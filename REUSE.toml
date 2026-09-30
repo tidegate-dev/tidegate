@@ -1,0 +1,7 @@
+version = 1
+SPDX-PackageName = "tidegate"
+
+[[annotations]]
+path = "**"
+SPDX-FileCopyrightText = "Copyright tidegate contributors"
+SPDX-License-Identifier = "Apache-2.0"
