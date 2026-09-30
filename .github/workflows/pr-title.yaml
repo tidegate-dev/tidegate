@@ -1,0 +1,28 @@
+name: PR title
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+
+permissions: {}
+
+jobs:
+  conventional-commits:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check that the title follows Conventional Commits
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          pattern='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9._/-]+\))?!?: [^ ].*$'
+          if [[ ! "$TITLE" =~ $pattern ]]; then
+            echo "::error::The pull request title does not follow Conventional Commits: $TITLE"
+            echo "Expected <type>(<optional scope>): <description>, for example 'fix(proxy): close idle connections'."
+            echo "See CONTRIBUTING.md for the allowed types."
+            exit 1
+          fi
+          echo "The pull request title is valid."
