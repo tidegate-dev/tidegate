@@ -66,10 +66,10 @@ You can use any tools for your contribution, including AI tools. You stay respon
 - Check everything an AI tool wrote before anyone else has to look at it.
 - Be ready to answer questions about your change in the review.
 - A tool may help you write the pull request description, but check that it says what you mean. The description explains why you made the change, how it works and what's still open.
-- If a tool wrote a substantial part of the change, say so in the pull request description, and name the tool and what it did. For example: "The tests were written with an AI assistant." This tells reviewers which parts to read more closely.
+- If you use an AI tool for your contribution, say so in the pull request description, and name the tool and what you used it for. For example: "I used an AI assistant to write the tests." This tells reviewers which parts to read more closely.
 - Don't paste review comments into an AI tool and push whatever it returns without reading it.
 
-The same applies to issues and to comments on pull requests and issues. Read what the tool wrote before you post it, and if a tool wrote a substantial part, say so.
+The same applies to issues and to comments on pull requests and issues. Read what the tool wrote before you post it, and say that a tool helped.
 
 If you report a security vulnerability with the help of an AI tool, reproduce the problem yourself first and describe how you did it.
 
