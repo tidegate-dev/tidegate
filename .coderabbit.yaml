@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-US
+reviews:
+  # Generated code and lock files aren't reviewed. Issues that add
+  # generated code, like sqlc output, add their paths here.
+  path_filters:
+    - "!**/*.pb.go"
+    - "!**/*.connect.go"
+    - "!**/go.sum"
+    - "!flake.lock"
