@@ -59,6 +59,30 @@ git rebase --signoff main
 git push --force-with-lease
 ```
 
+## Using AI tools
+
+You can use any tools for your contribution, including AI tools. You stay responsible for the result:
+
+- Check everything an AI tool wrote before anyone else has to look at it.
+- Be ready to answer questions about your change in the review.
+- Write the pull request description in your own words. A tool may fix the grammar or translate it. The description explains why you made the change, how it works and what's still open.
+- If a tool wrote a substantial part of the change, say so in the pull request description, and name the tool and what it did. For example: "The tests were written with an AI assistant." This tells reviewers which parts to read more closely.
+- Don't paste review comments into an AI tool and push whatever it returns without reading it.
+
+The same applies to issues and to comments on pull requests and issues. Read what the tool wrote before you post it, and if a tool wrote a substantial part, say so.
+
+If you report a security vulnerability with the help of an AI tool, reproduce the problem yourself first and describe how you did it.
+
+You're responsible for everything an AI tool does in your name, such as the pull requests and comments it posts.
+
+Every change costs reviewers time, and AI output that you haven't checked yourself pushes that work onto them. A maintainer may ask for changes to a pull request, issue or comment that doesn't follow these rules, or close or hide it.
+
+If you're new to tidegate, start with small changes that you fully understand.
+
+Your sign-off under the [DCO](#developer-certificate-of-origin) still means you have the right to submit the change. If an AI tool reproduces someone else's code, that doesn't give you that right, so check for it.
+
+These rules are adapted from the [LLVM AI Tool Use Policy](https://llvm.org/docs/AIToolPolicy.html), which builds on a policy of the Fedora project.
+
 ## License
 
 By contributing, you agree that your contributions are licensed under the [Apache License 2.0](LICENSE).
