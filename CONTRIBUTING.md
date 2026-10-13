@@ -65,7 +65,7 @@ You can use any tools for your contribution, including AI tools. You stay respon
 
 - Check everything an AI tool wrote before anyone else has to look at it.
 - Be ready to answer questions about your change in the review.
-- Write the pull request description in your own words. A tool may fix the grammar or translate it. The description explains why you made the change, how it works and what's still open.
+- A tool may help you write the pull request description, but check that it says what you mean. The description explains why you made the change, how it works and what's still open.
 - If a tool wrote a substantial part of the change, say so in the pull request description, and name the tool and what it did. For example: "The tests were written with an AI assistant." This tells reviewers which parts to read more closely.
 - Don't paste review comments into an AI tool and push whatever it returns without reading it.
 
