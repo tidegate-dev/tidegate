@@ -59,6 +59,26 @@ git rebase --signoff main
 git push --force-with-lease
 ```
 
+## Using AI tools
+
+You may use AI tools to write code and text for tidegate. A change made with an AI tool follows the same rules as any other change.
+
+An AI tool can't certify the [Developer Certificate of Origin](#developer-certificate-of-origin), so it must not add a `Signed-off-by` line. Before you sign off, review the change, make sure its license fits the project and take full responsibility for it.
+
+If an AI tool helped write a commit, add an `Assisted-by` line to the commit message:
+
+```
+Assisted-by: AGENT_NAME:MODEL_VERSION [TOOL1] [TOOL2]
+```
+
+`AGENT_NAME` is the AI tool and `MODEL_VERSION` is the exact model it used. After them you may list analysis tools that helped, like a linter or a static analyzer. Don't list basic tools like git, the compiler or your editor. For example:
+
+```
+Assisted-by: Claude:claude-opus-5-5
+```
+
+The squash merge keeps the commit messages from your branch, so this line ends up on `main`.
+
 ## License
 
 By contributing, you agree that your contributions are licensed under the [Apache License 2.0](LICENSE).
