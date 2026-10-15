@@ -4,6 +4,8 @@ An open source privileged access management tool.
 
 ## Development
 
+Development is supported on Linux and macOS. The Nix shell doesn't work on Intel Macs, because Nixpkgs no longer supports them.
+
 If you use Nix and direnv, run `direnv allow` in the repository. It gives you a shell with every tool you need, in the versions the project uses. Without direnv, run `nix develop`.
 
 If you don't use Nix, install these tools yourself:
