@@ -1,0 +1,10 @@
+# Build the control plane into bin/ at the root of the repository.
+build:
+    go build -o ../bin/control-plane ./cmd/control-plane
+
+# Run the control plane's unit tests.
+test:
+    go test ./...
+
+# Run every check that CI runs on the control plane.
+ci: build test
