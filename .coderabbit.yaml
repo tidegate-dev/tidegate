@@ -8,3 +8,9 @@ reviews:
     - "!**/*.connect.go"
     - "!**/go.sum"
     - "!flake.lock"
+  path_instructions:
+    - path: "**"
+      instructions: >-
+        REUSE.toml sets the copyright and license for every file in the
+        repository. Don't ask for SPDX copyright or license headers in
+        individual files.
