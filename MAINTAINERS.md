@@ -1,4 +1,4 @@
-# Owners
+# Maintainers
 
 The maintainers review and merge pull requests. They are the members of the [`@tidegate-dev/maintainers`](https://github.com/orgs/tidegate-dev/teams/maintainers) team:
 

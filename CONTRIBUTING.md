@@ -13,7 +13,7 @@ For bug fixes and small changes, open a pull request directly. For larger change
 1. Fork the repository and create a branch for your change.
 2. Make your change and sign off every commit (see [Developer Certificate of Origin](#developer-certificate-of-origin)).
 3. Open a pull request against `main`.
-4. A [maintainer](OWNERS.md) reviews the pull request and may ask for changes.
+4. A [maintainer](MAINTAINERS.md) reviews the pull request and may ask for changes.
 5. Once it is approved, a maintainer squash merges it.
 
 ## Pull request titles
