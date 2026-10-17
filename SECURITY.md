@@ -6,7 +6,7 @@ tidegate controls access to infrastructure, so a vulnerability in it can give an
 
 Report it through GitHub's [private vulnerability reporting](https://github.com/tidegate-dev/tidegate/security/advisories/new). If you don't have a GitHub account, send an email to karolin@giantswarm.io.
 
-Describe the problem, the affected version and the steps to reproduce it. We send a first response within 14 days.
+Describe the problem, the affected version and the steps to reproduce it. We respond as soon as we can.
 
 ## Supported versions
 
