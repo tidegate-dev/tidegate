@@ -8,6 +8,8 @@ Development is supported on Linux and macOS. The Nix shell doesn't work on Intel
 
 If you use Nix and direnv, run `direnv allow` in the repository. It gives you a shell with every tool you need, in the versions the project uses. Without direnv, run `nix develop`.
 
+The Nix shell also installs a pre-commit hook that runs `just lint` and `just test`, so a commit with a lint error or a failing test is refused.
+
 If you don't use Nix, install these tools yourself:
 
 - [Go](https://go.dev/dl/) 1.27.2 or newer
