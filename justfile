@@ -10,5 +10,11 @@ build: control-plane::build
 # Run the unit tests of every component.
 test: control-plane::test
 
+# Lint every component.
+lint: control-plane::lint
+
+# Format the code of every component in place.
+fmt: control-plane::fmt
+
 # Run every check that CI runs.
 ci: control-plane::ci

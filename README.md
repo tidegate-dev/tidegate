@@ -11,6 +11,7 @@ If you use Nix and direnv, run `direnv allow` in the repository. It gives you a 
 If you don't use Nix, install these tools yourself:
 
 - [Go](https://go.dev/dl/) 1.27.2 or newer
+- [golangci-lint](https://golangci-lint.run/) 2.14 or newer
 - [just](https://just.systems/)
 
 Then run `just` to see the recipes, for example `just build` and `just ci`.
