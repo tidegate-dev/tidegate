@@ -1,4 +1,5 @@
 mod control-plane
+mod docs
 
 # List the recipes.
 default:
@@ -11,4 +12,4 @@ build: control-plane::build
 test: control-plane::test
 
 # Run every check that CI runs.
-ci: control-plane::ci
+ci: control-plane::ci docs::build

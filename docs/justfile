@@ -1,0 +1,7 @@
+# Serve the documentation site locally and rebuild it on changes.
+serve:
+    zensical serve --config-file ../zensical.toml
+
+# Build the documentation site into site/ at the root of the repository.
+build:
+    zensical build --strict --config-file ../zensical.toml
