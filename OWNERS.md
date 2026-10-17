@@ -2,7 +2,6 @@
 
 The maintainers review and merge pull requests. They are the members of the [`@tidegate-dev/maintainers`](https://github.com/orgs/tidegate-dev/teams/maintainers) team:
 
-- [@christianhuening](https://github.com/christianhuening)
 - [@fjogeleit](https://github.com/fjogeleit)
 - [@salzg](https://github.com/salzg)
 - [@The127](https://github.com/The127)
