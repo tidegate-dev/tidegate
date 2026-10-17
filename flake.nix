@@ -20,6 +20,7 @@
           packages = [
             pkgs.go_1_27
             pkgs.just
+            pkgs.zensical
           ];
         };
       });
