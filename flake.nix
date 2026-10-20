@@ -50,7 +50,10 @@
     {
       devShells = forEachSystem (pkgs: {
         default = pkgs.mkShell {
-          packages = tools pkgs ++ [ pkgs.zensical ];
+          packages = tools pkgs ++ [
+            pkgs.govulncheck
+            pkgs.zensical
+          ];
           shellHook = (hooks pkgs).shellHook;
         };
       });

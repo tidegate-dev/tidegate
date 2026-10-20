@@ -14,5 +14,9 @@ lint:
 fmt:
     golangci-lint fmt ./...
 
+# Check the control plane's dependencies for known vulnerabilities.
+vuln:
+    govulncheck ./...
+
 # Run every check that CI runs on the control plane.
-ci: build test lint
+ci: build test lint vuln

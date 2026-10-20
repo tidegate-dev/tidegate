@@ -16,6 +16,7 @@ If you don't use Nix, install these tools yourself:
 
 - [Go](https://go.dev/dl/) 1.27.2 or newer
 - [golangci-lint](https://golangci-lint.run/) 2.14 or newer
+- [govulncheck](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck) 1.9 or newer
 - [just](https://just.systems/)
 - [Zensical](https://zensical.org/) 0.0.62 or newer, for the documentation site
 

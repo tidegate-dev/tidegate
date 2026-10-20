@@ -14,6 +14,9 @@ test: control-plane::test
 # Lint every component.
 lint: control-plane::lint
 
+# Check the dependencies of every component for known vulnerabilities.
+vuln: control-plane::vuln
+
 # Format the code of every component in place.
 fmt: control-plane::fmt
 
