@@ -1,5 +1,6 @@
 mod control-plane
 mod docs
+mod proto
 
 # List the recipes.
 default:
@@ -11,8 +12,11 @@ build: control-plane::build
 # Run the unit tests of every component.
 test: control-plane::test
 
+# Generate code from the .proto files.
+generate: proto::generate
+
 # Lint every component.
-lint: control-plane::lint
+lint: control-plane::lint proto::lint
 
 # Check the dependencies of every component for known vulnerabilities.
 vuln: control-plane::vuln
@@ -21,4 +25,4 @@ vuln: control-plane::vuln
 fmt: control-plane::fmt
 
 # Run every check that CI runs.
-ci: control-plane::ci docs::build
+ci: proto::ci control-plane::ci docs::build
