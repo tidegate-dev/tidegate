@@ -4,6 +4,15 @@ An open source privileged access management tool.
 
 The documentation is at [tidegate-dev.github.io/tidegate](https://tidegate-dev.github.io/tidegate/).
 
+## Platforms
+
+The control plane runs on Linux servers. The tools that people run on their own machines are built for Linux, macOS and Windows.
+
+| Component | Shipped as | Platforms | Status |
+|---|---|---|---|
+| Control plane | Binary and container image | Linux on amd64 and arm64 | Binary in development, image planned |
+| `tidegate` CLI | Binary | Linux, macOS and Windows, each on amd64 and arm64 | Planned |
+
 ## Development
 
 Development is supported on Linux and macOS. The Nix shell doesn't work on Intel Macs, because Nixpkgs no longer supports them.
