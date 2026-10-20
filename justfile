@@ -1,4 +1,5 @@
 mod control-plane
+mod docs
 
 # List the recipes.
 default:
@@ -17,4 +18,4 @@ lint: control-plane::lint
 fmt: control-plane::fmt
 
 # Run every check that CI runs.
-ci: control-plane::ci
+ci: control-plane::ci docs::build

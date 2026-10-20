@@ -21,6 +21,7 @@
             pkgs.go_1_27
             pkgs.golangci-lint
             pkgs.just
+            pkgs.zensical
           ];
         };
       });

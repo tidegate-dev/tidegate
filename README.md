@@ -2,6 +2,8 @@
 
 An open source privileged access management tool.
 
+The documentation is at [tidegate-dev.github.io/tidegate](https://tidegate-dev.github.io/tidegate/).
+
 ## Development
 
 Development is supported on Linux and macOS. The Nix shell doesn't work on Intel Macs, because Nixpkgs no longer supports them.
@@ -13,6 +15,7 @@ If you don't use Nix, install these tools yourself:
 - [Go](https://go.dev/dl/) 1.27.2 or newer
 - [golangci-lint](https://golangci-lint.run/) 2.14 or newer
 - [just](https://just.systems/)
+- [Zensical](https://zensical.org/) 0.0.62 or newer, for the documentation site
 
 Then run `just` to see the recipes, for example `just build` and `just ci`.
 

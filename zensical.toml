@@ -1,0 +1,12 @@
+[project]
+site_name = "tidegate"
+site_url = "https://tidegate-dev.github.io/tidegate/"
+repo_url = "https://github.com/tidegate-dev/tidegate"
+docs_dir = "docs/content"
+nav = [
+  { "What is tidegate" = "index.md" },
+  { "Development environment" = "development.md" },
+]
+
+[project.theme]
+language = "en"
