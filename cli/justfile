@@ -1,6 +1,6 @@
 # Build the CLI into bin/ at the root of the repository.
 build:
-    go build -o ../bin/tidegate ./cmd/tidegate
+    go build -o ../bin/ ./cmd/tidegate
 
 # Run the CLI's unit tests.
 test:
