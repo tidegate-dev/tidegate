@@ -29,7 +29,7 @@ If you don't use Nix, install these tools yourself:
 - [govulncheck](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck) 1.9 or newer
 - [just](https://just.systems/)
 - [protoc-gen-go](https://pkg.go.dev/google.golang.org/protobuf/cmd/protoc-gen-go) 1.36 or newer
-- [protoc-gen-connect-go](https://connectrpc.com/docs/go/getting-started/) 1.21 or newer
+- [protoc-gen-connect-go](https://connectrpc.com/docs/go/getting-started/) 1.21 or a newer 1.x release
 - [Zensical](https://zensical.org/) 0.0.62 or newer, for the documentation site
 
 Then run `just` to see the recipes, for example `just build` and `just ci`.
