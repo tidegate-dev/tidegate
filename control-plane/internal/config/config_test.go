@@ -29,6 +29,7 @@ func TestVariablesOverrideDefaults(t *testing.T) {
 	// arrange
 	environ := []string{
 		"TIDEGATE_CP__SERVER__LISTEN_ADDRESS=:9090",
+		"TIDEGATE_CP__METRICS__LISTEN_ADDRESS=:9100",
 		"TIDEGATE_CP__LOG__LEVEL=debug",
 		"TIDEGATE_CP__LOG__FORMAT=text",
 	}
@@ -39,8 +40,9 @@ func TestVariablesOverrideDefaults(t *testing.T) {
 	// assert
 	require.NoError(t, err)
 	assert.Equal(t, config.Config{
-		Server: config.Server{ListenAddress: ":9090"},
-		Log:    config.Log{Level: slog.LevelDebug, Format: logging.FormatText},
+		Server:  config.Server{ListenAddress: ":9090"},
+		Metrics: config.Metrics{ListenAddress: ":9100"},
+		Log:     config.Log{Level: slog.LevelDebug, Format: logging.FormatText},
 	}, cfg)
 }
 
@@ -164,7 +166,8 @@ func TestInvalidValuesNameTheirVariable(t *testing.T) {
 
 func defaultConfig() config.Config {
 	return config.Config{
-		Server: config.Server{ListenAddress: "127.0.0.1:8080"},
-		Log:    config.Log{Level: slog.LevelInfo, Format: logging.FormatJSON},
+		Server:  config.Server{ListenAddress: "127.0.0.1:8080"},
+		Metrics: config.Metrics{ListenAddress: "127.0.0.1:9464"},
+		Log:     config.Log{Level: slog.LevelInfo, Format: logging.FormatJSON},
 	}
 }
