@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"github.com/tidegate-dev/tidegate/control-plane/internal/config"
-	"github.com/tidegate-dev/tidegate/control-plane/internal/logging"
 	"github.com/tidegate-dev/tidegate/control-plane/internal/ping"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/controlplane/v1/controlplanev1connect"
+	"github.com/tidegate-dev/tidegate/internal/logging"
 )
 
 const shutdownTimeout = 10 * time.Second
@@ -27,7 +27,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	slog.SetDefault(logging.New(os.Stderr, cfg.Log))
+	slog.SetDefault(logging.New(os.Stderr, cfg.Log.Level, cfg.Log.Format))
 	slog.Debug("loaded config", "listen_address", cfg.Server.ListenAddress)
 
 	err = run(cfg)

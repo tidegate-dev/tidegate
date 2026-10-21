@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/tidegate-dev/tidegate/control-plane/internal/config"
+	"github.com/tidegate-dev/tidegate/internal/logging"
 )
 
 func TestDefaultsApplyWithoutVariables(t *testing.T) {
@@ -39,7 +40,7 @@ func TestVariablesOverrideDefaults(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, config.Config{
 		Server: config.Server{ListenAddress: ":9090"},
-		Log:    config.Log{Level: slog.LevelDebug, Format: config.LogFormatText},
+		Log:    config.Log{Level: slog.LevelDebug, Format: logging.FormatText},
 	}, cfg)
 }
 
@@ -94,7 +95,7 @@ func TestNamesAndValuesIgnoreLetterCase(t *testing.T) {
 	// assert
 	require.NoError(t, err)
 	assert.Equal(t, slog.LevelDebug, cfg.Log.Level)
-	assert.Equal(t, config.LogFormatText, cfg.Log.Format)
+	assert.Equal(t, logging.FormatText, cfg.Log.Format)
 }
 
 func TestValueMayContainEqualsSign(t *testing.T) {
@@ -164,6 +165,6 @@ func TestInvalidValuesNameTheirVariable(t *testing.T) {
 func defaultConfig() config.Config {
 	return config.Config{
 		Server: config.Server{ListenAddress: "127.0.0.1:8080"},
-		Log:    config.Log{Level: slog.LevelInfo, Format: config.LogFormatJSON},
+		Log:    config.Log{Level: slog.LevelInfo, Format: logging.FormatJSON},
 	}
 }

@@ -14,6 +14,8 @@ import (
 	"github.com/knadh/koanf/providers/env/v2"
 	"github.com/knadh/koanf/providers/structs"
 	"github.com/knadh/koanf/v2"
+
+	"github.com/tidegate-dev/tidegate/internal/logging"
 )
 
 const (
@@ -44,7 +46,7 @@ var defaults = rawConfig{
 	},
 	Log: rawLog{
 		Level:  "info",
-		Format: string(LogFormatJSON),
+		Format: string(logging.FormatJSON),
 	},
 }
 
@@ -62,18 +64,8 @@ type Server struct {
 // Log holds the logging settings.
 type Log struct {
 	Level  slog.Level
-	Format LogFormat
+	Format logging.Format
 }
-
-// LogFormat is how log lines are written.
-type LogFormat string
-
-const (
-	// LogFormatJSON writes one JSON object per line, for log collectors.
-	LogFormatJSON LogFormat = "json"
-	// LogFormatText writes key=value pairs, which are easier to read locally.
-	LogFormatText LogFormat = "text"
-)
 
 // Load reads the settings from environ, in the form os.Environ returns. An
 // empty variable counts as unset, so the setting keeps its default.
@@ -245,9 +237,9 @@ func parseLogLevel(value string) (slog.Level, error) {
 	return level, nil
 }
 
-func parseLogFormat(value string) (LogFormat, error) {
-	switch format := LogFormat(strings.ToLower(value)); format {
-	case LogFormatJSON, LogFormatText:
+func parseLogFormat(value string) (logging.Format, error) {
+	switch format := logging.Format(strings.ToLower(value)); format {
+	case logging.FormatJSON, logging.FormatText:
 		return format, nil
 	default:
 		return "", fmt.Errorf("unknown log format %q, want json or text", value)

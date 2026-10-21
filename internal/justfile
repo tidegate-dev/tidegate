@@ -1,0 +1,18 @@
+# Run the unit tests of the shared packages.
+test:
+    go test ./...
+
+# Lint the shared packages.
+lint:
+    golangci-lint run ./...
+
+# Format the shared packages' code in place.
+fmt:
+    golangci-lint fmt ./...
+
+# Check the shared packages' dependencies for known vulnerabilities.
+vuln:
+    govulncheck ./...
+
+# Run every check that CI runs on the shared packages.
+ci: test lint vuln

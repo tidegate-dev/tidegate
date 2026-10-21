@@ -9,8 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tidegate-dev/tidegate/control-plane/internal/config"
-	"github.com/tidegate-dev/tidegate/control-plane/internal/logging"
+	"github.com/tidegate-dev/tidegate/internal/logging"
 )
 
 func TestNewWritesJSON(t *testing.T) {
@@ -19,7 +18,7 @@ func TestNewWritesJSON(t *testing.T) {
 	// arrange
 	var out bytes.Buffer
 
-	logger := logging.New(&out, config.Log{Level: slog.LevelInfo, Format: config.LogFormatJSON})
+	logger := logging.New(&out, slog.LevelInfo, logging.FormatJSON)
 
 	// act
 	logger.Info("started", "address", "127.0.0.1:8080")
@@ -37,7 +36,7 @@ func TestNewWritesText(t *testing.T) {
 	// arrange
 	var out bytes.Buffer
 
-	logger := logging.New(&out, config.Log{Level: slog.LevelInfo, Format: config.LogFormatText})
+	logger := logging.New(&out, slog.LevelInfo, logging.FormatText)
 
 	// act
 	logger.Info("started", "address", "127.0.0.1:8080")
@@ -52,7 +51,7 @@ func TestNewDropsLinesBelowTheLevel(t *testing.T) {
 	// arrange
 	var out bytes.Buffer
 
-	logger := logging.New(&out, config.Log{Level: slog.LevelWarn, Format: config.LogFormatJSON})
+	logger := logging.New(&out, slog.LevelWarn, logging.FormatJSON)
 
 	// act
 	logger.Info("started")
@@ -65,7 +64,7 @@ func TestFromContextReturnsTheLoggerFromNewContext(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	logger := logging.New(&bytes.Buffer{}, config.Log{})
+	logger := logging.New(&bytes.Buffer{}, slog.LevelInfo, logging.FormatJSON)
 	ctx := logging.NewContext(t.Context(), logger)
 
 	// act
