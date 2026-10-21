@@ -23,10 +23,13 @@ The Nix shell also installs a pre-commit hook that runs `just lint` and `just te
 
 If you don't use Nix, install these tools yourself:
 
+- [buf](https://buf.build/docs/cli/installation/) 1.73 or newer
 - [Go](https://go.dev/dl/) 1.27.2 or newer
 - [golangci-lint](https://golangci-lint.run/) 2.14 or newer
 - [govulncheck](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck) 1.9 or newer
 - [just](https://just.systems/)
+- [protoc-gen-go](https://pkg.go.dev/google.golang.org/protobuf/cmd/protoc-gen-go) 1.36 or newer
+- [protoc-gen-connect-go](https://connectrpc.com/docs/go/getting-started/) 1.21 or newer
 - [Zensical](https://zensical.org/) 0.0.62 or newer, for the documentation site
 
 Then run `just` to see the recipes, for example `just build` and `just ci`.

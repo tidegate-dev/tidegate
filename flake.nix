@@ -21,6 +21,7 @@
 
       # When you change this list, update the tool list in README.md too.
       tools = pkgs: [
+        pkgs.buf
         pkgs.go_1_27
         pkgs.golangci-lint
         pkgs.just
@@ -52,6 +53,8 @@
         default = pkgs.mkShell {
           packages = tools pkgs ++ [
             pkgs.govulncheck
+            pkgs.protoc-gen-connect-go
+            pkgs.protoc-gen-go
             pkgs.zensical
           ];
           shellHook = (hooks pkgs).shellHook;

@@ -1,0 +1,15 @@
+# Generate the Go code for the .proto files into gen/ at the root of the repository.
+generate:
+    buf generate
+
+# Lint the .proto files.
+lint:
+    buf lint
+
+# Fail if the generated code doesn't match the .proto files.
+check-generated: generate
+    git diff --exit-code -- ../gen
+    test -z "$(git ls-files --others --exclude-standard -- ../gen)"
+
+# Run every check that CI runs on the .proto files.
+ci: lint check-generated

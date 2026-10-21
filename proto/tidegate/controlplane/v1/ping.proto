@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package tidegate.controlplane.v1;
+
+option go_package = "github.com/tidegate-dev/tidegate/gen/tidegate/controlplane/v1;controlplanev1";
+
+// PingService checks that a client can reach the control plane.
+service PingService {
+  // Ping answers with pong.
+  rpc Ping(PingRequest) returns (PingResponse);
+}
+
+message PingRequest {}
+
+message PingResponse {
+  // Message is always "pong".
+  string message = 1;
+}
