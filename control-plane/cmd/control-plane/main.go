@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/tidegate-dev/tidegate/control-plane/internal/config"
+	"github.com/tidegate-dev/tidegate/control-plane/internal/logging"
 	"github.com/tidegate-dev/tidegate/control-plane/internal/ping"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/controlplane/v1/controlplanev1connect"
 )
@@ -25,6 +26,9 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Invalid config:\n%v\n", err)
 		os.Exit(1)
 	}
+
+	slog.SetDefault(logging.New(os.Stderr, cfg.Log))
+	slog.Debug("loaded config", "listen_address", cfg.Server.ListenAddress)
 
 	err = run(cfg)
 	if err != nil {
