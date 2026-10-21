@@ -55,6 +55,9 @@ func run(cfg config.Config) error {
 		Handler:           mux,
 		Protocols:         &protocols,
 		ReadHeaderTimeout: 5 * time.Second,
+		// Every method is unary with a small request. A streaming method
+		// needs its own limit.
+		ReadTimeout: 10 * time.Second,
 	}
 
 	served := make(chan error, 1)
