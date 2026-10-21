@@ -11,7 +11,7 @@ The control plane runs on Linux servers. The tools that people run on their own 
 | Component | Shipped as | Platforms | Status |
 |---|---|---|---|
 | Control plane | Binary and container image | Linux on amd64 and arm64 | Binary in development, image planned |
-| `tidegate` CLI | Binary | Linux, macOS and Windows, each on amd64 and arm64 | Planned |
+| `tidegate` CLI | Binary | Linux, macOS and Windows, each on amd64 and arm64 | In development |
 
 ## Development
 
@@ -24,12 +24,12 @@ The Nix shell also installs a pre-commit hook that runs `just lint` and `just te
 If you don't use Nix, install these tools yourself:
 
 - [buf](https://buf.build/docs/cli/installation/) 1.73 or newer
-- [Go](https://go.dev/dl/) 1.27.2 or newer
+- [Go](https://go.dev/dl/) 1.27.3 or newer
 - [golangci-lint](https://golangci-lint.run/) 2.14 or newer
 - [govulncheck](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck) 1.9 or newer
 - [just](https://just.systems/)
 - [protoc-gen-go](https://pkg.go.dev/google.golang.org/protobuf/cmd/protoc-gen-go) 1.36 or newer
-- [protoc-gen-connect-go](https://connectrpc.com/docs/go/getting-started/) 1.21 or newer
+- [protoc-gen-connect-go](https://connectrpc.com/docs/go/getting-started/) 1.21 or a newer 1.x release
 - [Zensical](https://zensical.org/) 0.0.62 or newer, for the documentation site
 
 Then run `just` to see the recipes, for example `just build` and `just ci`.

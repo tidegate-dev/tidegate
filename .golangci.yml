@@ -5,6 +5,7 @@ linters:
   enable:
     - errorlint
     - gosec
+    - revive
     - wsl_v5
   settings:
     wsl_v5:

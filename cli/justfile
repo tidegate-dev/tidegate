@@ -1,0 +1,22 @@
+# Build the CLI into bin/ at the root of the repository.
+build:
+    go build -o ../bin/ ./cmd/tidegate
+
+# Run the CLI's unit tests.
+test:
+    go test ./...
+
+# Lint the CLI.
+lint:
+    golangci-lint run ./...
+
+# Format the CLI's code in place.
+fmt:
+    golangci-lint fmt ./...
+
+# Check the CLI's dependencies for known vulnerabilities.
+vuln:
+    govulncheck ./...
+
+# Run every check that CI runs on the CLI.
+ci: build test lint vuln

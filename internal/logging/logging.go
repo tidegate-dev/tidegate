@@ -1,21 +1,29 @@
-// Package logging builds the control plane's logger from the config and
-// passes it to request handlers through a context.
+// Package logging builds tidegate's loggers and passes them to request
+// handlers through a context.
 package logging
 
 import (
 	"context"
 	"io"
 	"log/slog"
-
-	"github.com/tidegate-dev/tidegate/control-plane/internal/config"
 )
 
-// New returns a logger that writes to w in the format and from the level
-// that cfg sets.
-func New(w io.Writer, cfg config.Log) *slog.Logger {
-	options := &slog.HandlerOptions{Level: cfg.Level}
+// Format is how log lines are written.
+type Format string
 
-	if cfg.Format == config.LogFormatText {
+const (
+	// FormatJSON writes one JSON object per line, for log collectors.
+	FormatJSON Format = "json"
+	// FormatText writes key=value pairs, which are easier to read locally.
+	FormatText Format = "text"
+)
+
+// New returns a logger that writes to w in format and drops lines below
+// level.
+func New(w io.Writer, level slog.Level, format Format) *slog.Logger {
+	options := &slog.HandlerOptions{Level: level}
+
+	if format == FormatText {
 		return slog.New(slog.NewTextHandler(w, options))
 	}
 

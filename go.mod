@@ -1,6 +1,6 @@
 module github.com/tidegate-dev/tidegate
 
-go 1.27.2
+go 1.27.3
 
 require (
 	connectrpc.com/connect v1.21.0
@@ -8,6 +8,7 @@ require (
 	github.com/knadh/koanf/providers/structs v1.0.1
 	github.com/knadh/koanf/v2 v2.4.1
 	github.com/stretchr/testify v1.12.1
+	github.com/urfave/cli/v3 v3.14.0
 	google.golang.org/protobuf v1.36.12
 )
 
