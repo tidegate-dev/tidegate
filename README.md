@@ -10,7 +10,7 @@ The control plane runs on Linux servers. The tools that people run on their own 
 
 | Component | Shipped as | Platforms | Status |
 |---|---|---|---|
-| Control plane | Binary and container image | Linux on amd64 and arm64 | Binary in development, image planned |
+| Control plane | Binary and container image | Linux on amd64 and arm64 | In development |
 | `tidegate` CLI | Binary | Linux, macOS and Windows, each on amd64 and arm64 | In development |
 
 ## Development
