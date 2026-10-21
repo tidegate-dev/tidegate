@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -37,6 +38,20 @@ func run(cfg config.Config) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	var listenConfig net.ListenConfig
+
+	listener, err := listenConfig.Listen(ctx, "tcp", cfg.Server.ListenAddress)
+	if err != nil {
+		return fmt.Errorf("listening: %w", err)
+	}
+
+	slog.Info("control plane listening", "address", listener.Addr().String())
+
+	return serve(ctx, listener)
+}
+
+// serve serves the API on listener until ctx is done, then shuts down.
+func serve(ctx context.Context, listener net.Listener) error {
 	mux := http.NewServeMux()
 	mux.Handle(controlplanev1connect.NewPingServiceHandler(ping.Service{}))
 
@@ -47,7 +62,6 @@ func run(cfg config.Config) error {
 	protocols.SetUnencryptedHTTP2(true)
 
 	server := &http.Server{
-		Addr:              cfg.Server.ListenAddress,
 		Handler:           mux,
 		Protocols:         &protocols,
 		ReadHeaderTimeout: 5 * time.Second,
@@ -56,10 +70,8 @@ func run(cfg config.Config) error {
 	served := make(chan error, 1)
 
 	go func() {
-		served <- server.ListenAndServe()
+		served <- server.Serve(listener)
 	}()
-
-	slog.Info("control plane listening", "address", cfg.Server.ListenAddress)
 
 	select {
 	case err := <-served:
