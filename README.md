@@ -24,7 +24,7 @@ The Nix shell also installs a pre-commit hook that runs `just lint` and `just te
 If you don't use Nix, install these tools yourself:
 
 - [buf](https://buf.build/docs/cli/installation/) 1.73 or newer
-- [Go](https://go.dev/dl/) 1.27.2 or newer
+- [Go](https://go.dev/dl/) 1.27.3 or newer
 - [golangci-lint](https://golangci-lint.run/) 2.14 or newer
 - [govulncheck](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck) 1.9 or newer
 - [just](https://just.systems/)
