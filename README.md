@@ -17,7 +17,7 @@ The control plane runs on Linux servers. The tools that people run on their own 
 
 Development is supported on Linux and macOS. The Nix shell doesn't work on Intel Macs, because Nixpkgs no longer supports them.
 
-Every setup also requires [Podman](https://podman.io/docs/installation) or [Docker](https://docs.docker.com/engine/install/), which the Nix shell doesn't provide.
+Every setup also requires [Podman](https://podman.io/docs/installation) or [Docker](https://docs.docker.com/engine/install/), which the Nix shell doesn't provide. With Podman on macOS, `just kind` needs a rootful Podman machine.
 
 If you use Nix and direnv, run `direnv allow` in the repository. It gives you a shell with every tool you need, in the versions the project uses. Without direnv, run `nix develop`.
 
@@ -30,6 +30,8 @@ If you don't use Nix, install these tools yourself:
 - [golangci-lint](https://golangci-lint.run/) 2.14 or newer
 - [govulncheck](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck) 1.9 or newer
 - [just](https://just.systems/)
+- [kind](https://kind.sigs.k8s.io/) 0.33 or newer
+- [kubectl](https://kubernetes.io/docs/tasks/tools/) 1.37 or newer
 - [process-compose](https://f1bonacc1.github.io/process-compose/) 1.122 or newer
 - [protoc-gen-go](https://pkg.go.dev/google.golang.org/protobuf/cmd/protoc-gen-go) 1.36 or newer
 - [protoc-gen-connect-go](https://connectrpc.com/docs/go/getting-started/) 1.21 or a newer 1.x release

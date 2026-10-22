@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: control-plane
+spec:
+  selector:
+    matchLabels:
+      app: control-plane
+  template:
+    metadata:
+      labels:
+        app: control-plane
+    spec:
+      containers:
+        - name: control-plane
+          image: localhost/tidegate-control-plane:latest
+          # just kind loads the image into the cluster, there's no registry.
+          imagePullPolicy: Never
+          env:
+            - name: TIDEGATE_CP__LOG__FORMAT
+              value: text
+          ports:
+            - name: http
+              containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: control-plane
+spec:
+  type: NodePort
+  selector:
+    app: control-plane
+  ports:
+    - port: 8080
+      targetPort: http
+      nodePort: 30080

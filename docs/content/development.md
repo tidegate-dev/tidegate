@@ -23,3 +23,11 @@ just dev-deps
 ```
 
 The services keep their data between runs. To start with empty data, stop `just dev` or `just dev-deps` and run `just dev-reset`. `dev/tidegate.yaml` defines the components and `dev/deps.yaml` the services, with their ports and logins.
+
+To run tidegate in Kubernetes instead, start a local cluster with [kind](https://kind.sigs.k8s.io/):
+
+```sh
+just kind
+```
+
+This builds the components' container images, creates the cluster if it doesn't exist yet and deploys everything in `dev/kind/`. Run it again after a change. Note that kind also switches your kubectl context to the new cluster. `just kind-down` deletes the cluster.
