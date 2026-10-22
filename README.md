@@ -10,12 +10,14 @@ The control plane runs on Linux servers. The tools that people run on their own 
 
 | Component | Shipped as | Platforms | Status |
 |---|---|---|---|
-| Control plane | Binary and container image | Linux on amd64 and arm64 | Binary in development, image planned |
+| Control plane | Binary and container image | Linux on amd64 and arm64 | In development |
 | `tidegate` CLI | Binary | Linux, macOS and Windows, each on amd64 and arm64 | In development |
 
 ## Development
 
 Development is supported on Linux and macOS. The Nix shell doesn't work on Intel Macs, because Nixpkgs no longer supports them.
+
+Every setup also requires [Podman](https://podman.io/docs/installation) or [Docker](https://docs.docker.com/engine/install/), which the Nix shell doesn't provide.
 
 If you use Nix and direnv, run `direnv allow` in the repository. It gives you a shell with every tool you need, in the versions the project uses. Without direnv, run `nix develop`.
 

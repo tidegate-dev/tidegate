@@ -1,0 +1,16 @@
+FROM docker.io/library/golang:1.27.3 AS build
+
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+# In a git worktree, .git points outside the build context, and stamping
+# VCS information into the binary fails.
+RUN CGO_ENABLED=0 go build -trimpath -buildvcs=false -o /control-plane ./control-plane/cmd/control-plane
+
+FROM gcr.io/distroless/static:nonroot
+
+COPY --from=build /control-plane /control-plane
+ENV TIDEGATE_CP__SERVER__LISTEN_ADDRESS=:8080
+EXPOSE 8080
+ENTRYPOINT ["/control-plane"]
