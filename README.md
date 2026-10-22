@@ -1,5 +1,7 @@
 # tidegate
 
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/tidegate-dev/tidegate/badge)](https://scorecard.dev/viewer/?uri=github.com/tidegate-dev/tidegate)
+
 An open source privileged access management tool.
 
 The documentation is at [tidegate-dev.github.io/tidegate](https://tidegate-dev.github.io/tidegate/).
