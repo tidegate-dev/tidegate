@@ -53,6 +53,7 @@
         default = pkgs.mkShell {
           packages = tools pkgs ++ [
             pkgs.govulncheck
+            pkgs.process-compose
             pkgs.protoc-gen-connect-go
             pkgs.protoc-gen-go
             pkgs.zensical

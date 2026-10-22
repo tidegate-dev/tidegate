@@ -1,0 +1,21 @@
+version: "0.5"
+
+processes:
+  postgres:
+    command: >-
+      $CONTAINER_RUNTIME rm --force tidegate-postgres >/dev/null 2>&1;
+      exec $CONTAINER_RUNTIME run --rm --name tidegate-postgres
+      --publish 127.0.0.1:5432:5432
+      --env POSTGRES_USER=tidegate
+      --env POSTGRES_PASSWORD=tidegate
+      --volume tidegate-postgres:/var/lib/postgresql
+      docker.io/library/postgres:18-alpine
+    readiness_probe:
+      exec:
+        command: $CONTAINER_RUNTIME exec tidegate-postgres pg_isready --username tidegate
+      initial_delay_seconds: 2
+      period_seconds: 2
+      # process-compose stops Postgres after this many failed checks, and
+      # the first start has to pull the image.
+      failure_threshold: 60
+

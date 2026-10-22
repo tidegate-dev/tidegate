@@ -7,3 +7,19 @@ Once you have them, run `just` in the repository to see the recipes. `just ci` r
 To work on this site, run `just docs::serve` and open the address it prints. The page reloads when you change a file in `docs/content/`.
 
 The API is defined in `.proto` files in `proto/`. After you change one, run `just generate` and commit the generated code in `gen/`. `just ci` fails if the generated code doesn't match the `.proto` files.
+
+## Run tidegate locally
+
+```sh
+just dev
+```
+
+This starts tidegate's components and the services they need, like Postgres, with [process-compose](https://f1bonacc1.github.io/process-compose/). The components run from your working copy. After you change one, restart it in process-compose, which builds it again.
+
+To debug a component, stop it in process-compose and start it in your editor's debugger. To run all components yourself, start only the services:
+
+```sh
+just dev-deps
+```
+
+The services keep their data between runs. To start with empty data, stop `just dev` or `just dev-deps` and run `just dev-reset`. `dev/tidegate.yaml` defines the components and `dev/deps.yaml` the services, with their ports and logins.
