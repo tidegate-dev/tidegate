@@ -84,9 +84,9 @@ kind: image
         kind load image-archive "$archive" --name tidegate
     done
     kubectl --context kind-tidegate apply --kustomize dev/kind
-    # The image tags stay the same, so the pods only pick up new images when
-    # they restart.
-    kubectl --context kind-tidegate --namespace tidegate rollout restart deployment
+    # The image tags stay the same, so the components only pick up new images
+    # when they restart. The services keep running, so Postgres keeps its data.
+    kubectl --context kind-tidegate --namespace tidegate rollout restart deployment --selector app.kubernetes.io/part-of=tidegate
     kubectl --context kind-tidegate --namespace tidegate rollout status deployment --timeout 3m
 
 # Delete the cluster that just kind created.
