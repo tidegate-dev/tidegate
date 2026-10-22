@@ -59,5 +59,46 @@ dev-reset:
     }
     "$runtime" volume rm --force tidegate-postgres
 
+images := "localhost/tidegate-control-plane"
+
+# Build the container images of every component.
+image: control-plane::image
+
+# Run tidegate's components and the services they need in a local Kubernetes cluster.
+kind: image
+    #!/usr/bin/env sh
+    set -eu
+    runtime=$(command -v podman || command -v docker) || {
+        echo "Install podman or Docker to run the development environment." >&2
+        exit 1
+    }
+    # kind uses Docker unless told otherwise.
+    case "$runtime" in */podman) export KIND_EXPERIMENTAL_PROVIDER=podman ;; esac
+    if ! kind get clusters 2>/dev/null | grep -qx tidegate; then
+        kind create cluster --name tidegate --config dev/kind/cluster.yaml
+    fi
+    archive=$(mktemp)
+    trap 'rm -f "$archive"' EXIT
+    for image in {{images}}; do
+        "$runtime" save --output "$archive" "$image"
+        kind load image-archive "$archive" --name tidegate
+    done
+    kubectl --context kind-tidegate apply --kustomize dev/kind
+    # The image tags stay the same, so the components only pick up new images
+    # when they restart. The services keep running, so Postgres keeps its data.
+    kubectl --context kind-tidegate --namespace tidegate rollout restart deployment --selector app.kubernetes.io/part-of=tidegate
+    kubectl --context kind-tidegate --namespace tidegate rollout status deployment --timeout 3m
+
+# Delete the cluster that just kind created.
+kind-down:
+    #!/usr/bin/env sh
+    set -eu
+    runtime=$(command -v podman || command -v docker) || {
+        echo "Install podman or Docker to run the development environment." >&2
+        exit 1
+    }
+    case "$runtime" in */podman) export KIND_EXPERIMENTAL_PROVIDER=podman ;; esac
+    kind delete cluster --name tidegate
+
 # Run every check that CI runs.
 ci: proto::ci control-plane::ci cli::ci internal::ci docs::build
