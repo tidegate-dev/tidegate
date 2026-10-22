@@ -17,6 +17,8 @@ The control plane runs on Linux servers. The tools that people run on their own 
 
 Development is supported on Linux and macOS. The Nix shell doesn't work on Intel Macs, because Nixpkgs no longer supports them.
 
+Every setup also requires [Podman](https://podman.io/docs/installation) or [Docker](https://docs.docker.com/engine/install/), which the Nix shell doesn't provide.
+
 If you use Nix and direnv, run `direnv allow` in the repository. It gives you a shell with every tool you need, in the versions the project uses. Without direnv, run `nix develop`.
 
 The Nix shell also installs a pre-commit hook that runs `just lint` and `just test`, so a commit with a lint error or a failing test is refused.
