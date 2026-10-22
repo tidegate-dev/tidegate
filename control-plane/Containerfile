@@ -11,6 +11,7 @@ RUN CGO_ENABLED=0 go build -trimpath -buildvcs=false -o /control-plane ./control
 FROM gcr.io/distroless/static:nonroot
 
 COPY --from=build /control-plane /control-plane
-ENV TIDEGATE_CP__SERVER__LISTEN_ADDRESS=:8080
-EXPOSE 8080
+ENV TIDEGATE_CP__SERVER__LISTEN_ADDRESS=:8080 \
+    TIDEGATE_CP__METRICS__LISTEN_ADDRESS=:9464
+EXPOSE 8080 9464
 ENTRYPOINT ["/control-plane"]

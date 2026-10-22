@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,6 +17,7 @@ import (
 	"github.com/tidegate-dev/tidegate/control-plane/internal/ping"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/controlplane/v1/controlplanev1connect"
 	"github.com/tidegate-dev/tidegate/internal/logging"
+	"github.com/tidegate-dev/tidegate/internal/metrics"
 )
 
 const shutdownTimeout = 10 * time.Second
@@ -41,6 +43,27 @@ func run(cfg config.Config) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	metricsHandler, shutdownMetrics, err := metrics.Setup()
+	if err != nil {
+		return err
+	}
+
+	metricsMux := http.NewServeMux()
+	metricsMux.Handle("GET /metrics", metricsHandler)
+
+	err = serve(ctx, map[string]*http.Server{
+		"api": apiServer(cfg.Server.ListenAddress),
+		"metrics": {
+			Addr:              cfg.Metrics.ListenAddress,
+			Handler:           metricsMux,
+			ReadHeaderTimeout: 5 * time.Second,
+		},
+	})
+
+	return errors.Join(err, shutdownMetrics(context.Background()))
+}
+
+func apiServer(address string) *http.Server {
 	mux := http.NewServeMux()
 	mux.Handle(controlplanev1connect.NewPingServiceHandler(ping.Service{}))
 
@@ -50,8 +73,8 @@ func run(cfg config.Config) error {
 	protocols.SetHTTP1(true)
 	protocols.SetUnencryptedHTTP2(true)
 
-	server := &http.Server{
-		Addr:              cfg.Server.ListenAddress,
+	return &http.Server{
+		Addr:              address,
 		Handler:           mux,
 		Protocols:         &protocols,
 		ReadHeaderTimeout: 5 * time.Second,
@@ -59,33 +82,64 @@ func run(cfg config.Config) error {
 		// needs its own limit.
 		ReadTimeout: 10 * time.Second,
 	}
+}
 
-	served := make(chan error, 1)
+// serve runs servers, keyed by a name for the logs, until ctx is done or
+// one of them fails, then shuts them all down.
+func serve(ctx context.Context, servers map[string]*http.Server) error {
+	var listenConfig net.ListenConfig
 
-	go func() {
-		served <- server.ListenAndServe()
-	}()
+	listeners := make(map[*http.Server]net.Listener, len(servers))
 
-	slog.Info("control plane listening", "address", cfg.Server.ListenAddress)
+	for name, server := range servers {
+		listener, err := listenConfig.Listen(ctx, "tcp", server.Addr)
+		if err != nil {
+			for _, l := range listeners {
+				_ = l.Close()
+			}
+
+			return fmt.Errorf("listening for %s: %w", name, err)
+		}
+
+		listeners[server] = listener
+		slog.Info("control plane listening", "server", name, "address", listener.Addr().String())
+	}
+
+	served := make(chan error, len(servers))
+
+	for server, listener := range listeners {
+		go func() {
+			served <- server.Serve(listener)
+		}()
+	}
+
+	var errs []error
+
+	running := len(servers)
 
 	select {
 	case err := <-served:
-		return err
+		errs = append(errs, err)
+		running--
 	case <-ctx.Done():
 	}
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 
-	err := server.Shutdown(shutdownCtx)
-	if err != nil {
-		return fmt.Errorf("shutting down: %w", err)
+	for name, server := range servers {
+		err := server.Shutdown(shutdownCtx)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("shutting down %s: %w", name, err))
+		}
 	}
 
-	err = <-served
-	if !errors.Is(err, http.ErrServerClosed) {
-		return err
+	for range running {
+		err := <-served
+		if !errors.Is(err, http.ErrServerClosed) {
+			errs = append(errs, err)
+		}
 	}
 
-	return nil
+	return errors.Join(errs...)
 }
