@@ -57,6 +57,9 @@ func run(cfg config.Config) error {
 			Addr:              cfg.Metrics.ListenAddress,
 			Handler:           metricsMux,
 			ReadHeaderTimeout: 5 * time.Second,
+			// Longer than Prometheus's default scrape interval of one minute,
+			// so a scraper can reuse its connection.
+			IdleTimeout: 90 * time.Second,
 		},
 	})
 
