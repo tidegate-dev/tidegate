@@ -22,4 +22,4 @@ To debug a component, stop it in process-compose and start it in your editor's d
 just dev-deps
 ```
 
-The services keep their data between runs. To start with empty data, stop `just dev` and run `just dev-reset`. `dev/tidegate.yaml` defines the components and `dev/deps.yaml` the services, with their ports and logins.
+The services keep their data between runs. To start with empty data, stop `just dev` or `just dev-deps` and run `just dev-reset`. `dev/tidegate.yaml` defines the components and `dev/deps.yaml` the services, with their ports and logins.
