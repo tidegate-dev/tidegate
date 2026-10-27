@@ -23,8 +23,11 @@ TIDEGATE_CP__LOG__LEVEL: unknown log level "loud", want debug, info, warn or err
 
 A setting keeps its default when its variable isn't set or is empty.
 
+The control plane serves its metrics at `/metrics` on their own address, in the Prometheus text format. That way you can make the API public and keep the metrics internal.
+
 | Variable | Default | Values |
 |---|---|---|
 | `TIDEGATE_CP__SERVER__LISTEN_ADDRESS` | `127.0.0.1:8080` | A host and port, like `:8080` or `[::1]:8080` |
+| `TIDEGATE_CP__METRICS__LISTEN_ADDRESS` | `127.0.0.1:9464` | A host and port for `/metrics`, like `:9464` |
 | `TIDEGATE_CP__LOG__LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
 | `TIDEGATE_CP__LOG__FORMAT` | `json` | `json` for log collectors, or `text`, which is easier to read locally |

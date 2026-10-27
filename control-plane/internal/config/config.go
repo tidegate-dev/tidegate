@@ -27,11 +27,16 @@ const (
 // rawConfig keeps every setting as a string, because environment variables
 // arrive as strings and validate needs the original value for its errors.
 type rawConfig struct {
-	Server rawServer `koanf:"server"`
-	Log    rawLog    `koanf:"log"`
+	Server  rawServer  `koanf:"server"`
+	Metrics rawMetrics `koanf:"metrics"`
+	Log     rawLog     `koanf:"log"`
 }
 
 type rawServer struct {
+	ListenAddress string `koanf:"listen_address"`
+}
+
+type rawMetrics struct {
 	ListenAddress string `koanf:"listen_address"`
 }
 
@@ -44,6 +49,9 @@ var defaults = rawConfig{
 	Server: rawServer{
 		ListenAddress: "127.0.0.1:8080",
 	},
+	Metrics: rawMetrics{
+		ListenAddress: "127.0.0.1:9464",
+	},
 	Log: rawLog{
 		Level:  "info",
 		Format: string(logging.FormatJSON),
@@ -52,12 +60,18 @@ var defaults = rawConfig{
 
 // Config holds the control plane's settings.
 type Config struct {
-	Server Server
-	Log    Log
+	Server  Server
+	Metrics Metrics
+	Log     Log
 }
 
 // Server holds the settings of the control plane's API server.
 type Server struct {
+	ListenAddress string
+}
+
+// Metrics holds the settings of the server that serves the metrics.
+type Metrics struct {
 	ListenAddress string
 }
 
@@ -125,6 +139,9 @@ func validate(raw rawConfig) (Config, error) {
 	listenAddress, err := parseListenAddress(raw.Server.ListenAddress)
 	v.check(&raw.Server.ListenAddress, err)
 
+	metricsListenAddress, err := parseListenAddress(raw.Metrics.ListenAddress)
+	v.check(&raw.Metrics.ListenAddress, err)
+
 	level, err := parseLogLevel(raw.Log.Level)
 	v.check(&raw.Log.Level, err)
 
@@ -136,8 +153,9 @@ func validate(raw rawConfig) (Config, error) {
 	}
 
 	return Config{
-		Server: Server{ListenAddress: listenAddress},
-		Log:    Log{Level: level, Format: format},
+		Server:  Server{ListenAddress: listenAddress},
+		Metrics: Metrics{ListenAddress: metricsListenAddress},
+		Log:     Log{Level: level, Format: format},
 	}, nil
 }
 
