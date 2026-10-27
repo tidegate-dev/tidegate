@@ -19,3 +19,20 @@ processes:
       # the first start has to pull the image.
       failure_threshold: 60
 
+
+  ssh-host:
+    command: >-
+      $CONTAINER_RUNTIME rm --force tidegate-ssh-host >/dev/null 2>&1;
+      exec $CONTAINER_RUNTIME run --rm --name tidegate-ssh-host
+      --publish 127.0.0.1:2222:2222
+      --env USER_NAME=tidegate
+      --env USER_PASSWORD=tidegate
+      --env PASSWORD_ACCESS=true
+      --volume ./dev/ssh-host:/config/ssh_host_keys:ro,z
+      lscr.io/linuxserver/openssh-server:latest
+    readiness_probe:
+      exec:
+        command: $CONTAINER_RUNTIME exec tidegate-ssh-host nc -z localhost 2222
+      initial_delay_seconds: 2
+      period_seconds: 2
+      failure_threshold: 60
