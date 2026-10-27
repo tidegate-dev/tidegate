@@ -45,6 +45,12 @@
               );
               pass_filenames = false;
             };
+            secrets = {
+              enable = true;
+              name = "gitleaks";
+              entry = "${pkgs.gitleaks}/bin/gitleaks git --pre-commit --staged --redact --no-banner";
+              pass_filenames = false;
+            };
           };
         };
     in
@@ -52,6 +58,7 @@
       devShells = forEachSystem (pkgs: {
         default = pkgs.mkShell {
           packages = tools pkgs ++ [
+            pkgs.gitleaks
             pkgs.govulncheck
             pkgs.kind
             pkgs.kubectl

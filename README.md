@@ -23,11 +23,12 @@ Every setup also requires [Podman](https://podman.io/docs/installation) or [Dock
 
 If you use Nix and direnv, run `direnv allow` in the repository. It gives you a shell with every tool you need, in the versions the project uses. Without direnv, run `nix develop`.
 
-The Nix shell also installs a pre-commit hook that runs `just lint` and `just test`, so a commit with a lint error or a failing test is refused.
+The Nix shell also installs a pre-commit hook that runs `just lint` and `just test` and checks the staged changes with gitleaks. A commit with a lint error, a failing test or a secret like a private key is refused.
 
 If you don't use Nix, install these tools yourself:
 
 - [buf](https://buf.build/docs/cli/installation/) 1.73 or newer
+- [gitleaks](https://github.com/gitleaks/gitleaks) 8.30 or newer
 - [Go](https://go.dev/dl/) 1.27.3 or newer
 - [golangci-lint](https://golangci-lint.run/) 2.14 or newer
 - [govulncheck](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck) 1.9 or newer
