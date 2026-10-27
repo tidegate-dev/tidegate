@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package tidegate.controlplane.v1;
+package tidegate.authority.v1;
 
-option go_package = "github.com/tidegate-dev/tidegate/gen/tidegate/controlplane/v1;controlplanev1";
+option go_package = "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;authorityv1";
 
-// PingService checks that a client can reach the control plane.
+// PingService checks that a client can reach the authority.
 service PingService {
   // Ping answers with pong.
   rpc Ping(PingRequest) returns (PingResponse);

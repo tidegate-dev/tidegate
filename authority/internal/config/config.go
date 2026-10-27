@@ -1,4 +1,4 @@
-// Package config loads the control plane's settings from environment
+// Package config loads the authority's settings from environment
 // variables.
 package config
 
@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	envPrefix      = "TIDEGATE_CP__"
+	envPrefix      = "TIDEGATE_AUTHORITY__"
 	levelSeparator = "__"
 	structTag      = "koanf"
 )
@@ -58,14 +58,14 @@ var defaults = rawConfig{
 	},
 }
 
-// Config holds the control plane's settings.
+// Config holds the authority's settings.
 type Config struct {
 	Server  Server
 	Metrics Metrics
 	Log     Log
 }
 
-// Server holds the settings of the control plane's API server.
+// Server holds the settings of the authority's API server.
 type Server struct {
 	ListenAddress string
 }

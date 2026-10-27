@@ -6,12 +6,12 @@ RUN go mod download
 COPY . .
 # In a git worktree, .git points outside the build context, and stamping
 # VCS information into the binary fails.
-RUN CGO_ENABLED=0 go build -trimpath -buildvcs=false -o /control-plane ./control-plane/cmd/control-plane
+RUN CGO_ENABLED=0 go build -trimpath -buildvcs=false -o /authority ./authority/cmd/authority
 
 FROM gcr.io/distroless/static:nonroot
 
-COPY --from=build /control-plane /control-plane
-ENV TIDEGATE_CP__SERVER__LISTEN_ADDRESS=:8080 \
-    TIDEGATE_CP__METRICS__LISTEN_ADDRESS=:9464
+COPY --from=build /authority /authority
+ENV TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=:8080 \
+    TIDEGATE_AUTHORITY__METRICS__LISTEN_ADDRESS=:9464
 EXPOSE 8080 9464
-ENTRYPOINT ["/control-plane"]
+ENTRYPOINT ["/authority"]

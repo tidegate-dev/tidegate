@@ -5,8 +5,8 @@ repo_url = "https://github.com/tidegate-dev/tidegate"
 docs_dir = "docs/content"
 nav = [
   { "What is tidegate" = "index.md" },
-  { "Control plane" = [
-    { "Configuration" = "control-plane/config.md" },
+  { "Authority" = [
+    { "Configuration" = "authority/config.md" },
   ] },
   { "Development environment" = "development.md" },
 ]

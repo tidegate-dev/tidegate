@@ -1,5 +1,5 @@
 mod cli
-mod control-plane
+mod authority
 mod docs
 mod internal
 mod proto
@@ -9,22 +9,22 @@ default:
     @{{just_executable()}} --list --list-submodules
 
 # Build every component into bin/.
-build: control-plane::build cli::build
+build: authority::build cli::build
 
 # Run the unit tests of every component.
-test: control-plane::test cli::test internal::test
+test: authority::test cli::test internal::test
 
 # Generate code from the .proto files.
 generate: proto::generate
 
 # Lint every component.
-lint: control-plane::lint cli::lint internal::lint proto::lint
+lint: authority::lint cli::lint internal::lint proto::lint
 
 # Check the dependencies of every component for known vulnerabilities.
-vuln: control-plane::vuln cli::vuln internal::vuln
+vuln: authority::vuln cli::vuln internal::vuln
 
 # Format the code of every component in place.
-fmt: control-plane::fmt cli::fmt internal::fmt
+fmt: authority::fmt cli::fmt internal::fmt
 
 # Start tidegate's components and the services they need.
 dev: (_process-compose "dev/deps.yaml" "dev/tidegate.yaml")
@@ -59,10 +59,10 @@ dev-reset:
     }
     "$runtime" volume rm --force tidegate-postgres
 
-images := "localhost/tidegate-control-plane"
+images := "localhost/tidegate-authority"
 
 # Build the container images of every component.
-image: control-plane::image
+image: authority::image
 
 # Run tidegate's components and the services they need in a local Kubernetes cluster.
 kind: image
@@ -101,4 +101,4 @@ kind-down:
     kind delete cluster --name tidegate
 
 # Run every check that CI runs.
-ci: proto::ci control-plane::ci cli::ci internal::ci docs::build
+ci: proto::ci authority::ci cli::ci internal::ci docs::build

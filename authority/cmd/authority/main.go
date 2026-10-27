@@ -1,4 +1,4 @@
-// Command control-plane runs the tidegate control plane.
+// Command authority runs the tidegate authority.
 package main
 
 import (
@@ -13,9 +13,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/tidegate-dev/tidegate/control-plane/internal/config"
-	"github.com/tidegate-dev/tidegate/control-plane/internal/ping"
-	"github.com/tidegate-dev/tidegate/gen/tidegate/controlplane/v1/controlplanev1connect"
+	"github.com/tidegate-dev/tidegate/authority/internal/config"
+	"github.com/tidegate-dev/tidegate/authority/internal/ping"
+	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
 	"github.com/tidegate-dev/tidegate/internal/logging"
 	"github.com/tidegate-dev/tidegate/internal/metrics"
 )
@@ -34,7 +34,7 @@ func main() {
 
 	err = run(cfg)
 	if err != nil {
-		slog.Error("control plane stopped", "error", err)
+		slog.Error("authority stopped", "error", err)
 		os.Exit(1)
 	}
 }
@@ -68,7 +68,7 @@ func run(cfg config.Config) error {
 
 func apiServer(address string) *http.Server {
 	mux := http.NewServeMux()
-	mux.Handle(controlplanev1connect.NewPingServiceHandler(ping.Service{}))
+	mux.Handle(authorityv1connect.NewPingServiceHandler(ping.Service{}))
 
 	// gRPC clients need HTTP/2, and the CLI's Connect client uses HTTP/1.1
 	// by default, so the server speaks both without TLS.
@@ -105,7 +105,7 @@ func serve(ctx context.Context, servers map[string]*http.Server) error {
 		}
 
 		listeners[server] = listener
-		slog.Info("control plane listening", "server", name, "address", listener.Addr().String())
+		slog.Info("authority listening", "server", name, "address", listener.Addr().String())
 	}
 
 	served := make(chan error, len(servers))
