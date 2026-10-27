@@ -28,9 +28,10 @@ const (
 // rawConfig keeps every setting as a string, because environment variables
 // arrive as strings and validate needs the original value for its errors.
 type rawConfig struct {
-	Server  rawServer  `koanf:"server"`
-	Metrics rawMetrics `koanf:"metrics"`
-	Log     rawLog     `koanf:"log"`
+	Server   rawServer   `koanf:"server"`
+	Metrics  rawMetrics  `koanf:"metrics"`
+	Database rawDatabase `koanf:"database"`
+	Log      rawLog      `koanf:"log"`
 }
 
 type rawServer struct {
@@ -47,6 +48,11 @@ type rawMetrics struct {
 	ListenAddress string `koanf:"listen_address"`
 }
 
+type rawDatabase struct {
+	URL            string `koanf:"url"`
+	MigrateOnStart string `koanf:"migrate_on_start"`
+}
+
 type rawLog struct {
 	Level  string `koanf:"level"`
 	Format string `koanf:"format"`
@@ -59,6 +65,9 @@ var defaults = rawConfig{
 	Metrics: rawMetrics{
 		ListenAddress: "127.0.0.1:9464",
 	},
+	Database: rawDatabase{
+		MigrateOnStart: "false",
+	},
 	Log: rawLog{
 		Level:  "info",
 		Format: string(logging.FormatJSON),
@@ -67,9 +76,10 @@ var defaults = rawConfig{
 
 // Config holds the authority's settings.
 type Config struct {
-	Server  Server
-	Metrics Metrics
-	Log     Log
+	Server   Server
+	Metrics  Metrics
+	Database Database
+	Log      Log
 }
 
 // Server holds the settings of the authority's API server.
@@ -82,6 +92,12 @@ type Server struct {
 // Metrics holds the settings of the server that serves the metrics.
 type Metrics struct {
 	ListenAddress string
+}
+
+// Database holds the settings for the connection to Postgres.
+type Database struct {
+	URL            string
+	MigrateOnStart bool
 }
 
 // Log holds the logging settings.
@@ -153,6 +169,13 @@ func validate(raw rawConfig) (Config, error) {
 	metricsListenAddress, err := parseListenAddress(raw.Metrics.ListenAddress)
 	v.check(&raw.Metrics.ListenAddress, err)
 
+	if raw.Database.URL == "" {
+		v.check(&raw.Database.URL, errors.New("must be set"))
+	}
+
+	migrateOnStart, err := parseBool(raw.Database.MigrateOnStart)
+	v.check(&raw.Database.MigrateOnStart, err)
+
 	level, err := parseLogLevel(raw.Log.Level)
 	v.check(&raw.Log.Level, err)
 
@@ -164,9 +187,10 @@ func validate(raw rawConfig) (Config, error) {
 	}
 
 	return Config{
-		Server:  Server{ListenAddress: listenAddress, Certificate: certificate},
-		Metrics: Metrics{ListenAddress: metricsListenAddress},
-		Log:     Log{Level: level, Format: format},
+		Server:   Server{ListenAddress: listenAddress, Certificate: certificate},
+		Metrics:  Metrics{ListenAddress: metricsListenAddress},
+		Database: Database{URL: raw.Database.URL, MigrateOnStart: migrateOnStart},
+		Log:      Log{Level: level, Format: format},
 	}, nil
 }
 
@@ -269,6 +293,17 @@ func parseListenAddress(value string) (string, error) {
 	}
 
 	return value, nil
+}
+
+func parseBool(value string) (bool, error) {
+	switch strings.ToLower(value) {
+	case "true":
+		return true, nil
+	case "false":
+		return false, nil
+	default:
+		return false, fmt.Errorf("invalid value %q, want true or false", value)
+	}
 }
 
 var logLevels = map[string]slog.Level{

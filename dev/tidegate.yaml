@@ -7,3 +7,8 @@ processes:
       - TIDEGATE_AUTHORITY__LOG__FORMAT=text
       - TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE=dev/tls/authority.pem
       - TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE=dev/tls/authority-key.pem
+      - TIDEGATE_AUTHORITY__DATABASE__URL=postgres://tidegate:tidegate@127.0.0.1:5432/tidegate
+      - TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START=true
+    depends_on:
+      postgres:
+        condition: process_healthy

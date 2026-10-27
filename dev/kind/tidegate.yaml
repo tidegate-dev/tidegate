@@ -25,6 +25,10 @@ spec:
               value: /tls/tls.crt
             - name: TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE
               value: /tls/tls.key
+            - name: TIDEGATE_AUTHORITY__DATABASE__URL
+              value: postgres://tidegate:tidegate@postgres:5432/tidegate
+            - name: TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START
+              value: "true"
           volumeMounts:
             - name: tls
               mountPath: /tls

@@ -67,6 +67,7 @@
             pkgs.process-compose
             pkgs.protoc-gen-connect-go
             pkgs.protoc-gen-go
+            pkgs.sqlc
             pkgs.zensical
           ];
           shellHook = (hooks pkgs).shellHook;

@@ -28,5 +28,13 @@ fmt:
 vuln:
     govulncheck ./...
 
+# Generate the Go code for the SQL queries in internal/db/queries/.
+generate:
+    sqlc generate
+
+# Fail if the generated code doesn't match the SQL queries.
+check-generated:
+    sqlc diff
+
 # Run every check that CI runs on the authority.
-ci: build test lint vuln image
+ci: build test lint vuln check-generated image

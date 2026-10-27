@@ -14,7 +14,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/urfave/cli/v3"
+
 	"github.com/tidegate-dev/tidegate/authority/internal/config"
+	"github.com/tidegate-dev/tidegate/authority/internal/db"
+	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
+	"github.com/tidegate-dev/tidegate/authority/internal/dummy"
 	"github.com/tidegate-dev/tidegate/authority/internal/ping"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
 	"github.com/tidegate-dev/tidegate/internal/logging"
@@ -34,16 +40,55 @@ func main() {
 	slog.SetDefault(logging.New(os.Stderr, cfg.Log.Level, cfg.Log.Format))
 	slog.Debug("loaded config", "listen_address", cfg.Server.ListenAddress)
 
-	err = run(cfg)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	err = newCommand(cfg).Run(ctx, os.Args)
 	if err != nil {
 		slog.Error("authority stopped", "error", err)
 		os.Exit(1)
 	}
 }
 
-func run(cfg config.Config) error {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+func newCommand(cfg config.Config) *cli.Command {
+	return &cli.Command{
+		Name:  "authority",
+		Usage: "run the tidegate authority",
+		Action: func(ctx context.Context, cmd *cli.Command) error {
+			if cmd.Args().Present() {
+				return fmt.Errorf("unknown command %q", cmd.Args().First())
+			}
+
+			return run(ctx, cfg)
+		},
+		Commands: []*cli.Command{
+			{
+				Name:  "migrate",
+				Usage: "apply the database migrations, then exit",
+				Action: func(ctx context.Context, _ *cli.Command) error {
+					return migrate(ctx, cfg.Database)
+				},
+			},
+		},
+	}
+}
+
+func migrate(ctx context.Context, cfg config.Database) error {
+	pool, err := db.Open(ctx, cfg.URL)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
+	return db.Migrate(ctx, pool)
+}
+
+func run(ctx context.Context, cfg config.Config) error {
+	pool, err := openDatabase(ctx, cfg.Database)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
 
 	notifier, err := systemd.Open()
 	if err != nil {
@@ -63,7 +108,7 @@ func run(cfg config.Config) error {
 	metricsMux.Handle("GET /metrics", metricsHandler)
 
 	err = serve(ctx, notifier, map[string]*http.Server{
-		"api": apiServer(cfg.Server),
+		"api": apiServer(cfg.Server, pool),
 		"metrics": {
 			Addr:              cfg.Metrics.ListenAddress,
 			Handler:           metricsMux,
@@ -77,9 +122,34 @@ func run(cfg config.Config) error {
 	return errors.Join(err, shutdownMetrics(context.Background()))
 }
 
-func apiServer(cfg config.Server) *http.Server {
+func openDatabase(ctx context.Context, cfg config.Database) (*pgxpool.Pool, error) {
+	pool, err := db.Open(ctx, cfg.URL)
+	if err != nil {
+		return nil, err
+	}
+
+	if cfg.MigrateOnStart {
+		err = db.Migrate(ctx, pool)
+	} else {
+		err = db.CheckSchema(ctx, pool)
+		if errors.Is(err, db.ErrSchemaTooOld) {
+			err = fmt.Errorf("%w. Run authority migrate first", err)
+		}
+	}
+
+	if err != nil {
+		pool.Close()
+
+		return nil, err
+	}
+
+	return pool, nil
+}
+
+func apiServer(cfg config.Server, pool *pgxpool.Pool) *http.Server {
 	mux := http.NewServeMux()
 	mux.Handle(authorityv1connect.NewPingServiceHandler(ping.Service{}))
+	mux.Handle(authorityv1connect.NewDummyServiceHandler(dummy.NewService(sqlc.New(pool))))
 
 	// gRPC clients need HTTP/2, and the CLI's Connect client uses HTTP/1.1
 	// by default.
