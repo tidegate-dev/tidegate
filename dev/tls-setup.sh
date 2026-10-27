@@ -12,7 +12,7 @@ if [ ! -f "$directory/ca.pem" ]; then
         -keyout "$directory/ca-key.pem" -out "$directory/ca.pem" 2>/dev/null
 fi
 
-if [ ! -f "$directory/authority.pem" ]; then
+if ! openssl verify -CAfile "$directory/ca.pem" "$directory/authority.pem" >/dev/null 2>&1; then
     openssl req -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -subj "/CN=localhost" \
         -keyout "$directory/authority-key.pem" -out "$directory/authority.csr" 2>/dev/null
     printf 'basicConstraints=critical,CA:FALSE\nsubjectAltName=DNS:localhost,IP:127.0.0.1,IP:::1\nextendedKeyUsage=serverAuth\n' \
