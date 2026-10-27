@@ -1,7 +1,6 @@
 version: "0.5"
 
-# Dependabot only updates images in fields called image, so the commands take
-# their image from vars.
+# Dependabot only updates images in fields called image.
 processes:
   postgres:
     vars:
