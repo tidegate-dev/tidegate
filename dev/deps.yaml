@@ -1,7 +1,11 @@
 version: "0.5"
 
+# Dependabot only updates images in fields called image, so the commands take
+# their image from vars.
 processes:
   postgres:
+    vars:
+      image: docker.io/library/postgres:18.6-alpine@sha256:10a5c69a83035ab5239f5620d708520e8b28f5aa1f2b20143e6024532edadfb5
     command: >-
       $CONTAINER_RUNTIME rm --force tidegate-postgres >/dev/null 2>&1;
       exec $CONTAINER_RUNTIME run --rm --name tidegate-postgres
@@ -9,7 +13,7 @@ processes:
       --env POSTGRES_USER=tidegate
       --env POSTGRES_PASSWORD=tidegate
       --volume tidegate-postgres:/var/lib/postgresql
-      docker.io/library/postgres:18-alpine
+      {{.image}}
     readiness_probe:
       exec:
         command: $CONTAINER_RUNTIME exec tidegate-postgres pg_isready --username tidegate
@@ -19,8 +23,9 @@ processes:
       # the first start has to pull the image.
       failure_threshold: 60
 
-
   ssh-host:
+    vars:
+      image: lscr.io/linuxserver/openssh-server:latest@sha256:b07414bb329b86a00525c9256711a7855fc3a369e9f62c36f1de8d1923197580
     command: >-
       $CONTAINER_RUNTIME rm --force tidegate-ssh-host >/dev/null 2>&1;
       exec $CONTAINER_RUNTIME run --rm --name tidegate-ssh-host
@@ -29,7 +34,7 @@ processes:
       --env USER_PASSWORD=tidegate
       --env PASSWORD_ACCESS=true
       --volume ./dev/ssh-host:/config/ssh_host_keys:ro,z
-      lscr.io/linuxserver/openssh-server:latest
+      {{.image}}
     readiness_probe:
       exec:
         command: $CONTAINER_RUNTIME exec tidegate-ssh-host nc -z localhost 2222
