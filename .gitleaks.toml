@@ -6,7 +6,7 @@ useDefault = true
 [[rules]]
 id = "connection-string-password"
 description = "Connection string with a password"
-regex = '''(?i)\b[a-z][a-z0-9+.-]*://[^:/\s@]+:([^/\s]+)@'''
+regex = '''(?i)\b[a-z][a-z0-9+.-]*://[^:/\s@]*:([^/\s]+)@'''
 secretGroup = 1
 keywords = ["://"]
 
