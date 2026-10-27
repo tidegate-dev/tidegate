@@ -1,5 +1,4 @@
-# just kind creates the Secret dev-ca from dev/tls/ca.pem, so the authority's
-# certificate comes from the same CA as in just dev.
+# just kind creates the Secret dev-ca from dev/tls/.
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:

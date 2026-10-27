@@ -1,7 +1,4 @@
 #!/usr/bin/env sh
-# Creates a throwaway CA and the authority's certificate in dev/tls/, unless
-# they exist. just kind gives the same CA to cert-manager, so one CA file
-# works against just dev and just kind.
 # P-256 instead of Ed25519, because browsers don't speak Ed25519 TLS.
 set -eu
 

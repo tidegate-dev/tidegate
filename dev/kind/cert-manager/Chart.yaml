@@ -1,5 +1,4 @@
-# Installs cert-manager into the cluster from just kind. It's a chart of its
-# own so that Dependabot can update the version.
+# Dependabot only updates chart versions in a Chart.yaml.
 apiVersion: v2
 name: cert-manager
 version: 0.0.0

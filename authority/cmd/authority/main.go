@@ -72,7 +72,7 @@ func apiServer(cfg config.Server) *http.Server {
 	mux.Handle(authorityv1connect.NewPingServiceHandler(ping.Service{}))
 
 	// gRPC clients need HTTP/2, and the CLI's Connect client uses HTTP/1.1
-	// by default, so the server speaks both, with or without TLS.
+	// by default.
 	var protocols http.Protocols
 	protocols.SetHTTP1(true)
 
@@ -124,7 +124,7 @@ func serve(ctx context.Context, servers map[string]*http.Server) error {
 	for server, listener := range listeners {
 		go func() {
 			if server.TLSConfig != nil {
-				// The certificate is already in TLSConfig, so no files.
+				// ServeTLS uses TLSConfig's certificate when the file names are empty.
 				served <- server.ServeTLS(listener, "", "")
 			} else {
 				served <- server.Serve(listener)

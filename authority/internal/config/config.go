@@ -200,8 +200,6 @@ func (v *validator) check(field *string, err error) {
 	}
 }
 
-// certificate loads the key pair when both files are set. A server that has
-// only one of them is a mistake, not a request for plain HTTP.
 func (v *validator) certificate(certFile, keyFile *string) *tls.Certificate {
 	switch {
 	case *certFile == "" && *keyFile == "":

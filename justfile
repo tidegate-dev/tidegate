@@ -32,7 +32,6 @@ dev: _dev-tls (_process-compose "dev/deps.yaml" "dev/tidegate.yaml")
 # Start only the services that tidegate's components need, like Postgres.
 dev-deps: (_process-compose "dev/deps.yaml")
 
-# Create the local CA and the authority's certificate in dev/tls/.
 _dev-tls:
     dev/tls-setup.sh
 
