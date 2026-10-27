@@ -21,9 +21,21 @@ spec:
           env:
             - name: TIDEGATE_AUTHORITY__LOG__FORMAT
               value: text
+            - name: TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE
+              value: /tls/tls.crt
+            - name: TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE
+              value: /tls/tls.key
+          volumeMounts:
+            - name: tls
+              mountPath: /tls
+              readOnly: true
           ports:
             - name: http
               containerPort: 8080
+      volumes:
+        - name: tls
+          secret:
+            secretName: authority-tls
 ---
 apiVersion: v1
 kind: Service

@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -52,7 +53,7 @@ func run(cfg config.Config) error {
 	metricsMux.Handle("GET /metrics", metricsHandler)
 
 	err = serve(ctx, map[string]*http.Server{
-		"api": apiServer(cfg.Server.ListenAddress),
+		"api": apiServer(cfg.Server),
 		"metrics": {
 			Addr:              cfg.Metrics.ListenAddress,
 			Handler:           metricsMux,
@@ -66,20 +67,30 @@ func run(cfg config.Config) error {
 	return errors.Join(err, shutdownMetrics(context.Background()))
 }
 
-func apiServer(address string) *http.Server {
+func apiServer(cfg config.Server) *http.Server {
 	mux := http.NewServeMux()
 	mux.Handle(authorityv1connect.NewPingServiceHandler(ping.Service{}))
 
 	// gRPC clients need HTTP/2, and the CLI's Connect client uses HTTP/1.1
-	// by default, so the server speaks both without TLS.
+	// by default, so the server speaks both, with or without TLS.
 	var protocols http.Protocols
 	protocols.SetHTTP1(true)
-	protocols.SetUnencryptedHTTP2(true)
+
+	var tlsConfig *tls.Config
+
+	if cfg.Certificate != nil {
+		tlsConfig = &tls.Config{Certificates: []tls.Certificate{*cfg.Certificate}}
+
+		protocols.SetHTTP2(true)
+	} else {
+		protocols.SetUnencryptedHTTP2(true)
+	}
 
 	return &http.Server{
-		Addr:              address,
+		Addr:              cfg.ListenAddress,
 		Handler:           mux,
 		Protocols:         &protocols,
+		TLSConfig:         tlsConfig,
 		ReadHeaderTimeout: 5 * time.Second,
 		// Every method is unary with a small request. A streaming method
 		// needs its own limit.
@@ -105,14 +116,19 @@ func serve(ctx context.Context, servers map[string]*http.Server) error {
 		}
 
 		listeners[server] = listener
-		slog.Info("authority listening", "server", name, "address", listener.Addr().String())
+		slog.Info("authority listening", "server", name, "address", listener.Addr().String(), "tls", server.TLSConfig != nil)
 	}
 
 	served := make(chan error, len(servers))
 
 	for server, listener := range listeners {
 		go func() {
-			served <- server.Serve(listener)
+			if server.TLSConfig != nil {
+				// The certificate is already in TLSConfig, so no files.
+				served <- server.ServeTLS(listener, "", "")
+			} else {
+				served <- server.Serve(listener)
+			}
 		}()
 	}
 

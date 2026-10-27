@@ -38,4 +38,12 @@ To run tidegate in Kubernetes instead, start a local cluster with [kind](https:/
 just kind
 ```
 
-This builds the components' container images, creates the cluster if it doesn't exist yet and deploys everything in `dev/kind/`. Run it again after a change. Note that kind also switches your kubectl context to the new cluster. `just kind-down` deletes the cluster.
+This builds the components' container images, creates the cluster if it doesn't exist yet, installs cert-manager with Helm and deploys everything in `dev/kind/`. Run it again after a change. Note that kind also switches your kubectl context to the new cluster. `just kind-down` deletes the cluster.
+
+In both environments, the authority serves HTTPS on port 8080 with a certificate from a local CA. `just dev` and `just kind` create the CA in `dev/tls/` the first time. In `just kind`, cert-manager issues the authority's certificate from the same CA. To trust the CA, point `SSL_CERT_FILE` to it:
+
+```sh
+SSL_CERT_FILE=dev/tls/ca.pem tidegate ping
+```
+
+Other tools take the CA file as a flag, like `buf curl --cacert dev/tls/ca.pem`. Your system's trust store stays unchanged.

@@ -1,0 +1,26 @@
+# just kind creates the Secret dev-ca from dev/tls/ca.pem, so the authority's
+# certificate comes from the same CA as in just dev.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: dev-ca
+spec:
+  ca:
+    secretName: dev-ca
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: authority
+spec:
+  secretName: authority-tls
+  issuerRef:
+    name: dev-ca
+    kind: Issuer
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  dnsNames:
+    - localhost
+  ipAddresses:
+    - 127.0.0.1

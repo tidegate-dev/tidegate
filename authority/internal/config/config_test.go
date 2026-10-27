@@ -1,7 +1,15 @@
 package config_test
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
+	"encoding/pem"
 	"log/slog"
+	"math/big"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -162,6 +170,93 @@ func TestInvalidValuesNameTheirVariable(t *testing.T) {
 			assert.EqualError(t, err, tt.want)
 		})
 	}
+}
+
+func TestCertificateAndKeyTogetherEnableTLS(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	certFile, keyFile := writeKeyPair(t)
+
+	// act
+	cfg, err := config.Load([]string{
+		"TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE=" + certFile,
+		"TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE=" + keyFile,
+	})
+
+	// assert
+	require.NoError(t, err)
+	assert.NotNil(t, cfg.Server.Certificate)
+}
+
+func TestCertificateOrKeyAloneIsRejected(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		variable string
+		want     string
+	}{
+		"certificate only": {
+			variable: "TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE=cert.pem",
+			want:     "TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE: must be set together with TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE",
+		},
+		"key only": {
+			variable: "TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE=key.pem",
+			want:     "TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE: must be set together with TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			// act
+			_, err := config.Load([]string{tt.variable})
+
+			// assert
+			assert.EqualError(t, err, tt.want)
+		})
+	}
+}
+
+func TestMissingKeyPairNamesTheCertificateVariable(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	directory := t.TempDir()
+
+	// act
+	_, err := config.Load([]string{
+		"TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE=" + filepath.Join(directory, "cert.pem"),
+		"TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE=" + filepath.Join(directory, "key.pem"),
+	})
+
+	// assert
+	require.Error(t, err)
+	assert.True(t, strings.HasPrefix(err.Error(), "TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE: loading the key pair: "), err.Error())
+}
+
+func writeKeyPair(t *testing.T) (certFile, keyFile string) {
+	t.Helper()
+
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+
+	template := &x509.Certificate{SerialNumber: big.NewInt(1), DNSNames: []string{"localhost"}}
+	der, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	require.NoError(t, err)
+
+	keyDER, err := x509.MarshalPKCS8PrivateKey(key)
+	require.NoError(t, err)
+
+	directory := t.TempDir()
+	certFile = filepath.Join(directory, "cert.pem")
+	keyFile = filepath.Join(directory, "key.pem")
+
+	require.NoError(t, os.WriteFile(certFile, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), 0o600))
+	require.NoError(t, os.WriteFile(keyFile, pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: keyDER}), 0o600))
+
+	return certFile, keyFile
 }
 
 func defaultConfig() config.Config {

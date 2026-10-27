@@ -13,8 +13,9 @@ import (
 	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
 )
 
-// defaultServer matches the authority's default listen address.
-const defaultServer = "http://127.0.0.1:8080"
+// defaultServer matches the authority in just dev and just kind, which
+// serves TLS on the default listen address.
+const defaultServer = "https://127.0.0.1:8080"
 
 const pingTimeout = 10 * time.Second
 

@@ -55,6 +55,8 @@
             pkgs.govulncheck
             pkgs.kind
             pkgs.kubectl
+            pkgs.kubernetes-helm
+            pkgs.openssl
             pkgs.process-compose
             pkgs.protoc-gen-connect-go
             pkgs.protoc-gen-go

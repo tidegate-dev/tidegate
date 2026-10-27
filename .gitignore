@@ -1,6 +1,8 @@
 /bin/
 /.direnv/
 /site/
+/dev/tls/
+/dev/kind/cert-manager/charts/
 /.pre-commit-config.yaml
 CLAUDE.local.md
 AGENTS.override.md

@@ -27,10 +27,14 @@ vuln: authority::vuln cli::vuln internal::vuln
 fmt: authority::fmt cli::fmt internal::fmt
 
 # Start tidegate's components and the services they need.
-dev: (_process-compose "dev/deps.yaml" "dev/tidegate.yaml")
+dev: _dev-tls (_process-compose "dev/deps.yaml" "dev/tidegate.yaml")
 
 # Start only the services that tidegate's components need, like Postgres.
 dev-deps: (_process-compose "dev/deps.yaml")
+
+# Create the local CA and the authority's certificate in dev/tls/.
+_dev-tls:
+    dev/tls-setup.sh
 
 [positional-arguments]
 _process-compose +configs:
@@ -65,7 +69,7 @@ images := "localhost/tidegate-authority"
 image: authority::image
 
 # Run tidegate's components and the services they need in a local Kubernetes cluster.
-kind: image
+kind: image _dev-tls
     #!/usr/bin/env sh
     set -eu
     runtime=$(command -v podman || command -v docker) || {
@@ -83,6 +87,13 @@ kind: image
         "$runtime" save --output "$archive" "$image"
         kind load image-archive "$archive" --name tidegate
     done
+    helm dependency build dev/kind/cert-manager
+    helm --kube-context kind-tidegate upgrade --install cert-manager dev/kind/cert-manager \
+        --namespace cert-manager --create-namespace --wait
+    kubectl --context kind-tidegate apply --filename dev/kind/namespace.yaml
+    kubectl --context kind-tidegate --namespace tidegate create secret tls dev-ca \
+        --cert dev/tls/ca.pem --key dev/tls/ca-key.pem --dry-run=client --output yaml \
+        | kubectl --context kind-tidegate apply --filename -
     kubectl --context kind-tidegate apply --kustomize dev/kind
     # The image tags stay the same, so the components only pick up new images
     # when they restart. The services keep running, so Postgres keeps its data.

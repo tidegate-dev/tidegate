@@ -31,9 +31,11 @@ If you don't use Nix, install these tools yourself:
 - [Go](https://go.dev/dl/) 1.27.3 or newer
 - [golangci-lint](https://golangci-lint.run/) 2.14 or newer
 - [govulncheck](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck) 1.9 or newer
+- [Helm](https://helm.sh/docs/intro/install/) 4.3 or newer
 - [just](https://just.systems/)
 - [kind](https://kind.sigs.k8s.io/) 0.33 or newer
 - [kubectl](https://kubernetes.io/docs/tasks/tools/) 1.37 or newer
+- [OpenSSL](https://openssl-library.org/) 3 or newer
 - [process-compose](https://f1bonacc1.github.io/process-compose/) 1.122 or newer
 - [protoc-gen-go](https://pkg.go.dev/google.golang.org/protobuf/cmd/protoc-gen-go) 1.36 or newer
 - [protoc-gen-connect-go](https://connectrpc.com/docs/go/getting-started/) 1.21 or a newer 1.x release
