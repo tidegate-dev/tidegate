@@ -9,11 +9,11 @@ import (
 	"connectrpc.com/connect"
 	"github.com/urfave/cli/v3"
 
-	controlplanev1 "github.com/tidegate-dev/tidegate/gen/tidegate/controlplane/v1"
-	"github.com/tidegate-dev/tidegate/gen/tidegate/controlplane/v1/controlplanev1connect"
+	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
+	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
 )
 
-// defaultServer matches the control plane's default listen address.
+// defaultServer matches the authority's default listen address.
 const defaultServer = "http://127.0.0.1:8080"
 
 const pingTimeout = 10 * time.Second
@@ -21,19 +21,19 @@ const pingTimeout = 10 * time.Second
 func newCommand() *cli.Command {
 	root := &cli.Command{
 		Name:   "tidegate",
-		Usage:  "talk to the tidegate control plane",
+		Usage:  "talk to the tidegate authority",
 		Action: unknownCommand,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "server",
-				Usage: "URL of the control plane",
+				Usage: "URL of the authority",
 				Value: defaultServer,
 			},
 		},
 		Commands: []*cli.Command{
 			{
 				Name:   "ping",
-				Usage:  "check that the control plane can be reached",
+				Usage:  "check that the authority can be reached",
 				Action: ping,
 			},
 		},
@@ -64,18 +64,18 @@ func enableSuggestions(cmd *cli.Command) {
 
 func ping(ctx context.Context, cmd *cli.Command) error {
 	server := cmd.String("server")
-	client := controlplanev1connect.NewPingServiceClient(http.DefaultClient, server)
+	client := authorityv1connect.NewPingServiceClient(http.DefaultClient, server)
 
 	ctx, cancel := context.WithTimeout(ctx, pingTimeout)
 	defer cancel()
 
-	response, err := client.Ping(ctx, connect.NewRequest(&controlplanev1.PingRequest{}))
+	response, err := client.Ping(ctx, connect.NewRequest(&authorityv1.PingRequest{}))
 	if connect.CodeOf(err) == connect.CodeUnavailable {
-		return fmt.Errorf("can't reach the control plane at %s: %w", server, err)
+		return fmt.Errorf("can't reach the authority at %s: %w", server, err)
 	}
 
 	if err != nil {
-		return fmt.Errorf("pinging the control plane at %s: %w", server, err)
+		return fmt.Errorf("pinging the authority at %s: %w", server, err)
 	}
 
 	_, err = fmt.Fprintln(cmd.Root().Writer, response.Msg.GetMessage())

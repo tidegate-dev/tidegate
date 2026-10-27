@@ -1,7 +1,7 @@
 version: "0.5"
 
 processes:
-  control-plane:
-    command: go build -o bin/control-plane ./control-plane/cmd/control-plane && exec bin/control-plane
+  authority:
+    command: go build -o bin/authority ./authority/cmd/authority && exec bin/authority
     environment:
-      - TIDEGATE_CP__LOG__FORMAT=text
+      - TIDEGATE_AUTHORITY__LOG__FORMAT=text

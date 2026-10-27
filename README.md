@@ -8,11 +8,11 @@ The documentation is at [tidegate-dev.github.io/tidegate](https://tidegate-dev.g
 
 ## Platforms
 
-The control plane runs on Linux servers. The tools that people run on their own machines are built for Linux, macOS and Windows.
+The authority runs on Linux servers. The tools that people run on their own machines are built for Linux, macOS and Windows.
 
 | Component | Shipped as | Platforms | Status |
 |---|---|---|---|
-| Control plane | Binary and container image | Linux on amd64 and arm64 | In development |
+| Authority | Binary and container image | Linux on amd64 and arm64 | In development |
 | `tidegate` CLI | Binary | Linux, macOS and Windows, each on amd64 and arm64 | In development |
 
 ## Development

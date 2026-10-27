@@ -1,0 +1,32 @@
+# Build the authority into bin/ at the root of the repository.
+build:
+    go build -o ../bin/authority ./cmd/authority
+
+# Build the authority's container image with podman or Docker.
+image:
+    #!/usr/bin/env sh
+    set -eu
+    runtime=$(command -v podman || command -v docker) || {
+        echo "Install podman or Docker to build the image." >&2
+        exit 1
+    }
+    "$runtime" build --file Containerfile --tag localhost/tidegate-authority ..
+
+# Run the authority's unit tests.
+test:
+    go test ./...
+
+# Lint the authority.
+lint:
+    golangci-lint run ./...
+
+# Format the authority's code in place.
+fmt:
+    golangci-lint fmt ./...
+
+# Check the authority's dependencies for known vulnerabilities.
+vuln:
+    govulncheck ./...
+
+# Run every check that CI runs on the authority.
+ci: build test lint vuln image
