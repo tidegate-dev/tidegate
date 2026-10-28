@@ -19,6 +19,7 @@ import (
 	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
 	"github.com/tidegate-dev/tidegate/internal/logging"
 	"github.com/tidegate-dev/tidegate/internal/metrics"
+	"github.com/tidegate-dev/tidegate/internal/systemd"
 )
 
 const shutdownTimeout = 10 * time.Second
@@ -44,6 +45,15 @@ func run(cfg config.Config) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	notifier, err := systemd.Open()
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		_ = notifier.Close()
+	}()
+
 	metricsHandler, shutdownMetrics, err := metrics.Setup()
 	if err != nil {
 		return err
@@ -52,7 +62,7 @@ func run(cfg config.Config) error {
 	metricsMux := http.NewServeMux()
 	metricsMux.Handle("GET /metrics", metricsHandler)
 
-	err = serve(ctx, map[string]*http.Server{
+	err = serve(ctx, notifier, map[string]*http.Server{
 		"api": apiServer(cfg.Server),
 		"metrics": {
 			Addr:              cfg.Metrics.ListenAddress,
@@ -99,8 +109,9 @@ func apiServer(cfg config.Server) *http.Server {
 }
 
 // serve runs servers, keyed by a name for the logs, until ctx is done or
-// one of them fails, then shuts them all down.
-func serve(ctx context.Context, servers map[string]*http.Server) error {
+// one of them fails, then shuts them all down. It tells notifier when all
+// servers listen and when the shutdown begins.
+func serve(ctx context.Context, notifier *systemd.Notifier, servers map[string]*http.Server) error {
 	var listenConfig net.ListenConfig
 
 	listeners := make(map[*http.Server]net.Listener, len(servers))
@@ -132,6 +143,11 @@ func serve(ctx context.Context, servers map[string]*http.Server) error {
 		}()
 	}
 
+	err := notifier.Ready()
+	if err != nil {
+		slog.Error("telling systemd that the authority is ready", "error", err)
+	}
+
 	var errs []error
 
 	running := len(servers)
@@ -141,6 +157,11 @@ func serve(ctx context.Context, servers map[string]*http.Server) error {
 		errs = append(errs, err)
 		running--
 	case <-ctx.Done():
+	}
+
+	err = notifier.Stopping()
+	if err != nil {
+		slog.Error("telling systemd that the authority is stopping", "error", err)
 	}
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)

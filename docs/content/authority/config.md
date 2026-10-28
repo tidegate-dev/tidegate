@@ -35,3 +35,15 @@ The API serves HTTPS when you set both a certificate file and a key file. Withou
 | `TIDEGATE_AUTHORITY__METRICS__LISTEN_ADDRESS` | `127.0.0.1:9464` | A host and port for `/metrics`, like `:9464` |
 | `TIDEGATE_AUTHORITY__LOG__LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
 | `TIDEGATE_AUTHORITY__LOG__FORMAT` | `json` | `json` for log collectors, or `text`, which is easier to read locally |
+
+## Running under systemd
+
+If you run the authority as a systemd service, give its unit `Type=notify`:
+
+```ini
+[Service]
+Type=notify
+ExecStart=/usr/local/bin/authority
+```
+
+systemd then counts the authority as started once it accepts connections, not as soon as the process runs. `systemctl start` waits until then, and units ordered after the authority don't start too early. Outside systemd, the authority starts and stops as usual.
