@@ -23,6 +23,10 @@ lint: authority::lint cli::lint internal::lint proto::lint
 # Check the dependencies of every component for known vulnerabilities.
 vuln: authority::vuln cli::vuln internal::vuln
 
+# Check every commit for secrets, like private keys.
+secrets:
+    gitleaks git --redact --no-banner
+
 # Format the code of every component in place.
 fmt: authority::fmt cli::fmt internal::fmt
 
@@ -101,4 +105,4 @@ kind-down:
     kind delete cluster --name tidegate
 
 # Run every check that CI runs.
-ci: proto::ci authority::ci cli::ci internal::ci docs::build
+ci: secrets proto::ci authority::ci cli::ci internal::ci docs::build
