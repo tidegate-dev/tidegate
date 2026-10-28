@@ -52,6 +52,21 @@ updates:
         update-types:
           - minor
 
+  - package-ecosystem: helm
+    directory: /dev/kind/cert-manager
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      patch:
+        update-types:
+          - patch
+      minor:
+        update-types:
+          - minor
+
   - package-ecosystem: nix
     directory: /
     schedule:

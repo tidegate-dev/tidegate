@@ -25,9 +25,13 @@ A setting keeps its default when its variable isn't set or is empty.
 
 The authority serves its metrics at `/metrics` on their own address, in the Prometheus text format. That way you can make the API public and keep the metrics internal.
 
+The API serves HTTPS when you set both a certificate file and a key file. Without them, it serves plain HTTP. If you set only one of them, the authority doesn't start. The authority reads both files when it starts, so restart it after you replace them. The metrics always use plain HTTP.
+
 | Variable | Default | Values |
 |---|---|---|
 | `TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS` | `127.0.0.1:8080` | A host and port, like `:8080` or `[::1]:8080` |
+| `TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE` | None | Path to the certificate in PEM format, followed by any intermediate certificates |
+| `TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE` | None | Path to the certificate's private key in PEM format |
 | `TIDEGATE_AUTHORITY__METRICS__LISTEN_ADDRESS` | `127.0.0.1:9464` | A host and port for `/metrics`, like `:9464` |
 | `TIDEGATE_AUTHORITY__LOG__LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
 | `TIDEGATE_AUTHORITY__LOG__FORMAT` | `json` | `json` for log collectors, or `text`, which is easier to read locally |

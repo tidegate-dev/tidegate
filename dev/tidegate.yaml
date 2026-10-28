@@ -5,3 +5,5 @@ processes:
     command: go build -o bin/authority ./authority/cmd/authority && exec bin/authority
     environment:
       - TIDEGATE_AUTHORITY__LOG__FORMAT=text
+      - TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE=dev/tls/authority.pem
+      - TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE=dev/tls/authority-key.pem

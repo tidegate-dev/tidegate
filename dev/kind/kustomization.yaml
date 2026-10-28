@@ -4,4 +4,5 @@ namespace: tidegate
 resources:
   - namespace.yaml
   - deps.yaml
+  - tls.yaml
   - tidegate.yaml

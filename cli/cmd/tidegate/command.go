@@ -14,7 +14,7 @@ import (
 )
 
 // defaultServer matches the authority's default listen address.
-const defaultServer = "http://127.0.0.1:8080"
+const defaultServer = "https://127.0.0.1:8080"
 
 const pingTimeout = 10 * time.Second
 
