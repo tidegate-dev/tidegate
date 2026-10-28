@@ -6,6 +6,8 @@ Once you have them, run `just` in the repository to see the recipes. `just ci` r
 
 To work on this site, run `just docs::serve` and open the address it prints. The page reloads when you change a file in `docs/content/`.
 
+`arch-go.yml` says which packages may import which. `internal/` imports nothing from a component or from `gen/`, and a component imports only itself, `internal/` and the generated code in `gen/`. Every package needs a rule there. If you add a new top-level directory, like a new component, add a rule for it too. `just arch` checks the rules, and `just ci` and the pre-commit hook run it. Note that arch-go reads packages like `go build` does, so it doesn't check imports in test files or in files behind a build tag.
+
 The API is defined in `.proto` files in `proto/`. After you change one, run `just generate` and commit the generated code in `gen/`. `just ci` fails if the generated code doesn't match the `.proto` files.
 
 The authority's SQL queries are in `authority/internal/db/queries/`, and sqlc generates Go code for them in `authority/internal/db/sqlc/`. After you change a query, also run `just generate` and commit the result.

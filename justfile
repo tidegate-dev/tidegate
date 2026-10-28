@@ -20,13 +20,19 @@ generate: proto::generate authority::generate
 # Lint every component.
 lint: authority::lint cli::lint internal::lint proto::lint
 
-# Check the dependencies of every component for known vulnerabilities.
+# Check the dependencies of every component and of the Go tools for known
+# vulnerabilities.
 vuln: authority::vuln cli::vuln internal::vuln
+    govulncheck github.com/arch-go/arch-go/v2/...
 
 # gitleaks reads every branch unless --log-opts names one.
 # Check every commit for secrets, like private keys.
 secrets:
     gitleaks git --redact --no-banner --log-opts=HEAD
+
+# Check which packages may import which, as arch-go.yml says.
+arch:
+    go tool arch-go
 
 # Format the code of every component in place.
 fmt: authority::fmt cli::fmt internal::fmt
@@ -116,4 +122,4 @@ kind-down:
     kind delete cluster --name tidegate
 
 # Run every check that CI runs.
-ci: secrets proto::ci authority::ci cli::ci internal::ci docs::build
+ci: secrets arch proto::ci authority::ci cli::ci internal::ci docs::build
