@@ -31,6 +31,27 @@ updates:
         update-types:
           - minor
 
+  - package-ecosystem: docker
+    directories:
+      - /authority
+      - /dev
+      - /dev/kind
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+      include: scope
+    # just kind builds these images locally, they aren't in a registry.
+    ignore:
+      - dependency-name: "*tidegate-*"
+    groups:
+      patch:
+        update-types:
+          - patch
+      minor:
+        update-types:
+          - minor
+
   - package-ecosystem: nix
     directory: /
     schedule:

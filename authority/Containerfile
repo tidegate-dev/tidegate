@@ -1,4 +1,4 @@
-FROM docker.io/library/golang:1.27.3 AS build
+FROM docker.io/library/golang:1.27.3@sha256:9048d5e7751706200eb1719c7dae0436950d362f29a1da91fa05e5c63867c60f AS build
 
 WORKDIR /src
 COPY go.mod go.sum ./
@@ -8,7 +8,7 @@ COPY . .
 # VCS information into the binary fails.
 RUN CGO_ENABLED=0 go build -trimpath -buildvcs=false -o /authority ./authority/cmd/authority
 
-FROM gcr.io/distroless/static:nonroot
+FROM gcr.io/distroless/static:nonroot@sha256:18f4cc26c9ffa7f20a359298be7deadac5c607c8e03a02b8119f1a5fc2f82c99
 
 COPY --from=build /authority /authority
 ENV TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=:8080 \

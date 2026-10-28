@@ -24,6 +24,14 @@ just dev-deps
 
 The services keep their data between runs. To start with empty data, stop `just dev` or `just dev-deps` and run `just dev-reset`. `dev/tidegate.yaml` defines the components and `dev/deps.yaml` the services, with their ports and logins.
 
+One of the services is an SSH host to try tidegate against. Connect to it with the password `tidegate`:
+
+```sh
+ssh -p 2222 tidegate@127.0.0.1
+```
+
+Its host key is committed in `dev/ssh-host/`, so the host has the same fingerprint for everyone.
+
 To run tidegate in Kubernetes instead, start a local cluster with [kind](https://kind.sigs.k8s.io/):
 
 ```sh
