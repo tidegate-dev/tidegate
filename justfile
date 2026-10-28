@@ -23,9 +23,10 @@ lint: authority::lint cli::lint internal::lint proto::lint
 # Check the dependencies of every component for known vulnerabilities.
 vuln: authority::vuln cli::vuln internal::vuln
 
+# gitleaks reads every branch unless --log-opts names one.
 # Check every commit for secrets, like private keys.
 secrets:
-    gitleaks git --redact --no-banner
+    gitleaks git --redact --no-banner --log-opts=HEAD
 
 # Format the code of every component in place.
 fmt: authority::fmt cli::fmt internal::fmt
