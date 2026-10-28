@@ -30,33 +30,34 @@ import (
 
 const shutdownTimeout = 10 * time.Second
 
+// errInvalidConfig marks errors that main prints as they are, because the
+// logger is only set up from a valid config.
+var errInvalidConfig = errors.New("invalid config")
+
 func main() {
-	cfg, err := config.Load(os.Environ())
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Invalid config:\n%v\n", err)
-		os.Exit(1)
-	}
-
-	slog.SetDefault(logging.New(os.Stderr, cfg.Log.Level, cfg.Log.Format))
-	slog.Debug("loaded config", "listen_address", cfg.Server.ListenAddress)
-
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	err = newCommand(cfg).Run(ctx, os.Args)
+	err := newCommand().Run(ctx, os.Args)
+	if errors.Is(err, errInvalidConfig) {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
 	if err != nil {
 		slog.Error("authority stopped", "error", err)
 		os.Exit(1)
 	}
 }
 
-func newCommand(cfg config.Config) *cli.Command {
+func newCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "authority",
 		Usage: "run the tidegate authority",
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			if cmd.Args().Present() {
-				return fmt.Errorf("unknown command %q", cmd.Args().First())
+			cfg, err := setUp(cmd)
+			if err != nil {
+				return err
 			}
 
 			return run(ctx, cfg)
@@ -65,12 +66,35 @@ func newCommand(cfg config.Config) *cli.Command {
 			{
 				Name:  "migrate",
 				Usage: "apply the database migrations, then exit",
-				Action: func(ctx context.Context, _ *cli.Command) error {
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					cfg, err := setUp(cmd)
+					if err != nil {
+						return err
+					}
+
 					return migrate(ctx, cfg.Database)
 				},
 			},
 		},
 	}
+}
+
+// setUp rejects arguments, loads the config and sets up logging from it.
+// The commands call it themselves, so --help works without a config.
+func setUp(cmd *cli.Command) (config.Config, error) {
+	if cmd.Args().Present() {
+		return config.Config{}, fmt.Errorf("unknown command %q", cmd.Args().First())
+	}
+
+	cfg, err := config.Load(os.Environ())
+	if err != nil {
+		return config.Config{}, fmt.Errorf("%w:\n%w", errInvalidConfig, err)
+	}
+
+	slog.SetDefault(logging.New(os.Stderr, cfg.Log.Level, cfg.Log.Format))
+	slog.Debug("loaded config", "listen_address", cfg.Server.ListenAddress)
+
+	return cfg, nil
 }
 
 func migrate(ctx context.Context, cfg config.Database) error {
