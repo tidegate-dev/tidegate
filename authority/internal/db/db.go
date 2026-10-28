@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"log/slog"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
@@ -22,6 +23,9 @@ var migrations embed.FS
 // ErrSchemaTooOld means the database misses migrations that this version of
 // the authority needs.
 var ErrSchemaTooOld = errors.New("the database schema is older than the authority expects")
+
+// The SQLSTATE code for a table that doesn't exist.
+const undefinedTable = "42P01"
 
 // Open connects to the database at url. It warns if the connection may run
 // unencrypted.
@@ -52,11 +56,15 @@ func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
 }
 
 // Migrate applies every migration that the database doesn't have yet.
-func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
+func Migrate(ctx context.Context, pool *pgxpool.Pool) (err error) {
 	provider, err := newProvider(pool)
 	if err != nil {
 		return err
 	}
+
+	defer func() {
+		err = errors.Join(err, provider.Close())
+	}()
 
 	_, err = provider.Up(ctx)
 	if err != nil {
@@ -67,23 +75,54 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
 }
 
 // CheckSchema returns ErrSchemaTooOld if the database misses migrations. A
-// newer schema is fine, because migrations only add to it.
-func CheckSchema(ctx context.Context, pool *pgxpool.Pool) error {
+// newer schema is fine, because migrations only add to it. It only reads from
+// the database.
+func CheckSchema(ctx context.Context, pool *pgxpool.Pool) (err error) {
+	current, err := schemaVersion(ctx, pool)
+	if err != nil {
+		return err
+	}
+
 	provider, err := newProvider(pool)
 	if err != nil {
 		return err
 	}
 
-	current, target, err := provider.GetVersions(ctx)
-	if err != nil {
-		return fmt.Errorf("reading the schema version: %w", err)
-	}
+	defer func() {
+		err = errors.Join(err, provider.Close())
+	}()
+
+	sources := provider.ListSources()
+	target := sources[len(sources)-1].Version
 
 	if current < target {
 		return fmt.Errorf("%w: it's at version %d, the authority needs %d", ErrSchemaTooOld, current, target)
 	}
 
 	return nil
+}
+
+// schemaVersion reads the version from goose's table itself, because goose
+// creates the table before reading it, and that needs more than read access.
+func schemaVersion(ctx context.Context, pool *pgxpool.Pool) (int64, error) {
+	var version *int64
+
+	err := pool.QueryRow(ctx, "SELECT max(version_id) FROM "+goose.DefaultTablename).Scan(&version)
+
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == undefinedTable {
+		return 0, nil
+	}
+
+	if err != nil {
+		return 0, fmt.Errorf("reading the schema version: %w", err)
+	}
+
+	if version == nil {
+		return 0, nil
+	}
+
+	return *version, nil
 }
 
 // fallsBackToPlaintext reports whether the connection tries TLS and then

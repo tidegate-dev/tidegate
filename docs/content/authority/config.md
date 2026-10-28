@@ -25,7 +25,7 @@ A setting keeps its default when its variable isn't set or is empty.
 
 The authority serves its metrics at `/metrics` on their own address, in the Prometheus text format. That way you can make the API public and keep the metrics internal.
 
-The authority keeps its data in Postgres, and `TIDEGATE_AUTHORITY__DATABASE__URL` is the only setting without a default. Before you start a new version of the authority, run `authority migrate` with the same variables. It brings the database schema up to date and exits. The authority refuses to start if the schema is older than it expects. With `TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START` set to `true`, the authority migrates when it starts instead. Its database user then needs permission to change the schema.
+The authority keeps its data in Postgres, and `TIDEGATE_AUTHORITY__DATABASE__URL` is the only setting without a default. Before you start a new version of the authority, run `authority migrate` with the same variables. It brings the database schema up to date and exits. The authority refuses to start if the schema is older than it expects. With `TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START` set to `true`, the authority migrates when it starts instead. Its database user then needs permission to change the schema. Without that, the user needs `SELECT` on the table `goose_db_version`, where the authority reads the schema version.
 
 Set `sslmode=verify-full` in the database URL, so the authority only connects to a Postgres server with a valid certificate. Without an `sslmode`, the connection may fall back to plain text, and the authority logs a warning when it starts.
 
