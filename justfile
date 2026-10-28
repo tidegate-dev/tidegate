@@ -15,7 +15,7 @@ build: authority::build cli::build
 test: authority::test cli::test internal::test
 
 # Generate code from the .proto files.
-generate: proto::generate
+generate: proto::generate authority::generate
 
 # Lint every component.
 lint: authority::lint cli::lint internal::lint proto::lint

@@ -16,7 +16,7 @@ import (
 // defaultServer matches the authority's default listen address.
 const defaultServer = "https://127.0.0.1:8080"
 
-const pingTimeout = 10 * time.Second
+const requestTimeout = 10 * time.Second
 
 func newCommand() *cli.Command {
 	root := &cli.Command{
@@ -36,6 +36,7 @@ func newCommand() *cli.Command {
 				Usage:  "check that the authority can be reached",
 				Action: ping,
 			},
+			dummyCommand(),
 		},
 	}
 
@@ -66,7 +67,7 @@ func ping(ctx context.Context, cmd *cli.Command) error {
 	server := cmd.String("server")
 	client := authorityv1connect.NewPingServiceClient(http.DefaultClient, server)
 
-	ctx, cancel := context.WithTimeout(ctx, pingTimeout)
+	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
 
 	response, err := client.Ping(ctx, connect.NewRequest(&authorityv1.PingRequest{}))

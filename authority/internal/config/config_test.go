@@ -20,11 +20,11 @@ import (
 	"github.com/tidegate-dev/tidegate/internal/logging"
 )
 
-func TestDefaultsApplyWithoutVariables(t *testing.T) {
+func TestDefaultsApplyWithOnlyTheDatabaseURL(t *testing.T) {
 	t.Parallel()
 
 	// act
-	cfg, err := config.Load(nil)
+	cfg, err := config.Load(withDatabaseURL())
 
 	// assert
 	require.NoError(t, err)
@@ -35,12 +35,13 @@ func TestVariablesOverrideDefaults(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	environ := []string{
+	environ := withDatabaseURL(
 		"TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=:9090",
 		"TIDEGATE_AUTHORITY__METRICS__LISTEN_ADDRESS=:9100",
 		"TIDEGATE_AUTHORITY__LOG__LEVEL=debug",
 		"TIDEGATE_AUTHORITY__LOG__FORMAT=text",
-	}
+		"TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START=true",
+	)
 
 	// act
 	cfg, err := config.Load(environ)
@@ -48,9 +49,10 @@ func TestVariablesOverrideDefaults(t *testing.T) {
 	// assert
 	require.NoError(t, err)
 	assert.Equal(t, config.Config{
-		Server:  config.Server{ListenAddress: ":9090"},
-		Metrics: config.Metrics{ListenAddress: ":9100"},
-		Log:     config.Log{Level: slog.LevelDebug, Format: logging.FormatText},
+		Server:   config.Server{ListenAddress: ":9090"},
+		Metrics:  config.Metrics{ListenAddress: ":9100"},
+		Database: config.Database{URL: databaseURL, MigrateOnStart: true},
+		Log:      config.Log{Level: slog.LevelDebug, Format: logging.FormatText},
 	}, cfg)
 }
 
@@ -70,7 +72,7 @@ func TestVariablesThatAreNotSettingsAreIgnored(t *testing.T) {
 			t.Parallel()
 
 			// act
-			cfg, err := config.Load([]string{variable})
+			cfg, err := config.Load(withDatabaseURL(variable))
 
 			// assert
 			require.NoError(t, err)
@@ -83,7 +85,7 @@ func TestEmptyVariableFallsBackToDefault(t *testing.T) {
 	t.Parallel()
 
 	// act
-	cfg, err := config.Load([]string{"TIDEGATE_AUTHORITY__LOG__LEVEL="})
+	cfg, err := config.Load(withDatabaseURL("TIDEGATE_AUTHORITY__LOG__LEVEL="))
 
 	// assert
 	require.NoError(t, err)
@@ -94,10 +96,10 @@ func TestNamesAndValuesIgnoreLetterCase(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	environ := []string{
+	environ := withDatabaseURL(
 		"TIDEGATE_AUTHORITY__Log__Level=DEBUG",
 		"TIDEGATE_AUTHORITY__LOG__FORMAT=Text",
-	}
+	)
 
 	// act
 	cfg, err := config.Load(environ)
@@ -112,7 +114,7 @@ func TestValueMayContainEqualsSign(t *testing.T) {
 	t.Parallel()
 
 	// act
-	cfg, err := config.Load([]string{"TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=a=b:80"})
+	cfg, err := config.Load(withDatabaseURL("TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=a=b:80"))
 
 	// assert
 	require.NoError(t, err)
@@ -123,12 +125,12 @@ func TestEveryProblemIsReported(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	environ := []string{
+	environ := withDatabaseURL(
 		"TIDEGATE_AUTHORITY__LOG__LEVEL=loud",
 		"TIDEGATE_AUTHORITY__LOG__LEVL=debug",
 		"TIDEGATE_AUTHORITY__LOG__FORMAT=xml",
 		"TIDEGATE_AUTHORITY__SERVER__PORT=80",
-	}
+	)
 
 	// act
 	_, err := config.Load(environ)
@@ -157,6 +159,7 @@ func TestInvalidValuesNameTheirVariable(t *testing.T) {
 		"too deep":       {variable: "TIDEGATE_AUTHORITY__LOG__LEVEL__X=debug", want: "TIDEGATE_AUTHORITY__LOG__LEVEL__X: unknown setting"},
 		"single level":   {variable: "TIDEGATE_AUTHORITY__LOG_LEVEL=debug", want: "TIDEGATE_AUTHORITY__LOG_LEVEL: unknown setting"},
 		"prefix only":    {variable: "TIDEGATE_AUTHORITY__=debug", want: "TIDEGATE_AUTHORITY__: unknown setting"},
+		"migrate":        {variable: "TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START=yes", want: `TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START: invalid value "yes", want true or false`},
 	}
 
 	for name, tt := range tests {
@@ -164,7 +167,7 @@ func TestInvalidValuesNameTheirVariable(t *testing.T) {
 			t.Parallel()
 
 			// act
-			_, err := config.Load([]string{tt.variable})
+			_, err := config.Load(withDatabaseURL(tt.variable))
 
 			// assert
 			assert.EqualError(t, err, tt.want)
@@ -179,10 +182,10 @@ func TestCertificateAndKeyTogetherEnableTLS(t *testing.T) {
 	certFile, keyFile := writeKeyPair(t)
 
 	// act
-	cfg, err := config.Load([]string{
-		"TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE=" + certFile,
-		"TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE=" + keyFile,
-	})
+	cfg, err := config.Load(withDatabaseURL(
+		"TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE="+certFile,
+		"TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE="+keyFile,
+	))
 
 	// assert
 	require.NoError(t, err)
@@ -211,7 +214,7 @@ func TestCertificateOrKeyAloneIsRejected(t *testing.T) {
 			t.Parallel()
 
 			// act
-			_, err := config.Load([]string{tt.variable})
+			_, err := config.Load(withDatabaseURL(tt.variable))
 
 			// assert
 			assert.EqualError(t, err, tt.want)
@@ -226,14 +229,24 @@ func TestMissingKeyPairNamesTheCertificateVariable(t *testing.T) {
 	directory := t.TempDir()
 
 	// act
-	_, err := config.Load([]string{
-		"TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE=" + filepath.Join(directory, "cert.pem"),
-		"TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE=" + filepath.Join(directory, "key.pem"),
-	})
+	_, err := config.Load(withDatabaseURL(
+		"TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE="+filepath.Join(directory, "cert.pem"),
+		"TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE="+filepath.Join(directory, "key.pem"),
+	))
 
 	// assert
 	require.Error(t, err)
 	assert.True(t, strings.HasPrefix(err.Error(), "TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE: loading the key pair: "), err.Error())
+}
+
+func TestDatabaseURLIsRequired(t *testing.T) {
+	t.Parallel()
+
+	// act
+	_, err := config.Load(nil)
+
+	// assert
+	assert.EqualError(t, err, "TIDEGATE_AUTHORITY__DATABASE__URL: must be set")
 }
 
 func writeKeyPair(t *testing.T) (certFile, keyFile string) {
@@ -259,10 +272,17 @@ func writeKeyPair(t *testing.T) (certFile, keyFile string) {
 	return certFile, keyFile
 }
 
+const databaseURL = "postgres://localhost/tidegate"
+
+func withDatabaseURL(variables ...string) []string {
+	return append([]string{"TIDEGATE_AUTHORITY__DATABASE__URL=" + databaseURL}, variables...)
+}
+
 func defaultConfig() config.Config {
 	return config.Config{
-		Server:  config.Server{ListenAddress: "127.0.0.1:8080"},
-		Metrics: config.Metrics{ListenAddress: "127.0.0.1:9464"},
-		Log:     config.Log{Level: slog.LevelInfo, Format: logging.FormatJSON},
+		Server:   config.Server{ListenAddress: "127.0.0.1:8080"},
+		Metrics:  config.Metrics{ListenAddress: "127.0.0.1:9464"},
+		Database: config.Database{URL: databaseURL},
+		Log:      config.Log{Level: slog.LevelInfo, Format: logging.FormatJSON},
 	}
 }

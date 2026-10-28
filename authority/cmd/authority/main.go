@@ -14,7 +14,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/urfave/cli/v3"
+
 	"github.com/tidegate-dev/tidegate/authority/internal/config"
+	"github.com/tidegate-dev/tidegate/authority/internal/db"
+	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
+	"github.com/tidegate-dev/tidegate/authority/internal/dummy"
 	"github.com/tidegate-dev/tidegate/authority/internal/ping"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
 	"github.com/tidegate-dev/tidegate/internal/logging"
@@ -24,26 +30,89 @@ import (
 
 const shutdownTimeout = 10 * time.Second
 
+// errInvalidConfig marks errors that main prints as they are, because the
+// logger is only set up from a valid config.
+var errInvalidConfig = errors.New("invalid config")
+
 func main() {
-	cfg, err := config.Load(os.Environ())
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Invalid config:\n%v\n", err)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	err := newCommand().Run(ctx, os.Args)
+	if errors.Is(err, errInvalidConfig) {
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 
-	slog.SetDefault(logging.New(os.Stderr, cfg.Log.Level, cfg.Log.Format))
-	slog.Debug("loaded config", "listen_address", cfg.Server.ListenAddress)
-
-	err = run(cfg)
 	if err != nil {
 		slog.Error("authority stopped", "error", err)
 		os.Exit(1)
 	}
 }
 
-func run(cfg config.Config) error {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+func newCommand() *cli.Command {
+	return &cli.Command{
+		Name:  "authority",
+		Usage: "run the tidegate authority",
+		Action: func(ctx context.Context, cmd *cli.Command) error {
+			cfg, err := setUp(cmd)
+			if err != nil {
+				return err
+			}
+
+			return run(ctx, cfg)
+		},
+		Commands: []*cli.Command{
+			{
+				Name:  "migrate",
+				Usage: "apply the database migrations, then exit",
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					cfg, err := setUp(cmd)
+					if err != nil {
+						return err
+					}
+
+					return migrate(ctx, cfg.Database)
+				},
+			},
+		},
+	}
+}
+
+// setUp rejects arguments, loads the config and sets up logging from it.
+// The commands call it themselves, so --help works without a config.
+func setUp(cmd *cli.Command) (config.Config, error) {
+	if cmd.Args().Present() {
+		return config.Config{}, fmt.Errorf("unknown command %q", cmd.Args().First())
+	}
+
+	cfg, err := config.Load(os.Environ())
+	if err != nil {
+		return config.Config{}, fmt.Errorf("%w:\n%w", errInvalidConfig, err)
+	}
+
+	slog.SetDefault(logging.New(os.Stderr, cfg.Log.Level, cfg.Log.Format))
+	slog.Debug("loaded config", "listen_address", cfg.Server.ListenAddress)
+
+	return cfg, nil
+}
+
+func migrate(ctx context.Context, cfg config.Database) error {
+	pool, err := db.Open(ctx, cfg.URL)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
+	return db.Migrate(ctx, pool)
+}
+
+func run(ctx context.Context, cfg config.Config) error {
+	pool, err := openDatabase(ctx, cfg.Database)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
 
 	notifier, err := systemd.Open()
 	if err != nil {
@@ -63,7 +132,7 @@ func run(cfg config.Config) error {
 	metricsMux.Handle("GET /metrics", metricsHandler)
 
 	err = serve(ctx, notifier, map[string]*http.Server{
-		"api": apiServer(cfg.Server),
+		"api": apiServer(cfg.Server, pool),
 		"metrics": {
 			Addr:              cfg.Metrics.ListenAddress,
 			Handler:           metricsMux,
@@ -77,9 +146,34 @@ func run(cfg config.Config) error {
 	return errors.Join(err, shutdownMetrics(context.Background()))
 }
 
-func apiServer(cfg config.Server) *http.Server {
+func openDatabase(ctx context.Context, cfg config.Database) (*pgxpool.Pool, error) {
+	pool, err := db.Open(ctx, cfg.URL)
+	if err != nil {
+		return nil, err
+	}
+
+	if cfg.MigrateOnStart {
+		err = db.Migrate(ctx, pool)
+	} else {
+		err = db.CheckSchema(ctx, pool)
+		if errors.Is(err, db.ErrSchemaTooOld) {
+			err = fmt.Errorf("%w. Run authority migrate first", err)
+		}
+	}
+
+	if err != nil {
+		pool.Close()
+
+		return nil, err
+	}
+
+	return pool, nil
+}
+
+func apiServer(cfg config.Server, pool *pgxpool.Pool) *http.Server {
 	mux := http.NewServeMux()
 	mux.Handle(authorityv1connect.NewPingServiceHandler(ping.Service{}))
+	mux.Handle(authorityv1connect.NewDummyServiceHandler(dummy.NewService(sqlc.New(pool))))
 
 	// gRPC clients need HTTP/2, and the CLI's Connect client uses HTTP/1.1
 	// by default.

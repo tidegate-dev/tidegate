@@ -8,6 +8,10 @@ To work on this site, run `just docs::serve` and open the address it prints. The
 
 The API is defined in `.proto` files in `proto/`. After you change one, run `just generate` and commit the generated code in `gen/`. `just ci` fails if the generated code doesn't match the `.proto` files.
 
+The authority's SQL queries are in `authority/internal/db/queries/`, and sqlc generates Go code for them in `authority/internal/db/sqlc/`. After you change a query, also run `just generate` and commit the result.
+
+To change the database schema, add a migration to `authority/internal/db/migrations/`, numbered after the last one. A migration only goes forward and only adds to the schema. To remove a table or a column, wait a release after the code stops using it, so an old and a new authority can share the database during an update. `just dev` and `just kind` migrate when the authority starts.
+
 ## Run tidegate locally
 
 ```sh

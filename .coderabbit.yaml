@@ -6,6 +6,7 @@ reviews:
   path_filters:
     - "!**/*.pb.go"
     - "!**/*.connect.go"
+    - "!authority/internal/db/sqlc/**"
     - "!**/go.sum"
     - "!flake.lock"
   path_instructions:

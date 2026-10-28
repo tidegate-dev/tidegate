@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package tidegate.authority.v1;
+
+option go_package = "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;authorityv1";
+
+// DummyService stores and reads texts, to check the path from a client through
+// the authority into the database and back.
+service DummyService {
+  // Write stores a text and returns its ID.
+  rpc Write(WriteRequest) returns (WriteResponse);
+  // Read returns the text with the given ID.
+  rpc Read(ReadRequest) returns (ReadResponse);
+}
+
+message WriteRequest {
+  string text = 1;
+}
+
+message WriteResponse {
+  int64 id = 1;
+}
+
+message ReadRequest {
+  int64 id = 1;
+}
+
+message ReadResponse {
+  string text = 1;
+}
