@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"path"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -66,9 +67,22 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool) (err error) {
 		err = errors.Join(err, provider.Close())
 	}()
 
-	_, err = provider.Up(ctx)
+	slog.Info("migrating the database, after any other authority that's migrating it")
+
+	results, err := provider.Up(ctx)
+	for _, result := range results {
+		slog.Info("applied a migration",
+			"version", result.Source.Version,
+			"file", path.Base(result.Source.Path),
+			"duration", result.Duration)
+	}
+
 	if err != nil {
 		return fmt.Errorf("migrating the database: %w", err)
+	}
+
+	if len(results) == 0 {
+		slog.Info("the database schema is up to date")
 	}
 
 	return nil
