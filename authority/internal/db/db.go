@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
@@ -22,9 +23,20 @@ var migrations embed.FS
 // the authority needs.
 var ErrSchemaTooOld = errors.New("the database schema is older than the authority expects")
 
-// Open connects to the database at url.
+// Open connects to the database at url. It warns if the connection may run
+// unencrypted.
 func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
-	pool, err := pgxpool.New(ctx, url)
+	config, err := pgxpool.ParseConfig(url)
+	if err != nil {
+		return nil, fmt.Errorf("parsing the database URL: %w", err)
+	}
+
+	if fallsBackToPlaintext(config) {
+		slog.Warn("the connection to the database may run unencrypted, because its URL sets no sslmode. " +
+			"Set sslmode=verify-full, or sslmode=disable if you don't want TLS")
+	}
+
+	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		return nil, fmt.Errorf("connecting to the database: %w", err)
 	}
@@ -72,6 +84,23 @@ func CheckSchema(ctx context.Context, pool *pgxpool.Pool) error {
 	}
 
 	return nil
+}
+
+// fallsBackToPlaintext reports whether the connection tries TLS and then
+// plaintext. pgx doesn't keep the sslmode, and this is what its default,
+// prefer, does.
+func fallsBackToPlaintext(config *pgxpool.Config) bool {
+	if config.ConnConfig.TLSConfig == nil {
+		return false
+	}
+
+	for _, fallback := range config.ConnConfig.Fallbacks {
+		if fallback.TLSConfig == nil {
+			return true
+		}
+	}
+
+	return false
 }
 
 func newProvider(pool *pgxpool.Pool) (*goose.Provider, error) {

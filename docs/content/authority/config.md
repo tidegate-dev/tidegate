@@ -27,6 +27,8 @@ The authority serves its metrics at `/metrics` on their own address, in the Prom
 
 The authority keeps its data in Postgres, and `TIDEGATE_AUTHORITY__DATABASE__URL` is the only setting without a default. Before you start a new version of the authority, run `authority migrate` with the same variables. It brings the database schema up to date and exits. The authority refuses to start if the schema is older than it expects. With `TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START` set to `true`, the authority migrates when it starts instead. Its database user then needs permission to change the schema.
 
+Set `sslmode=verify-full` in the database URL, so the authority only connects to a Postgres server with a valid certificate. Without an `sslmode`, the connection may fall back to plain text, and the authority logs a warning when it starts.
+
 The API serves HTTPS when you set both a certificate file and a key file. Without them, it serves plain HTTP. If you set only one of them, the authority doesn't start. The authority reads both files when it starts, so restart it after you replace them. The metrics always use plain HTTP.
 
 | Variable | Default | Values |
@@ -34,7 +36,7 @@ The API serves HTTPS when you set both a certificate file and a key file. Withou
 | `TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS` | `127.0.0.1:8080` | A host and port, like `:8080` or `[::1]:8080` |
 | `TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE` | None | Path to the certificate in PEM format, followed by any intermediate certificates |
 | `TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE` | None | Path to the certificate's private key in PEM format |
-| `TIDEGATE_AUTHORITY__DATABASE__URL` | None, required | A Postgres connection URL, like `postgres://tidegate:tidegate@host:5432/tidegate` |
+| `TIDEGATE_AUTHORITY__DATABASE__URL` | None, required | A Postgres connection URL, like `postgres://tidegate:tidegate@host:5432/tidegate?sslmode=verify-full` |
 | `TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START` | `false` | `true` or `false` |
 | `TIDEGATE_AUTHORITY__METRICS__LISTEN_ADDRESS` | `127.0.0.1:9464` | A host and port for `/metrics`, like `:9464` |
 | `TIDEGATE_AUTHORITY__LOG__LEVEL` | `info` | `debug`, `info`, `warn` or `error` |

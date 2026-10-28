@@ -26,7 +26,7 @@ spec:
             - name: TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE
               value: /tls/tls.key
             - name: TIDEGATE_AUTHORITY__DATABASE__URL
-              value: postgres://tidegate:tidegate@postgres:5432/tidegate
+              value: postgres://tidegate:tidegate@postgres:5432/tidegate?sslmode=disable
             - name: TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START
               value: "true"
           volumeMounts:
