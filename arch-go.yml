@@ -1,0 +1,37 @@
+# Which packages may import which, checked by `just arch`. arch-go turns each
+# pattern into a regular expression and matches it anywhere in the import
+# path, so every pattern starts at the module path. `x.**` covers x and
+# everything below it. arch-go reads packages like `go build` does on the
+# current system, so it doesn't see test files or files behind a build tag.
+version: 1
+threshold:
+  compliance: 100
+  coverage: 100
+dependenciesRules:
+  # internal/ imports nothing from a component or from gen/.
+  - package: '^github.com/tidegate-dev/tidegate/internal.**'
+    shouldOnlyDependsOn:
+      internal:
+        - '^github.com/tidegate-dev/tidegate/internal.**'
+
+  # gen/ imports only gen/.
+  - package: '^github.com/tidegate-dev/tidegate/gen.**'
+    shouldOnlyDependsOn:
+      internal:
+        - '^github.com/tidegate-dev/tidegate/gen.**'
+
+  # A component imports only itself, internal/ and gen/, nothing from another
+  # component.
+  - package: '^github.com/tidegate-dev/tidegate/authority.**'
+    shouldOnlyDependsOn:
+      internal:
+        - '^github.com/tidegate-dev/tidegate/authority.**'
+        - '^github.com/tidegate-dev/tidegate/internal.**'
+        - '^github.com/tidegate-dev/tidegate/gen.**'
+
+  - package: '^github.com/tidegate-dev/tidegate/cli.**'
+    shouldOnlyDependsOn:
+      internal:
+        - '^github.com/tidegate-dev/tidegate/cli.**'
+        - '^github.com/tidegate-dev/tidegate/internal.**'
+        - '^github.com/tidegate-dev/tidegate/gen.**'

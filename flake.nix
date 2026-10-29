@@ -45,6 +45,17 @@
               );
               pass_filenames = false;
             };
+            arch = {
+              enable = true;
+              name = "just arch";
+              entry = toString (
+                pkgs.writeShellScript "just-arch" ''
+                  export PATH=${pkgs.lib.makeBinPath (tools pkgs)}:$PATH
+                  just arch
+                ''
+              );
+              pass_filenames = false;
+            };
             secrets = {
               enable = true;
               name = "gitleaks";
