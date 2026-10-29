@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"connectrpc.com/connect"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/urfave/cli/v3"
 
@@ -23,6 +24,7 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/dummy"
 	"github.com/tidegate-dev/tidegate/authority/internal/ping"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
+	"github.com/tidegate-dev/tidegate/internal/handlererrors"
 	"github.com/tidegate-dev/tidegate/internal/logging"
 	"github.com/tidegate-dev/tidegate/internal/metrics"
 	"github.com/tidegate-dev/tidegate/internal/systemd"
@@ -171,9 +173,11 @@ func openDatabase(ctx context.Context, cfg config.Database) (*pgxpool.Pool, erro
 }
 
 func apiServer(cfg config.Server, pool *pgxpool.Pool) *http.Server {
+	options := connect.WithInterceptors(handlererrors.Interceptor())
+
 	mux := http.NewServeMux()
-	mux.Handle(authorityv1connect.NewPingServiceHandler(ping.Service{}))
-	mux.Handle(authorityv1connect.NewDummyServiceHandler(dummy.NewService(sqlc.New(pool))))
+	mux.Handle(authorityv1connect.NewPingServiceHandler(ping.Service{}, options))
+	mux.Handle(authorityv1connect.NewDummyServiceHandler(dummy.NewService(sqlc.New(pool)), options))
 
 	// gRPC clients need HTTP/2, and the CLI's Connect client uses HTTP/1.1
 	// by default.
@@ -199,6 +203,9 @@ func apiServer(cfg config.Server, pool *pgxpool.Pool) *http.Server {
 		// Every method is unary with a small request. A streaming method
 		// needs its own limit.
 		ReadTimeout: 10 * time.Second,
+		BaseContext: func(net.Listener) context.Context {
+			return logging.NewContext(context.Background(), slog.Default())
+		},
 	}
 }
 
