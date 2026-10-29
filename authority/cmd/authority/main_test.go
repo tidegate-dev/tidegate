@@ -24,7 +24,7 @@ func TestServeTellsSystemdWhenReadyAndStopping(t *testing.T) {
 
 	// act
 	go func() {
-		served <- serve(ctx, notifier, map[string]*http.Server{"api": {Addr: "127.0.0.1:0"}})
+		served <- serve(ctx, notifier, map[string]*http.Server{"api": {Addr: "127.0.0.1:0"}}, shutdownTimeout)
 	}()
 
 	ready := receive(t, socket)
@@ -49,13 +49,58 @@ func TestServeDoesNotTellSystemdReadyWhenListeningFails(t *testing.T) {
 	t.Cleanup(func() { _ = taken.Close() })
 
 	// act
-	err = serve(context.Background(), notifier, map[string]*http.Server{"api": {Addr: taken.Addr().String()}})
+	err = serve(context.Background(), notifier, map[string]*http.Server{"api": {Addr: taken.Addr().String()}}, shutdownTimeout)
 
 	// assert
 	require.Error(t, err)
 	require.NoError(t, socket.SetReadDeadline(time.Now().Add(100*time.Millisecond)))
 	_, _, err = socket.ReadFrom(make([]byte, 64))
 	assert.ErrorIs(t, err, os.ErrDeadlineExceeded)
+}
+
+func TestServeCancelsRequestsThatOutlastTheShutdownTimeout(t *testing.T) {
+	// arrange
+	socket := listenAsSystemd(t)
+	notifier := openNotifier(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	address := freeAddress(t)
+	started := make(chan struct{})
+	canceled := make(chan struct{})
+
+	handler := http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		close(started)
+		<-r.Context().Done()
+		close(canceled)
+	})
+
+	served := make(chan error, 1)
+
+	go func() {
+		served <- serve(ctx, notifier, map[string]*http.Server{"api": {Addr: address, Handler: handler}}, 100*time.Millisecond)
+	}()
+
+	require.Equal(t, "READY=1", receive(t, socket))
+
+	go func() {
+		response, err := http.Get("http://" + address)
+		if err == nil {
+			_ = response.Body.Close()
+		}
+	}()
+
+	<-started
+
+	// act
+	cancel()
+
+	// assert
+	select {
+	case <-canceled:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the request's context wasn't canceled")
+	}
+
+	require.ErrorIs(t, <-served, context.DeadlineExceeded)
 }
 
 // listenAsSystemd opens a socket that stands in for systemd's and points
@@ -87,6 +132,19 @@ func openNotifier(t *testing.T) *systemd.Notifier {
 	t.Cleanup(func() { _ = notifier.Close() })
 
 	return notifier
+}
+
+// freeAddress returns a local address that nothing listens on right now.
+func freeAddress(t *testing.T) string {
+	t.Helper()
+
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+
+	address := listener.Addr().String()
+	require.NoError(t, listener.Close())
+
+	return address
 }
 
 func receive(t *testing.T, socket net.PacketConn) string {

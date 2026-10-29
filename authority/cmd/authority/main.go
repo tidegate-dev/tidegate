@@ -40,6 +40,9 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	// stop restores Go's default for the signals, so a second one ends the process.
+	context.AfterFunc(ctx, stop)
+
 	err := newCommand().Run(ctx, os.Args)
 	if errors.Is(err, errInvalidConfig) {
 		fmt.Fprintln(os.Stderr, err)
@@ -143,7 +146,7 @@ func run(ctx context.Context, cfg config.Config) error {
 			// so a scraper can reuse its connection.
 			IdleTimeout: 90 * time.Second,
 		},
-	})
+	}, shutdownTimeout)
 
 	return errors.Join(err, shutdownMetrics(context.Background()))
 }
@@ -203,16 +206,22 @@ func apiServer(cfg config.Server, pool *pgxpool.Pool) *http.Server {
 		// Every method is unary with a small request. A streaming method
 		// needs its own limit.
 		ReadTimeout: 10 * time.Second,
-		BaseContext: func(net.Listener) context.Context {
-			return logging.NewContext(context.Background(), slog.Default())
-		},
 	}
 }
 
 // serve runs servers, keyed by a name for the logs, until ctx is done or
-// one of them fails, then shuts them all down. It tells notifier when all
-// servers listen and when the shutdown begins.
-func serve(ctx context.Context, notifier *systemd.Notifier, servers map[string]*http.Server) error {
+// one of them fails, then shuts them all down. It sets each server's
+// BaseContext, waits up to timeout for running requests, then cancels their
+// context. It tells notifier when all servers listen and when the shutdown
+// begins.
+func serve(ctx context.Context, notifier *systemd.Notifier, servers map[string]*http.Server, timeout time.Duration) error {
+	requests, cancelRequests := context.WithCancel(logging.NewContext(context.Background(), slog.Default()))
+	defer cancelRequests()
+
+	for _, server := range servers {
+		server.BaseContext = func(net.Listener) context.Context { return requests }
+	}
+
 	var listenConfig net.ListenConfig
 
 	listeners := make(map[*http.Server]net.Listener, len(servers))
@@ -265,7 +274,7 @@ func serve(ctx context.Context, notifier *systemd.Notifier, servers map[string]*
 		slog.Error("telling systemd that the authority is stopping", "error", err)
 	}
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	for name, server := range servers {
@@ -274,6 +283,9 @@ func serve(ctx context.Context, notifier *systemd.Notifier, servers map[string]*
 			errs = append(errs, fmt.Errorf("shutting down %s: %w", name, err))
 		}
 	}
+
+	// Shutdown gives up at the timeout and leaves the handlers running.
+	cancelRequests()
 
 	for range running {
 		err := <-served
