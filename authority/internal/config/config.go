@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/knadh/koanf/providers/env/v2"
 	"github.com/knadh/koanf/providers/structs"
 	"github.com/knadh/koanf/v2"
@@ -169,9 +170,7 @@ func validate(raw rawConfig) (Config, error) {
 	metricsListenAddress, err := parseListenAddress(raw.Metrics.ListenAddress)
 	v.check(&raw.Metrics.ListenAddress, err)
 
-	if raw.Database.URL == "" {
-		v.check(&raw.Database.URL, errors.New("must be set"))
-	}
+	v.check(&raw.Database.URL, checkDatabaseURL(raw.Database.URL))
 
 	migrateOnStart, err := parseBool(raw.Database.MigrateOnStart)
 	v.check(&raw.Database.MigrateOnStart, err)
@@ -279,6 +278,22 @@ func keyFromVariable(name string) string {
 
 func variableFromKey(key string) string {
 	return envPrefix + strings.ToUpper(strings.ReplaceAll(key, ".", levelSeparator))
+}
+
+// checkDatabaseURL leaves out pgx's error, because pgx masks the password only
+// where it can find it, and a malformed URL can hide it. pgx also reads the
+// PG variables, so the message names them too.
+func checkDatabaseURL(url string) error {
+	if url == "" {
+		return errors.New("must be set")
+	}
+
+	_, err := pgxpool.ParseConfig(url)
+	if err != nil {
+		return errors.New("isn't a valid Postgres connection URL, or a PG variable like PGSSLMODE is invalid")
+	}
+
+	return nil
 }
 
 func parseListenAddress(value string) (string, error) {

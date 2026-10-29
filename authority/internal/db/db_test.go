@@ -54,3 +54,14 @@ func TestFallsBackToPlaintextFollowsPGSSLMODE(t *testing.T) {
 	// assert
 	assert.False(t, got)
 }
+
+func TestOpenRejectsAnInvalidURLWithoutTheURL(t *testing.T) {
+	t.Parallel()
+
+	// act
+	// pgx can't find the password to mask in this URL, because the @ is missing.
+	_, err := Open(t.Context(), "postgres://tidegate:hunter2host:x/tidegate")
+
+	// assert
+	assert.EqualError(t, err, "the database URL isn't a valid Postgres connection URL, or a PG variable like PGSSLMODE is invalid")
+}

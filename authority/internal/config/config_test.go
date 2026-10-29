@@ -249,6 +249,31 @@ func TestDatabaseURLIsRequired(t *testing.T) {
 	assert.EqualError(t, err, "TIDEGATE_AUTHORITY__DATABASE__URL: must be set")
 }
 
+func TestInvalidDatabaseURLIsRejectedWithoutTheURL(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	// pgx can't find the password to mask in this URL, because the @ is missing.
+	environ := []string{"TIDEGATE_AUTHORITY__DATABASE__URL=postgres://tidegate:hunter2host:x/tidegate"}
+
+	// act
+	_, err := config.Load(environ)
+
+	// assert
+	assert.EqualError(t, err, "TIDEGATE_AUTHORITY__DATABASE__URL: "+invalidDatabaseURL)
+}
+
+func TestInvalidPGVariableIsReportedWithTheDatabaseURL(t *testing.T) {
+	// arrange
+	t.Setenv("PGSSLMODE", "bogus")
+
+	// act
+	_, err := config.Load(withDatabaseURL())
+
+	// assert
+	assert.EqualError(t, err, "TIDEGATE_AUTHORITY__DATABASE__URL: "+invalidDatabaseURL)
+}
+
 func writeKeyPair(t *testing.T) (certFile, keyFile string) {
 	t.Helper()
 
@@ -272,7 +297,10 @@ func writeKeyPair(t *testing.T) (certFile, keyFile string) {
 	return certFile, keyFile
 }
 
-const databaseURL = "postgres://localhost/tidegate"
+const (
+	databaseURL        = "postgres://localhost/tidegate"
+	invalidDatabaseURL = "isn't a valid Postgres connection URL, or a PG variable like PGSSLMODE is invalid"
+)
 
 func withDatabaseURL(variables ...string) []string {
 	return append([]string{"TIDEGATE_AUTHORITY__DATABASE__URL=" + databaseURL}, variables...)
