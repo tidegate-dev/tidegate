@@ -281,7 +281,8 @@ func variableFromKey(key string) string {
 }
 
 // checkDatabaseURL leaves out pgx's error, because pgx masks the password only
-// where it can find it, and a malformed URL can hide it.
+// where it can find it, and a malformed URL can hide it. pgx also reads the
+// PG variables, so the message names them too.
 func checkDatabaseURL(url string) error {
 	if url == "" {
 		return errors.New("must be set")
@@ -289,7 +290,7 @@ func checkDatabaseURL(url string) error {
 
 	_, err := pgxpool.ParseConfig(url)
 	if err != nil {
-		return errors.New("isn't a valid Postgres connection URL")
+		return errors.New("isn't a valid Postgres connection URL, or a PG variable like PGSSLMODE is invalid")
 	}
 
 	return nil

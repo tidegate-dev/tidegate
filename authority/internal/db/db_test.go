@@ -63,5 +63,5 @@ func TestOpenRejectsAnInvalidURLWithoutTheURL(t *testing.T) {
 	_, err := Open(t.Context(), "postgres://tidegate:hunter2host:x/tidegate")
 
 	// assert
-	assert.EqualError(t, err, "the database URL isn't a valid Postgres connection URL")
+	assert.EqualError(t, err, "the database URL isn't a valid Postgres connection URL, or a PG variable like PGSSLMODE is invalid")
 }

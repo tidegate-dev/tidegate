@@ -260,7 +260,18 @@ func TestInvalidDatabaseURLIsRejectedWithoutTheURL(t *testing.T) {
 	_, err := config.Load(environ)
 
 	// assert
-	assert.EqualError(t, err, "TIDEGATE_AUTHORITY__DATABASE__URL: isn't a valid Postgres connection URL")
+	assert.EqualError(t, err, "TIDEGATE_AUTHORITY__DATABASE__URL: "+invalidDatabaseURL)
+}
+
+func TestInvalidPGVariableIsReportedWithTheDatabaseURL(t *testing.T) {
+	// arrange
+	t.Setenv("PGSSLMODE", "bogus")
+
+	// act
+	_, err := config.Load(withDatabaseURL())
+
+	// assert
+	assert.EqualError(t, err, "TIDEGATE_AUTHORITY__DATABASE__URL: "+invalidDatabaseURL)
 }
 
 func writeKeyPair(t *testing.T) (certFile, keyFile string) {
@@ -286,7 +297,10 @@ func writeKeyPair(t *testing.T) (certFile, keyFile string) {
 	return certFile, keyFile
 }
 
-const databaseURL = "postgres://localhost/tidegate"
+const (
+	databaseURL        = "postgres://localhost/tidegate"
+	invalidDatabaseURL = "isn't a valid Postgres connection URL, or a PG variable like PGSSLMODE is invalid"
+)
 
 func withDatabaseURL(variables ...string) []string {
 	return append([]string{"TIDEGATE_AUTHORITY__DATABASE__URL=" + databaseURL}, variables...)

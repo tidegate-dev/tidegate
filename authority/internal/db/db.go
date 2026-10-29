@@ -34,8 +34,8 @@ func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	config, err := pgxpool.ParseConfig(url)
 	if err != nil {
 		// pgx masks the password only where it can find it, and a malformed URL
-		// can hide it.
-		return nil, errors.New("the database URL isn't a valid Postgres connection URL")
+		// can hide it. pgx also reads the PG variables.
+		return nil, errors.New("the database URL isn't a valid Postgres connection URL, or a PG variable like PGSSLMODE is invalid")
 	}
 
 	if fallsBackToPlaintext(config) {
