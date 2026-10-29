@@ -4,7 +4,17 @@
 
 package sqlc
 
+import (
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
 type Dummy struct {
 	ID   int64
 	Text string
+}
+
+type User struct {
+	ID           pgtype.UUID
+	Name         string
+	PasswordHash pgtype.Text
 }
