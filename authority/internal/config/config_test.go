@@ -249,6 +249,20 @@ func TestDatabaseURLIsRequired(t *testing.T) {
 	assert.EqualError(t, err, "TIDEGATE_AUTHORITY__DATABASE__URL: must be set")
 }
 
+func TestInvalidDatabaseURLIsRejectedWithoutTheURL(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	// pgx can't find the password to mask in this URL, because the @ is missing.
+	environ := []string{"TIDEGATE_AUTHORITY__DATABASE__URL=postgres://tidegate:hunter2host:x/tidegate"}
+
+	// act
+	_, err := config.Load(environ)
+
+	// assert
+	assert.EqualError(t, err, "TIDEGATE_AUTHORITY__DATABASE__URL: isn't a valid Postgres connection URL")
+}
+
 func writeKeyPair(t *testing.T) (certFile, keyFile string) {
 	t.Helper()
 

@@ -33,7 +33,9 @@ const undefinedTable = "42P01"
 func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	config, err := pgxpool.ParseConfig(url)
 	if err != nil {
-		return nil, fmt.Errorf("parsing the database URL: %w", err)
+		// pgx masks the password only where it can find it, and a malformed URL
+		// can hide it.
+		return nil, errors.New("the database URL isn't a valid Postgres connection URL")
 	}
 
 	if fallsBackToPlaintext(config) {
