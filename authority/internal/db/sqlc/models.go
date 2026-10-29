@@ -13,6 +13,11 @@ type Dummy struct {
 	Text string
 }
 
+type Project struct {
+	ID   pgtype.UUID
+	Name string
+}
+
 type User struct {
 	ID           pgtype.UUID
 	Name         string
