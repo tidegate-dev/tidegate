@@ -3,11 +3,12 @@
 You configure the authority with environment variables:
 
 ```sh
-TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=:8080
-TIDEGATE_AUTHORITY__LOG__LEVEL=debug
+TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=:8080 \
+TIDEGATE_AUTHORITY__LOG__LEVEL=debug \
+authority
 ```
 
-These two make the authority listen on port 8080 on every network interface and log at the debug level.
+This starts the authority listening on port 8080 on every network interface and logging at the debug level.
 
 Every variable starts with `TIDEGATE_AUTHORITY__`. Two underscores separate the parts of a name, like `SERVER` and `LISTEN_ADDRESS`. After the prefix, upper and lower case don't matter, in names or in values.
 
@@ -21,15 +22,7 @@ TIDEGATE_AUTHORITY__LOG__LEVEL: unknown log level "loud", want debug, info, warn
 
 ## Settings
 
-A setting keeps its default when its variable isn't set or is empty.
-
-The authority serves its metrics at `/metrics` on their own address, in the Prometheus text format. That way you can make the API public and keep the metrics internal.
-
-The authority keeps its data in Postgres, and `TIDEGATE_AUTHORITY__DATABASE__URL` is the only setting without a default. Before you start a new version of the authority, run `authority migrate` with the same variables. It brings the database schema up to date and exits. The authority refuses to start if the schema is older than it expects. With `TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START` set to `true`, the authority migrates when it starts instead. Its database user then needs permission to change the schema. Without that, the user needs `SELECT` on the table `goose_db_version`, where the authority reads the schema version.
-
-Set `sslmode=verify-full` in the database URL, so the authority only connects to a Postgres server with a valid certificate. Without an `sslmode`, the connection may fall back to plain text, and the authority logs a warning when it starts.
-
-The API serves HTTPS when you set both a certificate file and a key file. Without them, it serves plain HTTP. If you set only one of them, the authority doesn't start. The authority reads both files when it starts, so restart it after you replace them. The metrics always use plain HTTP.
+A setting keeps its default when its variable isn't set or is empty. `TIDEGATE_AUTHORITY__DATABASE__URL` is the only setting without a default. The pages on the [database](database.md), [TLS](tls.md) and [metrics](metrics.md) explain their settings.
 
 | Variable | Default | Values |
 |---|---|---|
@@ -41,15 +34,3 @@ The API serves HTTPS when you set both a certificate file and a key file. Withou
 | `TIDEGATE_AUTHORITY__METRICS__LISTEN_ADDRESS` | `127.0.0.1:9464` | A host and port for `/metrics`, like `:9464` |
 | `TIDEGATE_AUTHORITY__LOG__LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
 | `TIDEGATE_AUTHORITY__LOG__FORMAT` | `json` | `json` for log collectors, or `text`, which is easier to read locally |
-
-## Running under systemd
-
-If you run the authority as a systemd service, give its unit `Type=notify`:
-
-```ini
-[Service]
-Type=notify
-ExecStart=/usr/local/bin/authority
-```
-
-systemd then counts the authority as started once it accepts connections, not as soon as the process runs. `systemctl start` waits until then, and units ordered after the authority don't start too early. Outside systemd, the authority starts and stops as usual.

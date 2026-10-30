@@ -7,6 +7,10 @@ nav = [
   { "What is tidegate" = "index.md" },
   { "Authority" = [
     { "Configuration" = "authority/config.md" },
+    { "Database" = "authority/database.md" },
+    { "TLS" = "authority/tls.md" },
+    { "Metrics" = "authority/metrics.md" },
+    { "Running under systemd" = "authority/systemd.md" },
   ] },
   { "Development environment" = "development.md" },
 ]
