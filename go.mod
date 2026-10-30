@@ -81,7 +81,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-tool (
-	github.com/arch-go/arch-go/v2
-	github.com/onsi/ginkgo/v2/ginkgo
-)
+tool github.com/arch-go/arch-go/v2
