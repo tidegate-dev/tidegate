@@ -10,6 +10,4 @@ authority
 
 Without them, it serves plain HTTP. If you set only one of them, the authority doesn't start.
 
-The authority reads both files when it starts, so restart it after you replace them.
-
-The [metrics](metrics.md) always use plain HTTP.
+When you replace the files, the authority uses the new certificate for new connections within a minute, without a restart. If the new files don't hold a certificate and its key, it keeps the old one and logs an error. The [metrics](metrics.md) say when the certificate in use expires. They always use plain HTTP.
