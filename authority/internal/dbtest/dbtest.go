@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	. "github.com/onsi/ginkgo/v2"
@@ -32,6 +33,11 @@ func NewDatabase() string {
 		Fail(URLVariable + " must be a postgres:// URL")
 	}
 
+	// pgx lets these replace the database in the path.
+	if query := databaseURL.Query(); query.Has("dbname") || query.Has("database") {
+		Fail(URLVariable + " must not name a database in its query")
+	}
+
 	name := "test_" + strings.ToLower(rand.Text())
 	quoted := pgx.Identifier{name}.Sanitize()
 
@@ -47,7 +53,8 @@ func exec(serverURL, sql string) {
 	GinkgoHelper()
 
 	// Cleanup runs after the spec's context is canceled.
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	conn, err := pgx.Connect(ctx, serverURL)
 	Expect(err).NotTo(HaveOccurred(), "connecting to the database in "+URLVariable)
