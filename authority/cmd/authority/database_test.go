@@ -4,125 +4,107 @@ package main
 
 import (
 	"context"
-	"testing"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/pressly/goose/v3/lock"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/config"
 	"github.com/tidegate-dev/tidegate/authority/internal/db"
 	"github.com/tidegate-dev/tidegate/authority/internal/dbtest"
 )
 
-func TestOpenDatabaseRefusesAnEmptyDatabase(t *testing.T) {
-	t.Parallel()
+var _ = Describe("openDatabase", func() {
+	It("refuses an empty database", func(ctx SpecContext) {
+		url := dbtest.NewDatabase()
 
-	// arrange
-	url := dbtest.NewDatabase(t)
+		_, err := openDatabase(ctx, config.Database{URL: url})
 
-	// act
-	_, err := openDatabase(t.Context(), config.Database{URL: url})
+		Expect(err).To(MatchError(db.ErrSchemaTooOld))
+		Expect(err).To(MatchError(ContainSubstring("Run authority migrate first")))
+	})
 
-	// assert
-	require.ErrorIs(t, err, db.ErrSchemaTooOld)
-	assert.ErrorContains(t, err, "Run authority migrate first")
-}
+	It("opens a migrated database", func(ctx SpecContext) {
+		url := dbtest.NewDatabase()
+		Expect(migrate(ctx, config.Database{URL: url})).To(Succeed())
 
-func TestOpenDatabaseOpensAMigratedDatabase(t *testing.T) {
-	t.Parallel()
+		pool, err := openDatabase(ctx, config.Database{URL: url})
 
-	// arrange
-	url := dbtest.NewDatabase(t)
-	require.NoError(t, migrate(t.Context(), config.Database{URL: url}))
+		Expect(err).NotTo(HaveOccurred())
+		pool.Close()
+	})
 
-	// act
-	pool, err := openDatabase(t.Context(), config.Database{URL: url})
+	It("migrates once when two authorities wait for the lock", func(ctx SpecContext) {
+		url := dbtest.NewDatabase()
+		holder := connectToDatabase(ctx, url)
+		_, err := holder.Exec(ctx, "SELECT pg_advisory_lock($1)", lock.DefaultLockID)
+		Expect(err).NotTo(HaveOccurred())
 
-	// assert
-	require.NoError(t, err)
-	pool.Close()
-}
+		cfg := config.Database{URL: url, MigrateOnStart: true}
+		opened := make(chan error, 2)
 
-func TestOpenDatabaseMigratesOnceWhenTwoAuthoritiesWaitForTheLock(t *testing.T) {
-	t.Parallel()
+		for range 2 {
+			go func() {
+				pool, err := openDatabase(ctx, cfg)
+				if err == nil {
+					pool.Close()
+				}
 
-	// arrange
-	url := dbtest.NewDatabase(t)
-	holder := connectToDatabase(t, url)
-	_, err := holder.Exec(t.Context(), "SELECT pg_advisory_lock($1)", lock.DefaultLockID)
-	require.NoError(t, err)
+				opened <- err
+			}()
+		}
 
-	cfg := config.Database{URL: url, MigrateOnStart: true}
-	opened := make(chan error, 2)
+		Eventually(ctx, func() (int, error) { return lockWaiters(ctx, holder) }).
+			WithTimeout(30*time.Second).
+			Should(Equal(2), "the authorities never waited for goose's migration lock")
 
-	for range 2 {
-		go func() {
-			pool, err := openDatabase(t.Context(), cfg)
-			if err == nil {
-				pool.Close()
-			}
+		_, err = holder.Exec(ctx, "SELECT pg_advisory_unlock($1)", lock.DefaultLockID)
+		Expect(err).NotTo(HaveOccurred())
 
-			opened <- err
-		}()
-	}
+		Expect(<-opened).To(Succeed())
+		Expect(<-opened).To(Succeed())
+		Expect(maxTimesAMigrationWasApplied(ctx, holder)).To(Equal(1))
+	}, SpecTimeout(time.Minute))
+})
 
-	waitForLockWaiters(t, holder, 2)
+func connectToDatabase(ctx context.Context, url string) *pgx.Conn {
+	GinkgoHelper()
 
-	// act
-	_, err = holder.Exec(t.Context(), "SELECT pg_advisory_unlock($1)", lock.DefaultLockID)
-	require.NoError(t, err)
-
-	// assert
-	require.NoError(t, <-opened)
-	require.NoError(t, <-opened)
-	assert.Equal(t, 1, maxTimesAMigrationWasApplied(t, holder))
-}
-
-func connectToDatabase(t *testing.T, url string) *pgx.Conn {
-	t.Helper()
-
-	conn, err := pgx.Connect(t.Context(), url)
-	require.NoError(t, err)
-	t.Cleanup(func() {
+	conn, err := pgx.Connect(ctx, url)
+	Expect(err).NotTo(HaveOccurred())
+	DeferCleanup(func() {
 		_ = conn.Close(context.Background())
 	})
 
 	return conn
 }
 
-// waitForLockWaiters waits until count other sessions have tried to take
-// goose's lock. Between goose's attempts, pg_stat_activity shows the last
-// attempt as the session's query.
-func waitForLockWaiters(t *testing.T, conn *pgx.Conn, count int) {
-	t.Helper()
+// lockWaiters counts the other sessions that have tried to take goose's
+// lock. Between goose's attempts, pg_stat_activity shows the last attempt
+// as the session's query.
+func lockWaiters(ctx context.Context, conn *pgx.Conn) (int, error) {
+	var waiters int
 
-	assert.Eventually(t, func() bool {
-		var waiters int
+	err := conn.QueryRow(ctx,
+		"SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() AND pid <> pg_backend_pid() AND query LIKE '%pg_try_advisory_lock%'",
+	).Scan(&waiters)
 
-		err := conn.QueryRow(t.Context(),
-			"SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() AND pid <> pg_backend_pid() AND query LIKE '%pg_try_advisory_lock%'",
-		).Scan(&waiters)
-
-		// Eventually calls this function on another goroutine, where
-		// require can't stop the test.
-		return assert.NoError(t, err) && waiters == count
-	}, 30*time.Second, 50*time.Millisecond, "%d sessions never waited for goose's migration lock", count)
+	return waiters, err
 }
 
 // maxTimesAMigrationWasApplied counts goose's rows for each migration and
 // returns the highest count.
-func maxTimesAMigrationWasApplied(t *testing.T, conn *pgx.Conn) int {
-	t.Helper()
+func maxTimesAMigrationWasApplied(ctx context.Context, conn *pgx.Conn) int {
+	GinkgoHelper()
 
 	var count int
 
-	err := conn.QueryRow(t.Context(),
+	err := conn.QueryRow(ctx,
 		"SELECT max(applied) FROM (SELECT count(*) AS applied FROM goose_db_version WHERE version_id > 0 GROUP BY version_id) AS migrations",
 	).Scan(&count)
-	require.NoError(t, err)
+	Expect(err).NotTo(HaveOccurred())
 
 	return count
 }

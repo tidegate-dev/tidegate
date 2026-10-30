@@ -3,49 +3,45 @@
 package db
 
 import (
-	"testing"
+	"context"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/dbtest"
 )
 
-func TestMigrateTwiceChangesNothingTheSecondTime(t *testing.T) {
-	t.Parallel()
+var _ = Describe("Migrate", func() {
+	It("changes nothing the second time", func(ctx SpecContext) {
+		pool, err := Open(ctx, dbtest.NewDatabase())
+		Expect(err).NotTo(HaveOccurred())
+		DeferCleanup(pool.Close)
 
-	// arrange
-	pool, err := Open(t.Context(), dbtest.NewDatabase(t))
-	require.NoError(t, err)
-	t.Cleanup(pool.Close)
+		Expect(Migrate(ctx, pool)).To(Succeed())
+		before := appliedMigrations(ctx, pool)
 
-	require.NoError(t, Migrate(t.Context(), pool))
-	before := appliedMigrations(t, pool)
+		Expect(Migrate(ctx, pool)).To(Succeed())
 
-	// act
-	err = Migrate(t.Context(), pool)
-
-	// assert
-	require.NoError(t, err)
-	assert.Equal(t, before, appliedMigrations(t, pool))
-}
+		Expect(appliedMigrations(ctx, pool)).To(Equal(before))
+	})
+})
 
 type appliedMigration struct {
 	Version   int64
 	AppliedAt time.Time
 }
 
-func appliedMigrations(t *testing.T, pool *pgxpool.Pool) []appliedMigration {
-	t.Helper()
+func appliedMigrations(ctx context.Context, pool *pgxpool.Pool) []appliedMigration {
+	GinkgoHelper()
 
-	rows, err := pool.Query(t.Context(), "SELECT version_id, tstamp FROM goose_db_version ORDER BY id")
-	require.NoError(t, err)
+	rows, err := pool.Query(ctx, "SELECT version_id, tstamp FROM goose_db_version ORDER BY id")
+	Expect(err).NotTo(HaveOccurred())
 
 	migrations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[appliedMigration])
-	require.NoError(t, err)
+	Expect(err).NotTo(HaveOccurred())
 
 	return migrations
 }

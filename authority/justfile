@@ -21,7 +21,7 @@ test:
 # just dev-deps.
 test-integration:
     TIDEGATE_TEST_DATABASE_URL="${TIDEGATE_TEST_DATABASE_URL:-postgres://tidegate:tidegate@127.0.0.1:5432/tidegate?sslmode=disable}" \
-        go test -tags integration ./...
+        go tool ginkgo -r -p --tags integration
 
 # Lint the authority.
 lint:

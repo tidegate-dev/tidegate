@@ -12,6 +12,20 @@ linters:
     - revive
     - wsl_v5
   settings:
+    # Ginkgo and Gomega are written to be dot-imported.
+    revive:
+      # Configuring a rule turns off revive's default rules otherwise.
+      enable-default-rules: true
+      rules:
+        - name: dot-imports
+          arguments:
+            - allowed-packages:
+                - github.com/onsi/ginkgo/v2
+                - github.com/onsi/gomega
+    staticcheck:
+      dot-import-whitelist:
+        - github.com/onsi/ginkgo/v2
+        - github.com/onsi/gomega
     wsl_v5:
       enable:
         - after-block
