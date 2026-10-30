@@ -1,3 +1,5 @@
+//go:build integration
+
 // Package dbtest gives Ginkgo specs an empty Postgres database of their own.
 package dbtest
 
