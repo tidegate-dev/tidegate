@@ -10,8 +10,10 @@ service PingService {
   rpc Ping(PingRequest) returns (PingResponse);
 }
 
+// PingRequest is the input of PingService.Ping. It has no fields.
 message PingRequest {}
 
+// PingResponse is the result of PingService.Ping.
 message PingResponse {
   // Message is always "pong".
   string message = 1;

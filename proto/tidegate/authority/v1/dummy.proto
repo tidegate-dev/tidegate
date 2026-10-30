@@ -13,18 +13,26 @@ service DummyService {
   rpc Read(ReadRequest) returns (ReadResponse);
 }
 
+// WriteRequest is the input of DummyService.Write.
 message WriteRequest {
+  // Text is the text to store.
   string text = 1;
 }
 
+// WriteResponse is the result of DummyService.Write.
 message WriteResponse {
+  // ID identifies the stored text for DummyService.Read.
   int64 id = 1;
 }
 
+// ReadRequest is the input of DummyService.Read.
 message ReadRequest {
+  // ID is the one DummyService.Write returned for the text.
   int64 id = 1;
 }
 
+// ReadResponse is the result of DummyService.Read.
 message ReadResponse {
+  // Text is the stored text.
   string text = 1;
 }
