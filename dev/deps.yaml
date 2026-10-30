@@ -1,6 +1,7 @@
 version: "0.5"
 
-# Dependabot only updates images in fields called image.
+# Dependabot doesn't read this file. just images fails until its pins match
+# the ones in dev/kind/.
 processes:
   postgres:
     vars:

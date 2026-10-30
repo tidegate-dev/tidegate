@@ -37,6 +37,18 @@ secrets:
 arch:
     go tool arch-go
 
+# Check that files pinning the same image pin the same version.
+images:
+    #!/usr/bin/env sh
+    set -eu
+    pins=$(grep -rhoE --include='*.yaml' 'image: *[^ ]+' dev .github/workflows | sed -E 's/image: *//' | sort -u)
+    names=$(echo "$pins" | sed -E 's/:[^/]*$//' | sort | uniq -d)
+    for name in $names; do
+        echo "$name has different pins:" >&2
+        grep -rnoE --include='*.yaml' "image: *$name[:@][^ ]+" dev .github/workflows >&2
+    done
+    [ -z "$names" ]
+
 # Format the code of every component in place.
 fmt: authority::fmt cli::fmt internal::fmt
 
@@ -125,4 +137,4 @@ kind-down:
     kind delete cluster --name tidegate
 
 # Run every check that CI runs.
-ci: secrets arch proto::ci authority::ci cli::ci internal::ci docs::build
+ci: secrets arch images proto::ci authority::ci cli::ci internal::ci docs::build
