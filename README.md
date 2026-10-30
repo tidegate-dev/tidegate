@@ -48,6 +48,10 @@ Then run `just` to see the recipes, for example `just build` and `just ci`. Note
 
 ## Contributing
 
+tidegate has no release yet. To try it, clone the repository and build it with `just build`, as described above.
+
+Report bugs and suggest features in [GitHub issues](https://github.com/tidegate-dev/tidegate/issues). To report a vulnerability, follow [SECURITY.md](SECURITY.md) instead.
+
 Contributions are welcome. Before you open a pull request, read [CONTRIBUTING.md](CONTRIBUTING.md). It explains how to propose a change, how to title your pull request, how to sign off your commits and how you may use AI tools.
 
 ## License
