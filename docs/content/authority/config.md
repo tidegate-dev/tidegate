@@ -3,11 +3,12 @@
 You configure the authority with environment variables:
 
 ```sh
-TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=:8080
-TIDEGATE_AUTHORITY__LOG__LEVEL=debug
+TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=:8080 \
+TIDEGATE_AUTHORITY__LOG__LEVEL=debug \
+authority
 ```
 
-These two make the authority listen on port 8080 on every network interface and log at the debug level.
+This starts the authority listening on port 8080 on every network interface and logging at the debug level.
 
 Every variable starts with `TIDEGATE_AUTHORITY__`. Two underscores separate the parts of a name, like `SERVER` and `LISTEN_ADDRESS`. After the prefix, upper and lower case don't matter, in names or in values.
 
