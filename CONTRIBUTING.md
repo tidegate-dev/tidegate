@@ -16,7 +16,7 @@ For bug fixes and small changes, open a pull request directly. For larger change
 4. A [maintainer](MAINTAINERS.md) reviews the pull request and may ask for changes.
 5. Once it is approved, a maintainer squash merges it.
 
-Every pull request needs one approval from a maintainer other than its author before it can be merged. If someone pushes to the pull request after the approval, it needs a new approval from someone other than that person. CodeRabbit reviews every pull request first, but its review doesn't count as an approval. The only exception is Dependabot's patch updates, which are approved and merged automatically.
+Every pull request needs one approval from a maintainer other than its author before it can be merged. If someone pushes to the pull request after the approval, it needs a new approval from someone other than that person. CodeRabbit reviews every pull request first, but its review doesn't count as an approval. Dependabot's updates need an approval too.
 
 ## Pull request titles
 
