@@ -3,7 +3,6 @@
 package config
 
 import (
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -17,6 +16,7 @@ import (
 	"github.com/knadh/koanf/providers/structs"
 	"github.com/knadh/koanf/v2"
 
+	"github.com/tidegate-dev/tidegate/internal/certreload"
 	"github.com/tidegate-dev/tidegate/internal/logging"
 )
 
@@ -87,7 +87,7 @@ type Config struct {
 type Server struct {
 	ListenAddress string
 	// Certificate is nil when the server serves plain HTTP.
-	Certificate *tls.Certificate
+	Certificate *certreload.Certificate
 }
 
 // Metrics holds the settings of the server that serves the metrics.
@@ -223,7 +223,7 @@ func (v *validator) check(field *string, err error) {
 	}
 }
 
-func (v *validator) certificate(certFile, keyFile *string) *tls.Certificate {
+func (v *validator) certificate(certFile, keyFile *string) *certreload.Certificate {
 	switch {
 	case *certFile == "" && *keyFile == "":
 		return nil
@@ -235,13 +235,13 @@ func (v *validator) certificate(certFile, keyFile *string) *tls.Certificate {
 		return nil
 	}
 
-	certificate, err := tls.LoadX509KeyPair(*certFile, *keyFile)
+	certificate, err := certreload.Load(*certFile, *keyFile)
 	if err != nil {
 		v.check(certFile, fmt.Errorf("loading the key pair: %w", err))
 		return nil
 	}
 
-	return &certificate
+	return certificate
 }
 
 func fieldKeys(raw *rawConfig) map[*string]string {
