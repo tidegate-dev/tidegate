@@ -5,7 +5,9 @@
 
 An open source privileged access management tool.
 
-tidegate is in early development and has no release yet. To try it, build it from source as described under [Development](#development). The documentation is at [tidegate-dev.github.io/tidegate](https://tidegate-dev.github.io/tidegate/).
+The documentation is at [tidegate-dev.github.io/tidegate](https://tidegate-dev.github.io/tidegate/).
+
+tidegate is in early development and has no release yet. To try it, build it from source as described under [Development](#development).
 
 ## Platforms
 
