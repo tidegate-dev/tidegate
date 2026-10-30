@@ -30,6 +30,17 @@ just dev-deps
 
 The services keep their data between runs. To start with empty data, stop `just dev` or `just dev-deps` and run `just dev-reset`. `dev/tidegate.yaml` defines the components and `dev/deps.yaml` the services, with their ports and logins.
 
+The authority's integration tests run against Postgres. Start the services first, then run the tests:
+
+```sh
+just dev-deps
+just test-integration
+```
+
+`just ci` runs them too. Each test creates its own database and drops it at the end. If you stop a test run before it finishes, its databases stay behind. On the Postgres from `just dev-deps`, `just dev-reset` deletes them. To use another Postgres server, set `TIDEGATE_TEST_DATABASE_URL` to its URL. Its user needs the `CREATEDB` privilege.
+
+Integration tests are [Ginkgo](https://onsi.github.io/ginkgo/) specs with [Gomega](https://onsi.github.io/gomega/) assertions. Their files start with `//go:build integration`, so `just test` and `go test ./...` leave them out. Unit tests use the standard `testing` package with testify. To create a database for a spec, call `dbtest.NewDatabase` from `authority/internal/dbtest`.
+
 One of the services is an SSH host to try tidegate against. Connect to it with the password `tidegate`:
 
 ```sh

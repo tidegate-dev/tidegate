@@ -1,3 +1,5 @@
+export TIDEGATE_TEST_DATABASE_URL := env("TIDEGATE_TEST_DATABASE_URL", "postgres://tidegate:tidegate@127.0.0.1:5432/tidegate?sslmode=disable")
+
 # Build the authority into bin/ at the root of the repository.
 build:
     go build -o ../bin/authority ./cmd/authority
@@ -15,6 +17,10 @@ image:
 # Run the authority's unit tests.
 test:
     go test ./...
+
+# Run the authority's integration tests.
+test-integration:
+    go test -tags integration ./...
 
 # Lint the authority.
 lint:
@@ -37,4 +43,4 @@ check-generated:
     sqlc diff
 
 # Run every check that CI runs on the authority.
-ci: build test lint vuln check-generated image
+ci: build test test-integration lint vuln check-generated image

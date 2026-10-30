@@ -1,6 +1,7 @@
 version: "0.5"
 
-# Dependabot only updates images in fields called image.
+# Dependabot doesn't read this file. just images fails until its pins match
+# the ones in dev/kind/.
 processes:
   postgres:
     vars:
@@ -15,7 +16,7 @@ processes:
       {{.image}}
     readiness_probe:
       exec:
-        command: $CONTAINER_RUNTIME exec tidegate-postgres pg_isready --username tidegate
+        command: $CONTAINER_RUNTIME exec tidegate-postgres pg_isready --username tidegate --host 127.0.0.1
       initial_delay_seconds: 2
       period_seconds: 2
       # process-compose stops Postgres after this many failed checks, and

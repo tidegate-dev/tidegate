@@ -12,7 +12,7 @@ Significant changes are decided in a Tidegate Enhancement Proposal (TEP), a desi
 
 ## Checking your work
 
-`just ci` runs every check that CI runs. Run it before you call a change done.
+`just ci` runs every check that CI runs. Run it before you call a change done. Its integration tests need Postgres, so start `just dev-deps` first.
 
 If `just` isn't on your PATH, the tools from the Nix dev shell are missing. Run the command as `nix develop --command just ci`. If that fails too, ask instead of installing tools.
 
