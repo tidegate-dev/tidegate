@@ -14,6 +14,10 @@ build: authority::build cli::build
 # Run the unit tests of every component.
 test: authority::test cli::test internal::test
 
+# Run the unit tests and the integration tests of every component. The
+# integration tests need the services from just dev-deps.
+test-integration: authority::test-integration
+
 # Generate code from the .proto files.
 generate: proto::generate authority::generate
 

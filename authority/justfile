@@ -16,6 +16,13 @@ image:
 test:
     go test ./...
 
+# Run the authority's unit tests and the integration tests, which need
+# Postgres. Without TIDEGATE_TEST_DATABASE_URL, they use the Postgres from
+# just dev-deps.
+test-integration:
+    TIDEGATE_TEST_DATABASE_URL="${TIDEGATE_TEST_DATABASE_URL:-postgres://tidegate:tidegate@127.0.0.1:5432/tidegate?sslmode=disable}" \
+        go test -tags integration ./...
+
 # Lint the authority.
 lint:
     golangci-lint run ./...
@@ -37,4 +44,4 @@ check-generated:
     sqlc diff
 
 # Run every check that CI runs on the authority.
-ci: build test lint vuln check-generated image
+ci: build test test-integration lint vuln check-generated image

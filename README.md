@@ -43,7 +43,7 @@ If you don't use Nix, install these tools yourself:
 - [sqlc](https://docs.sqlc.dev/en/latest/overview/install.html) 1.31 or newer
 - [Zensical](https://zensical.org/) 0.0.62 or newer, for the documentation site
 
-Then run `just` to see the recipes, for example `just build` and `just ci`.
+Then run `just` to see the recipes, for example `just build` and `just ci`. Note that `just ci` needs the services from `just dev-deps`, like Postgres.
 
 ## Contributing
 

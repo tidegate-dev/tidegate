@@ -36,6 +36,7 @@ updates:
       - /authority
       - /dev
       - /dev/kind
+      - /.github/workflows
     schedule:
       interval: weekly
     commit-message:
