@@ -1,5 +1,6 @@
 # tidegate
 
+[![CI](https://github.com/tidegate-dev/tidegate/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/tidegate-dev/tidegate/actions/workflows/ci.yaml?query=branch%3Amain)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/tidegate-dev/tidegate/badge)](https://scorecard.dev/viewer/?uri=github.com/tidegate-dev/tidegate)
 
 An open source privileged access management tool.
