@@ -39,35 +39,51 @@ var _ = Describe("openDatabase", func() {
 	It("migrates once when two authorities wait for the lock", func(ctx SpecContext) {
 		url := dbtest.NewDatabase()
 		holder := connectToDatabase(ctx, url)
-		_, err := holder.Exec(ctx, "SELECT pg_advisory_lock($1)", lock.DefaultLockID)
-		Expect(err).NotTo(HaveOccurred())
+		takeMigrationLock(ctx, holder)
 
-		cfg := config.Database{URL: url, MigrateOnStart: true}
-		opened := make(chan error, 2)
-
-		for range 2 {
-			go func() {
-				pool, err := openDatabase(ctx, cfg)
-				if err == nil {
-					pool.Close()
-				}
-
-				opened <- err
-			}()
-		}
-
-		Eventually(ctx, func() (int, error) { return lockWaiters(ctx, holder) }).
-			WithTimeout(30*time.Second).
+		first := startAuthority(ctx, url)
+		second := startAuthority(ctx, url)
+		Eventually(ctx, lockWaiters).WithArguments(holder).WithTimeout(30*time.Second).
 			Should(Equal(2), "the authorities never waited for goose's migration lock")
 
-		_, err = holder.Exec(ctx, "SELECT pg_advisory_unlock($1)", lock.DefaultLockID)
-		Expect(err).NotTo(HaveOccurred())
+		releaseMigrationLock(ctx, holder)
 
-		Expect(<-opened).To(Succeed())
-		Expect(<-opened).To(Succeed())
+		Expect(<-first).To(Succeed())
+		Expect(<-second).To(Succeed())
 		Expect(maxTimesAMigrationWasApplied(ctx, holder)).To(Equal(1))
 	}, SpecTimeout(time.Minute))
 })
+
+// startAuthority opens the database like an authority that migrates when it
+// starts, and sends the result on the returned channel.
+func startAuthority(ctx context.Context, url string) <-chan error {
+	opened := make(chan error, 1)
+
+	go func() {
+		pool, err := openDatabase(ctx, config.Database{URL: url, MigrateOnStart: true})
+		if err == nil {
+			pool.Close()
+		}
+
+		opened <- err
+	}()
+
+	return opened
+}
+
+func takeMigrationLock(ctx context.Context, conn *pgx.Conn) {
+	GinkgoHelper()
+
+	_, err := conn.Exec(ctx, "SELECT pg_advisory_lock($1)", lock.DefaultLockID)
+	Expect(err).NotTo(HaveOccurred())
+}
+
+func releaseMigrationLock(ctx context.Context, conn *pgx.Conn) {
+	GinkgoHelper()
+
+	_, err := conn.Exec(ctx, "SELECT pg_advisory_unlock($1)", lock.DefaultLockID)
+	Expect(err).NotTo(HaveOccurred())
+}
 
 func connectToDatabase(ctx context.Context, url string) *pgx.Conn {
 	GinkgoHelper()
