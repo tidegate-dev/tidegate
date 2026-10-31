@@ -7,6 +7,8 @@ An open source privileged access management tool.
 
 The documentation is at [tidegate-dev.github.io/tidegate](https://tidegate-dev.github.io/tidegate/).
 
+tidegate is in early development and has no release yet. To try it, build it from source as described under [Development](#development).
+
 ## Platforms
 
 The authority runs on Linux servers. The tools that people run on their own machines are built for Linux, macOS and Windows.
@@ -48,7 +50,11 @@ Then run `just` to see the recipes, for example `just build` and `just ci`. Note
 
 ## Contributing
 
-Contributions are welcome. Before you open a pull request, read [CONTRIBUTING.md](CONTRIBUTING.md). It explains how to propose a change, how to title your pull request, how to sign off your commits and how you may use AI tools.
+Report bugs and suggest features in [GitHub issues](https://github.com/tidegate-dev/tidegate/issues). Contributions are welcome. Before you open a pull request, read [CONTRIBUTING.md](CONTRIBUTING.md). It explains how to propose a change, how to title your pull request, how to sign off your commits and how you may use AI tools.
+
+## Security
+
+tidegate controls access to infrastructure. If you find a vulnerability, don't open a public issue. Report it privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
