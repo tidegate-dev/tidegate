@@ -135,7 +135,7 @@ func openNotifier(t *testing.T) *systemd.Notifier {
 }
 
 // freeAddress returns a local address that nothing listens on right now.
-func freeAddress(t *testing.T) string {
+func freeAddress(t testing.TB) string {
 	t.Helper()
 
 	listener, err := net.Listen("tcp", "127.0.0.1:0")

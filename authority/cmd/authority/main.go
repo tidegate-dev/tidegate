@@ -67,7 +67,7 @@ func newCommand() *cli.Command {
 				return err
 			}
 
-			return run(ctx, cfg)
+			return run(ctx, cfg, shutdownTimeout)
 		},
 		Commands: []*cli.Command{
 			{
@@ -176,7 +176,7 @@ func createInitialAdmin(ctx context.Context, cfg config.Database, name string, i
 	return nil
 }
 
-func run(ctx context.Context, cfg config.Config) error {
+func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	if cfg.Database.MigrateOnStart {
 		err := migrate(ctx, cfg.Database)
 		if err != nil {
@@ -230,7 +230,7 @@ func run(ctx context.Context, cfg config.Config) error {
 			// so a scraper can reuse its connection.
 			IdleTimeout: 90 * time.Second,
 		},
-	}, shutdownTimeout)
+	}, timeout)
 
 	return errors.Join(err, shutdownMetrics(context.Background()))
 }

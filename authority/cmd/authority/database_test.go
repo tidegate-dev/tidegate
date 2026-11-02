@@ -4,8 +4,11 @@ package main
 
 import (
 	"context"
+	"net"
+	"net/http"
 	"time"
 
+	"connectrpc.com/connect"
 	"github.com/jackc/pgx/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -14,6 +17,8 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/config"
 	"github.com/tidegate-dev/tidegate/authority/internal/db"
 	"github.com/tidegate-dev/tidegate/authority/internal/dbtest"
+	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
+	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
 )
 
 var _ = Describe("openDatabase", func() {
@@ -56,6 +61,68 @@ var _ = Describe("migrate", func() {
 	}, SpecTimeout(time.Minute))
 })
 
+var _ = Describe("run", func() {
+	When("a query hangs", func() {
+		var authority runningAuthority
+
+		BeforeEach(func(ctx SpecContext) {
+			url := dbtest.NewDatabase()
+			Expect(migrate(ctx, config.Database{URL: url})).To(Succeed())
+			authority = serveAuthority(ctx, url)
+
+			// The lock makes the authority's write wait until the spec ends,
+			// like a query to a Postgres that doesn't answer.
+			holder := connectToDatabase(ctx, url)
+			lockDummies(ctx, holder)
+
+			go writeDummy(authority.address)
+
+			Eventually(ctx, sessionsWaitingForALock).WithArguments(holder).Should(Equal(1), "the write never waited for the lock")
+		}, NodeTimeout(30*time.Second))
+
+		It("stops", func(ctx SpecContext) {
+			authority.stop()
+
+			Eventually(ctx, authority.stopped).WithTimeout(5*time.Second).Should(Receive(), "the authority didn't stop")
+		}, SpecTimeout(30*time.Second))
+	})
+})
+
+// runningAuthority is an authority that serves in the background.
+type runningAuthority struct {
+	address string
+	stop    context.CancelFunc
+	stopped chan error
+}
+
+// serveAuthority runs the authority on the database at url and returns once
+// its API listens. It waits only 100 milliseconds for running requests when
+// it stops, so the spec doesn't wait the full shutdown timeout.
+func serveAuthority(ctx context.Context, url string) runningAuthority {
+	GinkgoHelper()
+
+	runCtx, stop := context.WithCancel(context.Background())
+	DeferCleanup(stop)
+
+	authority := runningAuthority{
+		address: freeAddress(GinkgoTB()),
+		stop:    stop,
+		stopped: make(chan error, 1),
+	}
+
+	go func() {
+		authority.stopped <- run(runCtx, config.Config{
+			Server:   config.Server{ListenAddress: authority.address},
+			Metrics:  config.Metrics{ListenAddress: "127.0.0.1:0"},
+			Database: config.Database{URL: url},
+		}, 100*time.Millisecond)
+	}()
+
+	Eventually(ctx, listening).WithArguments(authority.address).Should(Succeed())
+
+	return authority
+}
+
 // startMigration migrates the database in the background and sends
 // migrate's error on the returned channel.
 func startMigration(ctx context.Context, url string) <-chan error {
@@ -80,6 +147,41 @@ func releaseMigrationLock(ctx context.Context, conn *pgx.Conn) {
 
 	_, err := conn.Exec(ctx, "SELECT pg_advisory_unlock($1)", lock.DefaultLockID)
 	Expect(err).NotTo(HaveOccurred())
+}
+
+// lockDummies locks the dummies table in a transaction that stays open
+// until the connection closes.
+func lockDummies(ctx context.Context, conn *pgx.Conn) {
+	GinkgoHelper()
+
+	_, err := conn.Exec(ctx, "BEGIN; LOCK TABLE dummies IN ACCESS EXCLUSIVE MODE")
+	Expect(err).NotTo(HaveOccurred())
+}
+
+func sessionsWaitingForALock(ctx context.Context, conn *pgx.Conn) (int, error) {
+	var waiting int
+
+	err := conn.QueryRow(ctx,
+		"SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock'",
+	).Scan(&waiting)
+
+	return waiting, err
+}
+
+func listening(address string) error {
+	conn, err := net.Dial("tcp", address)
+	if err != nil {
+		return err
+	}
+
+	return conn.Close()
+}
+
+// writeDummy sends a write that only ends with the authority. A request
+// whose client gives up would cancel its query without the shutdown.
+func writeDummy(address string) {
+	client := authorityv1connect.NewDummyServiceClient(http.DefaultClient, "http://"+address)
+	_, _ = client.Write(context.Background(), connect.NewRequest(&authorityv1.WriteRequest{Text: "waits"}))
 }
 
 func connectToDatabase(ctx context.Context, url string) *pgx.Conn {
