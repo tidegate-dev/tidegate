@@ -153,7 +153,7 @@ func createInitialAdmin(ctx context.Context, cfg config.Database, name string, i
 		return users.ErrUserExists
 	}
 
-	plaintext, err := newPassword(ctx, in, out)
+	plaintext, err := readPassword(ctx, in, out)
 	if err != nil {
 		return err
 	}

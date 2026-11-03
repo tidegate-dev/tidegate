@@ -8,34 +8,34 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConfirmedPasswordReturnsMatchingEntries(t *testing.T) {
+func TestAskPasswordTwiceReturnsMatchingEntries(t *testing.T) {
 	t.Parallel()
 
 	// arrange
 	ask := answers("correct horse battery staple", "correct horse battery staple")
 
 	// act
-	password, err := confirmedPassword(ask)
+	password, err := askPasswordTwice(ask)
 
 	// assert
 	require.NoError(t, err)
 	assert.Equal(t, "correct horse battery staple", password)
 }
 
-func TestConfirmedPasswordRefusesDifferentEntries(t *testing.T) {
+func TestAskPasswordTwiceRefusesDifferentEntries(t *testing.T) {
 	t.Parallel()
 
 	// arrange
 	ask := answers("correct horse battery staple", "correct horse battery stapel")
 
 	// act
-	_, err := confirmedPassword(ask)
+	_, err := askPasswordTwice(ask)
 
 	// assert
 	require.ErrorIs(t, err, errPasswordsDiffer)
 }
 
-func TestPasswordLineIsTheFirstLineWithoutItsLineEnding(t *testing.T) {
+func TestReadPasswordLineReturnsTheFirstLineWithoutItsLineEnding(t *testing.T) {
 	t.Parallel()
 
 	for name, input := range map[string]string{
@@ -47,7 +47,7 @@ func TestPasswordLineIsTheFirstLineWithoutItsLineEnding(t *testing.T) {
 			t.Parallel()
 
 			// act
-			password, err := passwordLine(strings.NewReader(input))
+			password, err := readPasswordLine(strings.NewReader(input))
 
 			// assert
 			require.NoError(t, err)
@@ -67,14 +67,14 @@ func answers(entries ...string) func(string) (string, error) {
 	}
 }
 
-func TestPasswordLineDoesntCutOffALongPassword(t *testing.T) {
+func TestReadPasswordLineDoesntCutOffALongPassword(t *testing.T) {
 	t.Parallel()
 
 	// arrange
 	input := strings.Repeat("a", 2000) + "\r\n"
 
 	// act
-	line, err := passwordLine(strings.NewReader(input))
+	line, err := readPasswordLine(strings.NewReader(input))
 
 	// assert
 	require.NoError(t, err)
