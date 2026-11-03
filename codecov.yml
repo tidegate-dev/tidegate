@@ -1,0 +1,13 @@
+# Coverage is a report for reviewers, so its statuses never fail.
+coverage:
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
+
+ignore:
+  - gen
+  - authority/internal/db/sqlc
