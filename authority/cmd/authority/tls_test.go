@@ -42,19 +42,35 @@ func TestLoadCertificateLoadsTheFiles(t *testing.T) {
 	assert.NotNil(t, certificate)
 }
 
-func TestLoadCertificateNamesTheMissingFileAndHowToServePlainHTTP(t *testing.T) {
+func TestLoadCertificateNamesTheMissingKeyAndHowToServePlainHTTP(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	missing := filepath.Join(t.TempDir(), "tls.crt")
+	certFile, _ := writeKeyPair(t)
+	missingKey := filepath.Join(t.TempDir(), "tls.key")
 
 	// act
-	_, err := loadCertificate(config.TLS{CertFile: missing, KeyFile: missing})
+	_, err := loadCertificate(config.TLS{CertFile: certFile, KeyFile: missingKey})
 
 	// assert
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), missing)
+	assert.Contains(t, err.Error(), missingKey)
 	assert.Contains(t, err.Error(), "TIDEGATE_AUTHORITY__SERVER__TLS__DISABLED=true")
+}
+
+func TestLoadCertificateDoesntSuggestPlainHTTPForAnInvalidCertificate(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	certFile, keyFile := writeKeyPair(t)
+	require.NoError(t, os.WriteFile(certFile, []byte("not a certificate"), 0o600))
+
+	// act
+	_, err := loadCertificate(config.TLS{CertFile: certFile, KeyFile: keyFile})
+
+	// assert
+	require.Error(t, err)
+	assert.NotContains(t, err.Error(), "TLS__DISABLED")
 }
 
 func writeKeyPair(t *testing.T) (certFile, keyFile string) {

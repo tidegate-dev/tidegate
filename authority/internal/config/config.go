@@ -176,7 +176,7 @@ func Load(environ []string) (Config, error) {
 	return cfg, nil
 }
 
-// validate checks raw. set holds the keys that a variable set.
+// set holds the keys that a variable set, as opposed to a default.
 func validate(raw rawConfig, set map[string]bool) (Config, error) {
 	v := validator{keys: fieldKeys(&raw), set: set}
 
