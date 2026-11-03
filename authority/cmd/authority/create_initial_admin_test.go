@@ -19,14 +19,13 @@ import (
 var _ = Describe("authority create-initial-admin", func() {
 	var url string
 
-	BeforeEach(func() {
+	BeforeEach(func(ctx SpecContext) {
 		url = dbtest.NewDatabase()
 		GinkgoT().Setenv("TIDEGATE_AUTHORITY__DATABASE__URL", url)
+		Expect(migrate(ctx, config.Database{URL: url})).To(Succeed())
 	})
 
 	It("creates the user with the password from stdin", func(ctx SpecContext) {
-		Expect(migrate(ctx, config.Database{URL: url})).To(Succeed())
-
 		err := runCreateInitialAdmin(ctx, "alice", "correct horse battery staple\n")
 
 		Expect(err).NotTo(HaveOccurred())
@@ -34,8 +33,6 @@ var _ = Describe("authority create-initial-admin", func() {
 	})
 
 	It("doesn't count the line ending as part of the password", func(ctx SpecContext) {
-		Expect(migrate(ctx, config.Database{URL: url})).To(Succeed())
-
 		err := runCreateInitialAdmin(ctx, "alice", "fourteen chars\n")
 
 		Expect(err).To(MatchError(password.ErrTooShort))
@@ -43,7 +40,6 @@ var _ = Describe("authority create-initial-admin", func() {
 	})
 
 	It("refuses before it reads a password when a user exists", func(ctx SpecContext) {
-		Expect(migrate(ctx, config.Database{URL: url})).To(Succeed())
 		Expect(runCreateInitialAdmin(ctx, "alice", "correct horse battery staple\n")).To(Succeed())
 
 		err := runCreateInitialAdmin(ctx, "bob", "")
