@@ -14,13 +14,17 @@ image:
     }
     "$runtime" build --file Containerfile --tag localhost/tidegate-authority ..
 
-# Run the authority's unit tests with the race detector.
+# Run the authority's unit tests with the race detector, and write their
+# coverage to coverage/ at the root of the repository.
 test:
-    go test -race ./...
+    mkdir -p ../coverage
+    go test -race -coverpkg=github.com/tidegate-dev/tidegate/... -coverprofile=../coverage/authority.out ./...
 
-# Run the authority's integration tests with the race detector.
+# Run the authority's integration tests with the race detector, and write
+# their coverage to coverage/ at the root of the repository.
 test-integration:
-    go test -race -tags integration ./...
+    mkdir -p ../coverage
+    go test -race -tags integration -coverpkg=github.com/tidegate-dev/tidegate/... -coverprofile=../coverage/authority-integration.out ./...
 
 # Lint the authority.
 lint:

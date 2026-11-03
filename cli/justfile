@@ -2,9 +2,11 @@
 build:
     go build -o ../bin/ ./cmd/tidegate
 
-# Run the CLI's unit tests with the race detector.
+# Run the CLI's unit tests with the race detector, and write their coverage
+# to coverage/ at the root of the repository.
 test:
-    go test -race ./...
+    mkdir -p ../coverage
+    go test -race -coverpkg=github.com/tidegate-dev/tidegate/... -coverprofile=../coverage/cli.out ./...
 
 # Lint the CLI.
 lint:

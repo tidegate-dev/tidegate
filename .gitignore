@@ -1,6 +1,7 @@
 /bin/
 /.direnv/
 /site/
+/coverage/
 /dev/tls/
 /dev/kind/cert-manager/charts/
 /.pre-commit-config.yaml

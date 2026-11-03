@@ -43,6 +43,14 @@ Integration tests are [Ginkgo](https://onsi.github.io/ginkgo/) specs with [Gomeg
 
 `just test` and `just test-integration` run the tests with Go's [race detector](https://go.dev/doc/articles/race_detector).
 
+The test recipes also measure test coverage and write it to `coverage/`, one file for each set of tests. To see which lines a set of tests runs, open its file:
+
+```sh
+go tool cover -html=coverage/authority-integration.out
+```
+
+CI uploads the files to [Codecov](https://codecov.io/gh/tidegate-dev/tidegate). Codecov shows the coverage on each pull request, and low coverage doesn't fail CI.
+
 One of the services is an SSH host to try tidegate against. Connect to it with the password `tidegate`:
 
 ```sh

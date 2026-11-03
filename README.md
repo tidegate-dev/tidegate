@@ -1,6 +1,7 @@
 # tidegate
 
 [![CI](https://github.com/tidegate-dev/tidegate/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/tidegate-dev/tidegate/actions/workflows/ci.yaml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/tidegate-dev/tidegate/graph/badge.svg)](https://codecov.io/gh/tidegate-dev/tidegate)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/tidegate-dev/tidegate/badge)](https://scorecard.dev/viewer/?uri=github.com/tidegate-dev/tidegate)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/16081/badge)](https://www.bestpractices.dev/projects/16081)
 
