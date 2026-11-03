@@ -21,6 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// PingRequest is the input of PingService.Ping. It has no fields.
 type PingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -57,6 +58,7 @@ func (*PingRequest) Descriptor() ([]byte, []int) {
 	return file_tidegate_authority_v1_ping_proto_rawDescGZIP(), []int{0}
 }
 
+// PingResponse is the result of PingService.Ping.
 type PingResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Message is always "pong".

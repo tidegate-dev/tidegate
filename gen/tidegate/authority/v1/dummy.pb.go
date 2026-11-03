@@ -21,9 +21,11 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// WriteRequest is the input of DummyService.Write.
 type WriteRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Text is the text to store.
+	Text          string `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -65,9 +67,11 @@ func (x *WriteRequest) GetText() string {
 	return ""
 }
 
+// WriteResponse is the result of DummyService.Write.
 type WriteResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID identifies the stored text for DummyService.Read.
+	Id            int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -109,9 +113,11 @@ func (x *WriteResponse) GetId() int64 {
 	return 0
 }
 
+// ReadRequest is the input of DummyService.Read.
 type ReadRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID is the one DummyService.Write returned for the text.
+	Id            int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -153,9 +159,11 @@ func (x *ReadRequest) GetId() int64 {
 	return 0
 }
 
+// ReadResponse is the result of DummyService.Read.
 type ReadResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Text is the stored text.
+	Text          string `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
