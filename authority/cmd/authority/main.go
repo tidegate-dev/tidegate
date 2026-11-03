@@ -295,15 +295,15 @@ func serve(ctx context.Context, notifier *systemd.Notifier, servers map[string]*
 		slog.Info("authority listening", "server", name, "address", listener.Addr().String(), "tls", server.TLSConfig != nil)
 	}
 
-	served := make(chan error, len(servers))
+	serveErrorChan := make(chan error, len(servers))
 
 	for server, listener := range listeners {
 		go func() {
 			if server.TLSConfig != nil {
 				// ServeTLS uses TLSConfig's certificate when the file names are empty.
-				served <- server.ServeTLS(listener, "", "")
+				serveErrorChan <- server.ServeTLS(listener, "", "")
 			} else {
-				served <- server.Serve(listener)
+				serveErrorChan <- server.Serve(listener)
 			}
 		}()
 	}
@@ -318,7 +318,7 @@ func serve(ctx context.Context, notifier *systemd.Notifier, servers map[string]*
 	running := len(servers)
 
 	select {
-	case err := <-served:
+	case err := <-serveErrorChan:
 		errs = append(errs, err)
 		running--
 	case <-ctx.Done():
@@ -340,7 +340,7 @@ func serve(ctx context.Context, notifier *systemd.Notifier, servers map[string]*
 	}
 
 	for range running {
-		err := <-served
+		err := <-serveErrorChan
 		if !errors.Is(err, http.ErrServerClosed) {
 			errs = append(errs, err)
 		}
