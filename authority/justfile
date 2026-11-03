@@ -14,13 +14,13 @@ image:
     }
     "$runtime" build --file Containerfile --tag localhost/tidegate-authority ..
 
-# Run the authority's unit tests.
+# Run the authority's unit tests with the race detector.
 test:
-    go test ./...
+    go test -race ./...
 
-# Run the authority's integration tests.
+# Run the authority's integration tests with the race detector.
 test-integration:
-    go test -tags integration ./...
+    go test -race -tags integration ./...
 
 # Lint the authority.
 lint:

@@ -41,6 +41,8 @@ just test-integration
 
 Integration tests are [Ginkgo](https://onsi.github.io/ginkgo/) specs with [Gomega](https://onsi.github.io/gomega/) assertions. Their files start with `//go:build integration`, so `just test` and `go test ./...` leave them out. Unit tests use the standard `testing` package with testify. To create a database for a spec, call `dbtest.NewDatabase` from `authority/internal/dbtest`.
 
+`just test` and `just test-integration` run the tests with Go's [race detector](https://go.dev/doc/articles/race_detector).
+
 One of the services is an SSH host to try tidegate against. Connect to it with the password `tidegate`:
 
 ```sh

@@ -2,9 +2,9 @@
 build:
     go build -o ../bin/ ./cmd/tidegate
 
-# Run the CLI's unit tests.
+# Run the CLI's unit tests with the race detector.
 test:
-    go test ./...
+    go test -race ./...
 
 # Lint the CLI.
 lint:
