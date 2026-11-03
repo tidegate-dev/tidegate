@@ -1,6 +1,6 @@
-# Run the unit tests of the shared packages.
+# Run the unit tests of the shared packages with the race detector.
 test:
-    go test ./...
+    go test -race ./...
 
 # Lint the shared packages.
 lint:
