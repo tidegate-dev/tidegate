@@ -45,7 +45,7 @@ var _ = Describe("migrate", func() {
 
 		firstMigrationErrorChan := startMigration(ctx, url)
 		secondMigrationErrorChan := startMigration(ctx, url)
-		Eventually(ctx, lockWaiters).WithArguments(holder).WithTimeout(30*time.Second).
+		Eventually(ctx, countSessionsTryingMigrationLock).WithArguments(holder).WithTimeout(30*time.Second).
 			Should(Equal(2), "the authorities never waited for goose's migration lock")
 
 		releaseMigrationLock(ctx, holder)
@@ -94,17 +94,16 @@ func connectToDatabase(ctx context.Context, url string) *pgx.Conn {
 	return conn
 }
 
-// lockWaiters counts the other sessions that have tried to take goose's
-// lock. Between goose's attempts, pg_stat_activity shows the last attempt
-// as the session's query.
-func lockWaiters(ctx context.Context, conn *pgx.Conn) (int, error) {
-	var waiters int
+func countSessionsTryingMigrationLock(ctx context.Context, conn *pgx.Conn) (int, error) {
+	var sessions int
 
+	// Between goose's attempts, pg_stat_activity shows the last attempt as
+	// the session's query.
 	err := conn.QueryRow(ctx,
 		"SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() AND pid <> pg_backend_pid() AND query LIKE '%pg_try_advisory_lock%'",
-	).Scan(&waiters)
+	).Scan(&sessions)
 
-	return waiters, err
+	return sessions, err
 }
 
 // maxTimesAMigrationWasApplied counts goose's rows for each migration and
