@@ -20,9 +20,21 @@ func File(in io.Reader) (*os.File, bool) {
 	return file, true
 }
 
-// ReadSecret writes prompt to out and reads a line from in without echoing
-// it. It stops waiting when ctx ends.
+// ReadSecret writes prompt to the terminal and reads a line from in without
+// echoing it. It writes to out only if it can't open the terminal. It stops
+// waiting when ctx ends.
 func ReadSecret(ctx context.Context, in *os.File, out io.Writer, prompt string) (string, error) {
+	// Like sudo and ssh, because stderr may go into a log file while the user
+	// types at the terminal.
+	tty, err := os.OpenFile("/dev/tty", os.O_WRONLY, 0)
+	if err == nil {
+		defer func() {
+			_ = tty.Close()
+		}()
+
+		out = tty
+	}
+
 	fd := int(in.Fd()) //nolint:gosec // A file descriptor fits in an int.
 
 	state, err := term.GetState(fd)
