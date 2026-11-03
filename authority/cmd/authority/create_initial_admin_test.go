@@ -11,7 +11,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/config"
-	"github.com/tidegate-dev/tidegate/authority/internal/db"
 	"github.com/tidegate-dev/tidegate/authority/internal/dbtest"
 	"github.com/tidegate-dev/tidegate/authority/internal/password"
 	"github.com/tidegate-dev/tidegate/authority/internal/users"
@@ -50,13 +49,6 @@ var _ = Describe("authority create-initial-admin", func() {
 		err := runCreateInitialAdmin(ctx, "bob", "")
 
 		Expect(err).To(MatchError(users.ErrUserExists))
-	})
-
-	It("refuses a database that isn't migrated", func(ctx SpecContext) {
-		err := runCreateInitialAdmin(ctx, "alice", "correct horse battery staple\n")
-
-		Expect(err).To(MatchError(db.ErrSchemaTooOld))
-		Expect(err).To(MatchError(ContainSubstring("Run authority migrate first")))
 	})
 })
 

@@ -138,16 +138,11 @@ func migrate(ctx context.Context, cfg config.Database) error {
 // createInitialAdmin checks the schema and looks for users before it asks
 // for the password, so the user doesn't type it for nothing.
 func createInitialAdmin(ctx context.Context, cfg config.Database, name string, in io.Reader, out io.Writer) error {
-	pool, err := db.Open(ctx, cfg.URL)
+	pool, err := openDatabase(ctx, cfg.URL)
 	if err != nil {
 		return err
 	}
 	defer pool.Close()
-
-	err = checkSchema(ctx, pool)
-	if err != nil {
-		return err
-	}
 
 	exists, err := users.AnyExist(ctx, pool)
 	if err != nil {
@@ -174,7 +169,14 @@ func createInitialAdmin(ctx context.Context, cfg config.Database, name string, i
 }
 
 func run(ctx context.Context, cfg config.Config) error {
-	pool, err := openDatabase(ctx, cfg.Database)
+	if cfg.Database.MigrateOnStart {
+		err := migrate(ctx, cfg.Database)
+		if err != nil {
+			return err
+		}
+	}
+
+	pool, err := openDatabase(ctx, cfg.Database.URL)
 	if err != nil {
 		return err
 	}
@@ -212,34 +214,26 @@ func run(ctx context.Context, cfg config.Config) error {
 	return errors.Join(err, shutdownMetrics(context.Background()))
 }
 
-func openDatabase(ctx context.Context, cfg config.Database) (*pgxpool.Pool, error) {
-	pool, err := db.Open(ctx, cfg.URL)
+// openDatabase connects to the database at url. It refuses a schema that's
+// older than the authority expects.
+func openDatabase(ctx context.Context, url string) (*pgxpool.Pool, error) {
+	pool, err := db.Open(ctx, url)
 	if err != nil {
 		return nil, err
 	}
 
-	if cfg.MigrateOnStart {
-		err = db.Migrate(ctx, pool)
-	} else {
-		err = checkSchema(ctx, pool)
-	}
-
+	err = db.CheckSchema(ctx, pool)
 	if err != nil {
 		pool.Close()
+
+		if errors.Is(err, db.ErrSchemaTooOld) {
+			return nil, fmt.Errorf("%w. Run authority migrate first", err)
+		}
 
 		return nil, err
 	}
 
 	return pool, nil
-}
-
-func checkSchema(ctx context.Context, pool *pgxpool.Pool) error {
-	err := db.CheckSchema(ctx, pool)
-	if errors.Is(err, db.ErrSchemaTooOld) {
-		return fmt.Errorf("%w. Run authority migrate first", err)
-	}
-
-	return err
 }
 
 func apiServer(cfg config.Server, pool *pgxpool.Pool) *http.Server {
