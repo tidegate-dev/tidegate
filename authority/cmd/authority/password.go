@@ -19,7 +19,7 @@ var errPasswordsDiffer = errors.New("the passwords differ")
 func readPassword(ctx context.Context, in io.Reader, out io.Writer) (string, error) {
 	file, ok := terminal.File(in)
 	if !ok {
-		return readPasswordLine(in)
+		return readPasswordLine(ctx, in)
 	}
 
 	return askPasswordTwice(func(prompt string) (string, error) {
@@ -45,13 +45,31 @@ func askPasswordTwice(ask func(prompt string) (string, error)) (string, error) {
 	return first, nil
 }
 
-func readPasswordLine(in io.Reader) (string, error) {
-	// Room for the longest password, a CRLF line ending and one more byte, so
-	// a longer password is refused as too long instead of cut off.
-	line, err := bufio.NewReader(io.LimitReader(in, password.MaxBytes+3)).ReadString('\n')
-	if err != nil && !errors.Is(err, io.EOF) {
-		return "", fmt.Errorf("reading the password from stdin: %w", err)
+func readPasswordLine(ctx context.Context, in io.Reader) (string, error) {
+	type readResult struct {
+		line string
+		err  error
 	}
 
-	return strings.TrimSuffix(strings.TrimSuffix(line, "\n"), "\r"), nil
+	readResultChan := make(chan readResult, 1)
+
+	// A read from a pipe can't be canceled, so on ctx's end it's left
+	// running.
+	go func() {
+		// Room for the longest password, a CRLF line ending and one more byte,
+		// so a longer password is refused as too long instead of cut off.
+		line, err := bufio.NewReader(io.LimitReader(in, password.MaxBytes+3)).ReadString('\n')
+		readResultChan <- readResult{line, err}
+	}()
+
+	select {
+	case result := <-readResultChan:
+		if result.err != nil && !errors.Is(result.err, io.EOF) {
+			return "", fmt.Errorf("reading the password from stdin: %w", result.err)
+		}
+
+		return strings.TrimSuffix(strings.TrimSuffix(result.line, "\n"), "\r"), nil
+	case <-ctx.Done():
+		return "", ctx.Err()
+	}
 }

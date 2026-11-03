@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"io"
 	"strings"
 	"testing"
 
@@ -47,7 +49,7 @@ func TestReadPasswordLineReturnsTheFirstLineWithoutItsLineEnding(t *testing.T) {
 			t.Parallel()
 
 			// act
-			password, err := readPasswordLine(strings.NewReader(input))
+			password, err := readPasswordLine(t.Context(), strings.NewReader(input))
 
 			// assert
 			require.NoError(t, err)
@@ -74,9 +76,29 @@ func TestReadPasswordLineDoesntCutOffALongPassword(t *testing.T) {
 	input := strings.Repeat("a", 2000) + "\r\n"
 
 	// act
-	line, err := readPasswordLine(strings.NewReader(input))
+	line, err := readPasswordLine(t.Context(), strings.NewReader(input))
 
 	// assert
 	require.NoError(t, err)
 	assert.Greater(t, len(line), 1024, "a cut-off line would pass as a valid password")
+}
+
+func TestReadPasswordLineStopsWhenTheContextEnds(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	stdin, writer := io.Pipe()
+
+	t.Cleanup(func() {
+		_ = writer.Close()
+	})
+
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	// act
+	_, err := readPasswordLine(ctx, stdin)
+
+	// assert
+	require.ErrorIs(t, err, context.Canceled)
 }
