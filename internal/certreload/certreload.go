@@ -4,8 +4,12 @@ package certreload
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/tls"
+	"crypto/x509"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,6 +22,17 @@ import (
 	"go.opentelemetry.io/otel/metric"
 
 	"github.com/tidegate-dev/tidegate/internal/logging"
+)
+
+// ErrKeyTooShort means the certificate's key is shorter than NIST allows
+// through 2030.
+var ErrKeyTooShort = errors.New("the TLS certificate's key is too short")
+
+// The minimums of NIST SP 800-57 Part 1 for use through 2030, 112 bits of
+// security.
+const (
+	minRSABits   = 2048
+	minCurveBits = 224
 )
 
 // Certificate is a TLS certificate and its key, read from two files.
@@ -161,7 +176,7 @@ func (c *Certificate) logOnce(ctx context.Context, err error) {
 	}
 
 	c.lastError = err.Error()
-	logging.FromContext(ctx).Error("keeping the TLS certificate in use, because its files don't hold a certificate and its key",
+	logging.FromContext(ctx).Error("keeping the TLS certificate in use, because its files don't hold a usable certificate and key",
 		"cert_file", c.certFile, "error", err)
 }
 
@@ -181,8 +196,28 @@ func (c *Certificate) readKeyPair() (*keyPair, error) {
 		return nil, err
 	}
 
+	err = checkKeyLength(certificate.Leaf)
+	if err != nil {
+		return nil, err
+	}
+
 	return &keyPair{
 		hashes:      fileHashes{sha256.Sum256(certPEM), sha256.Sum256(keyPEM)},
 		certificate: &certificate,
 	}, nil
+}
+
+func checkKeyLength(leaf *x509.Certificate) error {
+	switch key := leaf.PublicKey.(type) {
+	case *rsa.PublicKey:
+		if bits := key.N.BitLen(); bits < minRSABits {
+			return fmt.Errorf("%w: its RSA key has %d bits, and tidegate needs at least %d", ErrKeyTooShort, bits, minRSABits)
+		}
+	case *ecdsa.PublicKey:
+		if bits := key.Curve.Params().BitSize; bits < minCurveBits {
+			return fmt.Errorf("%w: its elliptic curve has %d bits, and tidegate needs at least %d", ErrKeyTooShort, bits, minCurveBits)
+		}
+	}
+
+	return nil
 }

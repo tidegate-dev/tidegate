@@ -6,6 +6,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
@@ -40,6 +41,51 @@ func TestLoadRejectsAKeyOfAnotherCertificate(t *testing.T) {
 
 	// assert
 	assert.ErrorContains(t, err, "private key does not match public key")
+}
+
+func TestLoadRejectsAnRSAKeyUnder2048Bits(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	certFile, keyFile := writeRSAKeyPair(t, t.TempDir(), 1024)
+
+	// act
+	_, err := Load(certFile, keyFile)
+
+	// assert
+	assert.ErrorIs(t, err, ErrKeyTooShort)
+}
+
+func TestLoadAcceptsAnRSAKeyOf2048Bits(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	certFile, keyFile := writeRSAKeyPair(t, t.TempDir(), 2048)
+
+	// act
+	_, err := Load(certFile, keyFile)
+
+	// assert
+	assert.NoError(t, err)
+}
+
+func TestWatchKeepsTheCertificateWhenTheNewKeyIsTooShort(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	dir := t.TempDir()
+	certificate := load(t, dir, 1)
+	logs := &syncBuffer{}
+	watch(t, certificate, logs)
+
+	// act
+	writeRSAKeyPair(t, dir, 1024)
+
+	// assert
+	assert.Eventually(t, func() bool {
+		return bytes.Contains(logs.Bytes(), []byte("2048"))
+	}, 5*time.Second, 10*time.Millisecond)
+	assert.Equal(t, int64(1), serial(t, certificate))
 }
 
 func TestWatchPicksUpNewFiles(t *testing.T) {
@@ -268,6 +314,30 @@ func writeKeyPair(t *testing.T, dir string, serial int64) (certFile, keyFile str
 	certFile = filepath.Join(dir, "cert.pem")
 	keyFile = filepath.Join(dir, "key.pem")
 	require.NoError(t, os.WriteFile(keyFile, pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: keyDER}), 0o600))
+	require.NoError(t, os.WriteFile(certFile, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), 0o600))
+
+	return certFile, keyFile
+}
+
+// writeRSAKeyPair writes a self-signed certificate with serial 100 and an
+// RSA key of bits to cert.pem and key.pem in dir.
+func writeRSAKeyPair(t *testing.T, dir string, bits int) (certFile, keyFile string) {
+	t.Helper()
+
+	key, err := rsa.GenerateKey(rand.Reader, bits)
+	require.NoError(t, err)
+
+	template := &x509.Certificate{
+		SerialNumber: big.NewInt(100),
+		DNSNames:     []string{"localhost"},
+		NotAfter:     notAfter(100),
+	}
+	der, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	require.NoError(t, err)
+
+	certFile = filepath.Join(dir, "cert.pem")
+	keyFile = filepath.Join(dir, "key.pem")
+	require.NoError(t, os.WriteFile(keyFile, pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)}), 0o600))
 	require.NoError(t, os.WriteFile(certFile, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), 0o600))
 
 	return certFile, keyFile
