@@ -77,6 +77,7 @@
             pkgs.openssl
             pkgs.process-compose
             pkgs.protoc-gen-connect-go
+            pkgs.protoc-gen-doc
             pkgs.protoc-gen-go
             pkgs.sqlc
             pkgs.zensical

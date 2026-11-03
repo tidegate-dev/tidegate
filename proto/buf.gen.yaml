@@ -7,3 +7,7 @@ plugins:
   - local: protoc-gen-connect-go
     out: ../gen
     opt: paths=source_relative
+  # clean empties each plugin's out folder, so the reference has its own.
+  - local: protoc-gen-doc
+    out: ../docs/content/reference
+    opt: reference.md.tmpl,api.md
