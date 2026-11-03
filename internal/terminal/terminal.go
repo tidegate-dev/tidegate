@@ -38,24 +38,24 @@ func ReadSecret(ctx context.Context, in *os.File, out io.Writer, prompt string) 
 		return "", err
 	}
 
-	type result struct {
+	type readResult struct {
 		secret []byte
 		err    error
 	}
 
-	read := make(chan result, 1)
+	readResultChan := make(chan readResult, 1)
 
 	go func() {
 		secret, err := term.ReadPassword(fd)
-		read <- result{secret, err}
+		readResultChan <- readResult{secret, err}
 	}()
 
-	var r result
+	var result readResult
 
 	select {
-	case r = <-read:
+	case result = <-readResultChan:
 	case <-ctx.Done():
-		r.err = ctx.Err()
+		result.err = ctx.Err()
 
 		_ = term.Restore(fd, state)
 	}
@@ -64,9 +64,9 @@ func ReadSecret(ctx context.Context, in *os.File, out io.Writer, prompt string) 
 	// the prompt on the same line.
 	_, _ = fmt.Fprintln(out)
 
-	if r.err != nil {
-		return "", fmt.Errorf("reading from the terminal: %w", r.err)
+	if result.err != nil {
+		return "", fmt.Errorf("reading from the terminal: %w", result.err)
 	}
 
-	return string(r.secret), nil
+	return string(result.secret), nil
 }

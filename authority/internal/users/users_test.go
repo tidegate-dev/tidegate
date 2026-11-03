@@ -68,15 +68,15 @@ var _ = Describe("CreateInitialAdmin", func() {
 		_, err = holder.Exec(ctx, "SELECT pg_advisory_lock($1)", initialAdminLockID)
 		Expect(err).NotTo(HaveOccurred())
 
-		first := startCreateInitialAdmin(ctx, pool, "alice")
-		second := startCreateInitialAdmin(ctx, pool, "bob")
+		firstCreationErrorChan := startCreateInitialAdmin(ctx, pool, "alice")
+		secondCreationErrorChan := startCreateInitialAdmin(ctx, pool, "bob")
 		Eventually(ctx, lockWaiters).WithArguments(pool).WithTimeout(30*time.Second).
 			Should(Equal(2), "the runs never waited for the lock")
 
 		_, err = holder.Exec(ctx, "SELECT pg_advisory_unlock($1)", initialAdminLockID)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect([]error{<-first, <-second}).To(ConsistOf(Succeed(), MatchError(ErrUserExists)))
+		Expect([]error{<-firstCreationErrorChan, <-secondCreationErrorChan}).To(ConsistOf(Succeed(), MatchError(ErrUserExists)))
 		Expect(storedUsers(ctx, pool)).To(HaveLen(1))
 	}, SpecTimeout(time.Minute))
 })
@@ -99,13 +99,13 @@ func storedUsers(ctx context.Context, pool *pgxpool.Pool) []storedUser {
 }
 
 func startCreateInitialAdmin(ctx context.Context, pool *pgxpool.Pool, name string) <-chan error {
-	created := make(chan error, 1)
+	creationErrorChan := make(chan error, 1)
 
 	go func() {
-		created <- CreateInitialAdmin(ctx, pool, name, validPassword)
+		creationErrorChan <- CreateInitialAdmin(ctx, pool, name, validPassword)
 	}()
 
-	return created
+	return creationErrorChan
 }
 
 // lockWaiters counts the sessions that wait for the initial admin's lock.
