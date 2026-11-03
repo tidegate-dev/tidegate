@@ -14,6 +14,6 @@ If stdin isn't a terminal, the command reads the password once, from the first l
 authority create-initial-admin alice < password.txt
 ```
 
-Note that `kubectl exec` and `ssh` connect stdin to a terminal only with `-t`. Without it, the command shows no prompt, and your terminal shows the password as you type it.
+Note that stdin is a terminal only with `kubectl exec -it` or `ssh -t`. Without `-t`, the command shows no prompt, and your terminal shows the password as you type it. Without `-i`, `kubectl exec` passes no stdin at all.
 
 The command uses the same `TIDEGATE_AUTHORITY__DATABASE__URL` as the authority, and the database must be migrated first. It works only while the database holds no user. Once a user exists, it fails and changes nothing, also when two runs start at the same time.
