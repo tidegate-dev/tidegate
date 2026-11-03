@@ -201,6 +201,19 @@ func run(ctx context.Context, cfg config.Config) error {
 		return err
 	}
 
+	if cfg.Server.Certificate != nil {
+		registration, err := cfg.Server.Certificate.ReportExpiry()
+		if err != nil {
+			return errors.Join(err, shutdownMetrics(context.Background()))
+		}
+
+		defer func() {
+			_ = registration.Unregister()
+		}()
+
+		go cfg.Server.Certificate.Watch(ctx)
+	}
+
 	metricsMux := http.NewServeMux()
 	metricsMux.Handle("GET /metrics", metricsHandler)
 
@@ -256,7 +269,7 @@ func apiServer(cfg config.Server, pool *pgxpool.Pool) *http.Server {
 	var tlsConfig *tls.Config
 
 	if cfg.Certificate != nil {
-		tlsConfig = &tls.Config{Certificates: []tls.Certificate{*cfg.Certificate}}
+		tlsConfig = &tls.Config{GetCertificate: cfg.Certificate.Get}
 
 		protocols.SetHTTP2(true)
 	} else {

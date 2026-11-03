@@ -10,6 +10,6 @@ authority
 
 Without them, it serves plain HTTP. If you set only one of them, the authority doesn't start.
 
-The authority reads both files when it starts, so restart it after you replace them.
+The certificate's key needs at least 2048 bits for RSA or 224 bits for an elliptic curve, the minimum NIST sets for use through 2030. The authority doesn't start with a shorter key.
 
-The [metrics](metrics.md) always use plain HTTP.
+When you replace the files, the authority uses the new certificate for new connections within a minute, without a restart. If the new files don't hold a certificate and its key, or the key is too short, it keeps the old one and logs an error. The [metrics](metrics.md) say when the certificate in use expires. They always use plain HTTP.
