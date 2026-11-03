@@ -143,27 +143,25 @@ func TestWatchLogsBrokenFilesOnce(t *testing.T) {
 	assert.Equal(t, 1, bytes.Count(logs.Bytes(), []byte("keeping the TLS certificate")))
 }
 
-func TestWatchReportsWhenTheCertificateExpires(t *testing.T) {
+func TestReportExpiryReportsWhenTheCertificateInUseExpires(t *testing.T) {
 	// The meter provider is global, so this test can't run in parallel.
 
 	// arrange
 	reader := sdkmetric.NewManualReader()
 	otel.SetMeterProvider(sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader)))
 
-	dir := t.TempDir()
-	certificate := load(t, dir, 1)
-	watch(t, certificate, nil)
-
-	var metrics metricdata.ResourceMetrics
+	certificate := load(t, t.TempDir(), 1)
 
 	// act
-	assert.Eventually(t, func() bool {
-		require.NoError(t, reader.Collect(context.Background(), &metrics))
-
-		return len(metrics.ScopeMetrics) > 0
-	}, 5*time.Second, 10*time.Millisecond)
+	registration, err := certificate.ReportExpiry()
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = registration.Unregister()
+	})
 
 	// assert
+	var metrics metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(context.Background(), &metrics))
 	require.Len(t, metrics.ScopeMetrics, 1)
 	require.Len(t, metrics.ScopeMetrics[0].Metrics, 1)
 

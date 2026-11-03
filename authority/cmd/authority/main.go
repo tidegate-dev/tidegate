@@ -202,6 +202,15 @@ func run(ctx context.Context, cfg config.Config) error {
 	}
 
 	if cfg.Server.Certificate != nil {
+		registration, err := cfg.Server.Certificate.ReportExpiry()
+		if err != nil {
+			return errors.Join(err, shutdownMetrics(context.Background()))
+		}
+
+		defer func() {
+			_ = registration.Unregister()
+		}()
+
 		go cfg.Server.Certificate.Watch(ctx)
 	}
 
