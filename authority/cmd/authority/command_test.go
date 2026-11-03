@@ -12,6 +12,7 @@ func TestHelpWorksWithoutConfig(t *testing.T) {
 	for _, args := range [][]string{
 		{"authority", "--help"},
 		{"authority", "migrate", "--help"},
+		{"authority", "create-initial-admin", "--help"},
 	} {
 		t.Run(args[1], func(t *testing.T) {
 			// arrange
@@ -47,6 +48,25 @@ func TestUnknownArgumentsAreRejected(t *testing.T) {
 
 			// assert
 			require.EqualError(t, err, `unknown command "bogus"`)
+		})
+	}
+}
+
+func TestCreateInitialAdminNeedsExactlyOneName(t *testing.T) {
+	t.Parallel()
+
+	for name, args := range map[string][]string{
+		"no name":   {"authority", "create-initial-admin"},
+		"two names": {"authority", "create-initial-admin", "alice", "bob"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			// act
+			err := newCommand().Run(t.Context(), args)
+
+			// assert
+			require.EqualError(t, err, "create-initial-admin takes exactly one argument, the user's name")
 		})
 	}
 }

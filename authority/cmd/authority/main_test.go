@@ -20,11 +20,11 @@ func TestServeTellsSystemdWhenReadyAndStopping(t *testing.T) {
 	socket := listenAsSystemd(t)
 	notifier := openNotifier(t)
 	ctx, cancel := context.WithCancel(context.Background())
-	served := make(chan error, 1)
+	serveErrorChan := make(chan error, 1)
 
 	// act
 	go func() {
-		served <- serve(ctx, notifier, map[string]*http.Server{"api": {Addr: "127.0.0.1:0"}})
+		serveErrorChan <- serve(ctx, notifier, map[string]*http.Server{"api": {Addr: "127.0.0.1:0"}})
 	}()
 
 	ready := receive(t, socket)
@@ -36,7 +36,7 @@ func TestServeTellsSystemdWhenReadyAndStopping(t *testing.T) {
 	// assert
 	assert.Equal(t, "READY=1", ready)
 	assert.Equal(t, "STOPPING=1", stopping)
-	require.NoError(t, <-served)
+	require.NoError(t, <-serveErrorChan)
 }
 
 func TestServeDoesNotTellSystemdReadyWhenListeningFails(t *testing.T) {
