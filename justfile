@@ -17,11 +17,6 @@ test: authority::test cli::test internal::test
 # Run the integration tests.
 test-integration: authority::test-integration
 
-# Measure which code the unit and integration tests run, into coverage.out.
-coverage:
-    TIDEGATE_TEST_DATABASE_URL="${TIDEGATE_TEST_DATABASE_URL:-postgres://tidegate:tidegate@127.0.0.1:5432/tidegate?sslmode=disable}" \
-        go test -race -tags integration -coverpkg=./... -coverprofile=coverage.out ./...
-
 # Generate code from the .proto files.
 generate: proto::generate authority::generate
 
