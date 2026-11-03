@@ -77,22 +77,22 @@ var _ = Describe("run", func() {
 
 			go writeDummy(authority.address)
 
-			Eventually(ctx, sessionsWaitingForALock).WithArguments(holder).Should(Equal(1), "the write never waited for the lock")
+			Eventually(ctx, countSessionsWaitingForALock).WithArguments(holder).Should(Equal(1), "the write never waited for the lock")
 		}, NodeTimeout(30*time.Second))
 
 		It("stops", func(ctx SpecContext) {
 			authority.stop()
 
-			Eventually(ctx, authority.stopped).WithTimeout(5*time.Second).Should(Receive(), "the authority didn't stop")
+			Eventually(ctx, authority.runErrorChan).WithTimeout(5*time.Second).Should(Receive(), "the authority didn't stop")
 		}, SpecTimeout(30*time.Second))
 	})
 })
 
 // runningAuthority is an authority that serves in the background.
 type runningAuthority struct {
-	address string
-	stop    context.CancelFunc
-	stopped chan error
+	address      string
+	stop         context.CancelFunc
+	runErrorChan chan error
 }
 
 // serveAuthority runs the authority on the database at url and returns once
@@ -105,13 +105,13 @@ func serveAuthority(ctx context.Context, url string) runningAuthority {
 	DeferCleanup(stop)
 
 	authority := runningAuthority{
-		address: freeAddress(GinkgoTB()),
-		stop:    stop,
-		stopped: make(chan error, 1),
+		address:      freeAddress(GinkgoTB()),
+		stop:         stop,
+		runErrorChan: make(chan error, 1),
 	}
 
 	go func() {
-		authority.stopped <- run(runCtx, config.Config{
+		authority.runErrorChan <- run(runCtx, config.Config{
 			Server:   config.Server{ListenAddress: authority.address},
 			Metrics:  config.Metrics{ListenAddress: "127.0.0.1:0"},
 			Database: config.Database{URL: url},
@@ -158,14 +158,14 @@ func lockDummies(ctx context.Context, conn *pgx.Conn) {
 	Expect(err).NotTo(HaveOccurred())
 }
 
-func sessionsWaitingForALock(ctx context.Context, conn *pgx.Conn) (int, error) {
-	var waiting int
+func countSessionsWaitingForALock(ctx context.Context, conn *pgx.Conn) (int, error) {
+	var sessions int
 
 	err := conn.QueryRow(ctx,
 		"SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock'",
-	).Scan(&waiting)
+	).Scan(&sessions)
 
-	return waiting, err
+	return sessions, err
 }
 
 func listening(address string) error {
