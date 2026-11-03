@@ -70,7 +70,7 @@ var _ = Describe("CreateInitialAdmin", func() {
 
 		firstCreationErrorChan := startCreateInitialAdmin(ctx, pool, "alice")
 		secondCreationErrorChan := startCreateInitialAdmin(ctx, pool, "bob")
-		Eventually(ctx, lockWaiters).WithArguments(pool).WithTimeout(30*time.Second).
+		Eventually(ctx, countSessionsWaitingForInitialAdminLock).WithArguments(pool).WithTimeout(30*time.Second).
 			Should(Equal(2), "the runs never waited for the lock")
 
 		_, err = holder.Exec(ctx, "SELECT pg_advisory_unlock($1)", initialAdminLockID)
@@ -108,16 +108,15 @@ func startCreateInitialAdmin(ctx context.Context, pool *pgxpool.Pool, name strin
 	return creationErrorChan
 }
 
-// lockWaiters counts the sessions that wait for the initial admin's lock.
-func lockWaiters(ctx context.Context, pool *pgxpool.Pool) (int, error) {
-	var waiters int
+func countSessionsWaitingForInitialAdminLock(ctx context.Context, pool *pgxpool.Pool) (int, error) {
+	var sessions int
 
 	// pg_locks splits a bigint advisory key into objid (low 32 bits) and
 	// classid (high 32 bits).
 	err := pool.QueryRow(ctx,
 		"SELECT count(*) FROM pg_locks WHERE locktype = 'advisory' AND NOT granted AND ((classid::bigint << 32) | objid::bigint) = $1",
 		initialAdminLockID,
-	).Scan(&waiters)
+	).Scan(&sessions)
 
-	return waiters, err
+	return sessions, err
 }
