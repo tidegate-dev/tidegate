@@ -90,6 +90,11 @@ func newCommand() *cli.Command {
 						return errors.New("create-initial-admin takes exactly one argument, the user's name")
 					}
 
+					err := users.ValidateName(cmd.Args().First())
+					if err != nil {
+						return err
+					}
+
 					cfg, err := loadConfig()
 					if err != nil {
 						return err

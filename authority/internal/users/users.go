@@ -28,6 +28,16 @@ var (
 // takes. goose uses its own lock ID for migrations.
 const initialAdminLockID int64 = 0x7469646567617465 // "tidegate" in ASCII
 
+// ValidateName returns ErrInvalidName if name is empty or starts or ends
+// with whitespace.
+func ValidateName(name string) error {
+	if name == "" || strings.TrimSpace(name) != name {
+		return ErrInvalidName
+	}
+
+	return nil
+}
+
 // AnyExist reports whether the database holds a user.
 func AnyExist(ctx context.Context, pool *pgxpool.Pool) (bool, error) {
 	exists, err := sqlc.New(pool).AnyUserExists(ctx)
@@ -42,8 +52,9 @@ func AnyExist(ctx context.Context, pool *pgxpool.Pool) (bool, error) {
 // returns ErrUserExists if any user exists, also when another run creates
 // one at the same time.
 func CreateInitialAdmin(ctx context.Context, pool *pgxpool.Pool, name, plaintext string) error {
-	if name == "" || strings.TrimSpace(name) != name {
-		return ErrInvalidName
+	err := ValidateName(name)
+	if err != nil {
+		return err
 	}
 
 	hash, err := password.Hash(plaintext)

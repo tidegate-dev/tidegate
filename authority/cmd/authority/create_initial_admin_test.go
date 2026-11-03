@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
@@ -39,6 +40,15 @@ var _ = Describe("authority create-initial-admin", func() {
 		Expect(userNames(ctx, url)).To(BeEmpty())
 	})
 
+	It("refuses an invalid name before it reads a password", func(ctx SpecContext) {
+		command := newCommand()
+		command.Reader = unreadable{}
+
+		err := command.Run(ctx, []string{"authority", "create-initial-admin", " alice"})
+
+		Expect(err).To(MatchError(users.ErrInvalidName))
+	})
+
 	It("refuses before it reads a password when a user exists", func(ctx SpecContext) {
 		Expect(runCreateInitialAdmin(ctx, "alice", "correct horse battery staple\n")).To(Succeed())
 
@@ -53,6 +63,13 @@ func runCreateInitialAdmin(ctx context.Context, name, stdin string) error {
 	command.Reader = strings.NewReader(stdin)
 
 	return command.Run(ctx, []string{"authority", "create-initial-admin", name})
+}
+
+// unreadable is a stdin that fails every read.
+type unreadable struct{}
+
+func (unreadable) Read([]byte) (int, error) {
+	return 0, errors.New("the command read stdin")
 }
 
 func userNames(ctx context.Context, url string) []string {
