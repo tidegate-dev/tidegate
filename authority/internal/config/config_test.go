@@ -196,8 +196,9 @@ func TestDisabledTLSRejectsTLSFiles(t *testing.T) {
 	t.Parallel()
 
 	for name, variable := range map[string]string{
-		"certificate": "TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE=/srv/tls/cert.pem",
-		"key":         "TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE=/srv/tls/key.pem",
+		"certificate":                     "TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE=/srv/tls/cert.pem",
+		"key":                             "TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE=/srv/tls/key.pem",
+		"certificate at its default path": "TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE=/etc/tidegate/authority/tls/tls.crt",
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()

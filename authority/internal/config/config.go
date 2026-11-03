@@ -137,6 +137,8 @@ func Load(environ []string) (Config, error) {
 
 	errs := unknownVariables(environ, known)
 
+	set := make(map[string]bool)
+
 	err = k.Load(env.Provider(".", env.Opt{
 		Prefix: envPrefix,
 		TransformFunc: func(name, value string) (string, any) {
@@ -144,6 +146,8 @@ func Load(environ []string) (Config, error) {
 			if !known[key] || value == "" {
 				return "", nil
 			}
+
+			set[key] = true
 
 			return key, value
 		},
@@ -160,7 +164,7 @@ func Load(environ []string) (Config, error) {
 		return Config{}, fmt.Errorf("decoding settings: %w", err)
 	}
 
-	cfg, err := validate(raw)
+	cfg, err := validate(raw, set)
 	if err != nil {
 		errs = append(errs, err)
 	}
@@ -172,8 +176,9 @@ func Load(environ []string) (Config, error) {
 	return cfg, nil
 }
 
-func validate(raw rawConfig) (Config, error) {
-	v := validator{keys: fieldKeys(&raw)}
+// validate checks raw. set holds the keys that a variable set.
+func validate(raw rawConfig, set map[string]bool) (Config, error) {
+	v := validator{keys: fieldKeys(&raw), set: set}
 
 	listenAddress, err := parseListenAddress(raw.Server.ListenAddress)
 	v.check(&raw.Server.ListenAddress, err)
@@ -225,6 +230,7 @@ func unknownVariables(environ []string, known map[string]bool) []error {
 
 type validator struct {
 	keys map[*string]string
+	set  map[string]bool
 	errs []error
 }
 
@@ -240,7 +246,7 @@ func (v *validator) tls(raw *rawTLS) TLS {
 	disabled, err := parseBool(raw.Disabled)
 	v.check(&raw.Disabled, err)
 
-	if disabled && (raw.CertFile != defaults.Server.TLS.CertFile || raw.KeyFile != defaults.Server.TLS.KeyFile) {
+	if disabled && (v.set[v.keys[&raw.CertFile]] || v.set[v.keys[&raw.KeyFile]]) {
 		v.check(&raw.Disabled, fmt.Errorf("can't be true while %s or %s is set",
 			variableFromKey(v.keys[&raw.CertFile]), variableFromKey(v.keys[&raw.KeyFile])))
 	}
