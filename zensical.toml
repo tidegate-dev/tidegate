@@ -8,6 +8,7 @@ nav = [
   { "Authority" = [
     { "Configuration" = "authority/config.md" },
     { "Database" = "authority/database.md" },
+    { "First admin" = "authority/initial-admin.md" },
     { "TLS" = "authority/tls.md" },
     { "Metrics" = "authority/metrics.md" },
     { "Running under systemd" = "authority/systemd.md" },

@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
@@ -23,6 +24,7 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
 	"github.com/tidegate-dev/tidegate/authority/internal/dummy"
 	"github.com/tidegate-dev/tidegate/authority/internal/ping"
+	"github.com/tidegate-dev/tidegate/authority/internal/users"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
 	"github.com/tidegate-dev/tidegate/internal/handlererrors"
 	"github.com/tidegate-dev/tidegate/internal/logging"
@@ -77,6 +79,25 @@ func newCommand() *cli.Command {
 					return migrate(ctx, cfg.Database)
 				},
 			},
+			{
+				Name:      "create-initial-admin",
+				Usage:     "create the first user with a local password, then exit",
+				ArgsUsage: "<name>",
+				Description: "Asks for the password twice on a terminal, or reads it from the first line of stdin.\n" +
+					"Works only while the database holds no user.",
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					if cmd.Args().Len() != 1 {
+						return errors.New("create-initial-admin takes exactly one argument, the user's name")
+					}
+
+					cfg, err := loadConfig()
+					if err != nil {
+						return err
+					}
+
+					return createInitialAdmin(ctx, cfg.Database, cmd.Args().First(), cmd.Reader, cmd.ErrWriter)
+				},
+			},
 		},
 	}
 }
@@ -88,6 +109,11 @@ func setUp(cmd *cli.Command) (config.Config, error) {
 		return config.Config{}, fmt.Errorf("unknown command %q", cmd.Args().First())
 	}
 
+	return loadConfig()
+}
+
+// loadConfig loads the config and sets up logging from it.
+func loadConfig() (config.Config, error) {
 	cfg, err := config.Load(os.Environ())
 	if err != nil {
 		return config.Config{}, fmt.Errorf("%w:\n%w", errInvalidConfig, err)
@@ -107,6 +133,44 @@ func migrate(ctx context.Context, cfg config.Database) error {
 	defer pool.Close()
 
 	return db.Migrate(ctx, pool)
+}
+
+// createInitialAdmin checks the schema and looks for users before it asks
+// for the password, so the user doesn't type it for nothing.
+func createInitialAdmin(ctx context.Context, cfg config.Database, name string, in io.Reader, out io.Writer) error {
+	pool, err := db.Open(ctx, cfg.URL)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
+	err = checkSchema(ctx, pool)
+	if err != nil {
+		return err
+	}
+
+	exists, err := users.AnyExist(ctx, pool)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		return users.ErrUserExists
+	}
+
+	plaintext, err := newPassword(ctx, in, out)
+	if err != nil {
+		return err
+	}
+
+	err = users.CreateInitialAdmin(ctx, pool, name, plaintext)
+	if err != nil {
+		return err
+	}
+
+	slog.Info("created the initial admin", "name", name)
+
+	return nil
 }
 
 func run(ctx context.Context, cfg config.Config) error {
@@ -157,10 +221,7 @@ func openDatabase(ctx context.Context, cfg config.Database) (*pgxpool.Pool, erro
 	if cfg.MigrateOnStart {
 		err = db.Migrate(ctx, pool)
 	} else {
-		err = db.CheckSchema(ctx, pool)
-		if errors.Is(err, db.ErrSchemaTooOld) {
-			err = fmt.Errorf("%w. Run authority migrate first", err)
-		}
+		err = checkSchema(ctx, pool)
 	}
 
 	if err != nil {
@@ -170,6 +231,15 @@ func openDatabase(ctx context.Context, cfg config.Database) (*pgxpool.Pool, erro
 	}
 
 	return pool, nil
+}
+
+func checkSchema(ctx context.Context, pool *pgxpool.Pool) error {
+	err := db.CheckSchema(ctx, pool)
+	if errors.Is(err, db.ErrSchemaTooOld) {
+		return fmt.Errorf("%w. Run authority migrate first", err)
+	}
+
+	return err
 }
 
 func apiServer(cfg config.Server, pool *pgxpool.Pool) *http.Server {

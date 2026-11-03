@@ -1,0 +1,82 @@
+//go:build integration
+
+package main
+
+import (
+	"context"
+	"strings"
+
+	"github.com/jackc/pgx/v5"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
+	"github.com/tidegate-dev/tidegate/authority/internal/config"
+	"github.com/tidegate-dev/tidegate/authority/internal/db"
+	"github.com/tidegate-dev/tidegate/authority/internal/dbtest"
+	"github.com/tidegate-dev/tidegate/authority/internal/password"
+	"github.com/tidegate-dev/tidegate/authority/internal/users"
+)
+
+var _ = Describe("authority create-initial-admin", func() {
+	var url string
+
+	BeforeEach(func() {
+		url = dbtest.NewDatabase()
+		GinkgoT().Setenv("TIDEGATE_AUTHORITY__DATABASE__URL", url)
+	})
+
+	It("creates the user with the password from stdin", func(ctx SpecContext) {
+		Expect(migrate(ctx, config.Database{URL: url})).To(Succeed())
+
+		err := runCreateInitialAdmin(ctx, "alice", "correct horse battery staple\n")
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(userNames(ctx, url)).To(ConsistOf("alice"))
+	})
+
+	It("doesn't count the line ending as part of the password", func(ctx SpecContext) {
+		Expect(migrate(ctx, config.Database{URL: url})).To(Succeed())
+
+		err := runCreateInitialAdmin(ctx, "alice", "fourteen chars\n")
+
+		Expect(err).To(MatchError(password.ErrTooShort))
+		Expect(userNames(ctx, url)).To(BeEmpty())
+	})
+
+	It("refuses before it reads a password when a user exists", func(ctx SpecContext) {
+		Expect(migrate(ctx, config.Database{URL: url})).To(Succeed())
+		Expect(runCreateInitialAdmin(ctx, "alice", "correct horse battery staple\n")).To(Succeed())
+
+		err := runCreateInitialAdmin(ctx, "bob", "")
+
+		Expect(err).To(MatchError(users.ErrUserExists))
+	})
+
+	It("refuses a database that isn't migrated", func(ctx SpecContext) {
+		err := runCreateInitialAdmin(ctx, "alice", "correct horse battery staple\n")
+
+		Expect(err).To(MatchError(db.ErrSchemaTooOld))
+		Expect(err).To(MatchError(ContainSubstring("Run authority migrate first")))
+	})
+})
+
+func runCreateInitialAdmin(ctx context.Context, name, stdin string) error {
+	command := newCommand()
+	command.Reader = strings.NewReader(stdin)
+
+	return command.Run(ctx, []string{"authority", "create-initial-admin", name})
+}
+
+func userNames(ctx context.Context, url string) []string {
+	GinkgoHelper()
+
+	conn := connectToDatabase(ctx, url)
+
+	rows, err := conn.Query(ctx, "SELECT name FROM users")
+	Expect(err).NotTo(HaveOccurred())
+
+	names, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	Expect(err).NotTo(HaveOccurred())
+
+	return names
+}
