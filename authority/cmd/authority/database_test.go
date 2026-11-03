@@ -112,7 +112,7 @@ func serveAuthority(ctx context.Context, url string) runningAuthority {
 
 	go func() {
 		authority.runErrorChan <- run(runCtx, config.Config{
-			Server:   config.Server{ListenAddress: authority.address},
+			Server:   config.Server{ListenAddress: authority.address, TLS: config.TLS{Disabled: true}},
 			Metrics:  config.Metrics{ListenAddress: "127.0.0.1:0"},
 			Database: config.Database{URL: url},
 		}, 100*time.Millisecond)

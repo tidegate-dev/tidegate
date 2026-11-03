@@ -1,14 +1,23 @@
 # TLS
 
-The API serves HTTPS when you set a certificate file and a key file:
+The API serves HTTPS with a certificate and its key from these files:
+
+```
+/etc/tidegate/authority/tls/tls.crt
+/etc/tidegate/authority/tls/tls.key
+```
+
+The names are the ones in a Kubernetes TLS Secret, so in Kubernetes you can mount the Secret at `/etc/tidegate/authority/tls`. If your files are somewhere else, set their paths:
 
 ```sh
-TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE=/etc/tidegate/tls.crt \
-TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE=/etc/tidegate/tls.key \
+TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE=/srv/tls/cert.pem \
+TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE=/srv/tls/key.pem \
 authority
 ```
 
-Without them, it serves plain HTTP. If you set only one of them, the authority doesn't start.
+If a file is missing, the authority doesn't start and names the file. Only `authority` without a command, which serves the API, reads the files. `authority migrate` and `authority create-initial-admin` work without them.
+
+To serve plain HTTP, for example behind a proxy that terminates TLS, set `TIDEGATE_AUTHORITY__SERVER__TLS__DISABLED=true`. The authority then logs a warning when it starts. If you also set the path of the certificate or the key, it doesn't start.
 
 The certificate's key needs at least 2048 bits for RSA or 224 bits for an elliptic curve, the minimum NIST sets for use through 2030. The authority doesn't start with a shorter key.
 

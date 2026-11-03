@@ -1,15 +1,7 @@
 package config_test
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
-	"crypto/x509"
-	"encoding/pem"
 	"log/slog"
-	"math/big"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -49,7 +41,7 @@ func TestVariablesOverrideDefaults(t *testing.T) {
 	// assert
 	require.NoError(t, err)
 	assert.Equal(t, config.Config{
-		Server:   config.Server{ListenAddress: ":9090"},
+		Server:   config.Server{ListenAddress: ":9090", TLS: defaultConfig().Server.TLS},
 		Metrics:  config.Metrics{ListenAddress: ":9100"},
 		Database: config.Database{URL: databaseURL, MigrateOnStart: true},
 		Log:      config.Log{Level: slog.LevelDebug, Format: logging.FormatText},
@@ -175,68 +167,49 @@ func TestInvalidValuesNameTheirVariable(t *testing.T) {
 	}
 }
 
-func TestCertificateAndKeyTogetherEnableTLS(t *testing.T) {
+func TestTLSFilesCanBeSet(t *testing.T) {
 	t.Parallel()
-
-	// arrange
-	certFile, keyFile := writeKeyPair(t)
 
 	// act
 	cfg, err := config.Load(withDatabaseURL(
-		"TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE="+certFile,
-		"TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE="+keyFile,
+		"TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE=/srv/tls/cert.pem",
+		"TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE=/srv/tls/key.pem",
 	))
 
 	// assert
 	require.NoError(t, err)
-	assert.NotNil(t, cfg.Server.Certificate)
+	assert.Equal(t, config.TLS{CertFile: "/srv/tls/cert.pem", KeyFile: "/srv/tls/key.pem"}, cfg.Server.TLS)
 }
 
-func TestCertificateOrKeyAloneIsRejected(t *testing.T) {
+func TestTLSCanBeDisabled(t *testing.T) {
 	t.Parallel()
 
-	tests := map[string]struct {
-		variable string
-		want     string
-	}{
-		"certificate only": {
-			variable: "TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE=cert.pem",
-			want:     "TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE: must be set together with TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE",
-		},
-		"key only": {
-			variable: "TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE=key.pem",
-			want:     "TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE: must be set together with TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE",
-		},
-	}
+	// act
+	cfg, err := config.Load(withDatabaseURL("TIDEGATE_AUTHORITY__SERVER__TLS__DISABLED=true"))
 
-	for name, tt := range tests {
+	// assert
+	require.NoError(t, err)
+	assert.True(t, cfg.Server.TLS.Disabled)
+}
+
+func TestDisabledTLSRejectsTLSFiles(t *testing.T) {
+	t.Parallel()
+
+	for name, variable := range map[string]string{
+		"certificate": "TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE=/srv/tls/cert.pem",
+		"key":         "TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE=/srv/tls/key.pem",
+	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			// act
-			_, err := config.Load(withDatabaseURL(tt.variable))
+			_, err := config.Load(withDatabaseURL("TIDEGATE_AUTHORITY__SERVER__TLS__DISABLED=true", variable))
 
 			// assert
-			assert.EqualError(t, err, tt.want)
+			assert.EqualError(t, err, "TIDEGATE_AUTHORITY__SERVER__TLS__DISABLED: "+
+				"can't be true while TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE or TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE is set")
 		})
 	}
-}
-
-func TestMissingKeyPairNamesTheCertificateVariable(t *testing.T) {
-	t.Parallel()
-
-	// arrange
-	directory := t.TempDir()
-
-	// act
-	_, err := config.Load(withDatabaseURL(
-		"TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE="+filepath.Join(directory, "cert.pem"),
-		"TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE="+filepath.Join(directory, "key.pem"),
-	))
-
-	// assert
-	require.Error(t, err)
-	assert.True(t, strings.HasPrefix(err.Error(), "TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE: loading the key pair: "), err.Error())
 }
 
 func TestDatabaseURLIsRequired(t *testing.T) {
@@ -274,29 +247,6 @@ func TestInvalidPGVariableIsReportedWithTheDatabaseURL(t *testing.T) {
 	assert.EqualError(t, err, "TIDEGATE_AUTHORITY__DATABASE__URL: "+invalidDatabaseURL)
 }
 
-func writeKeyPair(t *testing.T) (certFile, keyFile string) {
-	t.Helper()
-
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	require.NoError(t, err)
-
-	template := &x509.Certificate{SerialNumber: big.NewInt(1), DNSNames: []string{"localhost"}}
-	der, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
-	require.NoError(t, err)
-
-	keyDER, err := x509.MarshalPKCS8PrivateKey(key)
-	require.NoError(t, err)
-
-	directory := t.TempDir()
-	certFile = filepath.Join(directory, "cert.pem")
-	keyFile = filepath.Join(directory, "key.pem")
-
-	require.NoError(t, os.WriteFile(certFile, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), 0o600))
-	require.NoError(t, os.WriteFile(keyFile, pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: keyDER}), 0o600))
-
-	return certFile, keyFile
-}
-
 const (
 	databaseURL        = "postgres://localhost/tidegate"
 	invalidDatabaseURL = "isn't a valid Postgres connection URL, or a PG variable like PGSSLMODE is invalid"
@@ -308,7 +258,10 @@ func withDatabaseURL(variables ...string) []string {
 
 func defaultConfig() config.Config {
 	return config.Config{
-		Server:   config.Server{ListenAddress: "127.0.0.1:8080"},
+		Server: config.Server{
+			ListenAddress: "127.0.0.1:8080",
+			TLS:           config.TLS{CertFile: "/etc/tidegate/authority/tls/tls.crt", KeyFile: "/etc/tidegate/authority/tls/tls.key"},
+		},
 		Metrics:  config.Metrics{ListenAddress: "127.0.0.1:9464"},
 		Database: config.Database{URL: databaseURL},
 		Log:      config.Log{Level: slog.LevelInfo, Format: logging.FormatJSON},

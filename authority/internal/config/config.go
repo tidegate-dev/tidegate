@@ -16,7 +16,6 @@ import (
 	"github.com/knadh/koanf/providers/structs"
 	"github.com/knadh/koanf/v2"
 
-	"github.com/tidegate-dev/tidegate/internal/certreload"
 	"github.com/tidegate-dev/tidegate/internal/logging"
 )
 
@@ -41,6 +40,7 @@ type rawServer struct {
 }
 
 type rawTLS struct {
+	Disabled string `koanf:"disabled"`
 	CertFile string `koanf:"cert_file"`
 	KeyFile  string `koanf:"key_file"`
 }
@@ -62,6 +62,12 @@ type rawLog struct {
 var defaults = rawConfig{
 	Server: rawServer{
 		ListenAddress: "127.0.0.1:8080",
+		// The file names of a Kubernetes TLS Secret, in a folder per component.
+		TLS: rawTLS{
+			Disabled: "false",
+			CertFile: "/etc/tidegate/authority/tls/tls.crt",
+			KeyFile:  "/etc/tidegate/authority/tls/tls.key",
+		},
 	},
 	Metrics: rawMetrics{
 		ListenAddress: "127.0.0.1:9464",
@@ -86,8 +92,15 @@ type Config struct {
 // Server holds the settings of the authority's API server.
 type Server struct {
 	ListenAddress string
-	// Certificate is nil when the server serves plain HTTP.
-	Certificate *certreload.Certificate
+	TLS           TLS
+}
+
+// TLS holds where the API server finds its certificate, or that it serves
+// plain HTTP.
+type TLS struct {
+	Disabled bool
+	CertFile string
+	KeyFile  string
 }
 
 // Metrics holds the settings of the server that serves the metrics.
@@ -165,7 +178,7 @@ func validate(raw rawConfig) (Config, error) {
 	listenAddress, err := parseListenAddress(raw.Server.ListenAddress)
 	v.check(&raw.Server.ListenAddress, err)
 
-	certificate := v.certificate(&raw.Server.TLS.CertFile, &raw.Server.TLS.KeyFile)
+	tls := v.tls(&raw.Server.TLS)
 
 	metricsListenAddress, err := parseListenAddress(raw.Metrics.ListenAddress)
 	v.check(&raw.Metrics.ListenAddress, err)
@@ -186,7 +199,7 @@ func validate(raw rawConfig) (Config, error) {
 	}
 
 	return Config{
-		Server:   Server{ListenAddress: listenAddress, Certificate: certificate},
+		Server:   Server{ListenAddress: listenAddress, TLS: tls},
 		Metrics:  Metrics{ListenAddress: metricsListenAddress},
 		Database: Database{URL: raw.Database.URL, MigrateOnStart: migrateOnStart},
 		Log:      Log{Level: level, Format: format},
@@ -223,25 +236,16 @@ func (v *validator) check(field *string, err error) {
 	}
 }
 
-func (v *validator) certificate(certFile, keyFile *string) *certreload.Certificate {
-	switch {
-	case *certFile == "" && *keyFile == "":
-		return nil
-	case *certFile == "":
-		v.check(certFile, fmt.Errorf("must be set together with %s", variableFromKey(v.keys[keyFile])))
-		return nil
-	case *keyFile == "":
-		v.check(keyFile, fmt.Errorf("must be set together with %s", variableFromKey(v.keys[certFile])))
-		return nil
+func (v *validator) tls(raw *rawTLS) TLS {
+	disabled, err := parseBool(raw.Disabled)
+	v.check(&raw.Disabled, err)
+
+	if disabled && (raw.CertFile != defaults.Server.TLS.CertFile || raw.KeyFile != defaults.Server.TLS.KeyFile) {
+		v.check(&raw.Disabled, fmt.Errorf("can't be true while %s or %s is set",
+			variableFromKey(v.keys[&raw.CertFile]), variableFromKey(v.keys[&raw.KeyFile])))
 	}
 
-	certificate, err := certreload.Load(*certFile, *keyFile)
-	if err != nil {
-		v.check(certFile, fmt.Errorf("loading the key pair: %w", err))
-		return nil
-	}
-
-	return certificate
+	return TLS{Disabled: disabled, CertFile: raw.CertFile, KeyFile: raw.KeyFile}
 }
 
 func fieldKeys(raw *rawConfig) map[*string]string {
