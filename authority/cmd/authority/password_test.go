@@ -24,6 +24,19 @@ func TestAskPasswordTwiceReturnsMatchingEntries(t *testing.T) {
 	assert.Equal(t, "correct horse battery staple", password)
 }
 
+func TestAskPasswordTwiceAcceptsEntriesThatDifferOnlyInTheirEncoding(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	ask := answers("caf\u00e9 au lait, bitte", "cafe\u0301 au lait, bitte")
+
+	// act
+	_, err := askPasswordTwice(ask)
+
+	// assert
+	require.NoError(t, err)
+}
+
 func TestAskPasswordTwiceRefusesDifferentEntries(t *testing.T) {
 	t.Parallel()
 

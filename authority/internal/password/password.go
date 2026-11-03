@@ -72,14 +72,24 @@ func prepare(password string) (string, error) {
 		return "", ErrTooLong
 	}
 
-	// NIST SP 800-63B asks for normalization, so a password matches however
-	// the client encodes it, for example é as one code point or as e with a
-	// combining accent.
-	password = norm.NFKC.String(password)
+	password = normalize(password)
 
 	if utf8.RuneCountInString(password) < MinLength {
 		return "", ErrTooShort
 	}
 
 	return password, nil
+}
+
+// Equivalent reports whether a and b are the same password once normalized,
+// so they get the same hash.
+func Equivalent(a, b string) bool {
+	return normalize(a) == normalize(b)
+}
+
+// normalize follows NIST SP 800-63B, so a password matches however the
+// client encodes it, for example é as one code point or as e with a
+// combining accent.
+func normalize(password string) string {
+	return norm.NFKC.String(password)
 }

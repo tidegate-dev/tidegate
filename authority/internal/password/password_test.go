@@ -124,3 +124,25 @@ func FuzzPrepareTreatsEquivalentUnicodeFormsAsTheSamePassword(f *testing.F) {
 		}
 	})
 }
+
+func TestEquivalentComparesTheNormalizedForms(t *testing.T) {
+	t.Parallel()
+
+	for name, test := range map[string]struct {
+		first, second string
+		expected      bool
+	}{
+		"é in two encodings":  {"café au lait, bitte", "café au lait, bitte", true},
+		"different passwords": {"café au lait, bitte", "café au lait, danke", false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			// act
+			actual := Equivalent(test.first, test.second)
+
+			// assert
+			assert.Equal(t, test.expected, actual)
+		})
+	}
+}

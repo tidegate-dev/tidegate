@@ -38,7 +38,7 @@ func askPasswordTwice(ask func(prompt string) (string, error)) (string, error) {
 		return "", err
 	}
 
-	if first != second {
+	if !password.Equivalent(first, second) {
 		return "", errPasswordsDiffer
 	}
 
