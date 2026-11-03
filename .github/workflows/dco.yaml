@@ -2,6 +2,8 @@ name: DCO
 
 on:
   pull_request:
+    # edited also fires when the base branch changes, which changes the range.
+    types: [opened, synchronize, reopened, edited]
 
 permissions:
   contents: read
@@ -14,15 +16,22 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # Fetches every branch, so origin/<base branch> exists for the range
+          # of commits below.
           fetch-depth: 0
           persist-credentials: false
       - name: Check that every commit is signed off
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_REF: ${{ github.base_ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
+          # The event's base.sha can predate an update of the pull request's
+          # branch, and then the range would take in commits from the base.
+          # Assigned first, because a failing command inside the for line
+          # wouldn't stop the step.
+          commits=$(git rev-list --no-merges "origin/$BASE_REF..$HEAD_SHA" --)
           failed=0
-          for commit in $(git rev-list --no-merges "$BASE_SHA..$HEAD_SHA"); do
+          for commit in $commits; do
             email=$(git show -s --format=%ae "$commit")
             if ! git show -s --format=%B "$commit" | grep '^Signed-off-by: ' | grep -qF "<$email>"; then
               echo "::error::Commit $commit has no Signed-off-by line for its author <$email>."
