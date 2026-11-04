@@ -24,6 +24,7 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
 	"github.com/tidegate-dev/tidegate/authority/internal/dummy"
 	"github.com/tidegate-dev/tidegate/authority/internal/login"
+	"github.com/tidegate-dev/tidegate/authority/internal/logintoken"
 	"github.com/tidegate-dev/tidegate/authority/internal/ping"
 	"github.com/tidegate-dev/tidegate/authority/internal/users"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
@@ -202,10 +203,12 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	}
 	defer pool.Close()
 
-	loginService, err := login.NewService(sqlc.New(pool), cfg.Login.TokenLifetime)
+	authenticator, err := users.NewAuthenticator(pool)
 	if err != nil {
 		return err
 	}
+
+	loginService := login.NewService(authenticator, logintoken.NewStore(pool, cfg.Login.TokenLifetime))
 
 	notifier, err := systemd.Open()
 	if err != nil {
