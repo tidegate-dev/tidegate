@@ -166,9 +166,10 @@ func TestRunStopsAtAMissingCertificateBeforeTheDatabase(t *testing.T) {
 	t.Parallel()
 
 	// arrange
+	_, keyFile := writeKeyPair(t)
 	missing := filepath.Join(t.TempDir(), "tls.crt")
 	cfg := config.Config{
-		Server:   config.Server{TLS: config.TLS{CertFile: missing, KeyFile: missing}},
+		Server:   config.Server{TLS: config.TLS{CertFile: missing, KeyFile: keyFile}},
 		Database: config.Database{URL: "postgres://tidegate@127.0.0.1:1/tidegate?sslmode=disable"},
 	}
 
