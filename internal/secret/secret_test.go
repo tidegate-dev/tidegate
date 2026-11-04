@@ -25,6 +25,16 @@ func TestRevealReturnsTheValue(t *testing.T) {
 	assert.Equal(t, value, revealed)
 }
 
+func TestRevealReturnsAnEmptyStringForTheZeroString(t *testing.T) {
+	t.Parallel()
+
+	// act
+	revealed := secret.String{}.Reveal()
+
+	// assert
+	assert.Empty(t, revealed)
+}
+
 func TestFormattingHidesTheValue(t *testing.T) {
 	t.Parallel()
 
@@ -55,6 +65,30 @@ func TestFormattingAStructHidesTheValue(t *testing.T) {
 
 	// assert
 	assert.NotContains(t, formatted, value)
+}
+
+func TestFormattingAStructHidesTheValueInAnUnexportedField(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	// fmt doesn't call Format or String on an unexported field.
+	login := struct {
+		name     string
+		password secret.String
+	}{name: "alice", password: secret.New(value)}
+
+	var logs bytes.Buffer
+
+	logger := slog.New(slog.NewTextHandler(&logs, nil))
+
+	// act
+	formatted := fmt.Sprintf("%v %+v %#v", login, login, login)
+
+	logger.Info("login", "login", login)
+
+	// assert
+	assert.NotContains(t, formatted, value)
+	assert.NotContains(t, logs.String(), value)
 }
 
 func TestLoggingHidesTheValue(t *testing.T) {

@@ -12,17 +12,23 @@ const hidden = "****"
 
 // String holds a value that prints as ****. Only Reveal returns it.
 type String struct {
-	value string
+	// A pointer, because fmt prints an unexported field of another struct
+	// without calling its methods, and prints a pointer there as an address.
+	value *string
 }
 
 // New returns value as a String.
 func New(value string) String {
-	return String{value: value}
+	return String{value: &value}
 }
 
-// Reveal returns the value.
+// Reveal returns the value, or "" for the zero String.
 func (s String) Reveal() string {
-	return s.value
+	if s.value == nil {
+		return ""
+	}
+
+	return *s.value
 }
 
 // String returns ****.
