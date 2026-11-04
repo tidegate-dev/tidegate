@@ -1,6 +1,7 @@
 package password
 
 import (
+	"encoding/base64"
 	"strings"
 	"testing"
 
@@ -143,6 +144,112 @@ func TestEquivalentComparesTheNormalizedForms(t *testing.T) {
 
 			// assert
 			assert.Equal(t, test.expected, actual)
+		})
+	}
+}
+
+func TestVerifyAcceptsTheHashedPassword(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	hash, err := Hash("correct horse battery staple")
+	require.NoError(t, err)
+
+	// act
+	ok, err := Verify("correct horse battery staple", hash)
+
+	// assert
+	require.NoError(t, err)
+	assert.True(t, ok)
+}
+
+func TestVerifyRejectsAnotherPassword(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	hash, err := Hash("correct horse battery staple")
+	require.NoError(t, err)
+
+	// act
+	ok, err := Verify("correct horse battery stapler", hash)
+
+	// assert
+	require.NoError(t, err)
+	assert.False(t, ok)
+}
+
+func TestVerifyReadsTheParametersFromTheHash(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	// From the argon2 command of the reference implementation, libargon2:
+	// echo -n 'correct horse battery staple' | argon2 tidegate-salt-16 -id -t 1 -m 3 -p 1 -l 16 -e
+	const hash = "$argon2id$v=19$m=8,t=1,p=1$dGlkZWdhdGUtc2FsdC0xNg$OtzZSdevu1lF+xEZ6HckGA"
+
+	// act
+	ok, err := Verify("correct horse battery staple", hash)
+
+	// assert
+	require.NoError(t, err)
+	assert.True(t, ok)
+}
+
+func TestVerifyTreatsEquivalentUnicodeFormsAsTheSamePassword(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	hash, err := Hash("café au lait, bitte")
+	require.NoError(t, err)
+
+	// act
+	ok, err := Verify("café au lait, bitte", hash)
+
+	// assert
+	require.NoError(t, err)
+	assert.True(t, ok)
+}
+
+func TestVerifyRefusesAPasswordOver1024Bytes(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	hash, err := Hash("correct horse battery staple")
+	require.NoError(t, err)
+
+	// act
+	_, err = Verify(strings.Repeat("a", 1025), hash)
+
+	// assert
+	require.ErrorIs(t, err, ErrTooLong)
+}
+
+func TestVerifyFailsOnAMalformedHash(t *testing.T) {
+	t.Parallel()
+
+	for name, hash := range map[string]string{
+		"empty":             "",
+		"another algorithm": "$argon2i$v=19$m=65536,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
+		"another version":   "$argon2id$v=16$m=65536,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
+		"missing the key":   "$argon2id$v=19$m=65536,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg",
+		"bad parameters":    "$argon2id$v=19$m=65536,t=3$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
+		"zero iterations":   "$argon2id$v=19$m=65536,t=0,p=4$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
+		"zero threads":      "$argon2id$v=19$m=65536,t=3,p=0$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
+		"bad salt":          "$argon2id$v=19$m=65536,t=3,p=4$not*base64$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
+		"empty key":         "$argon2id$v=19$m=65536,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$",
+		"key over 1024 bytes": "$argon2id$v=19$m=65536,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$" +
+			base64.RawStdEncoding.EncodeToString(make([]byte, 1025)),
+		"more memory than Hash uses": "$argon2id$v=19$m=131072,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
+		"more iterations than Hash":  "$argon2id$v=19$m=65536,t=4,p=4$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
+		"256 threads":                "$argon2id$v=19$m=65536,t=3,p=256$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			// act
+			_, err := Verify("correct horse battery staple", hash)
+
+			// assert
+			require.ErrorIs(t, err, ErrMalformedHash)
 		})
 	}
 }

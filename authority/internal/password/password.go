@@ -3,8 +3,13 @@ package password
 
 import (
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/base64"
+	"errors"
 	"fmt"
+	"math"
+	"strconv"
+	"strings"
 	"unicode/utf8"
 
 	"golang.org/x/crypto/argon2"
@@ -34,6 +39,9 @@ var (
 	ErrTooShort = fmt.Errorf("the password must have at least %d characters", MinLength)
 	// ErrTooLong means a password has more than MaxBytes bytes.
 	ErrTooLong = fmt.Errorf("the password must have at most %d bytes", MaxBytes)
+	// ErrMalformedHash means a hash isn't an argon2id PHC string that Verify
+	// can read.
+	ErrMalformedHash = errors.New("the password hash isn't a valid argon2id hash")
 )
 
 // Hash returns password's argon2id hash with a new random salt, as a PHC
@@ -92,4 +100,100 @@ func Equivalent(a, b string) bool {
 // combining accent.
 func normalize(password string) string {
 	return norm.NFKC.String(password)
+}
+
+// Verify reports whether password matches hash, a PHC string from Hash. It
+// takes the parameters from hash, so hashes made with cheaper parameters
+// still work. It returns ErrTooLong for a password over MaxBytes, before hashing,
+// and ErrMalformedHash for a hash it can't read. MinLength doesn't apply,
+// because a short password just doesn't match.
+func Verify(password, hash string) (bool, error) {
+	if len(password) > MaxBytes {
+		return false, ErrTooLong
+	}
+
+	params, err := parse(hash)
+	if err != nil {
+		return false, err
+	}
+
+	key := argon2.IDKey([]byte(normalize(password)), params.salt,
+		params.iterations, params.memoryKiB, params.threads, uint32(len(params.key))) //nolint:gosec // parse limits the key to maxKeyLength.
+
+	return subtle.ConstantTimeCompare(key, params.key) == 1, nil
+}
+
+type parsedHash struct {
+	memoryKiB, iterations uint32
+	threads               uint8
+	salt, key             []byte
+}
+
+// Verify refuses a hash that costs more than one from Hash, so a caller can
+// rely on Hash's parameters to bound the cost of a check.
+const (
+	maxMemoryKiB  = memoryKiB
+	maxIterations = iterations
+	maxKeyLength  = keyLength
+)
+
+func parse(hash string) (parsedHash, error) {
+	parts := strings.Split(hash, "$")
+	if len(parts) != 6 || parts[0] != "" || parts[1] != "argon2id" ||
+		parts[2] != fmt.Sprintf("v=%d", argon2.Version) {
+		return parsedHash{}, ErrMalformedHash
+	}
+
+	params := strings.Split(parts[3], ",")
+	if len(params) != 3 {
+		return parsedHash{}, ErrMalformedHash
+	}
+
+	memoryKiB, err := parseParam(params[0], "m")
+	if err != nil || memoryKiB > maxMemoryKiB {
+		return parsedHash{}, ErrMalformedHash
+	}
+
+	iterations, err := parseParam(params[1], "t")
+	if err != nil || iterations == 0 || iterations > maxIterations {
+		return parsedHash{}, ErrMalformedHash
+	}
+
+	threads, err := parseParam(params[2], "p")
+	if err != nil || threads == 0 || threads > math.MaxUint8 {
+		return parsedHash{}, ErrMalformedHash
+	}
+
+	salt, err := base64.RawStdEncoding.Strict().DecodeString(parts[4])
+	if err != nil {
+		return parsedHash{}, ErrMalformedHash
+	}
+
+	key, err := base64.RawStdEncoding.Strict().DecodeString(parts[5])
+	if err != nil || len(key) == 0 || len(key) > maxKeyLength {
+		return parsedHash{}, ErrMalformedHash
+	}
+
+	return parsedHash{
+		memoryKiB:  memoryKiB,
+		iterations: iterations,
+		threads:    uint8(threads),
+		salt:       salt,
+		key:        key,
+	}, nil
+}
+
+// parseParam reads a parameter like m=65536.
+func parseParam(param, name string) (uint32, error) {
+	value, found := strings.CutPrefix(param, name+"=")
+	if !found {
+		return 0, ErrMalformedHash
+	}
+
+	parsed, err := strconv.ParseUint(value, 10, 32)
+	if err != nil {
+		return 0, ErrMalformedHash
+	}
+
+	return uint32(parsed), nil
 }
