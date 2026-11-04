@@ -51,7 +51,7 @@ go tool cover -html=coverage/authority-integration.out
 
 CI uploads the files to [Codecov](https://codecov.io/gh/tidegate-dev/tidegate). Codecov shows the coverage on each pull request, and low coverage doesn't fail CI.
 
-Fuzz tests are native Go fuzz tests, like `func FuzzPrepare(f *testing.F)`. `just test` runs only their seed inputs. To fuzz one locally, run `go test -fuzz=FuzzPrepare ./authority/internal/password`. In CI, [ClusterFuzzLite](https://google.github.io/clusterfuzzlite/) fuzzes for five minutes on each pull request and fails it when it finds a crash. The log shows the error, and the run keeps the input that caused it as an artifact named `crashes-` followed by the fuzz test's name. Every night it fuzzes for an hour and keeps the inputs it found for the next run. The fuzz tests share that time.
+Fuzz tests are native Go fuzz tests, like `func FuzzPrepare(f *testing.F)`. `just test` runs only their seed inputs. To fuzz one locally, run `go test -fuzz=FuzzPrepare ./authority/internal/password`. In CI, [ClusterFuzzLite](https://google.github.io/clusterfuzzlite/) fuzzes for five minutes on each pull request that changes Go code or the fuzz setup, and fails it when it finds a crash. The log shows the error, and the run keeps the input that caused it as an artifact named `crashes-` followed by the fuzz test's name. Every night it fuzzes for an hour and keeps the inputs it found for the next run. The fuzz tests share that time.
 
 `.clusterfuzzlite/build.sh` finds the fuzz tests by their names, so a new one needs no extra setup. Put it in a test file of the package itself, not of a `_test` package, and without a `//go:build` line, because the fuzz build uses no build tags.
 

@@ -9,7 +9,7 @@ if [[ $toolchain == "$(go env GOMODCACHE)"/* ]]; then
 	export GOROOT=/tmp/go PATH=/tmp/go/bin:$PATH GOTOOLCHAIN=local
 fi
 
-fuzz_test='^func Fuzz\w*\(\w+ \*testing\.F\)'
+fuzz_test='^func Fuzz\w*\((\w+ )?\*testing\.F\)'
 
 # Find every native Go fuzz test, so a new one can't be left out.
 mapfile -t files < <(grep -rl --include='*_test.go' -E "$fuzz_test" .)
@@ -18,6 +18,12 @@ for file in "${files[@]}"; do
 	# The fuzz build uses no build tags, so it can't see a tagged test.
 	if grep -q '^//go:build' "$file"; then
 		echo "$file: move the fuzz tests to a test file without a //go:build line" >&2
+		exit 1
+	fi
+
+	# The build deletes the files of external test packages, see below.
+	if grep -qE '^package \w+_test$' "$file"; then
+		echo "$file: move the fuzz tests to a test file of the package itself, not of a _test package" >&2
 		exit 1
 	fi
 done
@@ -31,7 +37,7 @@ for file in "${files[@]}"; do
 	# This is a throwaway copy of the repository.
 	grep -lE '^package \w+_test$' "$dir"/*_test.go | xargs -r rm
 
-	for function in $(grep -oP '^func \KFuzz\w*(?=\(\w+ \*testing\.F\))' "$file"); do
+	for function in $(grep -oP '^func \KFuzz\w*(?=\((\w+ )?\*testing\.F\))' "$file"); do
 		# Unique across packages, and the corpus is stored under this name.
 		name=${package#github.com/tidegate-dev/tidegate/}
 		name=${name//\//_}_$function
