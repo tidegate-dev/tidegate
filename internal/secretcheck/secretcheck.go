@@ -68,20 +68,34 @@ func checkTypes(pass *analysis.Pass, decl *ast.GenDecl) {
 
 		switch typ := typeSpec.Type.(type) {
 		case *ast.StructType:
-			for _, field := range fields(typ.Fields) {
-				for _, name := range field.Names {
-					if name.IsExported() {
-						report(pass, field.Type, name, typeSpec.Name.Name+"."+name.Name)
-					}
-				}
-			}
+			checkStruct(pass, typeSpec.Name.Name, typ)
 		case *ast.InterfaceType:
-			for _, method := range fields(typ.Methods) {
-				funcType, ok := method.Type.(*ast.FuncType)
-				if ok && method.Names[0].IsExported() {
-					checkSignature(pass, funcType, typeSpec.Name.Name+"."+method.Names[0].Name)
-				}
+			checkInterface(pass, typeSpec.Name.Name, typ)
+		}
+	}
+}
+
+func checkStruct(pass *analysis.Pass, typeName string, typ *ast.StructType) {
+	for _, field := range fields(typ.Fields) {
+		for _, name := range field.Names {
+			if name.IsExported() {
+				report(pass, field.Type, name, typeName+"."+name.Name)
 			}
+		}
+	}
+}
+
+func checkInterface(pass *analysis.Pass, typeName string, typ *ast.InterfaceType) {
+	for _, method := range fields(typ.Methods) {
+		// An embedded interface has no name.
+		funcType, ok := method.Type.(*ast.FuncType)
+		if !ok {
+			continue
+		}
+
+		name := method.Names[0]
+		if name.IsExported() {
+			checkSignature(pass, funcType, typeName+"."+name.Name)
 		}
 	}
 }
