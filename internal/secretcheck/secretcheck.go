@@ -1,6 +1,6 @@
-// Package secretcheck reports exported struct fields, parameters and results
-// that are named like a secret but hold a plain string or []byte instead of
-// a secret.String.
+// Package secretcheck reports exported struct fields, and parameters and
+// results of exported functions and interface methods, that are named like a
+// secret but hold a plain string or []byte instead of a secret.String.
 package secretcheck
 
 import (
@@ -33,7 +33,7 @@ func run(pass *analysis.Pass) (any, error) {
 			case *ast.FuncDecl:
 				checkFunc(pass, decl)
 			case *ast.GenDecl:
-				checkStructs(pass, decl)
+				checkTypes(pass, decl)
 			}
 		}
 	}
@@ -46,31 +46,40 @@ func checkFunc(pass *analysis.Pass, decl *ast.FuncDecl) {
 		return
 	}
 
-	for _, list := range []*ast.FieldList{decl.Type.Params, decl.Type.Results} {
+	checkSignature(pass, decl.Type, decl.Name.Name)
+}
+
+func checkSignature(pass *analysis.Pass, funcType *ast.FuncType, funcName string) {
+	for _, list := range []*ast.FieldList{funcType.Params, funcType.Results} {
 		for _, field := range fields(list) {
 			for _, name := range field.Names {
-				report(pass, field.Type, name, decl.Name.Name+"'s "+name.Name)
+				report(pass, field.Type, name, funcName+"'s "+name.Name)
 			}
 		}
 	}
 }
 
-func checkStructs(pass *analysis.Pass, decl *ast.GenDecl) {
+func checkTypes(pass *analysis.Pass, decl *ast.GenDecl) {
 	for _, spec := range decl.Specs {
 		typeSpec, ok := spec.(*ast.TypeSpec)
 		if !ok || !typeSpec.Name.IsExported() {
 			continue
 		}
 
-		structType, ok := typeSpec.Type.(*ast.StructType)
-		if !ok {
-			continue
-		}
-
-		for _, field := range fields(structType.Fields) {
-			for _, name := range field.Names {
-				if name.IsExported() {
-					report(pass, field.Type, name, typeSpec.Name.Name+"."+name.Name)
+		switch typ := typeSpec.Type.(type) {
+		case *ast.StructType:
+			for _, field := range fields(typ.Fields) {
+				for _, name := range field.Names {
+					if name.IsExported() {
+						report(pass, field.Type, name, typeSpec.Name.Name+"."+name.Name)
+					}
+				}
+			}
+		case *ast.InterfaceType:
+			for _, method := range fields(typ.Methods) {
+				funcType, ok := method.Type.(*ast.FuncType)
+				if ok && method.Names[0].IsExported() {
+					checkSignature(pass, funcType, typeSpec.Name.Name+"."+method.Names[0].Name)
 				}
 			}
 		}

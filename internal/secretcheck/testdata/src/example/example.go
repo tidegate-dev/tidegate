@@ -15,6 +15,16 @@ type hidden struct {
 	Password string
 }
 
+type Signer interface {
+	SignIn(name, password string)     // want `Signer.SignIn's password holds a secret as string, use secret.String`
+	Issue() (token string, err error) // want `Signer.Issue's token holds a secret as string, use secret.String`
+	signOut(token string)
+}
+
+type hiddenSigner interface {
+	SignIn(name, password string)
+}
+
 func SignIn(name, password string) {} // want `SignIn's password holds a secret as string, use secret.String`
 
 func Issue() (token string, err error) { return "", nil } // want `Issue's token holds a secret as string, use secret.String`
