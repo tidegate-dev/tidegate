@@ -2,25 +2,25 @@
 
 This page is generated from the comments in the `.proto` files in `proto/`. Clients call the API with [Connect](https://connectrpc.com/), gRPC or gRPC-Web.
 {{range .Files}}{{range .Services}}
-## {{.Name}}
+## {{.FullName}} { #{{.FullName}} }
 
 {{.Description}}
 
 | Method | Request | Response | Description |
 | ------ | ------- | -------- | ----------- |
-{{range .Methods}}| `{{.Name}}` | [{{.RequestType}}](#{{.RequestType | lower}}) | [{{.ResponseType}}](#{{.ResponseType | lower}}) | {{nobr .Description}} |
+{{range .Methods}}| `{{.Name}}` | [{{.RequestFullType}}](#{{.RequestFullType}}) | [{{.ResponseFullType}}](#{{.ResponseFullType}}) | {{nobr .Description}} |
 {{end}}{{end}}{{end}}
 ## Types
 {{range .Files}}{{range .Messages}}
-### {{.Name}}
+### {{.FullName}} { #{{.FullName}} }
 
 {{.Description}}
 {{if .Fields}}
 | Field | Type | Description |
 | ----- | ---- | ----------- |
-{{range .Fields}}| `{{.Name}}` | `{{.Type}}` | {{nobr .Description}} |
+{{range .Fields}}| `{{.Name}}` | `{{if .Label}}{{.Label}} {{end}}{{.FullType}}` | {{nobr .Description}} |
 {{end}}{{end}}{{end}}{{end}}{{range .Files}}{{range .Enums}}
-### {{.Name}}
+### {{.FullName}} { #{{.FullName}} }
 
 {{.Description}}
 

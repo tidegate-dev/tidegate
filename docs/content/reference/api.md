@@ -2,27 +2,27 @@
 
 This page is generated from the comments in the `.proto` files in `proto/`. Clients call the API with [Connect](https://connectrpc.com/), gRPC or gRPC-Web.
 
-## DummyService
+## tidegate.authority.v1.DummyService { #tidegate.authority.v1.DummyService }
 
 DummyService stores and reads texts, to check the path from a client through
 the authority into the database and back.
 
 | Method | Request | Response | Description |
 | ------ | ------- | -------- | ----------- |
-| `Write` | [WriteRequest](#writerequest) | [WriteResponse](#writeresponse) | Write stores a text and returns its ID. |
-| `Read` | [ReadRequest](#readrequest) | [ReadResponse](#readresponse) | Read returns the text with the given ID. |
+| `Write` | [tidegate.authority.v1.WriteRequest](#tidegate.authority.v1.WriteRequest) | [tidegate.authority.v1.WriteResponse](#tidegate.authority.v1.WriteResponse) | Write stores a text and returns its ID. |
+| `Read` | [tidegate.authority.v1.ReadRequest](#tidegate.authority.v1.ReadRequest) | [tidegate.authority.v1.ReadResponse](#tidegate.authority.v1.ReadResponse) | Read returns the text with the given ID. |
 
-## PingService
+## tidegate.authority.v1.PingService { #tidegate.authority.v1.PingService }
 
 PingService checks that a client can reach the authority.
 
 | Method | Request | Response | Description |
 | ------ | ------- | -------- | ----------- |
-| `Ping` | [PingRequest](#pingrequest) | [PingResponse](#pingresponse) | Ping answers with pong. |
+| `Ping` | [tidegate.authority.v1.PingRequest](#tidegate.authority.v1.PingRequest) | [tidegate.authority.v1.PingResponse](#tidegate.authority.v1.PingResponse) | Ping answers with pong. |
 
 ## Types
 
-### ReadRequest
+### tidegate.authority.v1.ReadRequest { #tidegate.authority.v1.ReadRequest }
 
 ReadRequest is the input of DummyService.Read.
 
@@ -30,7 +30,7 @@ ReadRequest is the input of DummyService.Read.
 | ----- | ---- | ----------- |
 | `id` | `int64` | ID is the one DummyService.Write returned for the text. |
 
-### ReadResponse
+### tidegate.authority.v1.ReadResponse { #tidegate.authority.v1.ReadResponse }
 
 ReadResponse is the result of DummyService.Read.
 
@@ -38,7 +38,7 @@ ReadResponse is the result of DummyService.Read.
 | ----- | ---- | ----------- |
 | `text` | `string` | Text is the stored text. |
 
-### WriteRequest
+### tidegate.authority.v1.WriteRequest { #tidegate.authority.v1.WriteRequest }
 
 WriteRequest is the input of DummyService.Write.
 
@@ -46,7 +46,7 @@ WriteRequest is the input of DummyService.Write.
 | ----- | ---- | ----------- |
 | `text` | `string` | Text is the text to store. |
 
-### WriteResponse
+### tidegate.authority.v1.WriteResponse { #tidegate.authority.v1.WriteResponse }
 
 WriteResponse is the result of DummyService.Write.
 
@@ -54,11 +54,11 @@ WriteResponse is the result of DummyService.Write.
 | ----- | ---- | ----------- |
 | `id` | `int64` | ID identifies the stored text for DummyService.Read. |
 
-### PingRequest
+### tidegate.authority.v1.PingRequest { #tidegate.authority.v1.PingRequest }
 
 PingRequest is the input of PingService.Ping. It has no fields.
 
-### PingResponse
+### tidegate.authority.v1.PingResponse { #tidegate.authority.v1.PingResponse }
 
 PingResponse is the result of PingService.Ping.
 
