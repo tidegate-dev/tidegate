@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -57,9 +56,10 @@ func NewAuthenticator(pool *pgxpool.Pool) (*Authenticator, error) {
 
 // Authenticate returns the user's ID if plaintext is their local password.
 func (a *Authenticator) Authenticate(ctx context.Context, name string, plaintext secret.String) (pgtype.UUID, error) {
-	// Before waiting for a check, which could end in ErrBusy instead.
-	if len(plaintext.Reveal()) > password.MaxBytes {
-		return pgtype.UUID{}, password.ErrTooLong
+	// Checked before queueing for a password check, so it never ends in ErrBusy.
+	err := password.CheckMaxBytes(plaintext)
+	if err != nil {
+		return pgtype.UUID{}, err
 	}
 
 	user, err := a.findUser(ctx, name)
@@ -89,10 +89,10 @@ func (a *Authenticator) Authenticate(ctx context.Context, name string, plaintext
 	return user.ID, nil
 }
 
-// findUser returns pgx.ErrNoRows for a name with NUL, which Postgres
-// refuses in text.
+// findUser returns pgx.ErrNoRows for a name that no user can have, because
+// Postgres refuses some of those names in a query.
 func (a *Authenticator) findUser(ctx context.Context, name string) (sqlc.GetUserByNameRow, error) {
-	if strings.ContainsRune(name, 0) {
+	if ValidateName(name) != nil {
 		return sqlc.GetUserByNameRow{}, pgx.ErrNoRows
 	}
 

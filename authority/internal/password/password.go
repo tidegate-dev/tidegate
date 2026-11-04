@@ -87,11 +87,21 @@ func normalize(password string) string {
 	return norm.NFKC.String(password)
 }
 
+// CheckMaxBytes returns ErrTooLong if password has more than MaxBytes bytes.
+func CheckMaxBytes(password secret.String) error {
+	if len(password.Reveal()) > MaxBytes {
+		return ErrTooLong
+	}
+
+	return nil
+}
+
 // Verify reports whether password matches hash. It accepts hashes that cost
 // less than Hash's, and returns ErrTooLong or ErrMalformedHash.
 func Verify(password secret.String, hash string) (bool, error) {
-	if len(password.Reveal()) > MaxBytes {
-		return false, ErrTooLong
+	err := CheckMaxBytes(password)
+	if err != nil {
+		return false, err
 	}
 
 	raw, err := argon2.Decode([]byte(hash))

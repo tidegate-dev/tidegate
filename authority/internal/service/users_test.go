@@ -49,7 +49,7 @@ var _ = Describe("CreateInitialAdmin", func() {
 		Expect(storedUsers(ctx, pool)).To(HaveLen(1))
 	})
 
-	DescribeTable("refuses a name that's empty or has whitespace around it",
+	DescribeTable("refuses an invalid name",
 		func(ctx SpecContext, name string) {
 			err := CreateInitialAdmin(ctx, pool, name, secret.New(validPassword))
 
@@ -60,6 +60,7 @@ var _ = Describe("CreateInitialAdmin", func() {
 		Entry("only whitespace", " "),
 		Entry("leading space", " alice"),
 		Entry("trailing newline", "alice\n"),
+		Entry("NUL", "al\x00ice"),
 	)
 
 	It("creates one user when two runs wait for the lock", func(ctx SpecContext) {
