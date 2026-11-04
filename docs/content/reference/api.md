@@ -18,7 +18,7 @@ LoginService signs users in to the authority.
 
 | Method | Request | Response | Description |
 | ------ | ------- | -------- | ----------- |
-| `Login` | [tidegate.authority.v1.LoginRequest](#tidegate.authority.v1.LoginRequest) | [tidegate.authority.v1.LoginResponse](#tidegate.authority.v1.LoginResponse) | Login checks a user's local password and returns a login token. An unknown user, a user without a local password and a wrong password all get the same error. |
+| `Login` | [tidegate.authority.v1.LoginRequest](#tidegate.authority.v1.LoginRequest) | [tidegate.authority.v1.LoginResponse](#tidegate.authority.v1.LoginResponse) | Login checks a user's local password and returns a login token. All wrong credentials get the same error. |
 
 ## tidegate.authority.v1.PingService { #tidegate.authority.v1.PingService }
 
@@ -68,7 +68,7 @@ LoginRequest is the input of LoginService.Login.
 
 | Field | Type | Description |
 | ----- | ---- | ----------- |
-| `user_name` | `string` | UserName is the name of the user. Letter case doesn't matter. |
+| `user_name` | `string` | UserName is the user's name, in any letter case. |
 | `password` | `string` | Password is the user's local password. |
 
 ### tidegate.authority.v1.LoginResponse { #tidegate.authority.v1.LoginResponse }
@@ -77,7 +77,7 @@ LoginResponse is the result of LoginService.Login.
 
 | Field | Type | Description |
 | ----- | ---- | ----------- |
-| `token` | `string` | Token is the login token. It stays valid for the token lifetime the authority is configured with, 12 hours by default. |
+| `token` | `string` | Token is valid for the authority's token lifetime, 12 hours by default. |
 
 ### tidegate.authority.v1.PingRequest { #tidegate.authority.v1.PingRequest }
 

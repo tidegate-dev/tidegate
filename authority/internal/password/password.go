@@ -1,6 +1,4 @@
-// Package password hashes passwords with argon2id. It wraps
-// github.com/matthewhartstonge/argon2 and adds tidegate's rules for
-// passwords.
+// Package password hashes and checks passwords with argon2id.
 package password
 
 import (
@@ -25,13 +23,11 @@ var (
 	ErrTooShort = fmt.Errorf("the password must have at least %d characters", MinLength)
 	// ErrTooLong means a password has more than MaxBytes bytes.
 	ErrTooLong = fmt.Errorf("the password must have at most %d bytes", MaxBytes)
-	// ErrMalformedHash means a hash isn't an argon2id PHC string that Verify
-	// can read.
+	// ErrMalformedHash means Verify can't read or doesn't accept a hash.
 	ErrMalformedHash = errors.New("the password hash isn't a valid argon2id hash")
 )
 
-// config returns the parameters Hash uses: the second recommended option of
-// RFC 9106, section 4, for when 2 GiB of memory per hash is too much.
+// config is the second recommended option of RFC 9106, section 4.
 func config() argon2.Config {
 	return argon2.MemoryConstrainedDefaults()
 }
@@ -44,7 +40,6 @@ func Hash(password string) (string, error) {
 	return hashWithSalt(password, nil)
 }
 
-// hashWithSalt generates a salt if salt is nil.
 func hashWithSalt(password string, salt []byte) (string, error) {
 	password, err := prepare(password)
 	if err != nil {
@@ -90,12 +85,8 @@ func normalize(password string) string {
 	return norm.NFKC.String(password)
 }
 
-// Verify reports whether password matches hash, a PHC string from Hash. It
-// takes the parameters from hash, so hashes made with cheaper parameters
-// still work. It returns ErrTooLong for a password over MaxBytes, before
-// hashing, and ErrMalformedHash for a hash it can't read or that costs more
-// than one from Hash. MinLength doesn't apply, because a short password just
-// doesn't match.
+// Verify reports whether password matches hash. It accepts hashes that cost
+// less than Hash's, and returns ErrTooLong or ErrMalformedHash.
 func Verify(password, hash string) (bool, error) {
 	if len(password) > MaxBytes {
 		return false, ErrTooLong
@@ -106,8 +97,7 @@ func Verify(password, hash string) (bool, error) {
 		return false, ErrMalformedHash
 	}
 
-	// The library treats a nil password as an error, and an empty one just
-	// doesn't match.
+	// The library refuses a nil password.
 	ok, err := raw.Verify(append([]byte{}, normalize(password)...))
 	if err != nil {
 		return false, fmt.Errorf("checking the password: %w", err)
@@ -116,10 +106,7 @@ func Verify(password, hash string) (bool, error) {
 	return ok, nil
 }
 
-// acceptable reports whether a decoded hash is argon2id of the version Hash
-// writes and costs at most as much as one from Hash, so a caller can rely on
-// Hash's parameters to bound the cost of a check. The library's Verify
-// ignores the version, so this checks it.
+// acceptable checks the version, which the library's Verify ignores.
 func acceptable(decoded argon2.Config) bool {
 	ours := config()
 

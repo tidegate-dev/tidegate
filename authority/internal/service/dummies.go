@@ -14,13 +14,12 @@ import (
 // ErrNotFound means the database holds nothing with the given ID.
 var ErrNotFound = errors.New("not found")
 
-// Dummies stores texts and reads them back, to check the path from a client
-// through the authority into the database.
+// Dummies checks the path from a client into the database and back.
 type Dummies struct {
 	queries *sqlc.Queries
 }
 
-// NewDummies returns Dummies that stores texts in pool.
+// NewDummies returns Dummies.
 func NewDummies(pool *pgxpool.Pool) *Dummies {
 	return &Dummies{queries: sqlc.New(pool)}
 }

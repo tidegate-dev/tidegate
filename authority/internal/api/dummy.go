@@ -11,13 +11,12 @@ import (
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 )
 
-// DummyService stores texts and reads them back, to check the path from a
-// client through the authority into the database.
+// DummyService checks the path from a client into the database and back.
 type DummyService struct {
 	dummies *service.Dummies
 }
 
-// NewDummyService returns a DummyService that uses dummies.
+// NewDummyService returns a DummyService.
 func NewDummyService(dummies *service.Dummies) *DummyService {
 	return &DummyService{dummies: dummies}
 }

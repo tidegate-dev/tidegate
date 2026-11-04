@@ -39,9 +39,8 @@ const (
 
 // LoginServiceClient is a client for the tidegate.authority.v1.LoginService service.
 type LoginServiceClient interface {
-	// Login checks a user's local password and returns a login token. An
-	// unknown user, a user without a local password and a wrong password all
-	// get the same error.
+	// Login checks a user's local password and returns a login token. All
+	// wrong credentials get the same error.
 	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error)
 }
 
@@ -77,9 +76,8 @@ func (c *loginServiceClient) Login(ctx context.Context, req *connect.Request[v1.
 
 // LoginServiceHandler is an implementation of the tidegate.authority.v1.LoginService service.
 type LoginServiceHandler interface {
-	// Login checks a user's local password and returns a login token. An
-	// unknown user, a user without a local password and a wrong password all
-	// get the same error.
+	// Login checks a user's local password and returns a login token. All
+	// wrong credentials get the same error.
 	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error)
 }
 

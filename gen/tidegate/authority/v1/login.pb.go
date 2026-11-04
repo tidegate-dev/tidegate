@@ -24,7 +24,7 @@ const (
 // LoginRequest is the input of LoginService.Login.
 type LoginRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// UserName is the name of the user. Letter case doesn't matter.
+	// UserName is the user's name, in any letter case.
 	UserName string `protobuf:"bytes,1,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
 	// Password is the user's local password.
 	Password      string `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
@@ -79,8 +79,7 @@ func (x *LoginRequest) GetPassword() string {
 // LoginResponse is the result of LoginService.Login.
 type LoginResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Token is the login token. It stays valid for the token lifetime the
-	// authority is configured with, 12 hours by default.
+	// Token is valid for the authority's token lifetime, 12 hours by default.
 	Token         string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

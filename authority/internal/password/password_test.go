@@ -241,7 +241,7 @@ func TestVerifyRefusesAPasswordOver1024Bytes(t *testing.T) {
 func TestVerifyFailsOnAMalformedHash(t *testing.T) {
 	t.Parallel()
 
-	// The library parses the hash. These cases cover the rules on top of it.
+	// The library rejects unreadable hashes. These cases cover tidegate's rules.
 	for name, hash := range map[string]string{
 		"unreadable":                 "",
 		"not argon2id":               "$argon2i$v=19$m=65536,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",

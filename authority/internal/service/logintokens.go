@@ -16,22 +16,18 @@ import (
 
 const tokenBytes = 32
 
-// LoginTokens hands out the tokens that signed-in users send with their
-// API calls.
+// LoginTokens issues the tokens that signed-in users send with API calls.
 type LoginTokens struct {
 	queries  *sqlc.Queries
 	lifetime time.Duration
 }
 
-// NewLoginTokens returns LoginTokens that keeps tokens in pool and makes
-// them valid for lifetime.
+// NewLoginTokens returns LoginTokens that last lifetime.
 func NewLoginTokens(pool *pgxpool.Pool, lifetime time.Duration) *LoginTokens {
 	return &LoginTokens{queries: sqlc.New(pool), lifetime: lifetime}
 }
 
-// Issue returns a new login token for the user and deletes their expired
-// ones. It stores only the token's SHA-256 hash, so a copy of the database
-// can't sign anyone in.
+// Issue returns a new token for the user and deletes their expired ones.
 func (s *LoginTokens) Issue(ctx context.Context, userID pgtype.UUID) (string, error) {
 	err := s.queries.DeleteExpiredLoginTokens(ctx, userID)
 	if err != nil {

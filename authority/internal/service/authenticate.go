@@ -16,20 +16,14 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/password"
 )
 
-// maxConcurrentChecks bounds the memory that password checks take. Each
-// check needs at most the memory that password.Hash uses, 64 MiB.
+// maxConcurrentChecks bounds memory, because each check needs up to 64 MiB.
 const maxConcurrentChecks = 4
 
-// maxCheckWait bounds how long Authenticate waits for a free password check,
-// so clients that hold their connections open can't queue logins without
-// end.
+// maxCheckWait keeps clients that hold connections open from queueing logins.
 const maxCheckWait = 5 * time.Second
 
 var (
-	// ErrWrongCredentials means the user doesn't exist, has no local password
-	// or gave another password. Authenticate wraps it with the reason, for the
-	// log. Clients should only learn that the credentials are wrong, so they
-	// can't tell which user names exist.
+	// ErrWrongCredentials comes wrapped with a reason that only the log may show.
 	ErrWrongCredentials = errors.New("wrong user name or password")
 	// ErrBusy means no password check became free in time.
 	ErrBusy = errors.New("too many logins at once, try again")
@@ -37,12 +31,10 @@ var (
 
 // Authenticator checks users' local passwords.
 type Authenticator struct {
-	queries *sqlc.Queries
-	checks  *semaphore.Weighted
-	// checkWait is maxCheckWait, except in tests.
+	queries   *sqlc.Queries
+	checks    *semaphore.Weighted
 	checkWait time.Duration
-	// fixedHash is checked when the user doesn't exist or has no password,
-	// so those take as long as a wrong password.
+	// fixedHash makes unknown users take as long as a wrong password.
 	fixedHash string
 }
 
@@ -61,10 +53,7 @@ func NewAuthenticator(pool *pgxpool.Pool) (*Authenticator, error) {
 	}, nil
 }
 
-// Authenticate returns the ID of the user called name if plaintext is their
-// local password. The name ignores letter case. It returns
-// ErrWrongCredentials if not, password.ErrTooLong for a password over
-// password.MaxBytes, and ErrBusy if no password check becomes free in time.
+// Authenticate returns the user's ID if plaintext is their local password.
 func (a *Authenticator) Authenticate(ctx context.Context, name, plaintext string) (pgtype.UUID, error) {
 	user, err := a.queries.GetUserByName(ctx, name)
 

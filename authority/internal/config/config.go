@@ -124,9 +124,8 @@ type Database struct {
 	MigrateOnStart bool
 }
 
-// Login holds the settings for signing in to the authority.
+// Login holds the login settings.
 type Login struct {
-	// TokenLifetime is how long a login token stays valid.
 	TokenLifetime time.Duration
 }
 
@@ -357,8 +356,7 @@ func parseLifetime(value string) (time.Duration, error) {
 		return 0, fmt.Errorf("invalid duration %q, want a number with a unit, like 12h or 30m", value)
 	}
 
-	// Postgres stores intervals in microseconds, and a token that lasts less
-	// than a second is of no use to anyone.
+	// Postgres rounds intervals to microseconds, and a shorter token is useless.
 	if lifetime < time.Second {
 		return 0, errors.New("must be at least 1s")
 	}

@@ -8,8 +8,7 @@ import (
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 )
 
-// PingService answers pings, so a client can check that it reaches the
-// authority.
+// PingService lets a client check that it reaches the authority.
 type PingService struct{}
 
 // Ping answers with pong.

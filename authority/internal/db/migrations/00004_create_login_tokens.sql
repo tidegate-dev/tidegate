@@ -1,6 +1,6 @@
 -- +goose Up
 CREATE TABLE login_tokens (
-    -- The SHA-256 hash of the token, so a copy of the table can't sign anyone in.
+    -- A hash, so a copy of the table can't sign anyone in.
     token_hash bytea PRIMARY KEY CHECK (length(token_hash) = 32),
     user_id uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     created_at timestamptz NOT NULL DEFAULT now(),

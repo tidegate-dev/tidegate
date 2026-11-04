@@ -12,8 +12,7 @@ import (
 	"github.com/tidegate-dev/tidegate/internal/logging"
 )
 
-// MaxLoginRequestBytes bounds a LoginRequest. It fits a user name and a password
-// of password.MaxBytes with room to spare.
+// MaxLoginRequestBytes bounds a LoginRequest.
 const MaxLoginRequestBytes = 4096
 
 // LoginService signs users in.
@@ -21,7 +20,7 @@ type LoginService struct {
 	logins *service.Logins
 }
 
-// NewLoginService returns a LoginService that signs users in with logins.
+// NewLoginService returns a LoginService.
 func NewLoginService(logins *service.Logins) *LoginService {
 	return &LoginService{logins: logins}
 }
@@ -45,8 +44,8 @@ func (s *LoginService) Login(
 	return connect.NewResponse(&authorityv1.LoginResponse{Token: token}), nil
 }
 
-// clientError leaves out the reason of wrong credentials, so a client can't
-// tell which user names exist.
+// clientError hides why credentials are wrong, so clients can't tell which
+// user names exist.
 func clientError(err error) error {
 	switch {
 	case errors.Is(err, service.ErrWrongCredentials):

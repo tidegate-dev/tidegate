@@ -36,9 +36,7 @@ dependenciesRules:
         - '^github.com/tidegate-dev/tidegate/internal.**'
         - '^github.com/tidegate-dev/tidegate/gen.**'
 
-  # Inside the authority, api adapts service to Connect, and service does
-  # the work with the database. Leaf packages know no other authority
-  # package.
+  # The authority's layers: api calls service, service calls the database.
   - package: '^github.com/tidegate-dev/tidegate/authority/internal/password$'
     shouldNotDependsOn:
       internal:
@@ -54,7 +52,6 @@ dependenciesRules:
       internal:
         - '^github.com/tidegate-dev/tidegate/authority/internal/db.**'
 
-  # service knows no transport, so it can be called from anywhere.
   - package: '^github.com/tidegate-dev/tidegate/authority/internal/service$'
     shouldOnlyDependsOn:
       internal:
@@ -64,7 +61,6 @@ dependenciesRules:
       external:
         - connectrpc.com/connect
 
-  # api never reads the database or the config, it goes through service.
   - package: '^github.com/tidegate-dev/tidegate/authority/internal/api$'
     shouldOnlyDependsOn:
       internal:
