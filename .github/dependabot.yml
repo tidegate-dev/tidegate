@@ -5,6 +5,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # delay routine depedency bumps by 7 days to allow new releases to stabilize
+    # security updates are not delayed
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: chore
       include: scope
@@ -20,6 +24,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: chore
       include: scope
@@ -38,6 +44,8 @@ updates:
       - /dev/kind
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: chore
       include: scope
@@ -56,6 +64,8 @@ updates:
     directory: /dev/kind/cert-manager
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: chore
       include: scope
@@ -71,6 +81,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: chore
       include: scope
