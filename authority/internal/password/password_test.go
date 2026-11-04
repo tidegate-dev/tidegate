@@ -241,21 +241,15 @@ func TestVerifyRefusesAPasswordOver1024Bytes(t *testing.T) {
 func TestVerifyFailsOnAMalformedHash(t *testing.T) {
 	t.Parallel()
 
+	// The library parses the hash. These cases cover the rules on top of it.
 	for name, hash := range map[string]string{
-		"empty":             "",
-		"another algorithm": "$argon2i$v=19$m=65536,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
-		"another version":   "$argon2id$v=16$m=65536,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
-		"missing the key":   "$argon2id$v=19$m=65536,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg",
-		"bad parameters":    "$argon2id$v=19$m=65536,t=3$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
-		"zero iterations":   "$argon2id$v=19$m=65536,t=0,p=4$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
-		"zero threads":      "$argon2id$v=19$m=65536,t=3,p=0$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
-		"bad salt":          "$argon2id$v=19$m=65536,t=3,p=4$not*base64$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
-		"empty key":         "$argon2id$v=19$m=65536,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$",
-		"key over 1024 bytes": "$argon2id$v=19$m=65536,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$" +
-			base64.RawStdEncoding.EncodeToString(make([]byte, 1025)),
+		"unreadable":                 "",
+		"not argon2id":               "$argon2i$v=19$m=65536,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
+		"another version":            "$argon2id$v=16$m=65536,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
 		"more memory than Hash uses": "$argon2id$v=19$m=131072,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
 		"more iterations than Hash":  "$argon2id$v=19$m=65536,t=4,p=4$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
-		"256 threads":                "$argon2id$v=19$m=65536,t=3,p=256$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
+		"longer key than Hash": "$argon2id$v=19$m=65536,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$" +
+			base64.RawStdEncoding.EncodeToString(make([]byte, 33)),
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()

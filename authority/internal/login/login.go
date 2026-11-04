@@ -14,6 +14,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"golang.org/x/sync/semaphore"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
 	"github.com/tidegate-dev/tidegate/authority/internal/password"
@@ -49,7 +50,7 @@ var errBusy = errors.New("too many logins at once, try again")
 type Service struct {
 	queries  *sqlc.Queries
 	lifetime time.Duration
-	checks   limiter
+	checks   *semaphore.Weighted
 	// checkWait is maxCheckWait, except in tests.
 	checkWait time.Duration
 	// fixedHash is checked when the user doesn't exist or has no password,
@@ -68,7 +69,7 @@ func NewService(queries *sqlc.Queries, lifetime time.Duration) (*Service, error)
 	return &Service{
 		queries:   queries,
 		lifetime:  lifetime,
-		checks:    newLimiter(maxConcurrentChecks),
+		checks:    semaphore.NewWeighted(maxConcurrentChecks),
 		checkWait: maxCheckWait,
 		fixedHash: fixedHash,
 	}, nil
@@ -140,7 +141,7 @@ func (s *Service) verify(ctx context.Context, plaintext, hash string) (bool, err
 	wait, cancel := context.WithTimeout(ctx, s.checkWait)
 	defer cancel()
 
-	err := s.checks.acquire(wait)
+	err := s.checks.Acquire(wait, 1)
 
 	switch {
 	case ctx.Err() != nil:
@@ -149,7 +150,7 @@ func (s *Service) verify(ctx context.Context, plaintext, hash string) (bool, err
 		return false, errBusy
 	}
 
-	defer s.checks.release()
+	defer s.checks.Release(1)
 
 	ok, err := password.Verify(plaintext, hash)
 	if err != nil {
@@ -166,11 +167,7 @@ func (s *Service) createToken(ctx context.Context, userID pgtype.UUID) (string, 
 	}
 
 	random := make([]byte, tokenBytes)
-
-	_, err = rand.Read(random)
-	if err != nil {
-		return "", fmt.Errorf("generating a login token: %w", err)
-	}
+	_, _ = rand.Read(random) // Since Go 1.24 it crashes the program instead of failing.
 
 	token := base64.RawURLEncoding.EncodeToString(random)
 	hash := sha256.Sum256([]byte(token))

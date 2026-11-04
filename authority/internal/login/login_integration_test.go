@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"golang.org/x/sync/semaphore"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/db"
 	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
@@ -170,7 +171,7 @@ var _ = Describe("Login", func() {
 	})
 
 	It("gives up waiting for a password check and logs it", func(ctx SpecContext) {
-		service.checks = newLimiter(0)
+		service.checks = semaphore.NewWeighted(0)
 		service.checkWait = time.Millisecond
 
 		_, err := login(ctx, "alice", alicePassword)
