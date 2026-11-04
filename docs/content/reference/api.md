@@ -12,6 +12,14 @@ the authority into the database and back.
 | `Write` | [tidegate.authority.v1.WriteRequest](#tidegate.authority.v1.WriteRequest) | [tidegate.authority.v1.WriteResponse](#tidegate.authority.v1.WriteResponse) | Write stores a text and returns its ID. |
 | `Read` | [tidegate.authority.v1.ReadRequest](#tidegate.authority.v1.ReadRequest) | [tidegate.authority.v1.ReadResponse](#tidegate.authority.v1.ReadResponse) | Read returns the text with the given ID. |
 
+## tidegate.authority.v1.LoginService { #tidegate.authority.v1.LoginService }
+
+LoginService signs users in to the authority.
+
+| Method | Request | Response | Description |
+| ------ | ------- | -------- | ----------- |
+| `Login` | [tidegate.authority.v1.LoginRequest](#tidegate.authority.v1.LoginRequest) | [tidegate.authority.v1.LoginResponse](#tidegate.authority.v1.LoginResponse) | Login checks a user's local password and returns a login token. An unknown user, a user without a local password and a wrong password all get the same error. |
+
 ## tidegate.authority.v1.PingService { #tidegate.authority.v1.PingService }
 
 PingService checks that a client can reach the authority.
@@ -53,6 +61,23 @@ WriteResponse is the result of DummyService.Write.
 | Field | Type | Description |
 | ----- | ---- | ----------- |
 | `id` | `int64` | ID identifies the stored text for DummyService.Read. |
+
+### tidegate.authority.v1.LoginRequest { #tidegate.authority.v1.LoginRequest }
+
+LoginRequest is the input of LoginService.Login.
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| `user_name` | `string` | UserName is the name of the user. Letter case doesn't matter. |
+| `password` | `string` | Password is the user's local password. |
+
+### tidegate.authority.v1.LoginResponse { #tidegate.authority.v1.LoginResponse }
+
+LoginResponse is the result of LoginService.Login.
+
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+| `token` | `string` | Token is the login token. It stays valid for the token lifetime the authority is configured with, 12 hours by default. |
 
 ### tidegate.authority.v1.PingRequest { #tidegate.authority.v1.PingRequest }
 

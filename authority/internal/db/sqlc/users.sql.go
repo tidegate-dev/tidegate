@@ -36,6 +36,22 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 	return err
 }
 
+const getUserByName = `-- name: GetUserByName :one
+SELECT id, password_hash FROM users WHERE lower(name) = lower($1)
+`
+
+type GetUserByNameRow struct {
+	ID           pgtype.UUID
+	PasswordHash pgtype.Text
+}
+
+func (q *Queries) GetUserByName(ctx context.Context, name string) (GetUserByNameRow, error) {
+	row := q.db.QueryRow(ctx, getUserByName, name)
+	var i GetUserByNameRow
+	err := row.Scan(&i.ID, &i.PasswordHash)
+	return i, err
+}
+
 const lockTransaction = `-- name: LockTransaction :exec
 SELECT pg_advisory_xact_lock($1::bigint)
 `

@@ -23,6 +23,7 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/db"
 	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
 	"github.com/tidegate-dev/tidegate/authority/internal/dummy"
+	"github.com/tidegate-dev/tidegate/authority/internal/login"
 	"github.com/tidegate-dev/tidegate/authority/internal/ping"
 	"github.com/tidegate-dev/tidegate/authority/internal/users"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
@@ -201,6 +202,11 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	}
 	defer pool.Close()
 
+	loginService, err := login.NewService(sqlc.New(pool), cfg.Login.TokenLifetime)
+	if err != nil {
+		return err
+	}
+
 	notifier, err := systemd.Open()
 	if err != nil {
 		return err
@@ -232,7 +238,7 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	metricsMux.Handle("GET /metrics", metricsHandler)
 
 	err = serve(ctx, notifier, map[string]*http.Server{
-		"api": apiServer(cfg.Server.ListenAddress, certificate, pool),
+		"api": apiServer(cfg.Server.ListenAddress, certificate, pool, loginService),
 		"metrics": {
 			Addr:              cfg.Metrics.ListenAddress,
 			Handler:           metricsMux,
@@ -269,12 +275,14 @@ func openDatabase(ctx context.Context, url string) (*pgxpool.Pool, error) {
 }
 
 // apiServer serves plain HTTP if certificate is nil.
-func apiServer(address string, certificate *certreload.Certificate, pool *pgxpool.Pool) *http.Server {
+func apiServer(address string, certificate *certreload.Certificate, pool *pgxpool.Pool, loginService *login.Service) *http.Server {
 	options := connect.WithInterceptors(handlererrors.Interceptor())
 
 	mux := http.NewServeMux()
 	mux.Handle(authorityv1connect.NewPingServiceHandler(ping.Service{}, options))
 	mux.Handle(authorityv1connect.NewDummyServiceHandler(dummy.NewService(sqlc.New(pool)), options))
+	mux.Handle(authorityv1connect.NewLoginServiceHandler(loginService, options,
+		connect.WithReadMaxBytes(login.MaxRequestBytes)))
 
 	// gRPC clients need HTTP/2, and the CLI's Connect client uses HTTP/1.1
 	// by default.

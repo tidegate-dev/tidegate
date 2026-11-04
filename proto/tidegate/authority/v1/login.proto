@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package tidegate.authority.v1;
+
+option go_package = "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;authorityv1";
+
+// LoginService signs users in to the authority.
+service LoginService {
+  // Login checks a user's local password and returns a login token. An
+  // unknown user, a user without a local password and a wrong password all
+  // get the same error.
+  rpc Login(LoginRequest) returns (LoginResponse);
+}
+
+// LoginRequest is the input of LoginService.Login.
+message LoginRequest {
+  // UserName is the name of the user. Letter case doesn't matter.
+  string user_name = 1;
+  // Password is the user's local password.
+  string password = 2;
+}
+
+// LoginResponse is the result of LoginService.Login.
+message LoginResponse {
+  // Token is the login token. It stays valid for the token lifetime the
+  // authority is configured with, 12 hours by default.
+  string token = 1;
+}
