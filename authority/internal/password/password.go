@@ -116,5 +116,6 @@ func acceptable(decoded argon2.Config) bool {
 		decoded.Version == ours.Version &&
 		decoded.MemoryCost <= ours.MemoryCost &&
 		decoded.TimeCost <= ours.TimeCost &&
+		decoded.Parallelism <= ours.Parallelism &&
 		decoded.HashLength <= ours.HashLength
 }

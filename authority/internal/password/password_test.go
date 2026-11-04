@@ -250,6 +250,7 @@ func TestVerifyFailsOnAMalformedHash(t *testing.T) {
 		"another version":            "$argon2id$v=16$m=65536,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
 		"more memory than Hash uses": "$argon2id$v=19$m=131072,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
 		"more iterations than Hash":  "$argon2id$v=19$m=65536,t=4,p=4$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
+		"more threads than Hash":     "$argon2id$v=19$m=65536,t=3,p=8$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
 		"longer key than Hash": "$argon2id$v=19$m=65536,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$" +
 			base64.RawStdEncoding.EncodeToString(make([]byte, 33)),
 	} {
