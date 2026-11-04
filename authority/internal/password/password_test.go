@@ -209,6 +209,21 @@ func TestVerifyTreatsEquivalentUnicodeFormsAsTheSamePassword(t *testing.T) {
 	assert.True(t, ok)
 }
 
+func TestVerifyRejectsAnEmptyPassword(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	hash, err := Hash("correct horse battery staple")
+	require.NoError(t, err)
+
+	// act
+	ok, err := Verify("", hash)
+
+	// assert
+	require.NoError(t, err)
+	assert.False(t, ok)
+}
+
 func TestVerifyRefusesAPasswordOver1024Bytes(t *testing.T) {
 	t.Parallel()
 

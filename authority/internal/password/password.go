@@ -1,29 +1,15 @@
-// Package password hashes passwords with argon2id.
+// Package password hashes passwords with argon2id. It wraps
+// github.com/matthewhartstonge/argon2 and adds tidegate's rules for
+// passwords.
 package password
 
 import (
-	"crypto/rand"
-	"crypto/subtle"
-	"encoding/base64"
 	"errors"
 	"fmt"
-	"math"
-	"strconv"
-	"strings"
 	"unicode/utf8"
 
-	"golang.org/x/crypto/argon2"
+	"github.com/matthewhartstonge/argon2"
 	"golang.org/x/text/unicode/norm"
-)
-
-// The second recommended option of RFC 9106, section 4, for when 2 GiB of
-// memory per hash is too much.
-const (
-	iterations = 3
-	memoryKiB  = 64 * 1024
-	threads    = 4
-	saltLength = 16
-	keyLength  = 32
 )
 
 // MinLength is the minimum number of characters in a password. NIST
@@ -44,33 +30,35 @@ var (
 	ErrMalformedHash = errors.New("the password hash isn't a valid argon2id hash")
 )
 
+// config returns the parameters Hash uses: the second recommended option of
+// RFC 9106, section 4, for when 2 GiB of memory per hash is too much.
+func config() argon2.Config {
+	return argon2.MemoryConstrainedDefaults()
+}
+
 // Hash returns password's argon2id hash with a new random salt, as a PHC
 // string like $argon2id$v=19$m=65536,t=3,p=4$salt$hash. It returns
 // ErrTooShort or ErrTooLong for a password it doesn't accept. It hashes the
 // password's NFKC normalization, and MinLength counts its characters.
 func Hash(password string) (string, error) {
-	salt := make([]byte, saltLength)
-
-	_, err := rand.Read(salt)
-	if err != nil {
-		return "", fmt.Errorf("generating a salt: %w", err)
-	}
-
-	return hashWithSalt(password, salt)
+	return hashWithSalt(password, nil)
 }
 
+// hashWithSalt generates a salt if salt is nil.
 func hashWithSalt(password string, salt []byte) (string, error) {
 	password, err := prepare(password)
 	if err != nil {
 		return "", err
 	}
 
-	key := argon2.IDKey([]byte(password), salt, iterations, memoryKiB, threads, keyLength)
+	cfg := config()
 
-	return fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
-		argon2.Version, memoryKiB, iterations, threads,
-		base64.RawStdEncoding.EncodeToString(salt),
-		base64.RawStdEncoding.EncodeToString(key)), nil
+	raw, err := cfg.Hash([]byte(password), salt)
+	if err != nil {
+		return "", fmt.Errorf("hashing the password: %w", err)
+	}
+
+	return string(raw.Encode()), nil
 }
 
 // prepare checks password against the rules and returns the form to hash.
@@ -104,96 +92,40 @@ func normalize(password string) string {
 
 // Verify reports whether password matches hash, a PHC string from Hash. It
 // takes the parameters from hash, so hashes made with cheaper parameters
-// still work. It returns ErrTooLong for a password over MaxBytes, before hashing,
-// and ErrMalformedHash for a hash it can't read. MinLength doesn't apply,
-// because a short password just doesn't match.
+// still work. It returns ErrTooLong for a password over MaxBytes, before
+// hashing, and ErrMalformedHash for a hash it can't read or that costs more
+// than one from Hash. MinLength doesn't apply, because a short password just
+// doesn't match.
 func Verify(password, hash string) (bool, error) {
 	if len(password) > MaxBytes {
 		return false, ErrTooLong
 	}
 
-	params, err := parse(hash)
-	if err != nil {
-		return false, err
+	raw, err := argon2.Decode([]byte(hash))
+	if err != nil || !acceptable(raw.Config) {
+		return false, ErrMalformedHash
 	}
 
-	key := argon2.IDKey([]byte(normalize(password)), params.salt,
-		params.iterations, params.memoryKiB, params.threads, uint32(len(params.key))) //nolint:gosec // parse limits the key to maxKeyLength.
+	// The library treats a nil password as an error, and an empty one just
+	// doesn't match.
+	ok, err := raw.Verify(append([]byte{}, normalize(password)...))
+	if err != nil {
+		return false, fmt.Errorf("checking the password: %w", err)
+	}
 
-	return subtle.ConstantTimeCompare(key, params.key) == 1, nil
+	return ok, nil
 }
 
-type parsedHash struct {
-	memoryKiB, iterations uint32
-	threads               uint8
-	salt, key             []byte
-}
+// acceptable reports whether a decoded hash is argon2id of the version Hash
+// writes and costs at most as much as one from Hash, so a caller can rely on
+// Hash's parameters to bound the cost of a check. The library's Verify
+// ignores the version, so this checks it.
+func acceptable(decoded argon2.Config) bool {
+	ours := config()
 
-// Verify refuses a hash that costs more than one from Hash, so a caller can
-// rely on Hash's parameters to bound the cost of a check.
-const (
-	maxMemoryKiB  = memoryKiB
-	maxIterations = iterations
-	maxKeyLength  = keyLength
-)
-
-func parse(hash string) (parsedHash, error) {
-	parts := strings.Split(hash, "$")
-	if len(parts) != 6 || parts[0] != "" || parts[1] != "argon2id" ||
-		parts[2] != fmt.Sprintf("v=%d", argon2.Version) {
-		return parsedHash{}, ErrMalformedHash
-	}
-
-	params := strings.Split(parts[3], ",")
-	if len(params) != 3 {
-		return parsedHash{}, ErrMalformedHash
-	}
-
-	memoryKiB, err := parseParam(params[0], "m")
-	if err != nil || memoryKiB > maxMemoryKiB {
-		return parsedHash{}, ErrMalformedHash
-	}
-
-	iterations, err := parseParam(params[1], "t")
-	if err != nil || iterations == 0 || iterations > maxIterations {
-		return parsedHash{}, ErrMalformedHash
-	}
-
-	threads, err := parseParam(params[2], "p")
-	if err != nil || threads == 0 || threads > math.MaxUint8 {
-		return parsedHash{}, ErrMalformedHash
-	}
-
-	salt, err := base64.RawStdEncoding.Strict().DecodeString(parts[4])
-	if err != nil {
-		return parsedHash{}, ErrMalformedHash
-	}
-
-	key, err := base64.RawStdEncoding.Strict().DecodeString(parts[5])
-	if err != nil || len(key) == 0 || len(key) > maxKeyLength {
-		return parsedHash{}, ErrMalformedHash
-	}
-
-	return parsedHash{
-		memoryKiB:  memoryKiB,
-		iterations: iterations,
-		threads:    uint8(threads),
-		salt:       salt,
-		key:        key,
-	}, nil
-}
-
-// parseParam reads a parameter like m=65536.
-func parseParam(param, name string) (uint32, error) {
-	value, found := strings.CutPrefix(param, name+"=")
-	if !found {
-		return 0, ErrMalformedHash
-	}
-
-	parsed, err := strconv.ParseUint(value, 10, 32)
-	if err != nil {
-		return 0, ErrMalformedHash
-	}
-
-	return uint32(parsed), nil
+	return decoded.Mode == argon2.ModeArgon2id &&
+		decoded.Version == ours.Version &&
+		decoded.MemoryCost <= ours.MemoryCost &&
+		decoded.TimeCost <= ours.TimeCost &&
+		decoded.HashLength <= ours.HashLength
 }
