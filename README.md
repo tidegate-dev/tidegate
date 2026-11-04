@@ -45,6 +45,7 @@ If you don't use Nix, install these tools yourself:
 - [process-compose](https://f1bonacc1.github.io/process-compose/) 1.122 or newer
 - [protoc-gen-go](https://pkg.go.dev/google.golang.org/protobuf/cmd/protoc-gen-go) 1.36 or newer
 - [protoc-gen-connect-go](https://connectrpc.com/docs/go/getting-started/) 1.21 or a newer 1.x release
+- [protoc-gen-doc](https://github.com/pseudomuto/protoc-gen-doc) 1.5 or newer
 - [sqlc](https://docs.sqlc.dev/en/latest/overview/install.html) 1.31 or newer
 - [Zensical](https://zensical.org/) 0.0.62 or newer, for the documentation site
 
