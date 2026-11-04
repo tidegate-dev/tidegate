@@ -8,7 +8,7 @@ This page is generated from the comments in the `.proto` files in `proto/`. Clie
 
 | Method | Request | Response | Description |
 | ------ | ------- | -------- | ----------- |
-{{range .Methods}}| `{{.Name}}` | [{{.RequestFullType}}](#{{.RequestFullType}}) | [{{.ResponseFullType}}](#{{.ResponseFullType}}) | {{nobr .Description}} |
+{{range .Methods}}| `{{.Name}}` | [{{.RequestFullType}}](#{{.RequestFullType}}) | [{{.ResponseFullType}}](#{{.ResponseFullType}}) | {{nobr .Description | replace "|" "\\|"}} |
 {{end}}{{end}}{{end}}
 ## Types
 {{range .Files}}{{range .Messages}}
@@ -18,7 +18,7 @@ This page is generated from the comments in the `.proto` files in `proto/`. Clie
 {{if .Fields}}
 | Field | Type | Description |
 | ----- | ---- | ----------- |
-{{range .Fields}}| `{{.Name}}` | `{{if .Label}}{{.Label}} {{end}}{{.FullType}}` | {{nobr .Description}} |
+{{range .Fields}}| `{{.Name}}` | `{{if .Label}}{{.Label}} {{end}}{{.FullType}}` | {{nobr .Description | replace "|" "\\|"}} |
 {{end}}{{end}}{{end}}{{end}}{{range .Files}}{{range .Enums}}
 ### {{.FullName}} { #{{.FullName}} }
 
@@ -26,5 +26,5 @@ This page is generated from the comments in the `.proto` files in `proto/`. Clie
 
 | Value | Number | Description |
 | ----- | ------ | ----------- |
-{{range .Values}}| `{{.Name}}` | {{.Number}} | {{nobr .Description}} |
+{{range .Values}}| `{{.Name}}` | {{.Number}} | {{nobr .Description | replace "|" "\\|"}} |
 {{end}}{{end}}{{end}}
