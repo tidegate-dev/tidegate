@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -56,7 +57,12 @@ func NewAuthenticator(pool *pgxpool.Pool) (*Authenticator, error) {
 
 // Authenticate returns the user's ID if plaintext is their local password.
 func (a *Authenticator) Authenticate(ctx context.Context, name string, plaintext secret.String) (pgtype.UUID, error) {
-	user, err := a.queries.GetUserByName(ctx, name)
+	// Before waiting for a check, which could end in ErrBusy instead.
+	if len(plaintext.Reveal()) > password.MaxBytes {
+		return pgtype.UUID{}, password.ErrTooLong
+	}
+
+	user, err := a.findUser(ctx, name)
 
 	hash, failure := user.PasswordHash.String, error(nil)
 
@@ -83,16 +89,26 @@ func (a *Authenticator) Authenticate(ctx context.Context, name string, plaintext
 	return user.ID, nil
 }
 
+// findUser returns pgx.ErrNoRows for a name with NUL, which Postgres
+// refuses in text.
+func (a *Authenticator) findUser(ctx context.Context, name string) (sqlc.GetUserByNameRow, error) {
+	if strings.ContainsRune(name, 0) {
+		return sqlc.GetUserByNameRow{}, pgx.ErrNoRows
+	}
+
+	return a.queries.GetUserByName(ctx, name)
+}
+
 func (a *Authenticator) verify(ctx context.Context, plaintext secret.String, hash string) (bool, error) {
 	wait, cancel := context.WithTimeout(ctx, a.checkWait)
 	defer cancel()
 
 	err := a.checks.Acquire(wait, 1)
+	if err != nil {
+		if ctx.Err() != nil {
+			return false, ctx.Err()
+		}
 
-	switch {
-	case ctx.Err() != nil:
-		return false, ctx.Err()
-	case err != nil:
 		return false, ErrBusy
 	}
 

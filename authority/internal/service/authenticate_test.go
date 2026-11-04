@@ -71,9 +71,19 @@ var _ = Describe("Authenticate", func() {
 		Entry("wrong password", "alice", "correct horse battery stapler", "wrong password"),
 		Entry("unknown user", "carol", validPassword, "unknown user"),
 		Entry("no password", "bob", validPassword, "no local password"),
+		Entry("name that Postgres can't store", "al\x00ice", validPassword, "unknown user"),
 	)
 
 	It("refuses a password over 1024 bytes", func(ctx SpecContext) {
+		_, err := authenticator.Authenticate(ctx, "alice", secret.New(strings.Repeat("a", 1025)))
+
+		Expect(err).To(MatchError(password.ErrTooLong))
+	})
+
+	It("refuses a password over 1024 bytes without waiting for a password check", func(ctx SpecContext) {
+		authenticator.checks = semaphore.NewWeighted(0)
+		authenticator.checkWait = time.Millisecond
+
 		_, err := authenticator.Authenticate(ctx, "alice", secret.New(strings.Repeat("a", 1025)))
 
 		Expect(err).To(MatchError(password.ErrTooLong))
