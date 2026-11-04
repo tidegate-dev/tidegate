@@ -1,6 +1,6 @@
 //go:build integration
 
-package users
+package api
 
 import (
 	"testing"
@@ -11,5 +11,5 @@ import (
 
 func TestIntegration(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "users integration")
+	RunSpecs(t, "api integration")
 }

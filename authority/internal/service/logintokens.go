@@ -1,6 +1,4 @@
-// Package logintoken hands out the tokens that signed-in users send with
-// their API calls.
-package logintoken
+package service
 
 import (
 	"context"
@@ -18,22 +16,23 @@ import (
 
 const tokenBytes = 32
 
-// Store keeps login tokens in the database.
-type Store struct {
+// LoginTokens hands out the tokens that signed-in users send with their
+// API calls.
+type LoginTokens struct {
 	queries  *sqlc.Queries
 	lifetime time.Duration
 }
 
-// NewStore returns a Store that keeps tokens in pool and makes them valid
-// for lifetime.
-func NewStore(pool *pgxpool.Pool, lifetime time.Duration) *Store {
-	return &Store{queries: sqlc.New(pool), lifetime: lifetime}
+// NewLoginTokens returns LoginTokens that keeps tokens in pool and makes
+// them valid for lifetime.
+func NewLoginTokens(pool *pgxpool.Pool, lifetime time.Duration) *LoginTokens {
+	return &LoginTokens{queries: sqlc.New(pool), lifetime: lifetime}
 }
 
 // Issue returns a new login token for the user and deletes their expired
 // ones. It stores only the token's SHA-256 hash, so a copy of the database
 // can't sign anyone in.
-func (s *Store) Issue(ctx context.Context, userID pgtype.UUID) (string, error) {
+func (s *LoginTokens) Issue(ctx context.Context, userID pgtype.UUID) (string, error) {
 	err := s.queries.DeleteExpiredLoginTokens(ctx, userID)
 	if err != nil {
 		return "", fmt.Errorf("deleting expired login tokens: %w", err)

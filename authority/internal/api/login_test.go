@@ -1,4 +1,4 @@
-package login
+package api
 
 import (
 	"context"
@@ -10,14 +10,14 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/password"
-	"github.com/tidegate-dev/tidegate/authority/internal/users"
+	"github.com/tidegate-dev/tidegate/authority/internal/service"
 )
 
 func TestClientErrorLeavesOutTheReasonOfWrongCredentials(t *testing.T) {
 	t.Parallel()
 
 	// act
-	err := clientError(fmt.Errorf("%w: unknown user", users.ErrWrongCredentials))
+	err := clientError(fmt.Errorf("%w: unknown user", service.ErrWrongCredentials))
 
 	// assert
 	assert.Equal(t, connect.CodeUnauthenticated, connect.CodeOf(err))
@@ -32,7 +32,7 @@ func TestClientErrorGivesEachErrorItsCode(t *testing.T) {
 		code connect.Code
 	}{
 		"password too long": {fmt.Errorf("checking: %w", password.ErrTooLong), connect.CodeInvalidArgument},
-		"busy":              {users.ErrBusy, connect.CodeUnavailable},
+		"busy":              {service.ErrBusy, connect.CodeUnavailable},
 		"canceled":          {context.Canceled, connect.CodeUnknown},
 		"anything else":     {errors.New("database down"), connect.CodeUnknown},
 	} {

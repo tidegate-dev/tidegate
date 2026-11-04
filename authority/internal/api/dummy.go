@@ -1,6 +1,4 @@
-// Package dummy implements the DummyService, which checks the path from a
-// client through the authority into the database and back.
-package dummy
+package api
 
 import (
 	"context"
@@ -8,47 +6,47 @@ import (
 	"fmt"
 
 	"connectrpc.com/connect"
-	"github.com/jackc/pgx/v5"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
+	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 )
 
-// Service stores texts in the database and reads them back.
-type Service struct {
-	queries *sqlc.Queries
+// DummyService stores texts and reads them back, to check the path from a
+// client through the authority into the database.
+type DummyService struct {
+	dummies *service.Dummies
 }
 
-// NewService returns a Service that uses queries.
-func NewService(queries *sqlc.Queries) Service {
-	return Service{queries: queries}
+// NewDummyService returns a DummyService that uses dummies.
+func NewDummyService(dummies *service.Dummies) *DummyService {
+	return &DummyService{dummies: dummies}
 }
 
 // Write stores the text and returns its ID.
-func (s Service) Write(
+func (s *DummyService) Write(
 	ctx context.Context,
 	req *connect.Request[authorityv1.WriteRequest],
 ) (*connect.Response[authorityv1.WriteResponse], error) {
-	id, err := s.queries.CreateDummy(ctx, req.Msg.GetText())
+	id, err := s.dummies.Write(ctx, req.Msg.GetText())
 	if err != nil {
-		return nil, fmt.Errorf("storing the text: %w", err)
+		return nil, err
 	}
 
 	return connect.NewResponse(&authorityv1.WriteResponse{Id: id}), nil
 }
 
 // Read returns the text with the given ID.
-func (s Service) Read(
+func (s *DummyService) Read(
 	ctx context.Context,
 	req *connect.Request[authorityv1.ReadRequest],
 ) (*connect.Response[authorityv1.ReadResponse], error) {
-	text, err := s.queries.GetDummy(ctx, req.Msg.GetId())
-	if errors.Is(err, pgx.ErrNoRows) {
+	text, err := s.dummies.Read(ctx, req.Msg.GetId())
+	if errors.Is(err, service.ErrNotFound) {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("no text with ID %d", req.Msg.GetId()))
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("reading the text: %w", err)
+		return nil, err
 	}
 
 	return connect.NewResponse(&authorityv1.ReadResponse{Text: text}), nil

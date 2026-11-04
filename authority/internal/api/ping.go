@@ -1,6 +1,4 @@
-// Package ping implements the PingService, which lets a client check that
-// it can reach the authority.
-package ping
+package api
 
 import (
 	"context"
@@ -10,11 +8,12 @@ import (
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 )
 
-// Service answers pings.
-type Service struct{}
+// PingService answers pings, so a client can check that it reaches the
+// authority.
+type PingService struct{}
 
 // Ping answers with pong.
-func (Service) Ping(
+func (PingService) Ping(
 	context.Context,
 	*connect.Request[authorityv1.PingRequest],
 ) (*connect.Response[authorityv1.PingResponse], error) {

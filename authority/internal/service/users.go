@@ -1,5 +1,4 @@
-// Package users manages the authority's users.
-package users
+package service
 
 import (
 	"context"

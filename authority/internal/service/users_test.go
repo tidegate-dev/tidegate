@@ -1,6 +1,6 @@
 //go:build integration
 
-package users
+package service
 
 import (
 	"context"

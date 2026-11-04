@@ -14,7 +14,7 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/config"
 	"github.com/tidegate-dev/tidegate/authority/internal/dbtest"
 	"github.com/tidegate-dev/tidegate/authority/internal/password"
-	"github.com/tidegate-dev/tidegate/authority/internal/users"
+	"github.com/tidegate-dev/tidegate/authority/internal/service"
 )
 
 var _ = Describe("authority create-initial-admin", func() {
@@ -46,7 +46,7 @@ var _ = Describe("authority create-initial-admin", func() {
 
 		err := command.Run(ctx, []string{"authority", "create-initial-admin", " alice"})
 
-		Expect(err).To(MatchError(users.ErrInvalidName))
+		Expect(err).To(MatchError(service.ErrInvalidName))
 	})
 
 	It("refuses before it reads a password when a user exists", func(ctx SpecContext) {
@@ -54,7 +54,7 @@ var _ = Describe("authority create-initial-admin", func() {
 
 		err := runCreateInitialAdmin(ctx, "bob", "")
 
-		Expect(err).To(MatchError(users.ErrUserExists))
+		Expect(err).To(MatchError(service.ErrUserExists))
 	})
 })
 

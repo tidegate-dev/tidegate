@@ -1,6 +1,6 @@
 //go:build integration
 
-package logintoken
+package service
 
 import (
 	"testing"
@@ -11,5 +11,5 @@ import (
 
 func TestIntegration(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "logintoken integration")
+	RunSpecs(t, "service integration")
 }

@@ -1,6 +1,6 @@
 //go:build integration
 
-package login
+package api
 
 import (
 	"bytes"
@@ -16,8 +16,7 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/db"
 	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
 	"github.com/tidegate-dev/tidegate/authority/internal/dbtest"
-	"github.com/tidegate-dev/tidegate/authority/internal/logintoken"
-	"github.com/tidegate-dev/tidegate/authority/internal/users"
+	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 	"github.com/tidegate-dev/tidegate/internal/logging"
 )
@@ -26,14 +25,14 @@ const alicePassword = "correct horse battery staple"
 
 var _ = Describe("Login", func() {
 	var (
-		service *Service
+		handler *LoginService
 		logs    *bytes.Buffer
 	)
 
 	login := func(ctx context.Context, userName, plaintext string) (string, error) {
 		ctx = logging.NewContext(ctx, slog.New(slog.NewTextHandler(logs, nil)))
 
-		res, err := service.Login(ctx, connect.NewRequest(&authorityv1.LoginRequest{
+		res, err := handler.Login(ctx, connect.NewRequest(&authorityv1.LoginRequest{
 			UserName: userName,
 			Password: plaintext,
 		}))
@@ -50,13 +49,13 @@ var _ = Describe("Login", func() {
 		DeferCleanup(pool.Close)
 		Expect(db.Migrate(ctx, pool)).To(Succeed())
 
-		Expect(users.CreateInitialAdmin(ctx, pool, "alice", alicePassword)).To(Succeed())
+		Expect(service.CreateInitialAdmin(ctx, pool, "alice", alicePassword)).To(Succeed())
 		Expect(sqlc.New(pool).CreateUser(ctx, sqlc.CreateUserParams{Name: "bob"})).To(Succeed())
 
-		authenticator, err := users.NewAuthenticator(pool)
+		authenticator, err := service.NewAuthenticator(pool)
 		Expect(err).NotTo(HaveOccurred())
 
-		service = NewService(authenticator, logintoken.NewStore(pool, 12*time.Hour))
+		handler = NewLoginService(service.NewLogins(authenticator, service.NewLoginTokens(pool, 12*time.Hour)))
 		logs = &bytes.Buffer{}
 	})
 
