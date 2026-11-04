@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/text/unicode/norm"
+
+	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 func TestHashMatchesTheReferenceImplementation(t *testing.T) {
@@ -30,10 +32,10 @@ func TestHashUsesANewSaltEachTime(t *testing.T) {
 	t.Parallel()
 
 	// act
-	first, err := Hash("correct horse battery staple")
+	first, err := Hash(secret.New("correct horse battery staple"))
 	require.NoError(t, err)
 
-	second, err := Hash("correct horse battery staple")
+	second, err := Hash(secret.New("correct horse battery staple"))
 	require.NoError(t, err)
 
 	// assert
@@ -46,7 +48,7 @@ func TestHashRefusesAPasswordUnder15Characters(t *testing.T) {
 
 	// act
 	// 14 characters, but more than 15 bytes in UTF-8.
-	_, err := Hash("äöüäöüäöüäöüäö")
+	_, err := Hash(secret.New("äöüäöüäöüäöüäö"))
 
 	// assert
 	require.ErrorIs(t, err, ErrTooShort)
@@ -56,7 +58,7 @@ func TestHashRefusesAPasswordOver1024Bytes(t *testing.T) {
 	t.Parallel()
 
 	// act
-	_, err := Hash(strings.Repeat("a", 1025))
+	_, err := Hash(secret.New(strings.Repeat("a", 1025)))
 
 	// assert
 	require.ErrorIs(t, err, ErrTooLong)
@@ -73,7 +75,7 @@ func TestHashAcceptsPasswordsAtTheLimits(t *testing.T) {
 			t.Parallel()
 
 			// act
-			_, err := Hash(password)
+			_, err := Hash(secret.New(password))
 
 			// assert
 			require.NoError(t, err)
@@ -140,7 +142,7 @@ func TestEquivalentComparesTheNormalizedForms(t *testing.T) {
 			t.Parallel()
 
 			// act
-			actual := Equivalent(test.first, test.second)
+			actual := Equivalent(secret.New(test.first), secret.New(test.second))
 
 			// assert
 			assert.Equal(t, test.expected, actual)
@@ -152,11 +154,11 @@ func TestVerifyAcceptsTheHashedPassword(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	hash, err := Hash("correct horse battery staple")
+	hash, err := Hash(secret.New("correct horse battery staple"))
 	require.NoError(t, err)
 
 	// act
-	ok, err := Verify("correct horse battery staple", hash)
+	ok, err := Verify(secret.New("correct horse battery staple"), hash)
 
 	// assert
 	require.NoError(t, err)
@@ -167,11 +169,11 @@ func TestVerifyRejectsAnotherPassword(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	hash, err := Hash("correct horse battery staple")
+	hash, err := Hash(secret.New("correct horse battery staple"))
 	require.NoError(t, err)
 
 	// act
-	ok, err := Verify("correct horse battery stapler", hash)
+	ok, err := Verify(secret.New("correct horse battery stapler"), hash)
 
 	// assert
 	require.NoError(t, err)
@@ -187,7 +189,7 @@ func TestVerifyReadsTheParametersFromTheHash(t *testing.T) {
 	const hash = "$argon2id$v=19$m=8,t=1,p=1$dGlkZWdhdGUtc2FsdC0xNg$OtzZSdevu1lF+xEZ6HckGA"
 
 	// act
-	ok, err := Verify("correct horse battery staple", hash)
+	ok, err := Verify(secret.New("correct horse battery staple"), hash)
 
 	// assert
 	require.NoError(t, err)
@@ -198,11 +200,11 @@ func TestVerifyTreatsEquivalentUnicodeFormsAsTheSamePassword(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	hash, err := Hash("café au lait, bitte")
+	hash, err := Hash(secret.New("café au lait, bitte"))
 	require.NoError(t, err)
 
 	// act
-	ok, err := Verify("café au lait, bitte", hash)
+	ok, err := Verify(secret.New("café au lait, bitte"), hash)
 
 	// assert
 	require.NoError(t, err)
@@ -213,11 +215,11 @@ func TestVerifyRejectsAnEmptyPassword(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	hash, err := Hash("correct horse battery staple")
+	hash, err := Hash(secret.New("correct horse battery staple"))
 	require.NoError(t, err)
 
 	// act
-	ok, err := Verify("", hash)
+	ok, err := Verify(secret.New(""), hash)
 
 	// assert
 	require.NoError(t, err)
@@ -228,11 +230,11 @@ func TestVerifyRefusesAPasswordOver1024Bytes(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	hash, err := Hash("correct horse battery staple")
+	hash, err := Hash(secret.New("correct horse battery staple"))
 	require.NoError(t, err)
 
 	// act
-	_, err = Verify(strings.Repeat("a", 1025), hash)
+	_, err = Verify(secret.New(strings.Repeat("a", 1025)), hash)
 
 	// assert
 	require.ErrorIs(t, err, ErrTooLong)
@@ -255,7 +257,7 @@ func TestVerifyFailsOnAMalformedHash(t *testing.T) {
 			t.Parallel()
 
 			// act
-			_, err := Verify("correct horse battery staple", hash)
+			_, err := Verify(secret.New("correct horse battery staple"), hash)
 
 			// assert
 			require.ErrorIs(t, err, ErrMalformedHash)

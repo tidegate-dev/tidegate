@@ -10,6 +10,7 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 	"github.com/tidegate-dev/tidegate/internal/logging"
+	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 // MaxLoginRequestBytes bounds a LoginRequest.
@@ -32,7 +33,7 @@ func (s *LoginService) Login(
 ) (*connect.Response[authorityv1.LoginResponse], error) {
 	logger := logging.FromContext(ctx).With("user", req.Msg.GetUserName())
 
-	token, err := s.logins.Login(ctx, req.Msg.GetUserName(), req.Msg.GetPassword())
+	token, err := s.logins.Login(ctx, req.Msg.GetUserName(), secret.New(req.Msg.GetPassword()))
 	if err != nil {
 		logger.WarnContext(ctx, "login failed", "reason", err)
 
@@ -41,7 +42,7 @@ func (s *LoginService) Login(
 
 	logger.InfoContext(ctx, "login succeeded")
 
-	return connect.NewResponse(&authorityv1.LoginResponse{Token: token}), nil
+	return connect.NewResponse(&authorityv1.LoginResponse{Token: token.Reveal()}), nil
 }
 
 // clientError hides why credentials are wrong, so clients can't tell which

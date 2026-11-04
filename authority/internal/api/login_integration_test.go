@@ -19,6 +19,7 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 	"github.com/tidegate-dev/tidegate/internal/logging"
+	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 const alicePassword = "correct horse battery staple"
@@ -49,7 +50,7 @@ var _ = Describe("Login", func() {
 		DeferCleanup(pool.Close)
 		Expect(db.Migrate(ctx, pool)).To(Succeed())
 
-		Expect(service.CreateInitialAdmin(ctx, pool, "alice", alicePassword)).To(Succeed())
+		Expect(service.CreateInitialAdmin(ctx, pool, "alice", secret.New(alicePassword))).To(Succeed())
 		Expect(sqlc.New(pool).CreateUser(ctx, sqlc.CreateUserParams{Name: "bob"})).To(Succeed())
 
 		authenticator, err := service.NewAuthenticator(pool)

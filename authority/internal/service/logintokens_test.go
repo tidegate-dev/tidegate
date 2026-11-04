@@ -44,9 +44,9 @@ var _ = Describe("Issue", func() {
 		token, err := NewLoginTokens(pool, 12*time.Hour).Issue(ctx, userID)
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(token).To(MatchRegexp(`^[A-Za-z0-9_-]{43}$`))
+		Expect(token.Reveal()).To(MatchRegexp(`^[A-Za-z0-9_-]{43}$`))
 
-		hash := sha256.Sum256([]byte(token))
+		hash := sha256.Sum256([]byte(token.Reveal()))
 		Expect(storedTokens(ctx, pool)).To(ConsistOf(SatisfyAll(
 			HaveField("TokenHash", Equal(hash[:])),
 			HaveField("UserID", userID),
@@ -83,7 +83,7 @@ var _ = Describe("Issue", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 
-		hash := sha256.Sum256([]byte(token))
+		hash := sha256.Sum256([]byte(token.Reveal()))
 		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hash[:]))))
 	})
 })

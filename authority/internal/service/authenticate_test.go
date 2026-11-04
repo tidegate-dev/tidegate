@@ -17,6 +17,7 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
 	"github.com/tidegate-dev/tidegate/authority/internal/dbtest"
 	"github.com/tidegate-dev/tidegate/authority/internal/password"
+	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 var _ = Describe("Authenticate", func() {
@@ -34,7 +35,7 @@ var _ = Describe("Authenticate", func() {
 		DeferCleanup(pool.Close)
 		Expect(db.Migrate(ctx, pool)).To(Succeed())
 
-		Expect(CreateInitialAdmin(ctx, pool, "alice", validPassword)).To(Succeed())
+		Expect(CreateInitialAdmin(ctx, pool, "alice", secret.New(validPassword))).To(Succeed())
 		Expect(sqlc.New(pool).CreateUser(ctx, sqlc.CreateUserParams{Name: "bob"})).To(Succeed())
 
 		alice, err := sqlc.New(pool).GetUserByName(ctx, "alice")
@@ -47,14 +48,14 @@ var _ = Describe("Authenticate", func() {
 	})
 
 	It("returns the user's ID for their password", func(ctx SpecContext) {
-		id, err := authenticator.Authenticate(ctx, "alice", validPassword)
+		id, err := authenticator.Authenticate(ctx, "alice", secret.New(validPassword))
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(id).To(Equal(aliceID))
 	})
 
 	It("ignores the letter case of the name", func(ctx SpecContext) {
-		id, err := authenticator.Authenticate(ctx, "ALICE", validPassword)
+		id, err := authenticator.Authenticate(ctx, "ALICE", secret.New(validPassword))
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(id).To(Equal(aliceID))
@@ -62,7 +63,7 @@ var _ = Describe("Authenticate", func() {
 
 	DescribeTable("returns ErrWrongCredentials with the reason",
 		func(ctx SpecContext, name, plaintext, reason string) {
-			_, err := authenticator.Authenticate(ctx, name, plaintext)
+			_, err := authenticator.Authenticate(ctx, name, secret.New(plaintext))
 
 			Expect(err).To(MatchError(ErrWrongCredentials))
 			Expect(err).To(MatchError(ContainSubstring(reason)))
@@ -73,7 +74,7 @@ var _ = Describe("Authenticate", func() {
 	)
 
 	It("refuses a password over 1024 bytes", func(ctx SpecContext) {
-		_, err := authenticator.Authenticate(ctx, "alice", strings.Repeat("a", 1025))
+		_, err := authenticator.Authenticate(ctx, "alice", secret.New(strings.Repeat("a", 1025)))
 
 		Expect(err).To(MatchError(password.ErrTooLong))
 	})
@@ -82,7 +83,7 @@ var _ = Describe("Authenticate", func() {
 		authenticator.checks = semaphore.NewWeighted(0)
 		authenticator.checkWait = time.Millisecond
 
-		_, err := authenticator.Authenticate(ctx, "alice", validPassword)
+		_, err := authenticator.Authenticate(ctx, "alice", secret.New(validPassword))
 
 		Expect(err).To(MatchError(ErrBusy))
 	})
@@ -91,7 +92,7 @@ var _ = Describe("Authenticate", func() {
 		canceled, cancel := context.WithCancel(ctx)
 		cancel()
 
-		_, err := authenticator.Authenticate(canceled, "alice", validPassword)
+		_, err := authenticator.Authenticate(canceled, "alice", secret.New(validPassword))
 
 		Expect(err).To(MatchError(context.Canceled))
 	})

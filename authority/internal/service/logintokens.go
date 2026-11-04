@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
+	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 const tokenBytes = 32
@@ -28,10 +29,10 @@ func NewLoginTokens(pool *pgxpool.Pool, lifetime time.Duration) *LoginTokens {
 }
 
 // Issue returns a new token for the user and deletes their expired ones.
-func (s *LoginTokens) Issue(ctx context.Context, userID pgtype.UUID) (string, error) {
+func (s *LoginTokens) Issue(ctx context.Context, userID pgtype.UUID) (secret.String, error) {
 	err := s.queries.DeleteExpiredLoginTokens(ctx, userID)
 	if err != nil {
-		return "", fmt.Errorf("deleting expired login tokens: %w", err)
+		return secret.String{}, fmt.Errorf("deleting expired login tokens: %w", err)
 	}
 
 	random := make([]byte, tokenBytes)
@@ -46,8 +47,8 @@ func (s *LoginTokens) Issue(ctx context.Context, userID pgtype.UUID) (string, er
 		Lifetime:  pgtype.Interval{Microseconds: s.lifetime.Microseconds(), Valid: true},
 	})
 	if err != nil {
-		return "", fmt.Errorf("storing the login token: %w", err)
+		return secret.String{}, fmt.Errorf("storing the login token: %w", err)
 	}
 
-	return token, nil
+	return secret.New(token), nil
 }

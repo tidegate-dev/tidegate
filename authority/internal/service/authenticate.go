@@ -14,6 +14,7 @@ import (
 
 	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
 	"github.com/tidegate-dev/tidegate/authority/internal/password"
+	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 // maxConcurrentChecks bounds memory, because each check needs up to 64 MiB.
@@ -40,7 +41,7 @@ type Authenticator struct {
 
 // NewAuthenticator returns an Authenticator for the users in pool.
 func NewAuthenticator(pool *pgxpool.Pool) (*Authenticator, error) {
-	fixedHash, err := password.Hash(rand.Text())
+	fixedHash, err := password.Hash(secret.New(rand.Text()))
 	if err != nil {
 		return nil, fmt.Errorf("hashing the password for unknown users: %w", err)
 	}
@@ -54,7 +55,7 @@ func NewAuthenticator(pool *pgxpool.Pool) (*Authenticator, error) {
 }
 
 // Authenticate returns the user's ID if plaintext is their local password.
-func (a *Authenticator) Authenticate(ctx context.Context, name, plaintext string) (pgtype.UUID, error) {
+func (a *Authenticator) Authenticate(ctx context.Context, name string, plaintext secret.String) (pgtype.UUID, error) {
 	user, err := a.queries.GetUserByName(ctx, name)
 
 	hash, failure := user.PasswordHash.String, error(nil)
@@ -82,7 +83,7 @@ func (a *Authenticator) Authenticate(ctx context.Context, name, plaintext string
 	return user.ID, nil
 }
 
-func (a *Authenticator) verify(ctx context.Context, plaintext, hash string) (bool, error) {
+func (a *Authenticator) verify(ctx context.Context, plaintext secret.String, hash string) (bool, error) {
 	wait, cancel := context.WithTimeout(ctx, a.checkWait)
 	defer cancel()
 

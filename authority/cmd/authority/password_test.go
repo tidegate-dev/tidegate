@@ -21,7 +21,7 @@ func TestAskPasswordTwiceReturnsMatchingEntries(t *testing.T) {
 
 	// assert
 	require.NoError(t, err)
-	assert.Equal(t, "correct horse battery staple", password)
+	assert.Equal(t, "correct horse battery staple", password.Reveal())
 }
 
 func TestAskPasswordTwiceAcceptsEntriesThatDifferOnlyInTheirEncoding(t *testing.T) {

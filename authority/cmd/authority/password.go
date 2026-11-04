@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/password"
+	"github.com/tidegate-dev/tidegate/internal/secret"
 	"github.com/tidegate-dev/tidegate/internal/terminal"
 )
 
@@ -16,10 +17,12 @@ var errPasswordsDiffer = errors.New("the passwords differ")
 
 // readPassword asks for a password twice on a terminal. Otherwise it reads
 // the first line from in, so a script can pipe the password in.
-func readPassword(ctx context.Context, in io.Reader, out io.Writer) (string, error) {
+func readPassword(ctx context.Context, in io.Reader, out io.Writer) (secret.String, error) {
 	file, ok := terminal.File(in)
 	if !ok {
-		return readPasswordLine(ctx, in)
+		line, err := readPasswordLine(ctx, in)
+
+		return secret.New(line), err
 	}
 
 	return askPasswordTwice(func(prompt string) (string, error) {
@@ -27,22 +30,22 @@ func readPassword(ctx context.Context, in io.Reader, out io.Writer) (string, err
 	})
 }
 
-func askPasswordTwice(ask func(prompt string) (string, error)) (string, error) {
+func askPasswordTwice(ask func(prompt string) (string, error)) (secret.String, error) {
 	first, err := ask(fmt.Sprintf("Password, at least %d characters: ", password.MinLength))
 	if err != nil {
-		return "", err
+		return secret.String{}, err
 	}
 
 	second, err := ask("Repeat the password: ")
 	if err != nil {
-		return "", err
+		return secret.String{}, err
 	}
 
-	if !password.Equivalent(first, second) {
-		return "", errPasswordsDiffer
+	if !password.Equivalent(secret.New(first), secret.New(second)) {
+		return secret.String{}, errPasswordsDiffer
 	}
 
-	return first, nil
+	return secret.New(first), nil
 }
 
 func readPasswordLine(ctx context.Context, in io.Reader) (string, error) {

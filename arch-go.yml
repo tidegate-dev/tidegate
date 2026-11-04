@@ -38,9 +38,9 @@ dependenciesRules:
 
   # The authority's layers: api calls service, service calls the database.
   - package: '^github.com/tidegate-dev/tidegate/authority/internal/password$'
-    shouldNotDependsOn:
+    shouldOnlyDependsOn:
       internal:
-        - '^github.com/tidegate-dev/tidegate.**'
+        - '^github.com/tidegate-dev/tidegate/internal/secret$'
 
   - package: '^github.com/tidegate-dev/tidegate/authority/internal/config$'
     shouldOnlyDependsOn:
@@ -57,6 +57,7 @@ dependenciesRules:
       internal:
         - '^github.com/tidegate-dev/tidegate/authority/internal/db.**'
         - '^github.com/tidegate-dev/tidegate/authority/internal/password$'
+        - '^github.com/tidegate-dev/tidegate/internal/secret$'
     shouldNotDependsOn:
       external:
         - connectrpc.com/connect
@@ -68,6 +69,7 @@ dependenciesRules:
         - '^github.com/tidegate-dev/tidegate/authority/internal/password$'
         - '^github.com/tidegate-dev/tidegate/gen.**'
         - '^github.com/tidegate-dev/tidegate/internal/logging$'
+        - '^github.com/tidegate-dev/tidegate/internal/secret$'
     shouldNotDependsOn:
       external:
         - github.com/jackc/pgx/v5.**

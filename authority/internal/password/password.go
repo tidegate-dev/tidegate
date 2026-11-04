@@ -8,6 +8,8 @@ import (
 
 	"github.com/matthewhartstonge/argon2"
 	"golang.org/x/text/unicode/norm"
+
+	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 // MinLength is the minimum number of characters in a password. NIST
@@ -36,8 +38,8 @@ func config() argon2.Config {
 // string like $argon2id$v=19$m=65536,t=3,p=4$salt$hash. It returns
 // ErrTooShort or ErrTooLong for a password it doesn't accept. It hashes the
 // password's NFKC normalization, and MinLength counts its characters.
-func Hash(password string) (string, error) {
-	return hashWithSalt(password, nil)
+func Hash(password secret.String) (string, error) {
+	return hashWithSalt(password.Reveal(), nil)
 }
 
 func hashWithSalt(password string, salt []byte) (string, error) {
@@ -74,8 +76,8 @@ func prepare(password string) (string, error) {
 
 // Equivalent reports whether a and b are the same password once normalized,
 // so they get the same hash.
-func Equivalent(a, b string) bool {
-	return normalize(a) == normalize(b)
+func Equivalent(a, b secret.String) bool {
+	return normalize(a.Reveal()) == normalize(b.Reveal())
 }
 
 // normalize follows NIST SP 800-63B, so a password matches however the
@@ -87,8 +89,8 @@ func normalize(password string) string {
 
 // Verify reports whether password matches hash. It accepts hashes that cost
 // less than Hash's, and returns ErrTooLong or ErrMalformedHash.
-func Verify(password, hash string) (bool, error) {
-	if len(password) > MaxBytes {
+func Verify(password secret.String, hash string) (bool, error) {
+	if len(password.Reveal()) > MaxBytes {
 		return false, ErrTooLong
 	}
 
@@ -98,7 +100,7 @@ func Verify(password, hash string) (bool, error) {
 	}
 
 	// The library refuses a nil password.
-	ok, err := raw.Verify(append([]byte{}, normalize(password)...))
+	ok, err := raw.Verify(append([]byte{}, normalize(password.Reveal())...))
 	if err != nil {
 		return false, fmt.Errorf("checking the password: %w", err)
 	}

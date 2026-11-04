@@ -1,6 +1,10 @@
 package service
 
-import "context"
+import (
+	"context"
+
+	"github.com/tidegate-dev/tidegate/internal/secret"
+)
 
 // Logins signs users in with a local password.
 type Logins struct {
@@ -14,10 +18,10 @@ func NewLogins(authenticator *Authenticator, tokens *LoginTokens) *Logins {
 }
 
 // Login returns a new login token if plaintext is the user's password.
-func (l *Logins) Login(ctx context.Context, name, plaintext string) (string, error) {
+func (l *Logins) Login(ctx context.Context, name string, plaintext secret.String) (secret.String, error) {
 	userID, err := l.authenticator.Authenticate(ctx, name, plaintext)
 	if err != nil {
-		return "", err
+		return secret.String{}, err
 	}
 
 	return l.tokens.Issue(ctx, userID)

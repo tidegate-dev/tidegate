@@ -12,6 +12,7 @@ import (
 
 	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
 	"github.com/tidegate-dev/tidegate/authority/internal/password"
+	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 var (
@@ -50,7 +51,7 @@ func AnyExist(ctx context.Context, pool *pgxpool.Pool) (bool, error) {
 // CreateInitialAdmin creates the first user, with a local password. It
 // returns ErrUserExists if any user exists, also when another run creates
 // one at the same time.
-func CreateInitialAdmin(ctx context.Context, pool *pgxpool.Pool, name, plaintext string) error {
+func CreateInitialAdmin(ctx context.Context, pool *pgxpool.Pool, name string, plaintext secret.String) error {
 	err := ValidateName(name)
 	if err != nil {
 		return err
