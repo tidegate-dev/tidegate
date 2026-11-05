@@ -26,6 +26,7 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/ping"
 	"github.com/tidegate-dev/tidegate/authority/internal/users"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
+	"github.com/tidegate-dev/tidegate/internal/certreload"
 	"github.com/tidegate-dev/tidegate/internal/handlererrors"
 	"github.com/tidegate-dev/tidegate/internal/logging"
 	"github.com/tidegate-dev/tidegate/internal/metrics"
@@ -177,6 +178,16 @@ func createInitialAdmin(ctx context.Context, cfg config.Database, name string, i
 }
 
 func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
+	certificate, err := loadCertificate(cfg.Server.TLS)
+	if err != nil {
+		return err
+	}
+
+	if certificate == nil {
+		slog.Warn("the API serves plain HTTP, because TIDEGATE_AUTHORITY__SERVER__TLS__DISABLED is true. " +
+			"Only use this behind a proxy that terminates TLS")
+	}
+
 	if cfg.Database.MigrateOnStart {
 		err := migrate(ctx, cfg.Database)
 		if err != nil {
@@ -204,8 +215,8 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 		return err
 	}
 
-	if cfg.Server.Certificate != nil {
-		registration, err := cfg.Server.Certificate.ReportExpiry()
+	if certificate != nil {
+		registration, err := certificate.ReportExpiry()
 		if err != nil {
 			return errors.Join(err, shutdownMetrics(context.Background()))
 		}
@@ -214,14 +225,14 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 			_ = registration.Unregister()
 		}()
 
-		go cfg.Server.Certificate.Watch(ctx)
+		go certificate.Watch(ctx)
 	}
 
 	metricsMux := http.NewServeMux()
 	metricsMux.Handle("GET /metrics", metricsHandler)
 
 	err = serve(ctx, notifier, map[string]*http.Server{
-		"api": apiServer(cfg.Server, pool),
+		"api": apiServer(cfg.Server.ListenAddress, certificate, pool),
 		"metrics": {
 			Addr:              cfg.Metrics.ListenAddress,
 			Handler:           metricsMux,
@@ -257,7 +268,8 @@ func openDatabase(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-func apiServer(cfg config.Server, pool *pgxpool.Pool) *http.Server {
+// apiServer serves plain HTTP if certificate is nil.
+func apiServer(address string, certificate *certreload.Certificate, pool *pgxpool.Pool) *http.Server {
 	options := connect.WithInterceptors(handlererrors.Interceptor())
 
 	mux := http.NewServeMux()
@@ -271,8 +283,8 @@ func apiServer(cfg config.Server, pool *pgxpool.Pool) *http.Server {
 
 	var tlsConfig *tls.Config
 
-	if cfg.Certificate != nil {
-		tlsConfig = &tls.Config{GetCertificate: cfg.Certificate.Get}
+	if certificate != nil {
+		tlsConfig = &tls.Config{GetCertificate: certificate.Get}
 
 		protocols.SetHTTP2(true)
 	} else {
@@ -280,7 +292,7 @@ func apiServer(cfg config.Server, pool *pgxpool.Pool) *http.Server {
 	}
 
 	return &http.Server{
-		Addr:              cfg.ListenAddress,
+		Addr:              address,
 		Handler:           mux,
 		Protocols:         &protocols,
 		TLSConfig:         tlsConfig,

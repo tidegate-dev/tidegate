@@ -8,7 +8,7 @@ TIDEGATE_AUTHORITY__LOG__LEVEL=debug \
 authority
 ```
 
-This starts the authority listening on port 8080 on every network interface and logging at the debug level.
+This sets the authority to listen on port 8080 on every network interface and to log at the debug level.
 
 Every variable starts with `TIDEGATE_AUTHORITY__`. Two underscores separate the parts of a name, like `SERVER` and `LISTEN_ADDRESS`. After the prefix, upper and lower case don't matter, in names or in values.
 
@@ -27,8 +27,9 @@ A setting keeps its default when its variable isn't set or is empty. `TIDEGATE_A
 | Variable | Default | Values |
 |---|---|---|
 | `TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS` | `127.0.0.1:8080` | A host and port, like `:8080` or `[::1]:8080` |
-| `TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE` | None | Path to the certificate in PEM format, followed by any intermediate certificates |
-| `TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE` | None | Path to the certificate's private key in PEM format |
+| `TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE` | `/etc/tidegate/authority/tls/tls.crt` | Path to the certificate in PEM format, followed by any intermediate certificates |
+| `TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE` | `/etc/tidegate/authority/tls/tls.key` | Path to the certificate's private key in PEM format |
+| `TIDEGATE_AUTHORITY__SERVER__TLS__DISABLED` | `false` | `true` serves plain HTTP, for a proxy that terminates TLS |
 | `TIDEGATE_AUTHORITY__DATABASE__URL` | None, required | A Postgres connection URL, like `postgres://tidegate:tidegate@host:5432/tidegate?sslmode=verify-full` |
 | `TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START` | `false` | `true` or `false` |
 | `TIDEGATE_AUTHORITY__METRICS__LISTEN_ADDRESS` | `127.0.0.1:9464` | A host and port for `/metrics`, like `:9464` |
