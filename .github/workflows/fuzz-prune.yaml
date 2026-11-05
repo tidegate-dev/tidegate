@@ -1,4 +1,4 @@
-name: Prune the fuzz corpus
+name: Prune the fuzz corpus and measure its coverage
 
 on:
   # Its own run, because an upload in the same run as the scheduled fuzzing
@@ -29,4 +29,28 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           mode: prune
+          fuzz-seconds: 600
+
+  # Pull requests fuzz only the fuzz tests that reach the changed code, and
+  # ClusterFuzzLite finds them in this coverage report.
+  coverage:
+    needs: prune
+    runs-on: ubuntu-latest
+    # The job reads artifacts that pull request runs can upload too, so it must
+    # never get a secret or a write permission.
+    permissions:
+      contents: read
+      actions: read # Reads the pruned corpus.
+    steps:
+      - name: Build the fuzz tests with coverage
+        uses: google/clusterfuzzlite/actions/build_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1 # v1
+        with:
+          language: go
+          sanitizer: coverage
+      - name: Measure the coverage of the corpus
+        uses: google/clusterfuzzlite/actions/run_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1 # v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          mode: coverage
+          sanitizer: coverage
           fuzz-seconds: 600
