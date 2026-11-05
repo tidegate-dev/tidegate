@@ -1,0 +1,30 @@
+# API reference
+
+This page is generated from the comments in the `.proto` files in `proto/`. Clients call the API with [Connect](https://connectrpc.com/), gRPC or gRPC-Web.
+{{range .Files}}{{range .Services}}
+## {{.FullName}} { #{{.FullName}} }
+
+{{.Description}}
+
+| Method | Request | Response | Description |
+| ------ | ------- | -------- | ----------- |
+{{range .Methods}}| `{{.Name}}` | [{{.RequestFullType}}](#{{.RequestFullType}}) | [{{.ResponseFullType}}](#{{.ResponseFullType}}) | {{nobr .Description | replace "|" "\\|"}} |
+{{end}}{{end}}{{end}}
+## Types
+{{range .Files}}{{range .Messages}}
+### {{.FullName}} { #{{.FullName}} }
+
+{{.Description}}
+{{if .Fields}}
+| Field | Type | Description |
+| ----- | ---- | ----------- |
+{{range .Fields}}| `{{.Name}}` | `{{if .Label}}{{.Label}} {{end}}{{.FullType}}` | {{nobr .Description | replace "|" "\\|"}} |
+{{end}}{{end}}{{end}}{{end}}{{range .Files}}{{range .Enums}}
+### {{.FullName}} { #{{.FullName}} }
+
+{{.Description}}
+
+| Value | Number | Description |
+| ----- | ------ | ----------- |
+{{range .Values}}| `{{.Name}}` | {{.Number}} | {{nobr .Description | replace "|" "\\|"}} |
+{{end}}{{end}}{{end}}

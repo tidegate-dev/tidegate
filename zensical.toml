@@ -13,6 +13,7 @@ nav = [
     { "Metrics" = "authority/metrics.md" },
     { "Running under systemd" = "authority/systemd.md" },
   ] },
+  { "API reference" = "reference/api.md" },
   { "Development environment" = "development.md" },
 ]
 
