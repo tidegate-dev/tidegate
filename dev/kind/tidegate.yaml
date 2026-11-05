@@ -13,6 +13,9 @@ spec:
       labels:
         app: authority
     spec:
+      # 65532 is the user ID of the distroless image.
+      securityContext:
+        fsGroup: 65532
       containers:
         - name: authority
           image: localhost/tidegate-authority:latest
@@ -36,6 +39,7 @@ spec:
         - name: tls
           secret:
             secretName: authority-tls
+            defaultMode: 0440
 ---
 apiVersion: v1
 kind: Service

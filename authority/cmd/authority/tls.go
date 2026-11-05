@@ -25,6 +25,11 @@ func loadCertificate(cfg config.TLS) (*certreload.Certificate, error) {
 			"To serve plain HTTP behind a proxy that terminates TLS, set TIDEGATE_AUTHORITY__SERVER__TLS__DISABLED=true", err)
 	}
 
+	if errors.Is(err, fs.ErrPermission) {
+		return nil, fmt.Errorf("loading the TLS certificate: %w. "+
+			"In Kubernetes, set the Pod's fsGroup to 65532, the user ID of the container image", err)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("loading the TLS certificate: %w", err)
 	}
