@@ -53,6 +53,19 @@ go tool cover -html=coverage/authority-integration.out
 
 CI uploads the files to [Codecov](https://codecov.io/gh/tidegate-dev/tidegate). Codecov shows the coverage on each pull request, and low coverage doesn't fail CI.
 
+Coverage shows which lines the tests run, not whether they'd notice a mistake in them. To check that, run:
+
+```sh
+just dev-deps
+just mutate
+```
+
+[gremlins](https://gremlins.dev) makes small changes to the lines your branch changed since it split off from `origin/main`, like `>` to `>=`. After each one, it runs the tests of that package. `LIVED` marks a change that no test caught, and `NOT COVERED` a line that no test of its package runs. Some changes can't be caught, because they don't change what the code does. `.gremlins.yaml` sets which kinds of changes gremlins makes.
+
+The comparison includes uncommitted changes, but new files only once git tracks them. Run `git fetch` first, so `origin/main` is current. To compare with another branch or commit, name it, like `just mutate feat/login`.
+
+On a pull request, CI shows the same list in the summary of the `ci` job. The list doesn't fail CI.
+
 Fuzz tests are native Go fuzz tests, like `func FuzzPrepare(f *testing.F)`. `just test` runs only their seed inputs. To fuzz one locally, run `go test -fuzz=FuzzPrepare ./authority/internal/password`. In CI, [ClusterFuzzLite](https://google.github.io/clusterfuzzlite/) fuzzes for a minute on each pull request that changes Go code or the fuzz setup, and fails it when it finds a crash. The log shows the error, and the run keeps the input that caused it as an artifact named `crashes-` followed by the fuzz test's name. Every night it fuzzes for an hour and keeps the inputs it found for the next run. The fuzz tests share that time.
 
 `.clusterfuzzlite/build.sh` finds the fuzz tests by their names, so a new one needs no extra setup. Put it in a test file of the package itself, not of a `_test` package, and without a `//go:build` line, because the fuzz build uses no build tags.

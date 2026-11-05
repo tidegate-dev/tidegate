@@ -1,0 +1,21 @@
+unleash:
+  tags: integration
+  output-statuses: lc
+  # Generated code has no tests of its own.
+  exclude-files:
+    - ^gen/
+    - ^authority/internal/db/sqlc/
+# gremlins turns on the other mutants by default.
+mutants:
+  invert-assignments:
+    enabled: true
+  invert-bitwise:
+    enabled: true
+  invert-bwassign:
+    enabled: true
+  invert-logical:
+    enabled: true
+  invert-loopctrl:
+    enabled: true
+  remove-self-assignments:
+    enabled: true

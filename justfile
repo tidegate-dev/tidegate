@@ -4,6 +4,8 @@ mod docs
 mod internal
 mod proto
 
+import 'authority/test-database.just'
+
 # List the recipes.
 default:
     @{{just_executable()}} --list --list-submodules
@@ -17,6 +19,18 @@ test: authority::test cli::test internal::test
 # Run the integration tests.
 test-integration: authority::test-integration
 
+# Change each line the branch changed since it split off from base, and list
+# the changes that no test catches.
+mutate $base="origin/main":
+    #!/usr/bin/env sh
+    set -eu
+    # gremlins runs every test before it looks at the diff.
+    if git diff --quiet --merge-base "$base" -- '*.go'; then
+        echo "The branch changes no Go code since it split off from $base."
+        exit 0
+    fi
+    go tool gremlins unleash --diff "$base"
+
 # Generate code from the .proto files.
 generate: proto::generate authority::generate
 
@@ -29,6 +43,7 @@ lint: authority::lint cli::lint internal::lint proto::lint
 # vulnerabilities.
 vuln: authority::vuln cli::vuln internal::vuln
     govulncheck github.com/arch-go/arch-go/v2/...
+    govulncheck github.com/go-gremlins/gremlins/...
 
 # gitleaks reads every branch unless --log-opts names one.
 # Check every commit for secrets, like private keys.
