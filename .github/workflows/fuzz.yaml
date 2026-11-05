@@ -1,0 +1,37 @@
+name: Fuzz
+
+on:
+  pull_request:
+    paths:
+      - "**.go"
+      - go.mod
+      - go.sum
+      - .clusterfuzzlite/**
+      - .github/workflows/fuzz.yaml
+
+permissions: {}
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    # The job runs code from pull requests and reads artifacts that any run
+    # can upload, so it must never get a secret or a write permission.
+    permissions:
+      contents: read
+      actions: read # Reads the corpus that the scheduled fuzzing keeps.
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Build the fuzz tests
+        uses: google/clusterfuzzlite/actions/build_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1 # v1
+        with:
+          language: go
+      - name: Fuzz the code the pull request changes
+        uses: google/clusterfuzzlite/actions/run_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1 # v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          mode: code-change
+          fuzz-seconds: 300
+          # libFuzzer prints a crashing input to the log only up to 256 bytes.
+          minimize-crashes: true
