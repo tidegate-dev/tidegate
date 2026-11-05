@@ -3,18 +3,21 @@ package api
 import (
 	"context"
 	"errors"
+	"net/http"
+	"slices"
 
 	"connectrpc.com/connect"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/password"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
+	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
 	"github.com/tidegate-dev/tidegate/internal/logging"
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
-// MaxLoginRequestBytes bounds a LoginRequest.
-const MaxLoginRequestBytes = 4096
+// maxLoginRequestBytes bounds a LoginRequest.
+const maxLoginRequestBytes = 4096
 
 // LoginService signs users in.
 type LoginService struct {
@@ -24,6 +27,14 @@ type LoginService struct {
 // NewLoginService returns a LoginService.
 func NewLoginService(logins *service.Logins) *LoginService {
 	return &LoginService{logins: logins}
+}
+
+// NewLoginServiceHandler returns the path and the HTTP handler of a
+// LoginService that refuses requests over maxLoginRequestBytes.
+func NewLoginServiceHandler(logins *service.Logins, opts ...connect.HandlerOption) (string, http.Handler) {
+	opts = slices.Concat(opts, []connect.HandlerOption{connect.WithReadMaxBytes(maxLoginRequestBytes)})
+
+	return authorityv1connect.NewLoginServiceHandler(NewLoginService(logins), opts...)
 }
 
 // Login checks the user's local password and returns a new login token.

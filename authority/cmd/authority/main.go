@@ -280,8 +280,7 @@ func apiServer(address string, certificate *certreload.Certificate, pool *pgxpoo
 	mux := http.NewServeMux()
 	mux.Handle(authorityv1connect.NewPingServiceHandler(api.PingService{}, options))
 	mux.Handle(authorityv1connect.NewDummyServiceHandler(api.NewDummyService(service.NewDummies(pool)), options))
-	mux.Handle(authorityv1connect.NewLoginServiceHandler(api.NewLoginService(logins), options,
-		connect.WithReadMaxBytes(api.MaxLoginRequestBytes)))
+	mux.Handle(api.NewLoginServiceHandler(logins, options))
 
 	// gRPC clients need HTTP/2, and the CLI's Connect client uses HTTP/1.1
 	// by default.
