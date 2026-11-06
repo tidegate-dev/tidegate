@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -62,7 +63,7 @@ func TestConnectErrorPassesThrough(t *testing.T) {
 	assert.Same(t, notFound, err)
 }
 
-func TestCanceledContextPassesThrough(t *testing.T) {
+func TestCanceledCallReachesTheClientWithoutItsText(t *testing.T) {
 	t.Parallel()
 
 	// arrange
@@ -72,10 +73,13 @@ func TestCanceledContextPassesThrough(t *testing.T) {
 	_, err := handler(t.Context(), connect.NewRequest(&struct{}{}))
 
 	// assert
-	assert.ErrorIs(t, err, context.Canceled)
+	var connectErr *connect.Error
+	require.ErrorAs(t, err, &connectErr)
+	assert.Equal(t, connect.CodeCanceled, connectErr.Code())
+	assert.NotContains(t, connectErr.Message(), "storing the text")
 }
 
-func TestExceededDeadlinePassesThrough(t *testing.T) {
+func TestExceededDeadlineReachesTheClientWithoutItsText(t *testing.T) {
 	t.Parallel()
 
 	// arrange
@@ -85,7 +89,59 @@ func TestExceededDeadlinePassesThrough(t *testing.T) {
 	_, err := handler(t.Context(), connect.NewRequest(&struct{}{}))
 
 	// assert
-	assert.ErrorIs(t, err, context.DeadlineExceeded)
+	var connectErr *connect.Error
+	require.ErrorAs(t, err, &connectErr)
+	assert.Equal(t, connect.CodeDeadlineExceeded, connectErr.Code())
+	assert.NotContains(t, connectErr.Message(), "storing the text")
+}
+
+func TestNetworkTimeoutReachesTheClientWithoutItsText(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	handler := handlererrors.Interceptor().WrapUnary(failWith(fmt.Errorf("dial tcp 192.0.2.5:5432: %w", os.ErrDeadlineExceeded)))
+
+	// act
+	_, err := handler(t.Context(), connect.NewRequest(&struct{}{}))
+
+	// assert
+	var connectErr *connect.Error
+	require.ErrorAs(t, err, &connectErr)
+	assert.Equal(t, connect.CodeDeadlineExceeded, connectErr.Code())
+	assert.NotContains(t, connectErr.Message(), "192.0.2.5")
+}
+
+func TestExceededDeadlineIsLoggedAtDebugLevel(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	var out bytes.Buffer
+
+	ctx := logging.NewContext(t.Context(), logging.New(&out, slog.LevelDebug, logging.FormatText))
+	handler := handlererrors.Interceptor().WrapUnary(failWith(fmt.Errorf("storing the text: %w", context.DeadlineExceeded)))
+
+	// act
+	_, _ = handler(ctx, connect.NewRequest(&struct{}{}))
+
+	// assert
+	assert.Contains(t, out.String(), "level=DEBUG")
+	assert.Contains(t, out.String(), "storing the text")
+}
+
+func TestStreamingExceededDeadlineReachesTheClientWithoutItsText(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	handler := handlererrors.Interceptor().WrapStreamingHandler(streamFailWith(fmt.Errorf("reading the session: %w", context.DeadlineExceeded)))
+
+	// act
+	err := handler(t.Context(), stream{})
+
+	// assert
+	var connectErr *connect.Error
+	require.ErrorAs(t, err, &connectErr)
+	assert.Equal(t, connect.CodeDeadlineExceeded, connectErr.Code())
+	assert.NotContains(t, connectErr.Message(), "reading the session")
 }
 
 func TestUnexpectedStreamingErrorReachesTheClientAsInternal(t *testing.T) {
@@ -146,7 +202,7 @@ func streamFailWith(err error) connect.StreamingHandlerFunc {
 	}
 }
 
-// stream sets the procedure that connect-go fills in for a real call. The
+// stream returns the procedure that connect-go fills in for a real call. The
 // interceptor reads nothing else from it.
 type stream struct {
 	connect.StreamingHandlerConn
