@@ -71,6 +71,7 @@
           packages = tools pkgs ++ [
             pkgs.gitleaks
             pkgs.govulncheck
+            pkgs.hurl
             pkgs.kind
             pkgs.kubectl
             pkgs.kubernetes-helm

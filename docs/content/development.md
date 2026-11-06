@@ -102,7 +102,7 @@ To change the database schema, add a migration to `authority/internal/db/migrati
 
 ## Tests
 
-tidegate has unit tests and integration tests, and CI runs both. CI also measures their coverage, lists the changes that no test catches and fuzzes the code.
+tidegate has unit tests, integration tests and API tests, and CI runs all three. CI also measures their coverage, lists the changes that no test catches and fuzzes the code.
 
 ### Unit and integration tests
 
@@ -119,9 +119,20 @@ Each test creates its own database and drops it at the end. If you stop a run be
 
 `just test` and `just test-integration` run the tests with Go's [race detector](https://go.dev/doc/articles/race_detector).
 
+### API tests
+
+API tests send requests to a running component with [Hurl](https://hurl.dev) and check what comes back, like the status code and the error. They check what a client sees, and the Go tests check the logic behind it. Each component keeps its API tests in its own `api-tests/` folder, like `authority/api-tests/`. Start the services first, then run the tests:
+
+```sh
+just dev-deps
+just test-api
+```
+
+This starts the authority against the test database, on other ports than `just dev`, and runs the tests against it.
+
 ### Coverage
 
-`just test` and `just test-integration` measure coverage and write it to `coverage/`, one file for each set of tests. To see which lines a set of tests runs, open its file:
+`just test`, `just test-integration` and `just test-api` measure coverage and write it to `coverage/`, one file for each set of tests. To see which lines a set of tests runs, open its file:
 
 ```sh
 go tool cover -html=coverage/authority-integration.out
