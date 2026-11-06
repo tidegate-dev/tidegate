@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package tidegate.authority.v1;
 
+import "buf/validate/validate.proto";
+
 option go_package = "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;authorityv1";
 
 // DummyService stores and reads texts, to check the path from a client through
@@ -16,7 +18,9 @@ service DummyService {
 // WriteRequest is the input of DummyService.Write.
 message WriteRequest {
   // Text is the text to store.
-  string text = 1;
+  //
+  // Rules: At most 1024 characters.
+  string text = 1 [(buf.validate.field).string.max_len = 1024];
 }
 
 // WriteResponse is the result of DummyService.Write.

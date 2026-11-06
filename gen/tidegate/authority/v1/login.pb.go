@@ -7,6 +7,7 @@
 package authorityv1
 
 import (
+	_ "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -25,8 +26,12 @@ const (
 type LoginRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// UserName is the user's name, in any letter case.
+	//
+	// Rules: Not empty.
 	UserName string `protobuf:"bytes,1,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
 	// Password is the user's local password.
+	//
+	// Rules: Not empty, at most 1024 bytes.
 	Password      string `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -126,10 +131,11 @@ var File_tidegate_authority_v1_login_proto protoreflect.FileDescriptor
 
 const file_tidegate_authority_v1_login_proto_rawDesc = "" +
 	"\n" +
-	"!tidegate/authority/v1/login.proto\x12\x15tidegate.authority.v1\"G\n" +
-	"\fLoginRequest\x12\x1b\n" +
-	"\tuser_name\x18\x01 \x01(\tR\buserName\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"%\n" +
+	"!tidegate/authority/v1/login.proto\x12\x15tidegate.authority.v1\x1a\x1bbuf/validate/validate.proto\"\\\n" +
+	"\fLoginRequest\x12$\n" +
+	"\tuser_name\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x10\x01R\buserName\x12&\n" +
+	"\bpassword\x18\x02 \x01(\tB\n" +
+	"\xbaH\ar\x05\x10\x01(\x80\bR\bpassword\"%\n" +
 	"\rLoginResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token2b\n" +
 	"\fLoginService\x12R\n" +

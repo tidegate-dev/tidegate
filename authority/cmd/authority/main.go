@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"connectrpc.com/validate"
 	"github.com/The127/go-clock"
 	"github.com/The127/go-random"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -281,7 +282,7 @@ func openDatabase(ctx context.Context, url string) (*pgxpool.Pool, error) {
 // requestlog comes first, so it logs the code the client gets after
 // handlererrors has changed it.
 func interceptors(clk clock.Service) []connect.Interceptor {
-	return []connect.Interceptor{requestlog.Interceptor(clk), handlererrors.Interceptor()}
+	return []connect.Interceptor{requestlog.Interceptor(clk), handlererrors.Interceptor(), validate.NewInterceptor()}
 }
 
 // apiServer serves plain HTTP if certificate is nil.
