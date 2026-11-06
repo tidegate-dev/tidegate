@@ -49,15 +49,15 @@ func readKeyFile(keyFile string) ([]byte, error) {
 func checkKeyFileAccess(owner, self int, mode fs.FileMode) error {
 	switch owner {
 	case self:
-		if mode&0o077 != 0 {
+		if mode != 0o600 && mode != 0o400 {
 			return fmt.Errorf("%w: it has mode %04o, and a key file owned by the user tidegate runs as (%d) needs mode 0600 or 0400", ErrKeyFileAccess, mode, self)
 		}
 	case rootUID:
-		if mode&0o037 != 0 {
+		if mode != 0o640 && mode != 0o440 {
 			return fmt.Errorf("%w: it has mode %04o, and a key file owned by root needs mode 0640 or 0440", ErrKeyFileAccess, mode)
 		}
 	default:
-		return fmt.Errorf("%w: user %d owns it, and only root or the user tidegate runs as (%d) may own it", ErrKeyFileAccess, owner, self)
+		return fmt.Errorf("%w: it has mode %04o and user %d owns it, and a key file needs mode 0600 or 0400 with the user tidegate runs as (%d) as its owner, or mode 0640 or 0440 with root as its owner", ErrKeyFileAccess, mode, owner, self)
 	}
 
 	return nil

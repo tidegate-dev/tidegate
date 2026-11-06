@@ -104,10 +104,12 @@ func TestCheckKeyFileAccess(t *testing.T) {
 		{"the authority's file that only it can read and write", authority, authority, 0o600, true},
 		{"the authority's file that its group can read", authority, authority, 0o640, false},
 		{"the authority's file that others can read", authority, authority, 0o604, false},
+		{"the authority's file that only it can read and run", authority, authority, 0o500, false},
 		{"root's file that its group can read, like a Kubernetes Secret", root, authority, 0o440, true},
 		{"root's file that root can write and its group can read", root, authority, 0o640, true},
 		{"root's file that its group can write", root, authority, 0o660, false},
 		{"root's file that others can read", root, authority, 0o444, false},
+		{"root's file that its group can read and run", root, authority, 0o550, false},
 		{"root's file that its group can read, when the authority runs as root", root, root, 0o640, false},
 		{"another user's file that only they can read", other, authority, 0o400, false},
 	}
@@ -150,6 +152,9 @@ func TestWatchKeepsTheCertificateWhenTheNewKeyFileIsOpenToOthers(t *testing.T) {
 		return bytes.Contains(logs.Bytes(), []byte(ErrKeyFileAccess.Error()))
 	}, 5*time.Second, 10*time.Millisecond)
 	assert.Equal(t, int64(1), serial(t, certificate))
+
+	require.NoError(t, os.Chmod(filepath.Join(dir, "key.pem"), 0o600))
+	assertSerialBecomes(t, certificate, 2)
 }
 
 func TestWatchKeepsTheCertificateWhenTheNewKeyIsTooShort(t *testing.T) {
