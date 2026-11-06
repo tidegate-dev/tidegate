@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package tidegate.authority.v1;
 
+import "buf/validate/validate.proto";
+
 option go_package = "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;authorityv1";
 
 // LoginService signs users in to the authority.
@@ -14,9 +16,16 @@ service LoginService {
 // LoginRequest is the input of LoginService.Login.
 message LoginRequest {
   // UserName is the user's name, in any letter case.
-  string user_name = 1;
+  //
+  // Rules: Not empty.
+  string user_name = 1 [(buf.validate.field).string.min_len = 1];
   // Password is the user's local password.
-  string password = 2;
+  //
+  // Rules: Not empty, at most 1024 bytes.
+  string password = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_bytes: 1024
+  }];
 }
 
 // LoginResponse is the result of LoginService.Login.

@@ -34,50 +34,50 @@ PingService checks that a client can reach the authority.
 
 ReadRequest is the input of DummyService.Read.
 
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| `id` | `int64` | ID is the one DummyService.Write returned for the text. |
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `id` | `int64` | ID is the one DummyService.Write returned for the text. |  |
 
 ### tidegate.authority.v1.ReadResponse { #tidegate.authority.v1.ReadResponse }
 
 ReadResponse is the result of DummyService.Read.
 
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| `text` | `string` | Text is the stored text. |
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `text` | `string` | Text is the stored text. |  |
 
 ### tidegate.authority.v1.WriteRequest { #tidegate.authority.v1.WriteRequest }
 
 WriteRequest is the input of DummyService.Write.
 
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| `text` | `string` | Text is the text to store. |
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `text` | `string` | Text is the text to store. | At most 1024 characters. |
 
 ### tidegate.authority.v1.WriteResponse { #tidegate.authority.v1.WriteResponse }
 
 WriteResponse is the result of DummyService.Write.
 
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| `id` | `int64` | ID identifies the stored text for DummyService.Read. |
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `id` | `int64` | ID identifies the stored text for DummyService.Read. |  |
 
 ### tidegate.authority.v1.LoginRequest { #tidegate.authority.v1.LoginRequest }
 
 LoginRequest is the input of LoginService.Login.
 
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| `user_name` | `string` | UserName is the user's name, in any letter case. |
-| `password` | `string` | Password is the user's local password. |
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `user_name` | `string` | UserName is the user's name, in any letter case. | Not empty. |
+| `password` | `string` | Password is the user's local password. | Not empty, at most 1024 bytes. |
 
 ### tidegate.authority.v1.LoginResponse { #tidegate.authority.v1.LoginResponse }
 
 LoginResponse is the result of LoginService.Login.
 
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| `token` | `string` | Token is valid for the authority's token lifetime, 12 hours by default. |
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `token` | `string` | Token is valid for the authority's token lifetime, 12 hours by default. |  |
 
 ### tidegate.authority.v1.PingRequest { #tidegate.authority.v1.PingRequest }
 
@@ -87,7 +87,7 @@ PingRequest is the input of PingService.Ping. It has no fields.
 
 PingResponse is the result of PingService.Ping.
 
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| `message` | `string` | Message is always "pong". |
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `message` | `string` | Message is always "pong". |  |
 

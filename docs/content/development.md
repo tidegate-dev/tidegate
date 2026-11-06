@@ -14,6 +14,8 @@ Code outside tests doesn't call `crypto/rand`, `time.Now`, `time.Since` or `time
 
 The API is defined in `.proto` files in `proto/`. Every service, method, message, field and enum needs a comment, and `just proto::lint` fails without one. After you change a `.proto` file, run `just generate`. It writes the Go code to `gen/` and the [API reference](reference/api.md), built from the comments, to `docs/content/reference/`. Commit both. `just ci` fails if either doesn't match the `.proto` files.
 
+A rule for a request field, like a maximum length, goes into the field's `(buf.validate.field)` option. [protovalidate](https://github.com/bufbuild/protovalidate) checks it before the handler runs, and a request that breaks it fails with `invalid_argument`. The API reference can't read these options, so also write the rule into the field's comment, as a last paragraph that starts with `Rules:`. The reference shows that paragraph in its own column.
+
 The authority's SQL queries are in `authority/internal/db/queries/`, and sqlc generates Go code for them in `authority/internal/db/sqlc/`. After you change a query, also run `just generate` and commit the result.
 
 To change the database schema, add a migration to `authority/internal/db/migrations/`, numbered after the last one. A migration only goes forward and only adds to the schema. To remove a table or a column, wait a release after the code stops using it, so an old and a new authority can share the database during an update. `just dev` and `just kind` migrate when the authority starts.
