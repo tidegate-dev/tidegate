@@ -58,6 +58,25 @@ func TestLoadCertificateNamesTheMissingKeyAndHowToServePlainHTTP(t *testing.T) {
 	assert.Contains(t, err.Error(), "TIDEGATE_AUTHORITY__SERVER__TLS__DISABLED=true")
 }
 
+func TestLoadCertificatePointsToTheKeyRulesWhenItCantReadTheKey(t *testing.T) {
+	t.Parallel()
+
+	if os.Geteuid() == 0 {
+		t.Skip("root reads the key whatever its mode")
+	}
+
+	// arrange
+	certFile, keyFile := writeKeyPair(t)
+	require.NoError(t, os.Chmod(keyFile, 0o000))
+
+	// act
+	_, err := loadCertificate(config.TLS{CertFile: certFile, KeyFile: keyFile})
+
+	// assert
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "fsGroup")
+}
+
 func TestLoadCertificateDoesntSuggestPlainHTTPForAnInvalidCertificate(t *testing.T) {
 	t.Parallel()
 

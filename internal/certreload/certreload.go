@@ -1,5 +1,5 @@
 // Package certreload serves a TLS certificate from files and picks up new
-// files without a restart.
+// files without a restart. It needs Unix to check who owns the key file.
 package certreload
 
 import (
@@ -176,7 +176,7 @@ func (c *Certificate) logOnce(ctx context.Context, err error) {
 	}
 
 	c.lastError = err.Error()
-	logging.FromContext(ctx).Error("keeping the TLS certificate in use, because its files don't hold a usable certificate and key",
+	logging.FromContext(ctx).Error("keeping the TLS certificate in use, because its new files can't be used",
 		"cert_file", c.certFile, "error", err)
 }
 
@@ -186,7 +186,7 @@ func (c *Certificate) readKeyPair() (*keyPair, error) {
 		return nil, err
 	}
 
-	keyPEM, err := os.ReadFile(c.keyFile)
+	keyPEM, err := readKeyFile(c.keyFile)
 	if err != nil {
 		return nil, err
 	}

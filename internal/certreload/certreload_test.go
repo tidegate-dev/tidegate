@@ -10,6 +10,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"io/fs"
 	"log/slog"
 	"math/big"
 	"os"
@@ -67,6 +68,93 @@ func TestLoadAcceptsAnRSAKeyOf2048Bits(t *testing.T) {
 
 	// assert
 	assert.NoError(t, err)
+}
+
+func TestLoadRejectsAKeyFileThatOthersCanRead(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	certFile, keyFile := writeKeyPair(t, t.TempDir(), 1)
+	require.NoError(t, os.Chmod(keyFile, 0o604)) //nolint:gosec // The test needs a key file that is open to others.
+
+	// act
+	_, err := Load(certFile, keyFile)
+
+	// assert
+	assert.ErrorIs(t, err, ErrKeyFileAccess)
+}
+
+func TestCheckKeyFileAccess(t *testing.T) {
+	t.Parallel()
+
+	const (
+		root      = 0
+		authority = 65532
+		other     = 1000
+	)
+
+	tests := []struct {
+		name  string
+		owner int
+		self  int
+		mode  fs.FileMode
+		ok    bool
+	}{
+		{"the authority's file that only it can read", authority, authority, 0o400, true},
+		{"the authority's file that only it can read and write", authority, authority, 0o600, true},
+		{"the authority's file that its group can read", authority, authority, 0o640, false},
+		{"the authority's file that others can read", authority, authority, 0o604, false},
+		{"the authority's file that only it can read and run", authority, authority, 0o500, false},
+		{"root's file that its group can read, like a Kubernetes Secret", root, authority, 0o440, true},
+		{"root's file that root can write and its group can read", root, authority, 0o640, true},
+		{"root's file that its group can write", root, authority, 0o660, false},
+		{"root's file that others can read", root, authority, 0o444, false},
+		{"root's file that its group can read and run", root, authority, 0o550, false},
+		{"root's file that its group can read, when the authority runs as root", root, root, 0o640, false},
+		{"another user's file that only they can read", other, authority, 0o400, false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			// act
+			err := checkKeyFileAccess(test.owner, test.self, test.mode)
+
+			// assert
+			if test.ok {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorIs(t, err, ErrKeyFileAccess)
+			}
+		})
+	}
+}
+
+func TestWatchKeepsTheCertificateWhenTheNewKeyFileIsOpenToOthers(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	dir := t.TempDir()
+	certificate := load(t, dir, 1)
+	logs := &syncBuffer{}
+	watch(t, certificate, logs)
+
+	// act
+	staging := t.TempDir()
+	certFile, keyFile := writeKeyPair(t, staging, 2)
+	require.NoError(t, os.Chmod(keyFile, 0o644)) //nolint:gosec // The test needs a key file that is open to others.
+	require.NoError(t, os.Rename(keyFile, filepath.Join(dir, "key.pem")))
+	require.NoError(t, os.Rename(certFile, filepath.Join(dir, "cert.pem")))
+
+	// assert
+	assert.Eventually(t, func() bool {
+		return bytes.Contains(logs.Bytes(), []byte(ErrKeyFileAccess.Error()))
+	}, 5*time.Second, 10*time.Millisecond)
+	assert.Equal(t, int64(1), serial(t, certificate))
+
+	require.NoError(t, os.Chmod(filepath.Join(dir, "key.pem"), 0o600))
+	assertSerialBecomes(t, certificate, 2)
 }
 
 func TestWatchKeepsTheCertificateWhenTheNewKeyIsTooShort(t *testing.T) {
