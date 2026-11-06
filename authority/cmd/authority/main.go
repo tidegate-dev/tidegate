@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"github.com/The127/go-random"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/urfave/cli/v3"
 
@@ -165,7 +166,7 @@ func createInitialAdmin(ctx context.Context, cfg config.Database, name string, i
 		return err
 	}
 
-	err = service.CreateInitialAdmin(ctx, pool, name, plaintext)
+	err = service.CreateInitialAdmin(ctx, pool, random.NewCryptoRandom(), name, plaintext)
 	if err != nil {
 		return err
 	}
@@ -199,12 +200,14 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	}
 	defer pool.Close()
 
-	authenticator, err := service.NewAuthenticator(pool)
+	rnd := random.NewCryptoRandom()
+
+	authenticator, err := service.NewAuthenticator(pool, rnd)
 	if err != nil {
 		return err
 	}
 
-	logins := service.NewLogins(authenticator, service.NewLoginTokens(pool, cfg.Login.TokenLifetime))
+	logins := service.NewLogins(authenticator, service.NewLoginTokens(pool, rnd, cfg.Login.TokenLifetime))
 
 	notifier, err := systemd.Open()
 	if err != nil {

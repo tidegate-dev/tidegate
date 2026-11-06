@@ -4,6 +4,8 @@ github.com/MakeNowJust/heredoc v1.0.0 h1:cXCdzVdstXyiTqTvfqk9SDHpKNjxuom+DOlyEeQ
 github.com/MakeNowJust/heredoc v1.0.0/go.mod h1:mG5amYoWBHf8vpLOuehzbGGw0EHxpZZ6lCpQ4fNJ8LE=
 github.com/Masterminds/semver/v3 v3.4.0 h1:Zog+i5UMtVoCU8oKka5P7i9q9HgrJeGzI9SA1Xbatp0=
 github.com/Masterminds/semver/v3 v3.4.0/go.mod h1:4V+yj/TJE1HU9XfppCwVMZq3I84lprf4nC11bSS5beM=
+github.com/The127/go-random v1.0.0 h1:LHXVVt4dDQe7ebIqVbpje7guQU9IYA+yLO8TPpfm9ug=
+github.com/The127/go-random v1.0.0/go.mod h1:4PUWdlaRcs7nujROzehyWfErPM2dGNX5Btsevc3Ww1k=
 github.com/agiledragon/gomonkey/v2 v2.14.0 h1:FASzes6sjtD0hRo5lu0g796qKL03bOHCgcIA/4am9QM=
 github.com/agiledragon/gomonkey/v2 v2.14.0/go.mod h1:ap1AmDzcVOAz1YpeJ3TCzIgstoaWLA6jbbgxfB4w2iY=
 github.com/arch-go/arch-go/v2 v2.1.2 h1:kYf2VIVjtbKLGTs0/lr+2FOqiXFFKAiGc4UhoIS/l0M=

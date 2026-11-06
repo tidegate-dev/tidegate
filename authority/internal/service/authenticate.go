@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
-	"crypto/rand"
 	"errors"
 	"fmt"
 	"time"
 
+	"github.com/The127/go-random"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -39,9 +39,10 @@ type Authenticator struct {
 	fixedHash string
 }
 
-// NewAuthenticator returns an Authenticator for the users in pool.
-func NewAuthenticator(pool *pgxpool.Pool) (*Authenticator, error) {
-	fixedHash, err := password.Hash(secret.New(rand.Text()))
+// NewAuthenticator returns an Authenticator for the users in pool. It takes
+// the password and salt of fixedHash from rnd.
+func NewAuthenticator(pool *pgxpool.Pool, rnd random.Service) (*Authenticator, error) {
+	fixedHash, err := password.Hash(rnd, secret.New(rnd.Text()))
 	if err != nil {
 		return nil, fmt.Errorf("hashing the password for unknown users: %w", err)
 	}

@@ -10,6 +10,8 @@ To work on this site, run `just docs::serve` and open the address it prints. The
 
 Keep passwords, tokens and other secrets in a `secret.String` from `internal/secret`. It prints and logs as `****`, and only `Reveal()` returns the value. `just lint` fails if an exported field or parameter called something like `password` or `token` is a plain `string` instead.
 
+Code outside tests doesn't call `crypto/rand`, `time.Now`, `time.Since` or `time.Until` itself. It takes a `random.Service` from [go-random](https://github.com/The127/go-random) or a `clock.Service` from [go-clock](https://github.com/The127/go-clock) as a dependency, and a test passes a mock, like `randomtest.NewMock()`. In production, use `random.NewCryptoRandom()`. tidegate uses no pseudo-random source outside tests. `just lint` fails on a call that breaks these rules.
+
 The API is defined in `.proto` files in `proto/`. Every service, method, message, field and enum needs a comment, and `just proto::lint` fails without one. After you change a `.proto` file, run `just generate`. It writes the Go code to `gen/` and the [API reference](reference/api.md), built from the comments, to `docs/content/reference/`. Commit both. `just ci` fails if either doesn't match the `.proto` files.
 
 The authority's SQL queries are in `authority/internal/db/queries/`, and sqlc generates Go code for them in `authority/internal/db/sqlc/`. After you change a query, also run `just generate` and commit the result.

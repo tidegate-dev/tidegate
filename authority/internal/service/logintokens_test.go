@@ -41,7 +41,7 @@ var _ = Describe("Issue", func() {
 	})
 
 	It("returns a token and stores only its hash", func(ctx SpecContext) {
-		token, err := NewLoginTokens(pool, 12*time.Hour).Issue(ctx, userID)
+		token, err := NewLoginTokens(pool, rnd, 12*time.Hour).Issue(ctx, userID)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(token.Reveal()).To(MatchRegexp(`^[A-Za-z0-9_-]{43}$`))
@@ -55,7 +55,7 @@ var _ = Describe("Issue", func() {
 	})
 
 	It("returns a new token each time", func(ctx SpecContext) {
-		tokens := NewLoginTokens(pool, 12*time.Hour)
+		tokens := NewLoginTokens(pool, rnd, 12*time.Hour)
 
 		first, err := tokens.Issue(ctx, userID)
 		Expect(err).NotTo(HaveOccurred())
@@ -68,7 +68,7 @@ var _ = Describe("Issue", func() {
 	})
 
 	It("stores the expiry one lifetime after issuing the token", func(ctx SpecContext) {
-		_, err := NewLoginTokens(pool, time.Second).Issue(ctx, userID)
+		_, err := NewLoginTokens(pool, rnd, time.Second).Issue(ctx, userID)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("Lifetime", time.Second)))
@@ -79,7 +79,7 @@ var _ = Describe("Issue", func() {
 			VALUES (sha256('expired'), $1, now() - interval '1 second')`, userID)
 		Expect(err).NotTo(HaveOccurred())
 
-		token, err := NewLoginTokens(pool, 12*time.Hour).Issue(ctx, userID)
+		token, err := NewLoginTokens(pool, rnd, 12*time.Hour).Issue(ctx, userID)
 
 		Expect(err).NotTo(HaveOccurred())
 

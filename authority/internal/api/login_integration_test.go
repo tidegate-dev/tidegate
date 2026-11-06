@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"github.com/The127/go-random/randomtest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -50,13 +51,13 @@ var _ = Describe("Login", func() {
 		DeferCleanup(pool.Close)
 		Expect(db.Migrate(ctx, pool)).To(Succeed())
 
-		Expect(service.CreateInitialAdmin(ctx, pool, "alice", secret.New(alicePassword))).To(Succeed())
+		Expect(service.CreateInitialAdmin(ctx, pool, randomtest.NewMock(), "alice", secret.New(alicePassword))).To(Succeed())
 		Expect(sqlc.New(pool).CreateUser(ctx, sqlc.CreateUserParams{Name: "bob"})).To(Succeed())
 
-		authenticator, err := service.NewAuthenticator(pool)
+		authenticator, err := service.NewAuthenticator(pool, randomtest.NewMock())
 		Expect(err).NotTo(HaveOccurred())
 
-		handler = NewLoginService(service.NewLogins(authenticator, service.NewLoginTokens(pool, 12*time.Hour)))
+		handler = NewLoginService(service.NewLogins(authenticator, service.NewLoginTokens(pool, randomtest.NewMock(), 12*time.Hour)))
 		logs = &bytes.Buffer{}
 	})
 
