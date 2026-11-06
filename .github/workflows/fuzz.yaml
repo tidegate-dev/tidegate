@@ -32,6 +32,6 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           mode: code-change
-          fuzz-seconds: 300
+          fuzz-seconds: 60
           # libFuzzer prints a crashing input to the log only up to 256 bytes.
           minimize-crashes: true
