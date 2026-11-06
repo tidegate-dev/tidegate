@@ -18,7 +18,7 @@ For bug fixes and small changes, open a pull request directly. For larger change
 
 Every pull request needs one approval from a maintainer other than its author before it can be merged. If someone pushes to the pull request after the approval, it needs a new approval from someone other than that person. CodeRabbit reviews every pull request first, but its review doesn't count as an approval. Dependabot's updates need an approval too.
 
-Before you open a pull request, run `just ci`. It runs the linters, the tests and every other check that CI runs. A pull request can only be merged when these checks pass and its branch is up to date with `main`.
+Before you open a pull request, run `just ci`. It runs the linters, the tests and every other check that CI runs, except fuzzing and `just mutate`. The [development docs](https://tidegate-dev.github.io/tidegate/development/) explain how to run those two locally. A pull request can only be merged when these checks pass and its branch is up to date with `main`.
 
 ## Pull request titles
 

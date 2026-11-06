@@ -14,7 +14,7 @@ Significant changes are decided in a Tidegate Enhancement Proposal (TEP), a desi
 
 If a change adds or changes behaviour, add tests for it, as CONTRIBUTING.md asks.
 
-`just ci` runs every check that CI runs. Run it before you call a change done. Its integration tests need Postgres, so start `just dev-deps` first.
+`just ci` runs every check that CI runs, except fuzzing and `just mutate`. Run it before you call a change done. Its integration tests need Postgres, so start `just dev-deps` first. `docs/content/development.md` explains how to run fuzzing and `just mutate` locally.
 
 If `just` isn't on your PATH, the tools from the Nix dev shell are missing. Run the command as `nix develop --command just ci`. If that fails too, ask instead of installing tools.
 

@@ -49,3 +49,17 @@ jobs:
           # Pull requests from forks get no OIDC token, and Codecov accepts
           # their uploads without one.
           use_oidc: ${{ !github.event.pull_request.head.repo.fork }}
+      - name: List the changes no test catches
+        if: github.event_name == 'pull_request'
+        env:
+          # A branch name can contain shell code.
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -o pipefail
+          {
+            echo '## Changes no test catches'
+            echo
+            echo '```'
+            nix develop --command just mutate "origin/$BASE_REF"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
