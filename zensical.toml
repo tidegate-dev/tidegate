@@ -11,6 +11,7 @@ nav = [
     { "First admin" = "authority/initial-admin.md" },
     { "TLS" = "authority/tls.md" },
     { "Metrics" = "authority/metrics.md" },
+    { "Logs" = "authority/logs.md" },
     { "Running under systemd" = "authority/systemd.md" },
   ] },
   { "API reference" = "reference/api.md" },

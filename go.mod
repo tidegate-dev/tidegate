@@ -4,6 +4,7 @@ go 1.27.3
 
 require (
 	connectrpc.com/connect v1.21.1
+	github.com/The127/go-clock v1.0.0
 	github.com/The127/go-random v1.0.0
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/jackc/pgx/v5 v5.12.0
