@@ -153,5 +153,5 @@ kind-down:
     case "$runtime" in */podman) export KIND_EXPERIMENTAL_PROVIDER=podman ;; esac
     kind delete cluster --name tidegate
 
-# Run every check that CI runs.
+# Run every check that CI runs, except fuzzing and mutate.
 ci: secrets arch images proto::ci authority::ci cli::ci internal::ci docs::build

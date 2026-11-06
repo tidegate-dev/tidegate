@@ -2,7 +2,7 @@
 
 The [README](https://github.com/tidegate-dev/tidegate#development) lists the tools you need and how to get them with Nix.
 
-Once you have them, run `just` in the repository to see the recipes. `just ci` runs every check that CI runs.
+Once you have them, run `just` in the repository to see the recipes. `just ci` runs every check that CI runs, except fuzzing and `just mutate`. Both are described below.
 
 To work on this site, run `just docs::serve` and open the address it prints. The page reloads when you change a file in `docs/content/`.
 
