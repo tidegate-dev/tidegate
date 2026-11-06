@@ -6,6 +6,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/The127/go-random/randomtest"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	. "github.com/onsi/ginkgo/v2"
@@ -17,6 +18,8 @@ import (
 )
 
 const validPassword = "correct horse battery staple"
+
+var rnd = randomtest.NewMock()
 
 var _ = Describe("CreateInitialAdmin", func() {
 	var pool *pgxpool.Pool
@@ -31,7 +34,7 @@ var _ = Describe("CreateInitialAdmin", func() {
 	})
 
 	It("creates the user with an argon2id hash of the password", func(ctx SpecContext) {
-		err := CreateInitialAdmin(ctx, pool, "alice", secret.New(validPassword))
+		err := CreateInitialAdmin(ctx, pool, rnd, "alice", secret.New(validPassword))
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(storedUsers(ctx, pool)).To(ConsistOf(SatisfyAll(
@@ -41,9 +44,9 @@ var _ = Describe("CreateInitialAdmin", func() {
 	})
 
 	It("refuses when a user already exists", func(ctx SpecContext) {
-		Expect(CreateInitialAdmin(ctx, pool, "alice", secret.New(validPassword))).To(Succeed())
+		Expect(CreateInitialAdmin(ctx, pool, rnd, "alice", secret.New(validPassword))).To(Succeed())
 
-		err := CreateInitialAdmin(ctx, pool, "bob", secret.New(validPassword))
+		err := CreateInitialAdmin(ctx, pool, rnd, "bob", secret.New(validPassword))
 
 		Expect(err).To(MatchError(ErrUserExists))
 		Expect(storedUsers(ctx, pool)).To(HaveLen(1))
@@ -51,7 +54,7 @@ var _ = Describe("CreateInitialAdmin", func() {
 
 	DescribeTable("refuses an invalid name",
 		func(ctx SpecContext, name string) {
-			err := CreateInitialAdmin(ctx, pool, name, secret.New(validPassword))
+			err := CreateInitialAdmin(ctx, pool, rnd, name, secret.New(validPassword))
 
 			Expect(err).To(MatchError(ErrInvalidName))
 			Expect(storedUsers(ctx, pool)).To(BeEmpty())
@@ -104,7 +107,7 @@ func startCreateInitialAdmin(ctx context.Context, pool *pgxpool.Pool, name strin
 	creationErrorChan := make(chan error, 1)
 
 	go func() {
-		creationErrorChan <- CreateInitialAdmin(ctx, pool, name, secret.New(validPassword))
+		creationErrorChan <- CreateInitialAdmin(ctx, pool, rnd, name, secret.New(validPassword))
 	}()
 
 	return creationErrorChan

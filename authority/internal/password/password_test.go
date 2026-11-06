@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/The127/go-random/randomtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/text/unicode/norm"
@@ -28,14 +29,32 @@ func TestHashMatchesTheReferenceImplementation(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
+func TestHashTakesItsSaltFromTheRandomService(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	mock := randomtest.NewMock()
+	mock.QueueBytes([]byte("tidegate-salt-16"))
+
+	// act
+	actual, err := Hash(mock, secret.New("correct horse battery staple"))
+
+	// assert
+	require.NoError(t, err)
+	assert.Equal(t, "dGlkZWdhdGUtc2FsdC0xNg", strings.Split(actual, "$")[4])
+}
+
 func TestHashUsesANewSaltEachTime(t *testing.T) {
 	t.Parallel()
 
+	// arrange
+	mock := randomtest.NewMock()
+
 	// act
-	first, err := Hash(secret.New("correct horse battery staple"))
+	first, err := Hash(mock, secret.New("correct horse battery staple"))
 	require.NoError(t, err)
 
-	second, err := Hash(secret.New("correct horse battery staple"))
+	second, err := Hash(mock, secret.New("correct horse battery staple"))
 	require.NoError(t, err)
 
 	// assert
@@ -48,7 +67,7 @@ func TestHashRefusesAPasswordUnder15Characters(t *testing.T) {
 
 	// act
 	// 14 characters, but more than 15 bytes in UTF-8.
-	_, err := Hash(secret.New("äöüäöüäöüäöüäö"))
+	_, err := Hash(randomtest.NewMock(), secret.New("äöüäöüäöüäöüäö"))
 
 	// assert
 	require.ErrorIs(t, err, ErrTooShort)
@@ -58,7 +77,7 @@ func TestHashRefusesAPasswordOver1024Bytes(t *testing.T) {
 	t.Parallel()
 
 	// act
-	_, err := Hash(secret.New(strings.Repeat("a", 1025)))
+	_, err := Hash(randomtest.NewMock(), secret.New(strings.Repeat("a", 1025)))
 
 	// assert
 	require.ErrorIs(t, err, ErrTooLong)
@@ -75,7 +94,7 @@ func TestHashAcceptsPasswordsAtTheLimits(t *testing.T) {
 			t.Parallel()
 
 			// act
-			_, err := Hash(secret.New(password))
+			_, err := Hash(randomtest.NewMock(), secret.New(password))
 
 			// assert
 			require.NoError(t, err)
@@ -154,7 +173,7 @@ func TestVerifyAcceptsTheHashedPassword(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	hash, err := Hash(secret.New("correct horse battery staple"))
+	hash, err := Hash(randomtest.NewMock(), secret.New("correct horse battery staple"))
 	require.NoError(t, err)
 
 	// act
@@ -169,7 +188,7 @@ func TestVerifyRejectsAnotherPassword(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	hash, err := Hash(secret.New("correct horse battery staple"))
+	hash, err := Hash(randomtest.NewMock(), secret.New("correct horse battery staple"))
 	require.NoError(t, err)
 
 	// act
@@ -200,7 +219,7 @@ func TestVerifyTreatsEquivalentUnicodeFormsAsTheSamePassword(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	hash, err := Hash(secret.New("café au lait, bitte"))
+	hash, err := Hash(randomtest.NewMock(), secret.New("café au lait, bitte"))
 	require.NoError(t, err)
 
 	// act
@@ -215,7 +234,7 @@ func TestVerifyRejectsAnEmptyPassword(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	hash, err := Hash(secret.New("correct horse battery staple"))
+	hash, err := Hash(randomtest.NewMock(), secret.New("correct horse battery staple"))
 	require.NoError(t, err)
 
 	// act
@@ -230,7 +249,7 @@ func TestVerifyRefusesAPasswordOver1024Bytes(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	hash, err := Hash(secret.New("correct horse battery staple"))
+	hash, err := Hash(randomtest.NewMock(), secret.New("correct horse battery staple"))
 	require.NoError(t, err)
 
 	// act

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/The127/go-random"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -48,16 +49,16 @@ func AnyExist(ctx context.Context, pool *pgxpool.Pool) (bool, error) {
 	return exists, nil
 }
 
-// CreateInitialAdmin creates the first user, with a local password. It
-// returns ErrUserExists if any user exists, also when another run creates
-// one at the same time.
-func CreateInitialAdmin(ctx context.Context, pool *pgxpool.Pool, name string, plaintext secret.String) error {
+// CreateInitialAdmin creates the first user, with a local password hashed
+// with a salt from rnd. It returns ErrUserExists if any user exists, also when
+// another run creates one at the same time.
+func CreateInitialAdmin(ctx context.Context, pool *pgxpool.Pool, rnd random.Service, name string, plaintext secret.String) error {
 	err := ValidateName(name)
 	if err != nil {
 		return err
 	}
 
-	hash, err := password.Hash(plaintext)
+	hash, err := password.Hash(rnd, plaintext)
 	if err != nil {
 		return err
 	}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"unicode/utf8"
 
+	"github.com/The127/go-random"
 	"github.com/matthewhartstonge/argon2"
 	"golang.org/x/text/unicode/norm"
 
@@ -34,12 +35,12 @@ func config() argon2.Config {
 	return argon2.MemoryConstrainedDefaults()
 }
 
-// Hash returns password's argon2id hash with a new random salt, as a PHC
+// Hash returns password's argon2id hash with a new salt from rnd, as a PHC
 // string like $argon2id$v=19$m=65536,t=3,p=4$salt$hash. It returns
 // ErrTooShort or ErrTooLong for a password it doesn't accept. It hashes the
 // password's NFKC normalization, and MinLength counts its characters.
-func Hash(password secret.String) (string, error) {
-	return hashWithSalt(password.Reveal(), nil)
+func Hash(rnd random.Service, password secret.String) (string, error) {
+	return hashWithSalt(password.Reveal(), rnd.Bytes(int(config().SaltLength)))
 }
 
 func hashWithSalt(password string, salt []byte) (string, error) {

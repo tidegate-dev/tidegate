@@ -8,10 +8,26 @@ linters:
   default: standard
   enable:
     - errorlint
+    - forbidigo
     - gosec
     - revive
     - wsl_v5
   settings:
+    forbidigo:
+      analyze-types: true
+      forbid:
+        - pattern: ^rand\.
+          pkg: ^crypto/rand$
+          msg: Take a random.Service from github.com/The127/go-random.
+        - pattern: ^time\.(Now|Since|Until)$
+          pkg: ^time$
+          msg: Take a clock.Service from github.com/The127/go-clock.
+        - pattern: ^random\.NewPseudoRandom
+          pkg: ^github\.com/The127/go-random$
+          msg: Use random.NewCryptoRandom. A pseudo-random source isn't safe for secrets, and tidegate uses none outside tests.
+        - pattern: ^randomtest\.
+          pkg: ^github\.com/The127/go-random/randomtest$
+          msg: The mock only works in tests. Use random.NewCryptoRandom.
     # Ginkgo and Gomega are written to be dot-imported.
     revive:
       # Configuring a rule turns off revive's default rules otherwise.
@@ -29,6 +45,11 @@ linters:
     wsl_v5:
       enable:
         - after-block
+  exclusions:
+    rules:
+      - path: _test\.go$
+        linters:
+          - forbidigo
 
 formatters:
   enable:

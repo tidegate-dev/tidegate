@@ -40,7 +40,7 @@ func NewDatabase() string {
 		Fail(URLVariable + " must not name a database in its query")
 	}
 
-	name := "test_" + strings.ToLower(rand.Text())
+	name := "test_" + strings.ToLower(rand.Text()) //nolint:forbidigo // Only integration tests build this package.
 	quoted := pgx.Identifier{name}.Sanitize()
 
 	exec(serverURL, "CREATE DATABASE "+quoted)

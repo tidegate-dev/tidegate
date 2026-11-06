@@ -35,7 +35,7 @@ var _ = Describe("Authenticate", func() {
 		DeferCleanup(pool.Close)
 		Expect(db.Migrate(ctx, pool)).To(Succeed())
 
-		Expect(CreateInitialAdmin(ctx, pool, "alice", secret.New(validPassword))).To(Succeed())
+		Expect(CreateInitialAdmin(ctx, pool, rnd, "alice", secret.New(validPassword))).To(Succeed())
 		Expect(sqlc.New(pool).CreateUser(ctx, sqlc.CreateUserParams{Name: "bob"})).To(Succeed())
 
 		alice, err := sqlc.New(pool).GetUserByName(ctx, "alice")
@@ -43,7 +43,7 @@ var _ = Describe("Authenticate", func() {
 
 		aliceID = alice.ID
 
-		authenticator, err = NewAuthenticator(pool)
+		authenticator, err = NewAuthenticator(pool, rnd)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
