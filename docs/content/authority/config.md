@@ -32,6 +32,7 @@ A setting keeps its default when its variable isn't set or is empty. `TIDEGATE_A
 | `TIDEGATE_AUTHORITY__SERVER__TLS__DISABLED` | `false` | `true` serves plain HTTP, for a proxy that terminates TLS |
 | `TIDEGATE_AUTHORITY__DATABASE__URL` | None, required | A Postgres connection URL, like `postgres://tidegate:tidegate@host:5432/tidegate?sslmode=verify-full` |
 | `TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START` | `false` | `true` or `false` |
+| `TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME` | `12h` | A duration of at least `1s`, like `12h` or `30m` |
 | `TIDEGATE_AUTHORITY__METRICS__LISTEN_ADDRESS` | `127.0.0.1:9464` | A host and port for `/metrics`, like `:9464` |
 | `TIDEGATE_AUTHORITY__LOG__LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
 | `TIDEGATE_AUTHORITY__LOG__FORMAT` | `json` | `json` for log collectors, or `text`, which is easier to read locally |

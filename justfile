@@ -20,8 +20,10 @@ test-integration: authority::test-integration
 # Generate code from the .proto files.
 generate: proto::generate authority::generate
 
-# Lint every component.
+# Lint every component, and report secrets in exported APIs that aren't a
+# secret.String.
 lint: authority::lint cli::lint internal::lint proto::lint
+    go tool secretcheck ./...
 
 # Check the dependencies of every component and of the Go tools for known
 # vulnerabilities.

@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,6 +34,7 @@ func TestVariablesOverrideDefaults(t *testing.T) {
 		"TIDEGATE_AUTHORITY__LOG__LEVEL=debug",
 		"TIDEGATE_AUTHORITY__LOG__FORMAT=text",
 		"TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START=true",
+		"TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME=90m",
 	)
 
 	// act
@@ -44,6 +46,7 @@ func TestVariablesOverrideDefaults(t *testing.T) {
 		Server:   config.Server{ListenAddress: ":9090", TLS: defaultConfig().Server.TLS},
 		Metrics:  config.Metrics{ListenAddress: ":9100"},
 		Database: config.Database{URL: databaseURL, MigrateOnStart: true},
+		Login:    config.Login{TokenLifetime: 90 * time.Minute},
 		Log:      config.Log{Level: slog.LevelDebug, Format: logging.FormatText},
 	}, cfg)
 }
@@ -152,6 +155,9 @@ func TestInvalidValuesNameTheirVariable(t *testing.T) {
 		"single level":   {variable: "TIDEGATE_AUTHORITY__LOG_LEVEL=debug", want: "TIDEGATE_AUTHORITY__LOG_LEVEL: unknown setting"},
 		"prefix only":    {variable: "TIDEGATE_AUTHORITY__=debug", want: "TIDEGATE_AUTHORITY__: unknown setting"},
 		"migrate":        {variable: "TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START=yes", want: `TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START: invalid value "yes", want true or false`},
+		"token lifetime": {variable: "TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME=12", want: `TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME: invalid duration "12", want a number with a unit, like 12h or 30m`},
+		"short lifetime": {variable: "TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME=999ms", want: `TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME: must be at least 1s`},
+		"negative":       {variable: "TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME=-1h", want: `TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME: must be at least 1s`},
 	}
 
 	for name, tt := range tests {
@@ -265,6 +271,7 @@ func defaultConfig() config.Config {
 		},
 		Metrics:  config.Metrics{ListenAddress: "127.0.0.1:9464"},
 		Database: config.Database{URL: databaseURL},
+		Login:    config.Login{TokenLifetime: 12 * time.Hour},
 		Log:      config.Log{Level: slog.LevelInfo, Format: logging.FormatJSON},
 	}
 }

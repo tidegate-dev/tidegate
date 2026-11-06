@@ -19,7 +19,7 @@ If a file is missing, the authority doesn't start and names the file. Only `auth
 
 To serve plain HTTP, for example behind a proxy that terminates TLS, set `TIDEGATE_AUTHORITY__SERVER__TLS__DISABLED=true`. The authority then logs a warning when it starts. If you also set the path of the certificate or the key, it doesn't start.
 
-Note that the connection from the proxy to the authority is then unencrypted. Set `TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS` so that only the proxy reaches the API, for example `127.0.0.1:8080` when the proxy runs on the same host or in the same Pod. The container image listens on every interface by default.
+Note that the connection from the proxy to the authority is then unencrypted, including the passwords and tokens of logins. Set `TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS` so that only the proxy reaches the API, for example `127.0.0.1:8080` when the proxy runs on the same host or in the same Pod. The container image listens on every interface by default.
 
 The certificate's key needs at least 2048 bits for RSA or 224 bits for an elliptic curve, the minimum NIST sets for use through 2030. The authority doesn't start with a shorter key.
 

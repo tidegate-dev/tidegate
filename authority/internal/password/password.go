@@ -1,24 +1,15 @@
-// Package password hashes passwords with argon2id.
+// Package password hashes and checks passwords with argon2id.
 package password
 
 import (
-	"crypto/rand"
-	"encoding/base64"
+	"errors"
 	"fmt"
 	"unicode/utf8"
 
-	"golang.org/x/crypto/argon2"
+	"github.com/matthewhartstonge/argon2"
 	"golang.org/x/text/unicode/norm"
-)
 
-// The second recommended option of RFC 9106, section 4, for when 2 GiB of
-// memory per hash is too much.
-const (
-	iterations = 3
-	memoryKiB  = 64 * 1024
-	threads    = 4
-	saltLength = 16
-	keyLength  = 32
+	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 // MinLength is the minimum number of characters in a password. NIST
@@ -34,21 +25,21 @@ var (
 	ErrTooShort = fmt.Errorf("the password must have at least %d characters", MinLength)
 	// ErrTooLong means a password has more than MaxBytes bytes.
 	ErrTooLong = fmt.Errorf("the password must have at most %d bytes", MaxBytes)
+	// ErrMalformedHash means Verify can't read or doesn't accept a hash.
+	ErrMalformedHash = errors.New("the password hash isn't a valid argon2id hash")
 )
+
+// config is the second recommended option of RFC 9106, section 4.
+func config() argon2.Config {
+	return argon2.MemoryConstrainedDefaults()
+}
 
 // Hash returns password's argon2id hash with a new random salt, as a PHC
 // string like $argon2id$v=19$m=65536,t=3,p=4$salt$hash. It returns
 // ErrTooShort or ErrTooLong for a password it doesn't accept. It hashes the
 // password's NFKC normalization, and MinLength counts its characters.
-func Hash(password string) (string, error) {
-	salt := make([]byte, saltLength)
-
-	_, err := rand.Read(salt)
-	if err != nil {
-		return "", fmt.Errorf("generating a salt: %w", err)
-	}
-
-	return hashWithSalt(password, salt)
+func Hash(password secret.String) (string, error) {
+	return hashWithSalt(password.Reveal(), nil)
 }
 
 func hashWithSalt(password string, salt []byte) (string, error) {
@@ -57,12 +48,14 @@ func hashWithSalt(password string, salt []byte) (string, error) {
 		return "", err
 	}
 
-	key := argon2.IDKey([]byte(password), salt, iterations, memoryKiB, threads, keyLength)
+	cfg := config()
 
-	return fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
-		argon2.Version, memoryKiB, iterations, threads,
-		base64.RawStdEncoding.EncodeToString(salt),
-		base64.RawStdEncoding.EncodeToString(key)), nil
+	raw, err := cfg.Hash([]byte(password), salt)
+	if err != nil {
+		return "", fmt.Errorf("hashing the password: %w", err)
+	}
+
+	return string(raw.Encode()), nil
 }
 
 // prepare checks password against the rules and returns the form to hash.
@@ -83,8 +76,8 @@ func prepare(password string) (string, error) {
 
 // Equivalent reports whether a and b are the same password once normalized,
 // so they get the same hash.
-func Equivalent(a, b string) bool {
-	return normalize(a) == normalize(b)
+func Equivalent(a, b secret.String) bool {
+	return normalize(a.Reveal()) == normalize(b.Reveal())
 }
 
 // normalize follows NIST SP 800-63B, so a password matches however the
@@ -92,4 +85,47 @@ func Equivalent(a, b string) bool {
 // combining accent.
 func normalize(password string) string {
 	return norm.NFKC.String(password)
+}
+
+// CheckMaxBytes returns ErrTooLong if password has more than MaxBytes bytes.
+func CheckMaxBytes(password secret.String) error {
+	if len(password.Reveal()) > MaxBytes {
+		return ErrTooLong
+	}
+
+	return nil
+}
+
+// Verify reports whether password matches hash. It accepts hashes that cost
+// less than Hash's, and returns ErrTooLong or ErrMalformedHash.
+func Verify(password secret.String, hash string) (bool, error) {
+	err := CheckMaxBytes(password)
+	if err != nil {
+		return false, err
+	}
+
+	raw, err := argon2.Decode([]byte(hash))
+	if err != nil || !acceptable(raw.Config) {
+		return false, ErrMalformedHash
+	}
+
+	// The library refuses a nil password.
+	ok, err := raw.Verify(append([]byte{}, normalize(password.Reveal())...))
+	if err != nil {
+		return false, fmt.Errorf("checking the password: %w", err)
+	}
+
+	return ok, nil
+}
+
+// acceptable checks the version, which the library's Verify ignores.
+func acceptable(decoded argon2.Config) bool {
+	ours := config()
+
+	return decoded.Mode == argon2.ModeArgon2id &&
+		decoded.Version == ours.Version &&
+		decoded.MemoryCost <= ours.MemoryCost &&
+		decoded.TimeCost <= ours.TimeCost &&
+		decoded.Parallelism <= ours.Parallelism &&
+		decoded.HashLength <= ours.HashLength
 }

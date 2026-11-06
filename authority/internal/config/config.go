@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/knadh/koanf/providers/env/v2"
@@ -31,6 +32,7 @@ type rawConfig struct {
 	Server   rawServer   `koanf:"server"`
 	Metrics  rawMetrics  `koanf:"metrics"`
 	Database rawDatabase `koanf:"database"`
+	Login    rawLogin    `koanf:"login"`
 	Log      rawLog      `koanf:"log"`
 }
 
@@ -54,6 +56,10 @@ type rawDatabase struct {
 	MigrateOnStart string `koanf:"migrate_on_start"`
 }
 
+type rawLogin struct {
+	TokenLifetime string `koanf:"token_lifetime"`
+}
+
 type rawLog struct {
 	Level  string `koanf:"level"`
 	Format string `koanf:"format"`
@@ -75,6 +81,9 @@ var defaults = rawConfig{
 	Database: rawDatabase{
 		MigrateOnStart: "false",
 	},
+	Login: rawLogin{
+		TokenLifetime: "12h",
+	},
 	Log: rawLog{
 		Level:  "info",
 		Format: string(logging.FormatJSON),
@@ -86,6 +95,7 @@ type Config struct {
 	Server   Server
 	Metrics  Metrics
 	Database Database
+	Login    Login
 	Log      Log
 }
 
@@ -112,6 +122,11 @@ type Metrics struct {
 type Database struct {
 	URL            string
 	MigrateOnStart bool
+}
+
+// Login holds the login settings.
+type Login struct {
+	TokenLifetime time.Duration
 }
 
 // Log holds the logging settings.
@@ -193,6 +208,9 @@ func validate(raw rawConfig, set map[string]bool) (Config, error) {
 	migrateOnStart, err := parseBool(raw.Database.MigrateOnStart)
 	v.check(&raw.Database.MigrateOnStart, err)
 
+	tokenLifetime, err := parseLifetime(raw.Login.TokenLifetime)
+	v.check(&raw.Login.TokenLifetime, err)
+
 	level, err := parseLogLevel(raw.Log.Level)
 	v.check(&raw.Log.Level, err)
 
@@ -207,6 +225,7 @@ func validate(raw rawConfig, set map[string]bool) (Config, error) {
 		Server:   Server{ListenAddress: listenAddress, TLS: tls},
 		Metrics:  Metrics{ListenAddress: metricsListenAddress},
 		Database: Database{URL: raw.Database.URL, MigrateOnStart: migrateOnStart},
+		Login:    Login{TokenLifetime: tokenLifetime},
 		Log:      Log{Level: level, Format: format},
 	}, nil
 }
@@ -329,6 +348,20 @@ func parseBool(value string) (bool, error) {
 	default:
 		return false, fmt.Errorf("invalid value %q, want true or false", value)
 	}
+}
+
+func parseLifetime(value string) (time.Duration, error) {
+	lifetime, err := time.ParseDuration(strings.ToLower(value))
+	if err != nil {
+		return 0, fmt.Errorf("invalid duration %q, want a number with a unit, like 12h or 30m", value)
+	}
+
+	// Postgres rounds intervals to microseconds, and a shorter token is useless.
+	if lifetime < time.Second {
+		return 0, errors.New("must be at least 1s")
+	}
+
+	return lifetime, nil
 }
 
 var logLevels = map[string]slog.Level{

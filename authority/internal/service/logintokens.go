@@ -1,0 +1,54 @@
+package service
+
+import (
+	"context"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
+	"fmt"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
+	"github.com/tidegate-dev/tidegate/internal/secret"
+)
+
+const tokenBytes = 32
+
+// LoginTokens issues the tokens that signed-in users send with API calls.
+type LoginTokens struct {
+	queries  *sqlc.Queries
+	lifetime time.Duration
+}
+
+// NewLoginTokens returns LoginTokens that last lifetime.
+func NewLoginTokens(pool *pgxpool.Pool, lifetime time.Duration) *LoginTokens {
+	return &LoginTokens{queries: sqlc.New(pool), lifetime: lifetime}
+}
+
+// Issue returns a new token for the user and deletes their expired ones.
+func (s *LoginTokens) Issue(ctx context.Context, userID pgtype.UUID) (secret.String, error) {
+	err := s.queries.DeleteExpiredLoginTokens(ctx, userID)
+	if err != nil {
+		return secret.String{}, fmt.Errorf("deleting expired login tokens: %w", err)
+	}
+
+	random := make([]byte, tokenBytes)
+	_, _ = rand.Read(random) // Since Go 1.24 it crashes the program instead of failing.
+
+	token := base64.RawURLEncoding.EncodeToString(random)
+	hash := sha256.Sum256([]byte(token))
+
+	err = s.queries.CreateLoginToken(ctx, sqlc.CreateLoginTokenParams{
+		TokenHash: hash[:],
+		UserID:    userID,
+		Lifetime:  pgtype.Interval{Microseconds: s.lifetime.Microseconds(), Valid: true},
+	})
+	if err != nil {
+		return secret.String{}, fmt.Errorf("storing the login token: %w", err)
+	}
+
+	return secret.New(token), nil
+}

@@ -19,12 +19,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/urfave/cli/v3"
 
+	"github.com/tidegate-dev/tidegate/authority/internal/api"
 	"github.com/tidegate-dev/tidegate/authority/internal/config"
 	"github.com/tidegate-dev/tidegate/authority/internal/db"
-	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
-	"github.com/tidegate-dev/tidegate/authority/internal/dummy"
-	"github.com/tidegate-dev/tidegate/authority/internal/ping"
-	"github.com/tidegate-dev/tidegate/authority/internal/users"
+	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
 	"github.com/tidegate-dev/tidegate/internal/certreload"
 	"github.com/tidegate-dev/tidegate/internal/handlererrors"
@@ -94,7 +92,7 @@ func newCommand() *cli.Command {
 						return errors.New("create-initial-admin takes exactly one argument, the user's name")
 					}
 
-					err := users.ValidateName(cmd.Args().First())
+					err := service.ValidateName(cmd.Args().First())
 					if err != nil {
 						return err
 					}
@@ -153,13 +151,13 @@ func createInitialAdmin(ctx context.Context, cfg config.Database, name string, i
 	}
 	defer pool.Close()
 
-	exists, err := users.AnyExist(ctx, pool)
+	exists, err := service.AnyExist(ctx, pool)
 	if err != nil {
 		return err
 	}
 
 	if exists {
-		return users.ErrUserExists
+		return service.ErrUserExists
 	}
 
 	plaintext, err := readPassword(ctx, in, out)
@@ -167,7 +165,7 @@ func createInitialAdmin(ctx context.Context, cfg config.Database, name string, i
 		return err
 	}
 
-	err = users.CreateInitialAdmin(ctx, pool, name, plaintext)
+	err = service.CreateInitialAdmin(ctx, pool, name, plaintext)
 	if err != nil {
 		return err
 	}
@@ -201,6 +199,13 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	}
 	defer pool.Close()
 
+	authenticator, err := service.NewAuthenticator(pool)
+	if err != nil {
+		return err
+	}
+
+	logins := service.NewLogins(authenticator, service.NewLoginTokens(pool, cfg.Login.TokenLifetime))
+
 	notifier, err := systemd.Open()
 	if err != nil {
 		return err
@@ -232,7 +237,7 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	metricsMux.Handle("GET /metrics", metricsHandler)
 
 	err = serve(ctx, notifier, map[string]*http.Server{
-		"api": apiServer(cfg.Server.ListenAddress, certificate, pool),
+		"api": apiServer(cfg.Server.ListenAddress, certificate, pool, logins),
 		"metrics": {
 			Addr:              cfg.Metrics.ListenAddress,
 			Handler:           metricsMux,
@@ -269,12 +274,13 @@ func openDatabase(ctx context.Context, url string) (*pgxpool.Pool, error) {
 }
 
 // apiServer serves plain HTTP if certificate is nil.
-func apiServer(address string, certificate *certreload.Certificate, pool *pgxpool.Pool) *http.Server {
+func apiServer(address string, certificate *certreload.Certificate, pool *pgxpool.Pool, logins *service.Logins) *http.Server {
 	options := connect.WithInterceptors(handlererrors.Interceptor())
 
 	mux := http.NewServeMux()
-	mux.Handle(authorityv1connect.NewPingServiceHandler(ping.Service{}, options))
-	mux.Handle(authorityv1connect.NewDummyServiceHandler(dummy.NewService(sqlc.New(pool)), options))
+	mux.Handle(authorityv1connect.NewPingServiceHandler(api.PingService{}, options))
+	mux.Handle(authorityv1connect.NewDummyServiceHandler(api.NewDummyService(service.NewDummies(pool)), options))
+	mux.Handle(api.NewLoginServiceHandler(logins, options))
 
 	// gRPC clients need HTTP/2, and the CLI's Connect client uses HTTP/1.1
 	// by default.

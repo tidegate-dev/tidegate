@@ -35,3 +35,41 @@ dependenciesRules:
         - '^github.com/tidegate-dev/tidegate/cli.**'
         - '^github.com/tidegate-dev/tidegate/internal.**'
         - '^github.com/tidegate-dev/tidegate/gen.**'
+
+  # The authority's layers: api calls service, service calls the database.
+  - package: '^github.com/tidegate-dev/tidegate/authority/internal/password$'
+    shouldOnlyDependsOn:
+      internal:
+        - '^github.com/tidegate-dev/tidegate/internal/secret$'
+
+  - package: '^github.com/tidegate-dev/tidegate/authority/internal/config$'
+    shouldOnlyDependsOn:
+      internal:
+        - '^github.com/tidegate-dev/tidegate/internal.**'
+
+  - package: '^github.com/tidegate-dev/tidegate/authority/internal/db.**'
+    shouldOnlyDependsOn:
+      internal:
+        - '^github.com/tidegate-dev/tidegate/authority/internal/db.**'
+
+  - package: '^github.com/tidegate-dev/tidegate/authority/internal/service$'
+    shouldOnlyDependsOn:
+      internal:
+        - '^github.com/tidegate-dev/tidegate/authority/internal/db.**'
+        - '^github.com/tidegate-dev/tidegate/authority/internal/password$'
+        - '^github.com/tidegate-dev/tidegate/internal/secret$'
+    shouldNotDependsOn:
+      external:
+        - connectrpc.com/connect
+
+  - package: '^github.com/tidegate-dev/tidegate/authority/internal/api$'
+    shouldOnlyDependsOn:
+      internal:
+        - '^github.com/tidegate-dev/tidegate/authority/internal/service$'
+        - '^github.com/tidegate-dev/tidegate/authority/internal/password$'
+        - '^github.com/tidegate-dev/tidegate/gen.**'
+        - '^github.com/tidegate-dev/tidegate/internal/logging$'
+        - '^github.com/tidegate-dev/tidegate/internal/secret$'
+    shouldNotDependsOn:
+      external:
+        - github.com/jackc/pgx/v5.**

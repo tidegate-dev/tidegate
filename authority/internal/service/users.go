@@ -1,5 +1,4 @@
-// Package users manages the authority's users.
-package users
+package service
 
 import (
 	"context"
@@ -13,25 +12,26 @@ import (
 
 	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
 	"github.com/tidegate-dev/tidegate/authority/internal/password"
+	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 var (
 	// ErrUserExists means the initial admin can't be created, because a user
 	// exists.
 	ErrUserExists = errors.New("a user already exists")
-	// ErrInvalidName means a user name is empty or starts or ends with
-	// whitespace.
-	ErrInvalidName = errors.New("the name must not be empty or start or end with whitespace")
+	// ErrInvalidName means a user name is empty, starts or ends with
+	// whitespace, or has NUL.
+	ErrInvalidName = errors.New("the name must not be empty, start or end with whitespace, or contain NUL")
 )
 
 // initialAdminLockID is the Postgres advisory lock that CreateInitialAdmin
 // takes. goose uses its own lock ID for migrations.
 const initialAdminLockID int64 = 0x7469646567617465 // "tidegate" in ASCII
 
-// ValidateName returns ErrInvalidName if name is empty or starts or ends
-// with whitespace.
+// ValidateName returns ErrInvalidName if name is empty, starts or ends with
+// whitespace, or has NUL, which Postgres refuses in text.
 func ValidateName(name string) error {
-	if name == "" || strings.TrimSpace(name) != name {
+	if name == "" || strings.TrimSpace(name) != name || strings.ContainsRune(name, 0) {
 		return ErrInvalidName
 	}
 
@@ -51,7 +51,7 @@ func AnyExist(ctx context.Context, pool *pgxpool.Pool) (bool, error) {
 // CreateInitialAdmin creates the first user, with a local password. It
 // returns ErrUserExists if any user exists, also when another run creates
 // one at the same time.
-func CreateInitialAdmin(ctx context.Context, pool *pgxpool.Pool, name, plaintext string) error {
+func CreateInitialAdmin(ctx context.Context, pool *pgxpool.Pool, name string, plaintext secret.String) error {
 	err := ValidateName(name)
 	if err != nil {
 		return err

@@ -1,6 +1,6 @@
 //go:build integration
 
-package users
+package service
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 
 	"github.com/tidegate-dev/tidegate/authority/internal/db"
 	"github.com/tidegate-dev/tidegate/authority/internal/dbtest"
+	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 const validPassword = "correct horse battery staple"
@@ -30,7 +31,7 @@ var _ = Describe("CreateInitialAdmin", func() {
 	})
 
 	It("creates the user with an argon2id hash of the password", func(ctx SpecContext) {
-		err := CreateInitialAdmin(ctx, pool, "alice", validPassword)
+		err := CreateInitialAdmin(ctx, pool, "alice", secret.New(validPassword))
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(storedUsers(ctx, pool)).To(ConsistOf(SatisfyAll(
@@ -40,17 +41,17 @@ var _ = Describe("CreateInitialAdmin", func() {
 	})
 
 	It("refuses when a user already exists", func(ctx SpecContext) {
-		Expect(CreateInitialAdmin(ctx, pool, "alice", validPassword)).To(Succeed())
+		Expect(CreateInitialAdmin(ctx, pool, "alice", secret.New(validPassword))).To(Succeed())
 
-		err := CreateInitialAdmin(ctx, pool, "bob", validPassword)
+		err := CreateInitialAdmin(ctx, pool, "bob", secret.New(validPassword))
 
 		Expect(err).To(MatchError(ErrUserExists))
 		Expect(storedUsers(ctx, pool)).To(HaveLen(1))
 	})
 
-	DescribeTable("refuses a name that's empty or has whitespace around it",
+	DescribeTable("refuses an invalid name",
 		func(ctx SpecContext, name string) {
-			err := CreateInitialAdmin(ctx, pool, name, validPassword)
+			err := CreateInitialAdmin(ctx, pool, name, secret.New(validPassword))
 
 			Expect(err).To(MatchError(ErrInvalidName))
 			Expect(storedUsers(ctx, pool)).To(BeEmpty())
@@ -59,6 +60,7 @@ var _ = Describe("CreateInitialAdmin", func() {
 		Entry("only whitespace", " "),
 		Entry("leading space", " alice"),
 		Entry("trailing newline", "alice\n"),
+		Entry("NUL", "al\x00ice"),
 	)
 
 	It("creates one user when two runs wait for the lock", func(ctx SpecContext) {
@@ -102,7 +104,7 @@ func startCreateInitialAdmin(ctx context.Context, pool *pgxpool.Pool, name strin
 	creationErrorChan := make(chan error, 1)
 
 	go func() {
-		creationErrorChan <- CreateInitialAdmin(ctx, pool, name, validPassword)
+		creationErrorChan <- CreateInitialAdmin(ctx, pool, name, secret.New(validPassword))
 	}()
 
 	return creationErrorChan

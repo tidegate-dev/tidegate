@@ -1,12 +1,15 @@
 package password
 
 import (
+	"encoding/base64"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/text/unicode/norm"
+
+	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 func TestHashMatchesTheReferenceImplementation(t *testing.T) {
@@ -29,10 +32,10 @@ func TestHashUsesANewSaltEachTime(t *testing.T) {
 	t.Parallel()
 
 	// act
-	first, err := Hash("correct horse battery staple")
+	first, err := Hash(secret.New("correct horse battery staple"))
 	require.NoError(t, err)
 
-	second, err := Hash("correct horse battery staple")
+	second, err := Hash(secret.New("correct horse battery staple"))
 	require.NoError(t, err)
 
 	// assert
@@ -45,7 +48,7 @@ func TestHashRefusesAPasswordUnder15Characters(t *testing.T) {
 
 	// act
 	// 14 characters, but more than 15 bytes in UTF-8.
-	_, err := Hash("äöüäöüäöüäöüäö")
+	_, err := Hash(secret.New("äöüäöüäöüäöüäö"))
 
 	// assert
 	require.ErrorIs(t, err, ErrTooShort)
@@ -55,7 +58,7 @@ func TestHashRefusesAPasswordOver1024Bytes(t *testing.T) {
 	t.Parallel()
 
 	// act
-	_, err := Hash(strings.Repeat("a", 1025))
+	_, err := Hash(secret.New(strings.Repeat("a", 1025)))
 
 	// assert
 	require.ErrorIs(t, err, ErrTooLong)
@@ -72,7 +75,7 @@ func TestHashAcceptsPasswordsAtTheLimits(t *testing.T) {
 			t.Parallel()
 
 			// act
-			_, err := Hash(password)
+			_, err := Hash(secret.New(password))
 
 			// assert
 			require.NoError(t, err)
@@ -139,10 +142,126 @@ func TestEquivalentComparesTheNormalizedForms(t *testing.T) {
 			t.Parallel()
 
 			// act
-			actual := Equivalent(test.first, test.second)
+			actual := Equivalent(secret.New(test.first), secret.New(test.second))
 
 			// assert
 			assert.Equal(t, test.expected, actual)
+		})
+	}
+}
+
+func TestVerifyAcceptsTheHashedPassword(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	hash, err := Hash(secret.New("correct horse battery staple"))
+	require.NoError(t, err)
+
+	// act
+	ok, err := Verify(secret.New("correct horse battery staple"), hash)
+
+	// assert
+	require.NoError(t, err)
+	assert.True(t, ok)
+}
+
+func TestVerifyRejectsAnotherPassword(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	hash, err := Hash(secret.New("correct horse battery staple"))
+	require.NoError(t, err)
+
+	// act
+	ok, err := Verify(secret.New("correct horse battery stapler"), hash)
+
+	// assert
+	require.NoError(t, err)
+	assert.False(t, ok)
+}
+
+func TestVerifyReadsTheParametersFromTheHash(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	// From the argon2 command of the reference implementation, libargon2:
+	// echo -n 'correct horse battery staple' | argon2 tidegate-salt-16 -id -t 1 -m 3 -p 1 -l 16 -e
+	const hash = "$argon2id$v=19$m=8,t=1,p=1$dGlkZWdhdGUtc2FsdC0xNg$OtzZSdevu1lF+xEZ6HckGA"
+
+	// act
+	ok, err := Verify(secret.New("correct horse battery staple"), hash)
+
+	// assert
+	require.NoError(t, err)
+	assert.True(t, ok)
+}
+
+func TestVerifyTreatsEquivalentUnicodeFormsAsTheSamePassword(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	hash, err := Hash(secret.New("café au lait, bitte"))
+	require.NoError(t, err)
+
+	// act
+	ok, err := Verify(secret.New("café au lait, bitte"), hash)
+
+	// assert
+	require.NoError(t, err)
+	assert.True(t, ok)
+}
+
+func TestVerifyRejectsAnEmptyPassword(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	hash, err := Hash(secret.New("correct horse battery staple"))
+	require.NoError(t, err)
+
+	// act
+	ok, err := Verify(secret.New(""), hash)
+
+	// assert
+	require.NoError(t, err)
+	assert.False(t, ok)
+}
+
+func TestVerifyRefusesAPasswordOver1024Bytes(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	hash, err := Hash(secret.New("correct horse battery staple"))
+	require.NoError(t, err)
+
+	// act
+	_, err = Verify(secret.New(strings.Repeat("a", 1025)), hash)
+
+	// assert
+	require.ErrorIs(t, err, ErrTooLong)
+}
+
+func TestVerifyFailsOnAMalformedHash(t *testing.T) {
+	t.Parallel()
+
+	// The library rejects unreadable hashes. These cases cover tidegate's rules.
+	for name, hash := range map[string]string{
+		"unreadable":                 "",
+		"not argon2id":               "$argon2i$v=19$m=65536,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
+		"another version":            "$argon2id$v=16$m=65536,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
+		"more memory than Hash uses": "$argon2id$v=19$m=131072,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
+		"more iterations than Hash":  "$argon2id$v=19$m=65536,t=4,p=4$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
+		"more threads than Hash":     "$argon2id$v=19$m=65536,t=3,p=8$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",
+		"longer key than Hash": "$argon2id$v=19$m=65536,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$" +
+			base64.RawStdEncoding.EncodeToString(make([]byte, 33)),
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			// act
+			_, err := Verify(secret.New("correct horse battery staple"), hash)
+
+			// assert
+			require.ErrorIs(t, err, ErrMalformedHash)
 		})
 	}
 }

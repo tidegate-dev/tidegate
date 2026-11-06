@@ -1,4 +1,4 @@
-package ping_test
+package api_test
 
 import (
 	"net/http"
@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/ping"
+	"github.com/tidegate-dev/tidegate/authority/internal/api"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
 )
@@ -19,7 +19,7 @@ func TestPingAnswersPong(t *testing.T) {
 
 	// arrange
 	mux := http.NewServeMux()
-	mux.Handle(authorityv1connect.NewPingServiceHandler(ping.Service{}))
+	mux.Handle(authorityv1connect.NewPingServiceHandler(api.PingService{}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 
