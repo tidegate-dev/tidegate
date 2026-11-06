@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"connectrpc.com/validate"
 	"github.com/The127/go-random"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/urfave/cli/v3"
@@ -278,7 +279,7 @@ func openDatabase(ctx context.Context, url string) (*pgxpool.Pool, error) {
 
 // apiServer serves plain HTTP if certificate is nil.
 func apiServer(address string, certificate *certreload.Certificate, pool *pgxpool.Pool, logins *service.Logins) *http.Server {
-	options := connect.WithInterceptors(handlererrors.Interceptor())
+	options := connect.WithInterceptors(handlererrors.Interceptor(), validate.NewInterceptor())
 
 	mux := http.NewServeMux()
 	mux.Handle(authorityv1connect.NewPingServiceHandler(api.PingService{}, options))
