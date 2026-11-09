@@ -278,9 +278,15 @@ func openDatabase(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
+// requestlog comes first, so it logs the code the client gets after
+// handlererrors has changed it.
+func interceptors(clk clock.Service) []connect.Interceptor {
+	return []connect.Interceptor{requestlog.Interceptor(clk), handlererrors.Interceptor()}
+}
+
 // apiServer serves plain HTTP if certificate is nil.
 func apiServer(address string, certificate *certreload.Certificate, pool *pgxpool.Pool, logins *service.Logins) *http.Server {
-	options := connect.WithInterceptors(requestlog.Interceptor(clock.NewSystemClock()), handlererrors.Interceptor())
+	options := connect.WithInterceptors(interceptors(clock.NewSystemClock())...)
 
 	mux := http.NewServeMux()
 	mux.Handle(authorityv1connect.NewPingServiceHandler(api.PingService{}, options))
