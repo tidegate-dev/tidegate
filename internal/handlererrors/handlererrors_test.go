@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 	"github.com/stretchr/testify/assert"
@@ -111,13 +112,33 @@ func TestNetworkTimeoutReachesTheClientWithoutItsText(t *testing.T) {
 	assert.NotContains(t, connectErr.Message(), "192.0.2.5")
 }
 
-func TestExceededDeadlineIsLoggedAtDebugLevel(t *testing.T) {
+func TestTimeoutInsideTheServerIsLoggedAtWarnLevel(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	var out bytes.Buffer
+
+	ctx := logging.NewContext(t.Context(), logging.New(&out, slog.LevelInfo, logging.FormatText))
+	handler := handlererrors.Interceptor().WrapUnary(failWith(fmt.Errorf("storing the text: %w", context.DeadlineExceeded)))
+
+	// act
+	_, _ = handler(ctx, connect.NewRequest(&struct{}{}))
+
+	// assert
+	assert.Contains(t, out.String(), "level=WARN")
+	assert.Contains(t, out.String(), "storing the text")
+}
+
+func TestExceededCallDeadlineIsLoggedAtDebugLevel(t *testing.T) {
 	t.Parallel()
 
 	// arrange
 	var out bytes.Buffer
 
 	ctx := logging.NewContext(t.Context(), logging.New(&out, slog.LevelDebug, logging.FormatText))
+	ctx, cancel := context.WithDeadline(ctx, time.Unix(0, 0))
+	t.Cleanup(cancel)
+
 	handler := handlererrors.Interceptor().WrapUnary(failWith(fmt.Errorf("storing the text: %w", context.DeadlineExceeded)))
 
 	// act

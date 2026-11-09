@@ -61,7 +61,11 @@ func hide(ctx context.Context, spec connect.Spec, err error) error {
 
 		return connect.NewError(connect.CodeCanceled, context.Canceled)
 	case errors.Is(err, context.DeadlineExceeded), errors.Is(err, os.ErrDeadlineExceeded):
-		logger.DebugContext(ctx, "the call timed out")
+		if ctx.Err() == nil {
+			logger.WarnContext(ctx, "a timeout inside the server ended the call")
+		} else {
+			logger.DebugContext(ctx, "the call timed out")
+		}
 
 		return connect.NewError(connect.CodeDeadlineExceeded, context.DeadlineExceeded)
 	default:
