@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -39,12 +40,16 @@ func TestRequestLogShowsTheCodeTheClientGets(t *testing.T) {
 		return logging.NewContext(context.Background(), logging.New(&out, slog.LevelInfo, logging.FormatText))
 	}
 	server.Start()
-	t.Cleanup(server.Close)
+
+	closeServerOnce := sync.OnceFunc(server.Close)
+	t.Cleanup(closeServerOnce)
 
 	client := connect.NewClient[emptypb.Empty, emptypb.Empty](server.Client(), server.URL+procedure)
 
 	// act
 	_, err := client.CallUnary(t.Context(), connect.NewRequest(&emptypb.Empty{}))
+
+	closeServerOnce()
 
 	// assert
 	require.Error(t, err)
