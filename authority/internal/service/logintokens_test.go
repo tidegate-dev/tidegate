@@ -15,6 +15,7 @@ import (
 
 	"github.com/tidegate-dev/tidegate/authority/internal/db"
 	"github.com/tidegate-dev/tidegate/authority/internal/dbtest"
+	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 type storedToken struct {
@@ -86,6 +87,98 @@ var _ = Describe("Issue", func() {
 		hash := sha256.Sum256([]byte(token.Reveal()))
 		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hash[:]))))
 	})
+})
+
+var _ = Describe("Revoke", func() {
+	var (
+		pool   *pgxpool.Pool
+		tokens *LoginTokens
+		alice  pgtype.UUID
+		bob    pgtype.UUID
+	)
+
+	BeforeEach(func(ctx SpecContext) {
+		var err error
+
+		pool, err = db.Open(ctx, dbtest.NewDatabase())
+		Expect(err).NotTo(HaveOccurred())
+		DeferCleanup(pool.Close)
+		Expect(db.Migrate(ctx, pool)).To(Succeed())
+
+		Expect(pool.QueryRow(ctx, "INSERT INTO users (name) VALUES ('alice') RETURNING id").Scan(&alice)).To(Succeed())
+		Expect(pool.QueryRow(ctx, "INSERT INTO users (name) VALUES ('bob') RETURNING id").Scan(&bob)).To(Succeed())
+
+		tokens = NewLoginTokens(pool, rnd, 12*time.Hour)
+	})
+
+	issue := func(ctx context.Context, userID pgtype.UUID) secret.String {
+		GinkgoHelper()
+
+		token, err := tokens.Issue(ctx, userID)
+		Expect(err).NotTo(HaveOccurred())
+
+		return token
+	}
+
+	hashOf := func(token secret.String) []byte {
+		hash := sha256.Sum256([]byte(token.Reveal()))
+
+		return hash[:]
+	}
+
+	It("revokes only the given token", func(ctx SpecContext) {
+		token := issue(ctx, alice)
+		other := issue(ctx, alice)
+
+		userID, revoked, err := tokens.Revoke(ctx, token, false)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(userID).To(Equal(alice.String()))
+		Expect(revoked).To(Equal(1))
+		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hashOf(other)))))
+	})
+
+	It("revokes every token of the user for all sessions, and no other user's", func(ctx SpecContext) {
+		token := issue(ctx, alice)
+		issue(ctx, alice)
+		bobs := issue(ctx, bob)
+
+		userID, revoked, err := tokens.Revoke(ctx, token, true)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(userID).To(Equal(alice.String()))
+		Expect(revoked).To(Equal(2))
+		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hashOf(bobs)))))
+	})
+
+	DescribeTable("refuses an unknown token",
+		func(ctx SpecContext, allSessions bool) {
+			issue(ctx, alice)
+
+			_, _, err := tokens.Revoke(ctx, secret.New("unknown"), allSessions)
+
+			Expect(err).To(MatchError(ErrNotSignedIn))
+			Expect(storedTokens(ctx, pool)).To(HaveLen(1))
+		},
+		Entry("for one session", false),
+		Entry("for all sessions", true),
+	)
+
+	DescribeTable("refuses an expired token",
+		func(ctx SpecContext, allSessions bool) {
+			issue(ctx, alice)
+			_, err := pool.Exec(ctx, `INSERT INTO login_tokens (token_hash, user_id, expires_at)
+				VALUES (sha256('expired'), $1, now() - interval '1 second')`, alice)
+			Expect(err).NotTo(HaveOccurred())
+
+			_, _, err = tokens.Revoke(ctx, secret.New("expired"), allSessions)
+
+			Expect(err).To(MatchError(ErrNotSignedIn))
+			Expect(storedTokens(ctx, pool)).To(HaveLen(2))
+		},
+		Entry("for one session", false),
+		Entry("for all sessions", true),
+	)
 })
 
 func storedTokens(ctx context.Context, pool *pgxpool.Pool) []storedToken {

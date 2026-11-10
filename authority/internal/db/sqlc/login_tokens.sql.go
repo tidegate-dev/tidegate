@@ -35,3 +35,57 @@ func (q *Queries) DeleteExpiredLoginTokens(ctx context.Context, userID pgtype.UU
 	_, err := q.db.Exec(ctx, deleteExpiredLoginTokens, userID)
 	return err
 }
+
+const revokeLoginToken = `-- name: RevokeLoginToken :many
+DELETE FROM login_tokens WHERE token_hash = $1 AND expires_at > now()
+RETURNING user_id
+`
+
+func (q *Queries) RevokeLoginToken(ctx context.Context, tokenHash []byte) ([]pgtype.UUID, error) {
+	rows, err := q.db.Query(ctx, revokeLoginToken, tokenHash)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []pgtype.UUID
+	for rows.Next() {
+		var user_id pgtype.UUID
+		if err := rows.Scan(&user_id); err != nil {
+			return nil, err
+		}
+		items = append(items, user_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const revokeUserLoginTokens = `-- name: RevokeUserLoginTokens :many
+DELETE FROM login_tokens
+WHERE user_id = (
+    SELECT caller.user_id FROM login_tokens AS caller
+    WHERE caller.token_hash = $1 AND caller.expires_at > now()
+)
+RETURNING user_id
+`
+
+func (q *Queries) RevokeUserLoginTokens(ctx context.Context, tokenHash []byte) ([]pgtype.UUID, error) {
+	rows, err := q.db.Query(ctx, revokeUserLoginTokens, tokenHash)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []pgtype.UUID
+	for rows.Next() {
+		var user_id pgtype.UUID
+		if err := rows.Scan(&user_id); err != nil {
+			return nil, err
+		}
+		items = append(items, user_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

@@ -3,8 +3,10 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"slices"
+	"strings"
 
 	"connectrpc.com/connect"
 
@@ -21,8 +23,6 @@ const maxLoginRequestBytes = 4096
 
 // LoginService signs users in.
 type LoginService struct {
-	authorityv1connect.UnimplementedLoginServiceHandler
-
 	logins *service.Logins
 }
 
@@ -58,12 +58,56 @@ func (s *LoginService) Login(
 	return connect.NewResponse(&authorityv1.LoginResponse{Token: token.Reveal()}), nil
 }
 
-// clientError hides why credentials are wrong, so clients can't tell which
-// user names exist.
+// Logout revokes the caller's login token, or every login token of the
+// caller's user.
+func (s *LoginService) Logout(
+	ctx context.Context,
+	req *connect.Request[authorityv1.LogoutRequest],
+) (*connect.Response[authorityv1.LogoutResponse], error) {
+	allSessions := req.Msg.GetAllSessions()
+	logger := logging.FromContext(ctx).With("all_sessions", allSessions)
+
+	token, ok := bearerToken(req.Header())
+	if !ok {
+		err := fmt.Errorf("%w: no bearer token", service.ErrNotSignedIn)
+		logger.WarnContext(ctx, "logout failed", "reason", err)
+
+		return nil, clientError(err)
+	}
+
+	userID, revoked, err := s.logins.Logout(ctx, token, allSessions)
+	if err != nil {
+		logger.WarnContext(ctx, "logout failed", "reason", err)
+
+		return nil, clientError(err)
+	}
+
+	// TODO(#105): take the user from the request context, where the token
+	// check puts it, and drop it from what Logout returns.
+	logger.InfoContext(ctx, "logout succeeded", "user_id", userID, "revoked_tokens", revoked)
+
+	return connect.NewResponse(&authorityv1.LogoutResponse{}), nil
+}
+
+// bearerToken returns the token from an `Authorization: Bearer` header. HTTP
+// compares auth schemes without regard to case.
+func bearerToken(header http.Header) (secret.String, bool) {
+	scheme, token, found := strings.Cut(header.Get("Authorization"), " ")
+	if !found || !strings.EqualFold(scheme, "Bearer") || token == "" {
+		return secret.String{}, false
+	}
+
+	return secret.New(token), true
+}
+
+// clientError hides why credentials or a token are wrong, so clients can't
+// tell which user names exist or why a token was refused.
 func clientError(err error) error {
 	switch {
 	case errors.Is(err, service.ErrWrongCredentials):
 		return connect.NewError(connect.CodeUnauthenticated, service.ErrWrongCredentials)
+	case errors.Is(err, service.ErrNotSignedIn):
+		return connect.NewError(connect.CodeUnauthenticated, service.ErrNotSignedIn)
 	case errors.Is(err, password.ErrTooLong):
 		return connect.NewError(connect.CodeInvalidArgument, password.ErrTooLong)
 	case errors.Is(err, service.ErrBusy):

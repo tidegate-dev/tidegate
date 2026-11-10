@@ -2,9 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
+
+// ErrNotSignedIn means a call has no login token, or one that is unknown or
+// expired.
+var ErrNotSignedIn = errors.New("not signed in")
 
 // Logins signs users in with a local password.
 type Logins struct {
@@ -25,4 +30,10 @@ func (l *Logins) Login(ctx context.Context, name string, plaintext secret.String
 	}
 
 	return l.tokens.Issue(ctx, userID)
+}
+
+// Logout revokes the login token, or with allSessions every login token of
+// its user, and returns the user's ID and how many tokens it revoked.
+func (l *Logins) Logout(ctx context.Context, token secret.String, allSessions bool) (string, int, error) {
+	return l.tokens.Revoke(ctx, token, allSessions)
 }

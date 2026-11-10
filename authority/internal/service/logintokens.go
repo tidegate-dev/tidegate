@@ -37,11 +37,10 @@ func (s *LoginTokens) Issue(ctx context.Context, userID pgtype.UUID) (secret.Str
 		return secret.String{}, fmt.Errorf("deleting expired login tokens: %w", err)
 	}
 
-	token := base64.RawURLEncoding.EncodeToString(s.rnd.Bytes(tokenBytes))
-	hash := sha256.Sum256([]byte(token))
+	token := secret.New(base64.RawURLEncoding.EncodeToString(s.rnd.Bytes(tokenBytes)))
 
 	err = s.queries.CreateLoginToken(ctx, sqlc.CreateLoginTokenParams{
-		TokenHash: hash[:],
+		TokenHash: hash(token),
 		UserID:    userID,
 		Lifetime:  pgtype.Interval{Microseconds: s.lifetime.Microseconds(), Valid: true},
 	})
@@ -49,5 +48,32 @@ func (s *LoginTokens) Issue(ctx context.Context, userID pgtype.UUID) (secret.Str
 		return secret.String{}, fmt.Errorf("storing the login token: %w", err)
 	}
 
-	return secret.New(token), nil
+	return token, nil
+}
+
+// Revoke deletes the token, or with allSessions every token of its user, and
+// returns the user's ID and how many tokens it deleted. It returns
+// ErrNotSignedIn if the token is unknown or expired.
+func (s *LoginTokens) Revoke(ctx context.Context, token secret.String, allSessions bool) (string, int, error) {
+	revoke := s.queries.RevokeLoginToken
+	if allSessions {
+		revoke = s.queries.RevokeUserLoginTokens
+	}
+
+	userIDs, err := revoke(ctx, hash(token))
+	if err != nil {
+		return "", 0, fmt.Errorf("revoking login tokens: %w", err)
+	}
+
+	if len(userIDs) == 0 {
+		return "", 0, fmt.Errorf("%w: unknown or expired token", ErrNotSignedIn)
+	}
+
+	return userIDs[0].String(), len(userIDs), nil
+}
+
+func hash(token secret.String) []byte {
+	sum := sha256.Sum256([]byte(token.Reveal()))
+
+	return sum[:]
 }
