@@ -290,8 +290,6 @@ func interceptors(clk clock.Service, sessions api.SessionLookup) []connect.Inter
 		api.NewSessionInterceptor(sessions,
 			authorityv1connect.LoginServiceLoginProcedure,
 			authorityv1connect.PingServicePingProcedure,
-			authorityv1connect.DummyServiceReadProcedure,
-			authorityv1connect.DummyServiceWriteProcedure,
 		),
 		validate.NewInterceptor(),
 	}

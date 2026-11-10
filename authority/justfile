@@ -61,17 +61,29 @@ test-api:
     mkdir "$work/coverage"
     go build -cover -coverpkg=github.com/tidegate-dev/tidegate/... -o "$work/authority" ./cmd/authority
     # Other ports than just dev, so both can run at the same time.
-    GOCOVERDIR="$work/coverage" \
-    TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=127.0.0.1:18080 \
-    TIDEGATE_AUTHORITY__METRICS__LISTEN_ADDRESS=127.0.0.1:19464 \
-    TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE=../dev/tls/authority.pem \
-    TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE=../dev/tls/authority-key.pem \
-    TIDEGATE_AUTHORITY__DATABASE__URL="$server/$database$query" \
-    TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START=true \
-        "$work/authority" >"$work/log" 2>&1 &
+    export GOCOVERDIR="$work/coverage"
+    export TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=127.0.0.1:18080
+    export TIDEGATE_AUTHORITY__METRICS__LISTEN_ADDRESS=127.0.0.1:19464
+    export TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE=../dev/tls/authority.pem
+    export TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE=../dev/tls/authority-key.pem
+    export TIDEGATE_AUTHORITY__DATABASE__URL="$server/$database$query"
+    export TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START=true
+    "$work/authority" >"$work/log" 2>&1 &
     authority=$!
-    options=(--cacert ../dev/tls/ca.pem --variable authority=https://127.0.0.1:18080)
+    user=alice
+    password='correct horse battery staple'
+    options=(
+        --cacert ../dev/tls/ca.pem
+        --variable authority=https://127.0.0.1:18080
+        --variable "user=$user"
+        --variable "password=$password"
+    )
     if ! hurl "${options[@]}" --retry 50 --retry-interval 200 api-tests/ping.hurl >/dev/null; then
+        cat "$work/log" >&2
+        exit 1
+    fi
+    # The authority has migrated the database by the time it answers a ping.
+    if ! printf '%s\n' "$password" | "$work/authority" create-initial-admin "$user" >>"$work/log" 2>&1; then
         cat "$work/log" >&2
         exit 1
     fi
