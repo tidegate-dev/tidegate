@@ -210,7 +210,8 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 		return err
 	}
 
-	logins := service.NewLogins(authenticator, service.NewLoginTokens(pool, rnd, cfg.Login.TokenLifetime))
+	tokens := service.NewLoginTokens(pool, rnd, cfg.Login.TokenLifetime)
+	logins := service.NewLogins(authenticator, tokens)
 
 	notifier, err := systemd.Open()
 	if err != nil {
@@ -243,7 +244,7 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	metricsMux.Handle("GET /metrics", metricsHandler)
 
 	err = serve(ctx, notifier, map[string]*http.Server{
-		"api": apiServer(cfg.Server.ListenAddress, certificate, pool, logins),
+		"api": apiServer(cfg.Server.ListenAddress, certificate, pool, logins, tokens),
 		"metrics": {
 			Addr:              cfg.Metrics.ListenAddress,
 			Handler:           metricsMux,
@@ -280,14 +281,31 @@ func openDatabase(ctx context.Context, url string) (*pgxpool.Pool, error) {
 }
 
 // requestlog comes first, so it logs the code the client gets after
-// handlererrors has changed it.
-func interceptors(clk clock.Service) []connect.Interceptor {
-	return []connect.Interceptor{requestlog.Interceptor(clk), handlererrors.Interceptor(), validate.NewInterceptor()}
+// handlererrors has changed it. The session check comes before validate, so
+// a caller without a login token learns nothing about the request's rules.
+func interceptors(clk clock.Service, sessions api.SessionLookup) []connect.Interceptor {
+	return []connect.Interceptor{
+		requestlog.Interceptor(clk),
+		handlererrors.Interceptor(),
+		api.NewSessionInterceptor(sessions,
+			authorityv1connect.LoginServiceLoginProcedure,
+			authorityv1connect.PingServicePingProcedure,
+			authorityv1connect.DummyServiceReadProcedure,
+			authorityv1connect.DummyServiceWriteProcedure,
+		),
+		validate.NewInterceptor(),
+	}
 }
 
 // apiServer serves plain HTTP if certificate is nil.
-func apiServer(address string, certificate *certreload.Certificate, pool *pgxpool.Pool, logins *service.Logins) *http.Server {
-	options := connect.WithInterceptors(interceptors(clock.NewSystemClock())...)
+func apiServer(
+	address string,
+	certificate *certreload.Certificate,
+	pool *pgxpool.Pool,
+	logins *service.Logins,
+	sessions api.SessionLookup,
+) *http.Server {
+	options := connect.WithInterceptors(interceptors(clock.NewSystemClock(), sessions)...)
 
 	mux := http.NewServeMux()
 	mux.Handle(authorityv1connect.NewPingServiceHandler(api.PingService{}, options))
