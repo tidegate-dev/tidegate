@@ -14,6 +14,7 @@ type Dummy struct {
 }
 
 type LoginToken struct {
+	ID        pgtype.UUID
 	TokenHash []byte
 	UserID    pgtype.UUID
 	CreatedAt pgtype.Timestamptz
