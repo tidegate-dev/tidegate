@@ -36,6 +36,22 @@ func (q *Queries) DeleteExpiredLoginTokens(ctx context.Context, userID pgtype.UU
 	return err
 }
 
+const getLoginSession = `-- name: GetLoginSession :one
+SELECT id, user_id FROM login_tokens WHERE token_hash = $1 AND expires_at > now()
+`
+
+type GetLoginSessionRow struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) GetLoginSession(ctx context.Context, tokenHash []byte) (GetLoginSessionRow, error) {
+	row := q.db.QueryRow(ctx, getLoginSession, tokenHash)
+	var i GetLoginSessionRow
+	err := row.Scan(&i.ID, &i.UserID)
+	return i, err
+}
+
 const revokeLoginToken = `-- name: RevokeLoginToken :many
 DELETE FROM login_tokens WHERE token_hash = $1 AND expires_at > now()
 RETURNING user_id

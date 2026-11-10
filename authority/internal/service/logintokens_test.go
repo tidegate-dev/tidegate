@@ -181,6 +181,59 @@ var _ = Describe("Revoke", func() {
 	)
 })
 
+var _ = Describe("Session", func() {
+	var (
+		pool   *pgxpool.Pool
+		tokens *LoginTokens
+		alice  pgtype.UUID
+	)
+
+	BeforeEach(func(ctx SpecContext) {
+		var err error
+
+		pool, err = db.Open(ctx, dbtest.NewDatabase())
+		Expect(err).NotTo(HaveOccurred())
+		DeferCleanup(pool.Close)
+		Expect(db.Migrate(ctx, pool)).To(Succeed())
+
+		Expect(pool.QueryRow(ctx, "INSERT INTO users (name) VALUES ('alice') RETURNING id").Scan(&alice)).To(Succeed())
+
+		tokens = NewLoginTokens(pool, rnd, 12*time.Hour)
+	})
+
+	It("returns the session of the token", func(ctx SpecContext) {
+		token, err := tokens.Issue(ctx, alice)
+		Expect(err).NotTo(HaveOccurred())
+
+		var id pgtype.UUID
+		Expect(pool.QueryRow(ctx, "SELECT id FROM login_tokens").Scan(&id)).To(Succeed())
+
+		session, err := tokens.Session(ctx, token)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(session).To(Equal(Session{ID: id, UserID: alice}))
+	})
+
+	It("refuses an unknown token", func(ctx SpecContext) {
+		_, err := tokens.Issue(ctx, alice)
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = tokens.Session(ctx, secret.New("unknown"))
+
+		Expect(err).To(MatchError(ErrNotSignedIn))
+	})
+
+	It("refuses an expired token", func(ctx SpecContext) {
+		_, err := pool.Exec(ctx, `INSERT INTO login_tokens (token_hash, user_id, expires_at)
+			VALUES (sha256('expired'), $1, now() - interval '1 second')`, alice)
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = tokens.Session(ctx, secret.New("expired"))
+
+		Expect(err).To(MatchError(ErrNotSignedIn))
+	})
+})
+
 func storedTokens(ctx context.Context, pool *pgxpool.Pool) []storedToken {
 	GinkgoHelper()
 

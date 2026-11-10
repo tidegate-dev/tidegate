@@ -4,10 +4,12 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/The127/go-random"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -16,6 +18,12 @@ import (
 )
 
 const tokenBytes = 32
+
+// Session is one login of a user, found by its login token.
+type Session struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+}
 
 // LoginTokens issues the tokens that signed-in users send with API calls.
 type LoginTokens struct {
@@ -49,6 +57,21 @@ func (s *LoginTokens) Issue(ctx context.Context, userID pgtype.UUID) (secret.Str
 	}
 
 	return token, nil
+}
+
+// Session returns the session of the token. It returns ErrNotSignedIn if the
+// token is unknown or expired.
+func (s *LoginTokens) Session(ctx context.Context, token secret.String) (Session, error) {
+	row, err := s.queries.GetLoginSession(ctx, hash(token))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Session{}, fmt.Errorf("%w: unknown or expired token", ErrNotSignedIn)
+	}
+
+	if err != nil {
+		return Session{}, fmt.Errorf("looking up the login token: %w", err)
+	}
+
+	return Session{ID: row.ID, UserID: row.UserID}, nil
 }
 
 // Revoke deletes the token, or with allSessions every token of its user, and
