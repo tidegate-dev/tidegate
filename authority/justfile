@@ -58,6 +58,10 @@ test-api:
         "${psql[@]}" --command "DROP DATABASE $database WITH (FORCE)"
     }
     trap cleanup EXIT
+    fail() {
+        cat "$work/log" >&2
+        exit 1
+    }
     mkdir "$work/coverage"
     go build -cover -coverpkg=github.com/tidegate-dev/tidegate/... -o "$work/authority" ./cmd/authority
     # Other ports than just dev, so both can run at the same time.
@@ -78,24 +82,15 @@ test-api:
         --variable "user=$user"
         --variable "password=$password"
     )
-    if ! hurl "${options[@]}" --retry 50 --retry-interval 200 api-tests/ping.hurl >/dev/null; then
-        cat "$work/log" >&2
-        exit 1
-    fi
+    hurl "${options[@]}" --retry 50 --retry-interval 200 api-tests/ping.hurl >/dev/null || fail
     # The authority has migrated the database by the time it answers a ping.
-    if ! printf '%s\n' "$password" | "$work/authority" create-initial-admin "$user" >>"$work/log" 2>&1; then
-        cat "$work/log" >&2
-        exit 1
-    fi
+    printf '%s\n' "$password" | "$work/authority" create-initial-admin "$user" >>"$work/log" 2>&1 || fail
     hurl --test "${options[@]}" api-tests/*.hurl
     # The authority writes its coverage only when it stops cleanly.
     kill "$authority"
     stopped=$authority
     authority=
-    if ! wait "$stopped"; then
-        cat "$work/log" >&2
-        exit 1
-    fi
+    wait "$stopped" || fail
     go tool covdata textfmt -i="$work/coverage" -o ../coverage/authority-api.out
 
 # Lint the authority.
