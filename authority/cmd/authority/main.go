@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"github.com/The127/go-clock"
 	"github.com/The127/go-random"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/urfave/cli/v3"
@@ -29,6 +30,7 @@ import (
 	"github.com/tidegate-dev/tidegate/internal/handlererrors"
 	"github.com/tidegate-dev/tidegate/internal/logging"
 	"github.com/tidegate-dev/tidegate/internal/metrics"
+	"github.com/tidegate-dev/tidegate/internal/requestlog"
 	"github.com/tidegate-dev/tidegate/internal/systemd"
 )
 
@@ -276,9 +278,15 @@ func openDatabase(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
+// requestlog comes first, so it logs the code the client gets after
+// handlererrors has changed it.
+func interceptors(clk clock.Service) []connect.Interceptor {
+	return []connect.Interceptor{requestlog.Interceptor(clk), handlererrors.Interceptor()}
+}
+
 // apiServer serves plain HTTP if certificate is nil.
 func apiServer(address string, certificate *certreload.Certificate, pool *pgxpool.Pool, logins *service.Logins) *http.Server {
-	options := connect.WithInterceptors(handlererrors.Interceptor())
+	options := connect.WithInterceptors(interceptors(clock.NewSystemClock())...)
 
 	mux := http.NewServeMux()
 	mux.Handle(authorityv1connect.NewPingServiceHandler(api.PingService{}, options))
