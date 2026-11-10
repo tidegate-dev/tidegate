@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"slices"
 	"strings"
@@ -51,8 +50,6 @@ func (s *LoginService) Login(
 		return nil, clientError(err)
 	}
 
-	logger.InfoContext(ctx, "login succeeded")
-
 	return connect.NewResponse(&authorityv1.LoginResponse{Token: token.Reveal()}), nil
 }
 
@@ -62,27 +59,17 @@ func (s *LoginService) Logout(
 	ctx context.Context,
 	req *connect.Request[authorityv1.LogoutRequest],
 ) (*connect.Response[authorityv1.LogoutResponse], error) {
-	allSessions := req.Msg.GetAllSessions()
-	logger := logging.FromContext(ctx).With("all_sessions", allSessions)
-
 	token, ok := bearerToken(req.Header())
 	if !ok {
-		err := fmt.Errorf("%w: no bearer token", service.ErrNotSignedIn)
-		logger.WarnContext(ctx, "logout failed", "reason", err)
-
-		return nil, clientError(err)
-	}
-
-	userID, revoked, err := s.logins.Logout(ctx, token, allSessions)
-	if err != nil {
-		logger.WarnContext(ctx, "logout failed", "reason", err)
-
-		return nil, clientError(err)
+		return nil, clientError(service.ErrNotSignedIn)
 	}
 
 	// TODO(#105): take the user from the request context, where the token
 	// check puts it, and drop it from what Logout returns.
-	logger.InfoContext(ctx, "logout succeeded", "user_id", userID, "revoked_tokens", revoked)
+	_, _, err := s.logins.Logout(ctx, token, req.Msg.GetAllSessions())
+	if err != nil {
+		return nil, clientError(err)
+	}
 
 	return connect.NewResponse(&authorityv1.LogoutResponse{}), nil
 }

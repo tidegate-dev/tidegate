@@ -2,15 +2,12 @@ package api
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"net/http"
 	"slices"
 
 	"connectrpc.com/connect"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
-	"github.com/tidegate-dev/tidegate/internal/logging"
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
@@ -65,23 +62,15 @@ func (i sessionInterceptor) withSession(ctx context.Context, spec connect.Spec, 
 
 	token, ok := bearerToken(header)
 	if !ok {
-		return ctx, refused(ctx, spec, fmt.Errorf("%w: no bearer token", service.ErrNotSignedIn))
+		return ctx, clientError(service.ErrNotSignedIn)
 	}
 
 	session, err := i.sessions.Session(ctx, token)
 	if err != nil {
-		return ctx, refused(ctx, spec, err)
+		return ctx, clientError(err)
 	}
 
 	return context.WithValue(ctx, sessionKey{}, session), nil
-}
-
-func refused(ctx context.Context, spec connect.Spec, err error) error {
-	if errors.Is(err, service.ErrNotSignedIn) {
-		logging.FromContext(ctx).WarnContext(ctx, "refused a call", "procedure", spec.Procedure, "reason", err)
-	}
-
-	return clientError(err)
 }
 
 type sessionKey struct{}

@@ -78,18 +78,6 @@ var _ = Describe("Login", func() {
 		Expect(noPassword).To(Equal(wrongPassword))
 	})
 
-	It("logs a successful login with the user name and without the password or token", func(ctx SpecContext) {
-		token, err := login(ctx, "alice", alicePassword)
-
-		Expect(err).NotTo(HaveOccurred())
-		Expect(logs.String()).To(SatisfyAll(
-			ContainSubstring("login succeeded"),
-			ContainSubstring("user=alice"),
-			Not(ContainSubstring(alicePassword)),
-			Not(ContainSubstring(token)),
-		))
-	})
-
 	DescribeTable("logs a failed login with the user name and reason, without the password",
 		func(ctx SpecContext, userName, plaintext, reason string) {
 			_, err := login(ctx, userName, plaintext)
