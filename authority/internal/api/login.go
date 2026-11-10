@@ -17,7 +17,7 @@ import (
 // maxLoginRequestBytes bounds a LoginRequest.
 const maxLoginRequestBytes = 4096
 
-// LoginService signs users in.
+// LoginService signs users in and logs them out.
 type LoginService struct {
 	logins *service.Logins
 }

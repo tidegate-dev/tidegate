@@ -25,7 +25,8 @@ type Session struct {
 	UserID pgtype.UUID
 }
 
-// LoginTokens issues the tokens that signed-in users send with API calls.
+// LoginTokens issues, looks up and revokes the tokens that signed-in users
+// send with API calls.
 type LoginTokens struct {
 	queries  *sqlc.Queries
 	rnd      random.Service

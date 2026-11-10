@@ -281,8 +281,7 @@ func openDatabase(ctx context.Context, url string) (*pgxpool.Pool, error) {
 }
 
 // requestlog comes first, so it logs the code the client gets after
-// handlererrors has changed it. The session check comes before validate, so
-// a caller without a login token learns nothing about the request's rules.
+// handlererrors has changed it.
 func interceptors(clk clock.Service, sessions api.SessionLookup) []connect.Interceptor {
 	return []connect.Interceptor{
 		requestlog.Interceptor(clk),

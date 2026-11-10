@@ -11,7 +11,7 @@ import (
 // expired.
 var ErrNotSignedIn = errors.New("not signed in")
 
-// Logins signs users in with a local password.
+// Logins signs users in with a local password and logs them out.
 type Logins struct {
 	authenticator *Authenticator
 	tokens        *LoginTokens
@@ -32,8 +32,8 @@ func (l *Logins) Login(ctx context.Context, name string, plaintext secret.String
 	return l.tokens.Issue(ctx, userID)
 }
 
-// Logout revokes the session's login token, or with allSessions every login
-// token of its user.
+// Logout revokes the login token of the session. With allSessions it revokes
+// every login token of the user.
 func (l *Logins) Logout(ctx context.Context, session Session, allSessions bool) error {
 	if allSessions {
 		return l.tokens.RevokeAll(ctx, session.UserID)

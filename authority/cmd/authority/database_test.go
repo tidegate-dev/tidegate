@@ -192,8 +192,6 @@ func writeDummy(address string, token secret.String) {
 	_, _ = client.Write(context.Background(), request)
 }
 
-// signIn creates a user in the database at url and returns a login token of
-// theirs.
 func signIn(ctx context.Context, url string) secret.String {
 	GinkgoHelper()
 

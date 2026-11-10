@@ -196,7 +196,6 @@ func TestBearerTokenReadsTheAuthorizationHeader(t *testing.T) {
 	}
 }
 
-// fakeSessions knows the sessions in byToken, or fails every lookup with err.
 type fakeSessions struct {
 	byToken map[string]service.Session
 	err     error
@@ -230,7 +229,6 @@ func (streamWithoutToken) RequestHeader() http.Header {
 	return http.Header{}
 }
 
-// pingClient returns a client for a PingService behind interceptors.
 func pingClient(t *testing.T, interceptors ...connect.Interceptor) authorityv1connect.PingServiceClient {
 	t.Helper()
 

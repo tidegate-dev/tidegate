@@ -88,8 +88,6 @@ func TestInterceptorsLetLoginThroughWithoutALoginToken(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// clientOfSucceedingHandler returns a client for a handler that serves
-// procedure behind the authority's interceptors and always succeeds.
 func clientOfSucceedingHandler(t *testing.T, procedure string) *connect.Client[emptypb.Empty, emptypb.Empty] {
 	t.Helper()
 
@@ -106,7 +104,6 @@ func clientOfSucceedingHandler(t *testing.T, procedure string) *connect.Client[e
 	return connect.NewClient[emptypb.Empty, emptypb.Empty](server.Client(), server.URL+procedure)
 }
 
-// anySession finds a session for every login token.
 type anySession struct{}
 
 func (anySession) Session(context.Context, secret.String) (service.Session, error) {

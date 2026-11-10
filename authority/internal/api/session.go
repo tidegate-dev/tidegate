@@ -19,10 +19,9 @@ type SessionLookup interface {
 	Session(ctx context.Context, token secret.String) (service.Session, error)
 }
 
-// NewSessionInterceptor returns an interceptor that refuses a call without a
-// valid login token and puts the caller's session into the context of every
-// other call. The procedures in public need no login token and get no
-// session.
+// NewSessionInterceptor returns an interceptor that requires a login token.
+// It puts the session of the token into the call's context. A procedure in
+// public needs no token.
 func NewSessionInterceptor(sessions SessionLookup, public ...string) connect.Interceptor {
 	return sessionInterceptor{sessions: sessions, public: public}
 }
@@ -93,8 +92,6 @@ type sessionKey struct{}
 
 var errNoSession = errors.New("the call has no session")
 
-// sessionFromContext returns the session that the session interceptor found
-// for the call. It returns errNoSession for a public procedure.
 func sessionFromContext(ctx context.Context) (service.Session, error) {
 	session, ok := ctx.Value(sessionKey{}).(service.Session)
 	if !ok {
