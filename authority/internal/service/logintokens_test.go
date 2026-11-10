@@ -122,12 +122,6 @@ var _ = Describe("Logout", func() {
 		return token
 	}
 
-	hashOf := func(token secret.String) []byte {
-		hash := sha256.Sum256([]byte(token.Reveal()))
-
-		return hash[:]
-	}
-
 	sessionOf := func(ctx context.Context, token secret.String) Session {
 		GinkgoHelper()
 
@@ -144,7 +138,7 @@ var _ = Describe("Logout", func() {
 		err := logins.Logout(ctx, session, false)
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hashOf(other)))))
+		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hash(other)))))
 	})
 
 	It("revokes every token of the user for all sessions, and no other user's", func(ctx SpecContext) {
@@ -155,7 +149,7 @@ var _ = Describe("Logout", func() {
 		err := logins.Logout(ctx, session, true)
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hashOf(bobs)))))
+		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hash(bobs)))))
 	})
 
 	DescribeTable("succeeds for a session that is already revoked",
@@ -167,7 +161,7 @@ var _ = Describe("Logout", func() {
 			err := logins.Logout(ctx, session, allSessions)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hashOf(bobs)))))
+			Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hash(bobs)))))
 		},
 		Entry("for one session", false),
 		Entry("for all sessions", true),
