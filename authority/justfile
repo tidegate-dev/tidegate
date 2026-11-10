@@ -72,7 +72,7 @@ test-api:
     export TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE=../dev/tls/authority-key.pem
     export TIDEGATE_AUTHORITY__DATABASE__URL="$server/$database$query"
     export TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START=true
-    "$work/authority" >"$work/log" 2>&1 &
+    "$work/authority" >>"$work/log" 2>&1 &
     authority=$!
     user=alice
     password='correct horse battery staple'
@@ -85,7 +85,7 @@ test-api:
     hurl "${options[@]}" --retry 50 --retry-interval 200 api-tests/ping.hurl >/dev/null || fail
     # The authority has migrated the database by the time it answers a ping.
     printf '%s\n' "$password" | "$work/authority" create-initial-admin "$user" >>"$work/log" 2>&1 || fail
-    hurl --test "${options[@]}" api-tests/*.hurl
+    hurl --test "${options[@]}" api-tests/*.hurl || fail
     # The authority writes its coverage only when it stops cleanly.
     kill "$authority"
     stopped=$authority
