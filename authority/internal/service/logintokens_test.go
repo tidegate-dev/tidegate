@@ -211,11 +211,12 @@ var _ = Describe("Session", func() {
 	})
 
 	It("refuses an expired token", func(ctx SpecContext) {
+		expired := secret.New("expired")
 		_, err := pool.Exec(ctx, `INSERT INTO login_tokens (token_hash, user_id, expires_at)
-			VALUES (sha256('expired'), $1, now() - interval '1 second')`, alice)
+			VALUES ($1, $2, now() - interval '1 second')`, hash(expired), alice)
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = tokens.Session(ctx, secret.New("expired"))
+		_, err = tokens.Session(ctx, expired)
 
 		Expect(err).To(MatchError(ErrNotSignedIn))
 	})
