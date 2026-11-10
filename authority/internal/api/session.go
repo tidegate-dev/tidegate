@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"slices"
+	"strings"
 
 	"connectrpc.com/connect"
 
@@ -75,6 +76,17 @@ func (i sessionInterceptor) withSession(ctx context.Context, spec connect.Spec, 
 	logger := logging.FromContext(ctx).With("user_id", session.UserID.String(), "session_id", session.ID.String())
 
 	return context.WithValue(logging.NewContext(ctx, logger), sessionKey{}, session), nil
+}
+
+// bearerToken returns the token from an `Authorization: Bearer` header. HTTP
+// compares auth schemes without regard to case.
+func bearerToken(header http.Header) (secret.String, bool) {
+	scheme, token, found := strings.Cut(header.Get("Authorization"), " ")
+	if !found || !strings.EqualFold(scheme, "Bearer") || token == "" {
+		return secret.String{}, false
+	}
+
+	return secret.New(token), true
 }
 
 type sessionKey struct{}

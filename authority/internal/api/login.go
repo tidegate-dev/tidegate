@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"slices"
-	"strings"
 
 	"connectrpc.com/connect"
 
@@ -70,15 +69,4 @@ func (s *LoginService) Logout(
 	}
 
 	return connect.NewResponse(&authorityv1.LogoutResponse{}), nil
-}
-
-// bearerToken returns the token from an `Authorization: Bearer` header. HTTP
-// compares auth schemes without regard to case.
-func bearerToken(header http.Header) (secret.String, bool) {
-	scheme, token, found := strings.Cut(header.Get("Authorization"), " ")
-	if !found || !strings.EqualFold(scheme, "Bearer") || token == "" {
-		return secret.String{}, false
-	}
-
-	return secret.New(token), true
 }
