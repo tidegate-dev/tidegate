@@ -89,10 +89,11 @@ var _ = Describe("Issue", func() {
 	})
 })
 
-var _ = Describe("Revoke", func() {
+var _ = Describe("Logout", func() {
 	var (
 		pool   *pgxpool.Pool
 		tokens *LoginTokens
+		logins *Logins
 		alice  pgtype.UUID
 		bob    pgtype.UUID
 	)
@@ -109,6 +110,7 @@ var _ = Describe("Revoke", func() {
 		Expect(pool.QueryRow(ctx, "INSERT INTO users (name) VALUES ('bob') RETURNING id").Scan(&bob)).To(Succeed())
 
 		tokens = NewLoginTokens(pool, rnd, 12*time.Hour)
+		logins = NewLogins(nil, tokens)
 	})
 
 	issue := func(ctx context.Context, userID pgtype.UUID) secret.String {
@@ -139,7 +141,7 @@ var _ = Describe("Revoke", func() {
 		session := sessionOf(ctx, issue(ctx, alice))
 		other := issue(ctx, alice)
 
-		err := tokens.Revoke(ctx, session, false)
+		err := logins.Logout(ctx, session, false)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hashOf(other)))))
@@ -150,7 +152,7 @@ var _ = Describe("Revoke", func() {
 		issue(ctx, alice)
 		bobs := issue(ctx, bob)
 
-		err := tokens.Revoke(ctx, session, true)
+		err := logins.Logout(ctx, session, true)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hashOf(bobs)))))
@@ -160,9 +162,9 @@ var _ = Describe("Revoke", func() {
 		func(ctx SpecContext, allSessions bool) {
 			session := sessionOf(ctx, issue(ctx, alice))
 			bobs := issue(ctx, bob)
-			Expect(tokens.Revoke(ctx, session, false)).To(Succeed())
+			Expect(logins.Logout(ctx, session, false)).To(Succeed())
 
-			err := tokens.Revoke(ctx, session, allSessions)
+			err := logins.Logout(ctx, session, allSessions)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hashOf(bobs)))))

@@ -74,17 +74,21 @@ func (s *LoginTokens) Session(ctx context.Context, token secret.String) (Session
 	return Session{ID: row.ID, UserID: row.UserID}, nil
 }
 
-// Revoke deletes the session's token, or with allSessions every token of its
-// user.
-func (s *LoginTokens) Revoke(ctx context.Context, session Session, allSessions bool) error {
-	revoke, id := s.queries.RevokeLoginToken, session.ID
-	if allSessions {
-		revoke, id = s.queries.RevokeUserLoginTokens, session.UserID
+// Revoke deletes the token of the session.
+func (s *LoginTokens) Revoke(ctx context.Context, sessionID pgtype.UUID) error {
+	err := s.queries.RevokeLoginToken(ctx, sessionID)
+	if err != nil {
+		return fmt.Errorf("revoking a login token: %w", err)
 	}
 
-	err := revoke(ctx, id)
+	return nil
+}
+
+// RevokeAll deletes every token of the user.
+func (s *LoginTokens) RevokeAll(ctx context.Context, userID pgtype.UUID) error {
+	err := s.queries.RevokeUserLoginTokens(ctx, userID)
 	if err != nil {
-		return fmt.Errorf("revoking login tokens: %w", err)
+		return fmt.Errorf("revoking a user's login tokens: %w", err)
 	}
 
 	return nil

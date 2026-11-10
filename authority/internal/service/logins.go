@@ -35,5 +35,9 @@ func (l *Logins) Login(ctx context.Context, name string, plaintext secret.String
 // Logout revokes the session's login token, or with allSessions every login
 // token of its user.
 func (l *Logins) Logout(ctx context.Context, session Session, allSessions bool) error {
-	return l.tokens.Revoke(ctx, session, allSessions)
+	if allSessions {
+		return l.tokens.RevokeAll(ctx, session.UserID)
+	}
+
+	return l.tokens.Revoke(ctx, session.ID)
 }
