@@ -75,20 +75,16 @@ func (s *LoginTokens) Session(ctx context.Context, token secret.String) (Session
 }
 
 // Revoke deletes the session's token, or with allSessions every token of its
-// user. It returns ErrNotSignedIn if there was nothing left to delete.
+// user.
 func (s *LoginTokens) Revoke(ctx context.Context, session Session, allSessions bool) error {
 	revoke, id := s.queries.RevokeLoginToken, session.ID
 	if allSessions {
 		revoke, id = s.queries.RevokeUserLoginTokens, session.UserID
 	}
 
-	revoked, err := revoke(ctx, id)
+	err := revoke(ctx, id)
 	if err != nil {
 		return fmt.Errorf("revoking login tokens: %w", err)
-	}
-
-	if revoked == 0 {
-		return fmt.Errorf("%w: the session is already revoked", ErrNotSignedIn)
 	}
 
 	return nil

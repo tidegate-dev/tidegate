@@ -156,7 +156,7 @@ var _ = Describe("Revoke", func() {
 		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hashOf(bobs)))))
 	})
 
-	DescribeTable("refuses a session that is already revoked",
+	DescribeTable("succeeds for a session that is already revoked",
 		func(ctx SpecContext, allSessions bool) {
 			session := sessionOf(ctx, issue(ctx, alice))
 			bobs := issue(ctx, bob)
@@ -164,7 +164,7 @@ var _ = Describe("Revoke", func() {
 
 			err := tokens.Revoke(ctx, session, allSessions)
 
-			Expect(err).To(MatchError(ErrNotSignedIn))
+			Expect(err).NotTo(HaveOccurred())
 			Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hashOf(bobs)))))
 		},
 		Entry("for one session", false),

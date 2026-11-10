@@ -52,26 +52,20 @@ func (q *Queries) GetLoginSession(ctx context.Context, tokenHash []byte) (GetLog
 	return i, err
 }
 
-const revokeLoginToken = `-- name: RevokeLoginToken :execrows
+const revokeLoginToken = `-- name: RevokeLoginToken :exec
 DELETE FROM login_tokens WHERE id = $1
 `
 
-func (q *Queries) RevokeLoginToken(ctx context.Context, id pgtype.UUID) (int64, error) {
-	result, err := q.db.Exec(ctx, revokeLoginToken, id)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
+func (q *Queries) RevokeLoginToken(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, revokeLoginToken, id)
+	return err
 }
 
-const revokeUserLoginTokens = `-- name: RevokeUserLoginTokens :execrows
+const revokeUserLoginTokens = `-- name: RevokeUserLoginTokens :exec
 DELETE FROM login_tokens WHERE user_id = $1
 `
 
-func (q *Queries) RevokeUserLoginTokens(ctx context.Context, userID pgtype.UUID) (int64, error) {
-	result, err := q.db.Exec(ctx, revokeUserLoginTokens, userID)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
+func (q *Queries) RevokeUserLoginTokens(ctx context.Context, userID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, revokeUserLoginTokens, userID)
+	return err
 }
