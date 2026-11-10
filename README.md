@@ -43,6 +43,7 @@ If you don't use Nix, install these tools yourself:
 - [kind](https://kind.sigs.k8s.io/) 0.33 or newer
 - [kubectl](https://kubernetes.io/docs/tasks/tools/) 1.37 or newer
 - [OpenSSL](https://openssl-library.org/) 3 or newer
+- [psql](https://www.postgresql.org/download/), the PostgreSQL client, 18 or newer
 - [process-compose](https://f1bonacc1.github.io/process-compose/) 1.122 or newer
 - [protoc-gen-go](https://pkg.go.dev/google.golang.org/protobuf/cmd/protoc-gen-go) 1.36 or newer
 - [protoc-gen-connect-go](https://connectrpc.com/docs/go/getting-started/) 1.21 or a newer 1.x release

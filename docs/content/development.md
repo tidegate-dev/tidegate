@@ -128,7 +128,7 @@ just dev-deps
 just test-api
 ```
 
-This starts the authority against the test database, on other ports than `just dev`, and runs the tests against it.
+This creates a database of its own on the test Postgres server, starts the authority against it on other ports than `just dev` and runs the tests. When the tests end, it drops the database again, so the tests never see the data from `just dev` or from an earlier run.
 
 ### Coverage
 
