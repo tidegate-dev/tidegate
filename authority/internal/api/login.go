@@ -63,7 +63,7 @@ func (s *LoginService) Logout(
 		return nil, err
 	}
 
-	_, err = s.logins.Logout(ctx, session, req.Msg.GetAllSessions())
+	err = s.logins.Logout(ctx, session, req.Msg.GetAllSessions())
 	if err != nil {
 		return nil, clientError(err)
 	}

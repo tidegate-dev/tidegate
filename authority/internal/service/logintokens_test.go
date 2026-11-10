@@ -139,10 +139,9 @@ var _ = Describe("Revoke", func() {
 		session := sessionOf(ctx, issue(ctx, alice))
 		other := issue(ctx, alice)
 
-		revoked, err := tokens.Revoke(ctx, session, false)
+		err := tokens.Revoke(ctx, session, false)
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(revoked).To(Equal(1))
 		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hashOf(other)))))
 	})
 
@@ -151,10 +150,9 @@ var _ = Describe("Revoke", func() {
 		issue(ctx, alice)
 		bobs := issue(ctx, bob)
 
-		revoked, err := tokens.Revoke(ctx, session, true)
+		err := tokens.Revoke(ctx, session, true)
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(revoked).To(Equal(2))
 		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hashOf(bobs)))))
 	})
 
@@ -162,10 +160,9 @@ var _ = Describe("Revoke", func() {
 		func(ctx SpecContext, allSessions bool) {
 			session := sessionOf(ctx, issue(ctx, alice))
 			bobs := issue(ctx, bob)
-			_, err := tokens.Revoke(ctx, session, false)
-			Expect(err).NotTo(HaveOccurred())
+			Expect(tokens.Revoke(ctx, session, false)).To(Succeed())
 
-			_, err = tokens.Revoke(ctx, session, allSessions)
+			err := tokens.Revoke(ctx, session, allSessions)
 
 			Expect(err).To(MatchError(ErrNotSignedIn))
 			Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hashOf(bobs)))))
