@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"slices"
@@ -10,7 +9,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/password"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
@@ -98,21 +96,4 @@ func bearerToken(header http.Header) (secret.String, bool) {
 	}
 
 	return secret.New(token), true
-}
-
-// clientError hides why credentials or a token are wrong, so clients can't
-// tell which user names exist or why a token was refused.
-func clientError(err error) error {
-	switch {
-	case errors.Is(err, service.ErrWrongCredentials):
-		return connect.NewError(connect.CodeUnauthenticated, service.ErrWrongCredentials)
-	case errors.Is(err, service.ErrNotSignedIn):
-		return connect.NewError(connect.CodeUnauthenticated, service.ErrNotSignedIn)
-	case errors.Is(err, password.ErrTooLong):
-		return connect.NewError(connect.CodeInvalidArgument, password.ErrTooLong)
-	case errors.Is(err, service.ErrBusy):
-		return connect.NewError(connect.CodeUnavailable, service.ErrBusy)
-	default:
-		return err
-	}
 }
