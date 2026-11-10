@@ -21,6 +21,8 @@ const maxLoginRequestBytes = 4096
 
 // LoginService signs users in.
 type LoginService struct {
+	authorityv1connect.UnimplementedLoginServiceHandler
+
 	logins *service.Logins
 }
 

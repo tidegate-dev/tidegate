@@ -11,6 +11,10 @@ service LoginService {
   // Login checks a user's local password and returns a login token. All
   // wrong credentials get the same error.
   rpc Login(LoginRequest) returns (LoginResponse);
+  // Logout revokes the login token in the call's `Authorization: Bearer`
+  // header, so later calls with it fail. A missing, unknown or expired token
+  // fails with unauthenticated.
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
 }
 
 // LoginRequest is the input of LoginService.Login.
@@ -33,3 +37,13 @@ message LoginResponse {
   // Token is valid for the authority's token lifetime, 12 hours by default.
   string token = 1;
 }
+
+// LogoutRequest is the input of LoginService.Logout.
+message LogoutRequest {
+  // AllSessions revokes every login token of the caller's user, not only the
+  // one the call carries.
+  bool all_sessions = 1;
+}
+
+// LogoutResponse is the result of LoginService.Logout.
+message LogoutResponse {}

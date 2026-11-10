@@ -127,6 +127,90 @@ func (x *LoginResponse) GetToken() string {
 	return ""
 }
 
+// LogoutRequest is the input of LoginService.Logout.
+type LogoutRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// AllSessions revokes every login token of the caller's user, not only the
+	// one the call carries.
+	AllSessions   bool `protobuf:"varint,1,opt,name=all_sessions,json=allSessions,proto3" json:"all_sessions,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogoutRequest) Reset() {
+	*x = LogoutRequest{}
+	mi := &file_tidegate_authority_v1_login_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogoutRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogoutRequest) ProtoMessage() {}
+
+func (x *LogoutRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_tidegate_authority_v1_login_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogoutRequest.ProtoReflect.Descriptor instead.
+func (*LogoutRequest) Descriptor() ([]byte, []int) {
+	return file_tidegate_authority_v1_login_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *LogoutRequest) GetAllSessions() bool {
+	if x != nil {
+		return x.AllSessions
+	}
+	return false
+}
+
+// LogoutResponse is the result of LoginService.Logout.
+type LogoutResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogoutResponse) Reset() {
+	*x = LogoutResponse{}
+	mi := &file_tidegate_authority_v1_login_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogoutResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogoutResponse) ProtoMessage() {}
+
+func (x *LogoutResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_tidegate_authority_v1_login_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogoutResponse.ProtoReflect.Descriptor instead.
+func (*LogoutResponse) Descriptor() ([]byte, []int) {
+	return file_tidegate_authority_v1_login_proto_rawDescGZIP(), []int{3}
+}
+
 var File_tidegate_authority_v1_login_proto protoreflect.FileDescriptor
 
 const file_tidegate_authority_v1_login_proto_rawDesc = "" +
@@ -137,9 +221,13 @@ const file_tidegate_authority_v1_login_proto_rawDesc = "" +
 	"\bpassword\x18\x02 \x01(\tB\n" +
 	"\xbaH\ar\x05\x10\x01(\x80\bR\bpassword\"%\n" +
 	"\rLoginResponse\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token2b\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"2\n" +
+	"\rLogoutRequest\x12!\n" +
+	"\fall_sessions\x18\x01 \x01(\bR\vallSessions\"\x10\n" +
+	"\x0eLogoutResponse2\xb9\x01\n" +
 	"\fLoginService\x12R\n" +
-	"\x05Login\x12#.tidegate.authority.v1.LoginRequest\x1a$.tidegate.authority.v1.LoginResponseBHZFgithub.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;authorityv1b\x06proto3"
+	"\x05Login\x12#.tidegate.authority.v1.LoginRequest\x1a$.tidegate.authority.v1.LoginResponse\x12U\n" +
+	"\x06Logout\x12$.tidegate.authority.v1.LogoutRequest\x1a%.tidegate.authority.v1.LogoutResponseBHZFgithub.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;authorityv1b\x06proto3"
 
 var (
 	file_tidegate_authority_v1_login_proto_rawDescOnce sync.Once
@@ -153,16 +241,20 @@ func file_tidegate_authority_v1_login_proto_rawDescGZIP() []byte {
 	return file_tidegate_authority_v1_login_proto_rawDescData
 }
 
-var file_tidegate_authority_v1_login_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_tidegate_authority_v1_login_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_tidegate_authority_v1_login_proto_goTypes = []any{
-	(*LoginRequest)(nil),  // 0: tidegate.authority.v1.LoginRequest
-	(*LoginResponse)(nil), // 1: tidegate.authority.v1.LoginResponse
+	(*LoginRequest)(nil),   // 0: tidegate.authority.v1.LoginRequest
+	(*LoginResponse)(nil),  // 1: tidegate.authority.v1.LoginResponse
+	(*LogoutRequest)(nil),  // 2: tidegate.authority.v1.LogoutRequest
+	(*LogoutResponse)(nil), // 3: tidegate.authority.v1.LogoutResponse
 }
 var file_tidegate_authority_v1_login_proto_depIdxs = []int32{
 	0, // 0: tidegate.authority.v1.LoginService.Login:input_type -> tidegate.authority.v1.LoginRequest
-	1, // 1: tidegate.authority.v1.LoginService.Login:output_type -> tidegate.authority.v1.LoginResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	2, // 1: tidegate.authority.v1.LoginService.Logout:input_type -> tidegate.authority.v1.LogoutRequest
+	1, // 2: tidegate.authority.v1.LoginService.Login:output_type -> tidegate.authority.v1.LoginResponse
+	3, // 3: tidegate.authority.v1.LoginService.Logout:output_type -> tidegate.authority.v1.LogoutResponse
+	2, // [2:4] is the sub-list for method output_type
+	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -179,7 +271,7 @@ func file_tidegate_authority_v1_login_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_tidegate_authority_v1_login_proto_rawDesc), len(file_tidegate_authority_v1_login_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

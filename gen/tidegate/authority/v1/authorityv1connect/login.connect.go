@@ -35,6 +35,8 @@ const (
 const (
 	// LoginServiceLoginProcedure is the fully-qualified name of the LoginService's Login RPC.
 	LoginServiceLoginProcedure = "/tidegate.authority.v1.LoginService/Login"
+	// LoginServiceLogoutProcedure is the fully-qualified name of the LoginService's Logout RPC.
+	LoginServiceLogoutProcedure = "/tidegate.authority.v1.LoginService/Logout"
 )
 
 // LoginServiceClient is a client for the tidegate.authority.v1.LoginService service.
@@ -42,6 +44,10 @@ type LoginServiceClient interface {
 	// Login checks a user's local password and returns a login token. All
 	// wrong credentials get the same error.
 	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error)
+	// Logout revokes the login token in the call's `Authorization: Bearer`
+	// header, so later calls with it fail. A missing, unknown or expired token
+	// fails with unauthenticated.
+	Logout(context.Context, *connect.Request[v1.LogoutRequest]) (*connect.Response[v1.LogoutResponse], error)
 }
 
 // NewLoginServiceClient constructs a client for the tidegate.authority.v1.LoginService service. By
@@ -61,12 +67,19 @@ func NewLoginServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(loginServiceMethods.ByName("Login")),
 			connect.WithClientOptions(opts...),
 		),
+		logout: connect.NewClient[v1.LogoutRequest, v1.LogoutResponse](
+			httpClient,
+			baseURL+LoginServiceLogoutProcedure,
+			connect.WithSchema(loginServiceMethods.ByName("Logout")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // loginServiceClient implements LoginServiceClient.
 type loginServiceClient struct {
-	login *connect.Client[v1.LoginRequest, v1.LoginResponse]
+	login  *connect.Client[v1.LoginRequest, v1.LoginResponse]
+	logout *connect.Client[v1.LogoutRequest, v1.LogoutResponse]
 }
 
 // Login calls tidegate.authority.v1.LoginService.Login.
@@ -74,11 +87,20 @@ func (c *loginServiceClient) Login(ctx context.Context, req *connect.Request[v1.
 	return c.login.CallUnary(ctx, req)
 }
 
+// Logout calls tidegate.authority.v1.LoginService.Logout.
+func (c *loginServiceClient) Logout(ctx context.Context, req *connect.Request[v1.LogoutRequest]) (*connect.Response[v1.LogoutResponse], error) {
+	return c.logout.CallUnary(ctx, req)
+}
+
 // LoginServiceHandler is an implementation of the tidegate.authority.v1.LoginService service.
 type LoginServiceHandler interface {
 	// Login checks a user's local password and returns a login token. All
 	// wrong credentials get the same error.
 	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error)
+	// Logout revokes the login token in the call's `Authorization: Bearer`
+	// header, so later calls with it fail. A missing, unknown or expired token
+	// fails with unauthenticated.
+	Logout(context.Context, *connect.Request[v1.LogoutRequest]) (*connect.Response[v1.LogoutResponse], error)
 }
 
 // NewLoginServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -94,10 +116,18 @@ func NewLoginServiceHandler(svc LoginServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(loginServiceMethods.ByName("Login")),
 		connect.WithHandlerOptions(opts...),
 	)
+	loginServiceLogoutHandler := connect.NewUnaryHandler(
+		LoginServiceLogoutProcedure,
+		svc.Logout,
+		connect.WithSchema(loginServiceMethods.ByName("Logout")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/tidegate.authority.v1.LoginService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case LoginServiceLoginProcedure:
 			loginServiceLoginHandler.ServeHTTP(w, r)
+		case LoginServiceLogoutProcedure:
+			loginServiceLogoutHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -109,4 +139,8 @@ type UnimplementedLoginServiceHandler struct{}
 
 func (UnimplementedLoginServiceHandler) Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("tidegate.authority.v1.LoginService.Login is not implemented"))
+}
+
+func (UnimplementedLoginServiceHandler) Logout(context.Context, *connect.Request[v1.LogoutRequest]) (*connect.Response[v1.LogoutResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("tidegate.authority.v1.LoginService.Logout is not implemented"))
 }
