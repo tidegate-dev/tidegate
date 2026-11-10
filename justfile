@@ -19,6 +19,9 @@ test: authority::test cli::test internal::test
 # Run the integration tests.
 test-integration: authority::test-integration
 
+# Run the API tests.
+test-api: authority::test-api
+
 # Change each line the branch changed since it split off from base, and list
 # the changes that no test catches.
 mutate $base="origin/main":

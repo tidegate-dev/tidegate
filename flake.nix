@@ -71,10 +71,13 @@
           packages = tools pkgs ++ [
             pkgs.gitleaks
             pkgs.govulncheck
+            pkgs.hurl
             pkgs.kind
             pkgs.kubectl
             pkgs.kubernetes-helm
             pkgs.openssl
+            # pkgs.postgresql would also add its headers, which pull in LLVM, thats why we add `.out`.
+            pkgs.postgresql.out
             pkgs.process-compose
             pkgs.protoc-gen-connect-go
             pkgs.protoc-gen-doc

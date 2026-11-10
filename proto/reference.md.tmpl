@@ -16,9 +16,9 @@ This page is generated from the comments in the `.proto` files in `proto/`. Clie
 
 {{.Description}}
 {{if .Fields}}
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-{{range .Fields}}| `{{.Name}}` | `{{if .Label}}{{.Label}} {{end}}{{.FullType}}` | {{nobr .Description | replace "|" "\\|"}} |
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+{{range .Fields}}{{$parts := splitList "\n\nRules: " .Description}}| `{{.Name}}` | `{{if .Label}}{{.Label}} {{end}}{{.FullType}}` | {{nobr (first $parts | trim) | replace "|" "\\|"}} | {{if gt (len $parts) 1}}{{nobr (last $parts | trim) | replace "|" "\\|"}}{{end}} |
 {{end}}{{end}}{{end}}{{end}}{{range .Files}}{{range .Enums}}
 ### {{.FullName}} { #{{.FullName}} }
 

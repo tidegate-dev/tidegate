@@ -15,7 +15,7 @@ nav = [
     { "Running under systemd" = "authority/systemd.md" },
   ] },
   { "API reference" = "reference/api.md" },
-  { "Development environment" = "development.md" },
+  { "Development" = "development.md" },
 ]
 
 [project.theme]
