@@ -11,6 +11,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/The127/go-random/randomtest"
+	"github.com/jackc/pgx/v5/pgtype"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -107,5 +108,56 @@ var _ = Describe("Login", func() {
 			ContainSubstring("login failed"),
 			ContainSubstring("user=alice"),
 		))
+	})
+})
+
+var _ = Describe("Logout", func() {
+	var (
+		handler *LoginService
+		tokens  *service.LoginTokens
+		token   secret.String
+		session service.Session
+	)
+
+	BeforeEach(func(ctx SpecContext) {
+		pool, err := db.Open(ctx, dbtest.NewDatabase())
+		Expect(err).NotTo(HaveOccurred())
+		DeferCleanup(pool.Close)
+		Expect(db.Migrate(ctx, pool)).To(Succeed())
+
+		authenticator, err := service.NewAuthenticator(pool, randomtest.NewMock())
+		Expect(err).NotTo(HaveOccurred())
+
+		tokens = service.NewLoginTokens(pool, randomtest.NewMock(), 12*time.Hour)
+		handler = NewLoginService(service.NewLogins(authenticator, tokens))
+
+		var alice pgtype.UUID
+		Expect(pool.QueryRow(ctx, "INSERT INTO users (name) VALUES ('alice') RETURNING id").Scan(&alice)).To(Succeed())
+
+		token, err = tokens.Issue(ctx, alice)
+		Expect(err).NotTo(HaveOccurred())
+
+		session, err = tokens.Session(ctx, token)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("revokes the session of the call", func(ctx SpecContext) {
+		signedIn := context.WithValue(ctx, sessionKey{}, session)
+
+		_, err := handler.Logout(signedIn, connect.NewRequest(&authorityv1.LogoutRequest{}))
+
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = tokens.Session(ctx, token)
+		Expect(err).To(MatchError(service.ErrNotSignedIn))
+	})
+
+	It("fails without revoking anything if the call has no session", func(ctx SpecContext) {
+		_, err := handler.Logout(ctx, connect.NewRequest(&authorityv1.LogoutRequest{AllSessions: true}))
+
+		Expect(err).To(MatchError(errNoSession))
+
+		_, err = tokens.Session(ctx, token)
+		Expect(err).NotTo(HaveOccurred())
 	})
 })

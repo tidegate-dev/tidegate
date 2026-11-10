@@ -59,14 +59,12 @@ func (s *LoginService) Logout(
 	ctx context.Context,
 	req *connect.Request[authorityv1.LogoutRequest],
 ) (*connect.Response[authorityv1.LogoutResponse], error) {
-	token, ok := bearerToken(req.Header())
-	if !ok {
-		return nil, clientError(service.ErrNotSignedIn)
+	session, err := sessionFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	// TODO(#105): take the user from the request context, where the token
-	// check puts it, and drop it from what Logout returns.
-	_, _, err := s.logins.Logout(ctx, token, req.Msg.GetAllSessions())
+	_, err = s.logins.Logout(ctx, session, req.Msg.GetAllSessions())
 	if err != nil {
 		return nil, clientError(err)
 	}

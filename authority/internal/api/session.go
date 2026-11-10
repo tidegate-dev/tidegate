@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"slices"
 
@@ -75,10 +76,15 @@ func (i sessionInterceptor) withSession(ctx context.Context, spec connect.Spec, 
 
 type sessionKey struct{}
 
-// sessionFromContext returns the session that the session interceptor found
-// for the call. A public procedure has none.
-func sessionFromContext(ctx context.Context) (service.Session, bool) {
-	session, ok := ctx.Value(sessionKey{}).(service.Session)
+var errNoSession = errors.New("the call has no session")
 
-	return session, ok
+// sessionFromContext returns the session that the session interceptor found
+// for the call. It returns errNoSession for a public procedure.
+func sessionFromContext(ctx context.Context) (service.Session, error) {
+	session, ok := ctx.Value(sessionKey{}).(service.Session)
+	if !ok {
+		return service.Session{}, errNoSession
+	}
+
+	return session, nil
 }

@@ -52,56 +52,26 @@ func (q *Queries) GetLoginSession(ctx context.Context, tokenHash []byte) (GetLog
 	return i, err
 }
 
-const revokeLoginToken = `-- name: RevokeLoginToken :many
-DELETE FROM login_tokens WHERE token_hash = $1 AND expires_at > now()
-RETURNING user_id
+const revokeLoginToken = `-- name: RevokeLoginToken :execrows
+DELETE FROM login_tokens WHERE id = $1
 `
 
-func (q *Queries) RevokeLoginToken(ctx context.Context, tokenHash []byte) ([]pgtype.UUID, error) {
-	rows, err := q.db.Query(ctx, revokeLoginToken, tokenHash)
+func (q *Queries) RevokeLoginToken(ctx context.Context, id pgtype.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, revokeLoginToken, id)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	defer rows.Close()
-	var items []pgtype.UUID
-	for rows.Next() {
-		var user_id pgtype.UUID
-		if err := rows.Scan(&user_id); err != nil {
-			return nil, err
-		}
-		items = append(items, user_id)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+	return result.RowsAffected(), nil
 }
 
-const revokeUserLoginTokens = `-- name: RevokeUserLoginTokens :many
-DELETE FROM login_tokens
-WHERE user_id = (
-    SELECT caller.user_id FROM login_tokens AS caller
-    WHERE caller.token_hash = $1 AND caller.expires_at > now()
-)
-RETURNING user_id
+const revokeUserLoginTokens = `-- name: RevokeUserLoginTokens :execrows
+DELETE FROM login_tokens WHERE user_id = $1
 `
 
-func (q *Queries) RevokeUserLoginTokens(ctx context.Context, tokenHash []byte) ([]pgtype.UUID, error) {
-	rows, err := q.db.Query(ctx, revokeUserLoginTokens, tokenHash)
+func (q *Queries) RevokeUserLoginTokens(ctx context.Context, userID pgtype.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, revokeUserLoginTokens, userID)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	defer rows.Close()
-	var items []pgtype.UUID
-	for rows.Next() {
-		var user_id pgtype.UUID
-		if err := rows.Scan(&user_id); err != nil {
-			return nil, err
-		}
-		items = append(items, user_id)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+	return result.RowsAffected(), nil
 }

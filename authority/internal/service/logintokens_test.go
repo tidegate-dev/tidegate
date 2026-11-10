@@ -126,55 +126,49 @@ var _ = Describe("Revoke", func() {
 		return hash[:]
 	}
 
-	It("revokes only the given token", func(ctx SpecContext) {
-		token := issue(ctx, alice)
+	sessionOf := func(ctx context.Context, token secret.String) Session {
+		GinkgoHelper()
+
+		session, err := tokens.Session(ctx, token)
+		Expect(err).NotTo(HaveOccurred())
+
+		return session
+	}
+
+	It("revokes only the given session", func(ctx SpecContext) {
+		session := sessionOf(ctx, issue(ctx, alice))
 		other := issue(ctx, alice)
 
-		userID, revoked, err := tokens.Revoke(ctx, token, false)
+		revoked, err := tokens.Revoke(ctx, session, false)
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(userID).To(Equal(alice.String()))
 		Expect(revoked).To(Equal(1))
 		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hashOf(other)))))
 	})
 
 	It("revokes every token of the user for all sessions, and no other user's", func(ctx SpecContext) {
-		token := issue(ctx, alice)
+		session := sessionOf(ctx, issue(ctx, alice))
 		issue(ctx, alice)
 		bobs := issue(ctx, bob)
 
-		userID, revoked, err := tokens.Revoke(ctx, token, true)
+		revoked, err := tokens.Revoke(ctx, session, true)
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(userID).To(Equal(alice.String()))
 		Expect(revoked).To(Equal(2))
 		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hashOf(bobs)))))
 	})
 
-	DescribeTable("refuses an unknown token",
+	DescribeTable("refuses a session that is already revoked",
 		func(ctx SpecContext, allSessions bool) {
-			issue(ctx, alice)
-
-			_, _, err := tokens.Revoke(ctx, secret.New("unknown"), allSessions)
-
-			Expect(err).To(MatchError(ErrNotSignedIn))
-			Expect(storedTokens(ctx, pool)).To(HaveLen(1))
-		},
-		Entry("for one session", false),
-		Entry("for all sessions", true),
-	)
-
-	DescribeTable("refuses an expired token",
-		func(ctx SpecContext, allSessions bool) {
-			issue(ctx, alice)
-			_, err := pool.Exec(ctx, `INSERT INTO login_tokens (token_hash, user_id, expires_at)
-				VALUES (sha256('expired'), $1, now() - interval '1 second')`, alice)
+			session := sessionOf(ctx, issue(ctx, alice))
+			bobs := issue(ctx, bob)
+			_, err := tokens.Revoke(ctx, session, false)
 			Expect(err).NotTo(HaveOccurred())
 
-			_, _, err = tokens.Revoke(ctx, secret.New("expired"), allSessions)
+			_, err = tokens.Revoke(ctx, session, allSessions)
 
 			Expect(err).To(MatchError(ErrNotSignedIn))
-			Expect(storedTokens(ctx, pool)).To(HaveLen(2))
+			Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hashOf(bobs)))))
 		},
 		Entry("for one session", false),
 		Entry("for all sessions", true),
