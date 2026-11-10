@@ -1,9 +1,11 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"sync/atomic"
@@ -17,6 +19,7 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
+	"github.com/tidegate-dev/tidegate/internal/logging"
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
@@ -47,6 +50,35 @@ func TestSessionInterceptorPutsTheSessionIntoTheContext(t *testing.T) {
 	// assert
 	require.NoError(t, err)
 	assert.Equal(t, session, <-found)
+}
+
+func TestSessionInterceptorAddsTheUserAndTheSessionToTheLogger(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	var out bytes.Buffer
+
+	session := service.Session{
+		ID:     pgtype.UUID{Bytes: [16]byte{1}, Valid: true},
+		UserID: pgtype.UUID{Bytes: [16]byte{2}, Valid: true},
+	}
+	sessions := &fakeSessions{byToken: map[string]service.Session{"abc": session}}
+	handler := NewSessionInterceptor(sessions).WrapUnary(
+		func(ctx context.Context, _ connect.AnyRequest) (connect.AnyResponse, error) {
+			logging.FromContext(ctx).InfoContext(ctx, "handled")
+
+			return connect.NewResponse(&authorityv1.PingResponse{}), nil
+		},
+	)
+	ctx := logging.NewContext(t.Context(), logging.New(&out, slog.LevelInfo, logging.FormatText))
+
+	// act
+	_, err := handler(ctx, pingWithToken("abc"))
+
+	// assert
+	require.NoError(t, err)
+	assert.Contains(t, out.String(), "user_id="+session.UserID.String())
+	assert.Contains(t, out.String(), "session_id="+session.ID.String())
 }
 
 func TestSessionInterceptorRefusesACallWithoutAToken(t *testing.T) {

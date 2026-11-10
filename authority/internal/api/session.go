@@ -9,6 +9,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
+	"github.com/tidegate-dev/tidegate/internal/logging"
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
@@ -71,7 +72,9 @@ func (i sessionInterceptor) withSession(ctx context.Context, spec connect.Spec, 
 		return ctx, clientError(err)
 	}
 
-	return context.WithValue(ctx, sessionKey{}, session), nil
+	logger := logging.FromContext(ctx).With("user_id", session.UserID.String(), "session_id", session.ID.String())
+
+	return context.WithValue(logging.NewContext(ctx, logger), sessionKey{}, session), nil
 }
 
 type sessionKey struct{}
