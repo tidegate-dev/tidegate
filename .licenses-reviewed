@@ -1,0 +1,11 @@
+# License files that syft can't identify and that someone has read.
+# Each line names a module and the sha256 value syft gives the file.
+
+# NOTICE files that come with the Apache-2.0 license.
+github.com/prometheus/client_golang sha256:8548bfb2bc1913396df38c548a6ec60b8dbcac3b0800485a40569c8bdd184471
+github.com/prometheus/client_model sha256:6c79faa15168885fb88a316ae0df18f486deafddefdc16826cdc56dfbd421e24
+github.com/prometheus/common sha256:600244c8052c8c1d307043fafacbc83b429c171dd8e08f5a537c0a54014585ee
+github.com/prometheus/procfs sha256:497fcdb9fae55924c12f55f05cbe83a096662e5c591d79b74e4a8f23bab5ffee
+
+# pgproto3/notice_response.go, a source file that syft takes for a license file.
+github.com/jackc/pgx/v5 sha256:4b9071daf5f9975eb936c370200709bb7433862c5d4a32d21db65620133f4a8e

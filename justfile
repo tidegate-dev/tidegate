@@ -74,10 +74,24 @@ images:
     [ -z "$names" ]
 
 # Check that every Go module in tidegate's binaries uses a license that
-# .grant.yaml allows.
+# .grant.yaml allows, and that every license file syft can't identify is in
+# .licenses-reviewed.
 licenses: build
+    #!/usr/bin/env sh
+    set -eu
     syft scan dir:bin --config .syft.yaml -q -o syft-json=bin/sbom.json
-    jq -e 'any(.artifacts[]; .type == "go-module")' bin/sbom.json > /dev/null || (echo "syft found no Go modules in bin/" >&2; exit 1)
+    if ! jq -e 'any(.artifacts[]; .type == "go-module")' bin/sbom.json > /dev/null; then
+        echo "syft found no Go modules in bin/" >&2
+        exit 1
+    fi
+    # grant drops license entries that syft gives only a sha256 value.
+    unreviewed=$(jq -r '.artifacts[] | .name as $module | .licenses[]? | select(.value | startswith("sha256:")) | "\($module) \(.value) \(.urls[0] // "")"' bin/sbom.json \
+        | awk 'NR == FNR { if (!/^#/ && NF) reviewed[$1 " " $2] = 1; next } !reviewed[$1 " " $2]' .licenses-reviewed - | sort -u)
+    if [ -n "$unreviewed" ]; then
+        echo "syft can't identify these license files. Read them and add them to .licenses-reviewed:" >&2
+        echo "$unreviewed" >&2
+        exit 1
+    fi
     grant check --config .grant.yaml bin/sbom.json
 
 # Format the code of every component in place.
