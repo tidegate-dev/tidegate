@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 
@@ -42,6 +43,12 @@ func dummyWrite(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	server := cmd.String("server")
+
+	err := checkServer(server)
+	if err != nil {
+		return err
+	}
+
 	client := authorityv1connect.NewDummyServiceClient(http.DefaultClient, server)
 
 	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
@@ -71,6 +78,12 @@ func dummyRead(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	server := cmd.String("server")
+
+	err = checkServer(server)
+	if err != nil {
+		return err
+	}
+
 	client := authorityv1connect.NewDummyServiceClient(http.DefaultClient, server)
 
 	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
@@ -87,6 +100,24 @@ func dummyRead(ctx context.Context, cmd *cli.Command) error {
 	_, err = fmt.Fprintln(cmd.Root().Writer, response.Msg.GetText())
 
 	return err
+}
+
+func checkServer(server string) error {
+	parsed, err := url.Parse(server)
+	if err != nil {
+		return fmt.Errorf("invalid --server %q: %w", server, err)
+	}
+
+	if parsed.Scheme != "http" {
+		return nil
+	}
+
+	switch parsed.Hostname() {
+	case "localhost", "127.0.0.1", "::1":
+		return nil
+	default:
+		return fmt.Errorf("refusing to send a password or a token over plain HTTP to %s, use https:// or a server on localhost", server)
+	}
 }
 
 func setToken(header http.Header) {

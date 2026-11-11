@@ -22,6 +22,12 @@ func logoutCommand() *cli.Command {
 
 func logout(ctx context.Context, cmd *cli.Command) error {
 	server := cmd.String("server")
+
+	err := checkServer(server)
+	if err != nil {
+		return err
+	}
+
 	client := authorityv1connect.NewLoginServiceClient(http.DefaultClient, server)
 
 	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
@@ -30,7 +36,7 @@ func logout(ctx context.Context, cmd *cli.Command) error {
 	request := connect.NewRequest(&authorityv1.LogoutRequest{})
 	setToken(request.Header())
 
-	_, err := client.Logout(ctx, request)
+	_, err = client.Logout(ctx, request)
 	if err != nil {
 		return fmt.Errorf("signing out at %s: %w", server, err)
 	}

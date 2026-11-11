@@ -26,12 +26,18 @@ func loginCommand() *cli.Command {
 }
 
 func login(ctx context.Context, cmd *cli.Command) error {
+	server := cmd.String("server")
+
+	err := checkServer(server)
+	if err != nil {
+		return err
+	}
+
 	userName, password, err := readCredentials(ctx, cmd.Root().Reader, cmd.Root().ErrWriter)
 	if err != nil {
 		return err
 	}
 
-	server := cmd.String("server")
 	client := authorityv1connect.NewLoginServiceClient(http.DefaultClient, server)
 
 	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
