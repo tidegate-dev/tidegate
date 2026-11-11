@@ -3,6 +3,7 @@ package authority
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"sync/atomic"
 	"testing"
 
@@ -85,6 +86,39 @@ func TestCheckServerRefusesOtherServers(t *testing.T) {
 
 			// assert
 			assert.Error(t, err)
+		})
+	}
+}
+
+func TestCheckServerRefusesCredentialsInTheURLWithoutShowingThem(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name   string
+		server url.URL
+	}{
+		{
+			name:   "user name and password",
+			server: url.URL{Scheme: "https", User: url.UserPassword("alice", "hunter2"), Host: "authority.example"},
+		},
+		{
+			name:   "only a user name",
+			server: url.URL{Scheme: "https", User: url.User("hunter2"), Host: "authority.example"},
+		},
+		{
+			name:   "user name and password on local plain HTTP",
+			server: url.URL{Scheme: "http", User: url.UserPassword("alice", "hunter2"), Host: "localhost:8080"},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			// act
+			err := checkServer(test.server.String())
+
+			// assert
+			require.Error(t, err)
+			assert.NotContains(t, err.Error(), "hunter2")
 		})
 	}
 }

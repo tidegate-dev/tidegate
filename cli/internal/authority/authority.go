@@ -2,6 +2,7 @@
 package authority
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -64,6 +65,10 @@ func checkServer(server string) error {
 	parsed, err := url.Parse(server)
 	if err != nil {
 		return fmt.Errorf("invalid --server %q: %w", server, err)
+	}
+
+	if parsed.User != nil {
+		return errors.New("--server must not contain a user name or password")
 	}
 
 	if parsed.Host == "" {
