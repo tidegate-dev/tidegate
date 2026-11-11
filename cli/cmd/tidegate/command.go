@@ -37,6 +37,7 @@ func newCommand() *cli.Command {
 				Action: ping,
 			},
 			loginCommand(),
+			logoutCommand(),
 			dummyCommand(),
 		},
 	}
