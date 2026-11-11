@@ -38,9 +38,6 @@ func login(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
-	defer cancel()
-
 	response, err := clients.Login().Login(ctx, connect.NewRequest(&authorityv1.LoginRequest{
 		UserName: userName,
 		Password: password,

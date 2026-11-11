@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/urfave/cli/v3"
 
@@ -15,8 +14,6 @@ import (
 
 // defaultServer matches the authority's default listen address.
 const defaultServer = "https://127.0.0.1:8080"
-
-const requestTimeout = 10 * time.Second
 
 // New returns the tidegate command with all its subcommands.
 func New() *cli.Command {

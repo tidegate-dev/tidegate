@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -20,23 +21,28 @@ type Clients struct {
 	dummy authorityv1connect.DummyServiceClient
 }
 
+const requestTimeout = 10 * time.Second
+
 // Connect refuses a plain HTTP server that isn't on this machine, and returns
-// clients that send token with every call, if it isn't empty.
+// clients that give every call 10 seconds and send token with it, if it isn't
+// empty.
 func Connect(server string, token secret.String) (*Clients, error) {
 	err := checkServer(server)
 	if err != nil {
 		return nil, err
 	}
 
-	var options []connect.ClientOption
+	interceptors := []connect.Interceptor{timeout(requestTimeout)}
 	if token.Reveal() != "" {
-		options = append(options, connect.WithInterceptors(bearer(token)))
+		interceptors = append(interceptors, bearer(token))
 	}
 
+	option := connect.WithInterceptors(interceptors...)
+
 	return &Clients{
-		ping:  authorityv1connect.NewPingServiceClient(http.DefaultClient, server, options...),
-		login: authorityv1connect.NewLoginServiceClient(http.DefaultClient, server, options...),
-		dummy: authorityv1connect.NewDummyServiceClient(http.DefaultClient, server, options...),
+		ping:  authorityv1connect.NewPingServiceClient(http.DefaultClient, server, option),
+		login: authorityv1connect.NewLoginServiceClient(http.DefaultClient, server, option),
+		dummy: authorityv1connect.NewDummyServiceClient(http.DefaultClient, server, option),
 	}, nil
 }
 
@@ -64,6 +70,17 @@ func checkServer(server string) error {
 		return nil
 	default:
 		return fmt.Errorf("refusing to send a password or a token over plain HTTP to %s, use https:// or a server on localhost", server)
+	}
+}
+
+func timeout(limit time.Duration) connect.UnaryInterceptorFunc {
+	return func(next connect.UnaryFunc) connect.UnaryFunc {
+		return func(ctx context.Context, request connect.AnyRequest) (connect.AnyResponse, error) {
+			ctx, cancel := context.WithTimeout(ctx, limit)
+			defer cancel()
+
+			return next(ctx, request)
+		}
 	}
 }
 

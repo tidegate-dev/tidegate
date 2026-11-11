@@ -26,9 +26,6 @@ func ping(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
-	defer cancel()
-
 	response, err := clients.Ping().Ping(ctx, connect.NewRequest(&authorityv1.PingRequest{}))
 	if connect.CodeOf(err) == connect.CodeUnavailable {
 		return fmt.Errorf("can't reach the authority at %s: %w", server, err)

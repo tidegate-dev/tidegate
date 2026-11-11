@@ -45,9 +45,6 @@ func dummyWrite(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
-	defer cancel()
-
 	response, err := clients.Dummy().Write(ctx, connect.NewRequest(&authorityv1.WriteRequest{Text: cmd.Args().First()}))
 	if err != nil {
 		return fmt.Errorf("storing the text at %s: %w", server, err)
@@ -74,9 +71,6 @@ func dummyRead(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
-
-	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
-	defer cancel()
 
 	response, err := clients.Dummy().Read(ctx, connect.NewRequest(&authorityv1.ReadRequest{Id: id}))
 	if err != nil {

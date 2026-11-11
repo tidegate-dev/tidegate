@@ -26,9 +26,6 @@ func logout(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
-	defer cancel()
-
 	_, err = clients.Login().Logout(ctx, connect.NewRequest(&authorityv1.LogoutRequest{}))
 	if err != nil {
 		return fmt.Errorf("signing out at %s: %w", server, err)
