@@ -130,9 +130,20 @@ just test-api
 
 This creates a database of its own on the test Postgres server, starts the authority against it on other ports than `just dev` and runs the tests. When the tests end, it drops the database again, so the tests never see the data from `just dev` or from an earlier run.
 
+### End-to-end tests
+
+End-to-end tests use tidegate the way a user does. They run the `tidegate` CLI against a running authority with [Bats](https://bats-core.readthedocs.io/) and check what it prints. They live in `e2e/` at the root of the repository. Start the services first, then run the tests:
+
+```sh
+just dev-deps
+just test-e2e
+```
+
+Like `just test-api`, this starts the authority on a database of its own and creates the initial admin. A test finds the authority in `TIDEGATE_TEST_AUTHORITY` and the admin's user name and password in `TIDEGATE_TEST_USER` and `TIDEGATE_TEST_PASSWORD`.
+
 ### Coverage
 
-`just test`, `just test-integration` and `just test-api` measure coverage and write it to `coverage/`, one file for each set of tests. To see which lines a set of tests runs, open its file:
+`just test`, `just test-integration`, `just test-api` and `just test-e2e` measure coverage and write it to `coverage/`, one file for each set of tests. To see which lines a set of tests runs, open its file:
 
 ```sh
 go tool cover -html=coverage/authority-integration.out

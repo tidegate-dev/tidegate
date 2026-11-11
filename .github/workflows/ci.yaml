@@ -44,7 +44,7 @@ jobs:
       - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           # The test recipes in just ci write these.
-          files: coverage/authority.out,coverage/authority-integration.out,coverage/authority-api.out,coverage/cli.out,coverage/internal.out
+          files: coverage/authority.out,coverage/authority-integration.out,coverage/authority-api.out,coverage/authority-e2e.out,coverage/cli.out,coverage/internal.out
           disable_search: true
           # Pull requests from forks get no OIDC token, and Codecov accepts
           # their uploads without one.
