@@ -58,6 +58,8 @@ func Print(w io.Writer, format Format, result Result) error {
 
 		return encoder.Close()
 	default:
-		return fmt.Errorf("unknown output format %q, want text, json or yaml", format)
+		_, err := ParseFormat(string(format))
+
+		return err
 	}
 }
