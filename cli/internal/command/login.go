@@ -74,6 +74,10 @@ func readCredentials(ctx context.Context, in io.Reader, prompts io.Writer) (stri
 	}
 
 	userName, err := readLine(lines)
+	if errors.Is(err, io.EOF) {
+		return "", "", errors.New("no user name on stdin")
+	}
+
 	if err != nil {
 		return "", "", fmt.Errorf("reading the user name: %w", err)
 	}
@@ -88,6 +92,10 @@ func readCredentials(ctx context.Context, in io.Reader, prompts io.Writer) (stri
 	}
 
 	password, err := readLine(lines)
+	if errors.Is(err, io.EOF) {
+		return "", "", errors.New("no password on stdin")
+	}
+
 	if err != nil {
 		return "", "", fmt.Errorf("reading the password: %w", err)
 	}
@@ -97,6 +105,10 @@ func readCredentials(ctx context.Context, in io.Reader, prompts io.Writer) (stri
 
 func readLine(lines *bufio.Reader) (string, error) {
 	line, err := lines.ReadString('\n')
+	if errors.Is(err, io.EOF) && line == "" {
+		return "", io.EOF
+	}
+
 	if err != nil && !errors.Is(err, io.EOF) {
 		return "", err
 	}
