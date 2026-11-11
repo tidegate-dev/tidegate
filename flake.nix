@@ -27,6 +27,27 @@
         pkgs.just
       ];
 
+      # nixpkgs doesn't package grant.
+      grant =
+        pkgs:
+        pkgs.buildGoModule (finalAttrs: {
+          pname = "grant";
+          version = "0.7.1";
+          src = pkgs.fetchFromGitHub {
+            owner = "anchore";
+            repo = "grant";
+            tag = "v${finalAttrs.version}";
+            hash = "sha256-Zznac28Gb7b3+uMzUbzPASs27SpYv8i75QzydTKtjhk=";
+          };
+          vendorHash = "sha256-2d+G5z+DS9BDqO8WhogTD019qJZVNcj6xYLctFIBC00=";
+          subPackages = [ "cmd/grant" ];
+          ldflags = [
+            "-s"
+            "-w"
+            "-X main.version=${finalAttrs.version}"
+          ];
+        });
+
       hooks =
         pkgs:
         git-hooks.lib.${pkgs.stdenv.hostPlatform.system}.run {
@@ -71,7 +92,9 @@
           packages = tools pkgs ++ [
             pkgs.gitleaks
             pkgs.govulncheck
+            (grant pkgs)
             pkgs.hurl
+            pkgs.jq
             pkgs.kind
             pkgs.kubectl
             pkgs.kubernetes-helm
@@ -83,6 +106,7 @@
             pkgs.protoc-gen-doc
             pkgs.protoc-gen-go
             pkgs.sqlc
+            pkgs.syft
             pkgs.zensical
           ];
           shellHook = (hooks pkgs).shellHook;

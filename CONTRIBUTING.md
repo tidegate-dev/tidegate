@@ -86,3 +86,13 @@ The squash merge keeps the commit messages from your branch, so this line ends u
 ## License
 
 By contributing, you agree that your contributions are licensed under the [Apache License 2.0](LICENSE).
+
+tidegate's binaries may only use dependencies under these licenses:
+
+- Apache-2.0
+- BSD-2-Clause
+- BSD-3-Clause
+- MIT
+- MPL-2.0
+
+If a dependency has more than one license, each of them must be on this list. `just ci` checks this. It fails when a dependency has a license that isn't on the list, or no license at all.

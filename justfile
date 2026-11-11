@@ -73,6 +73,13 @@ images:
     done
     [ -z "$names" ]
 
+# Check that every Go module in tidegate's binaries uses a license that
+# .grant.yaml allows.
+licenses: build
+    syft scan dir:bin --config .syft.yaml -q -o syft-json=bin/sbom.json
+    jq -e 'any(.artifacts[]; .type == "go-module")' bin/sbom.json > /dev/null || (echo "syft found no Go modules in bin/" >&2; exit 1)
+    grant check --config .grant.yaml bin/sbom.json
+
 # Format the code of every component in place.
 fmt: authority::fmt cli::fmt internal::fmt
 
@@ -161,4 +168,4 @@ kind-down:
     kind delete cluster --name tidegate
 
 # Run every check that CI runs, except fuzzing and mutate.
-ci: secrets arch images proto::ci authority::ci cli::ci internal::ci docs::build
+ci: secrets arch images licenses proto::ci authority::ci cli::ci internal::ci docs::build
