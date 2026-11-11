@@ -13,6 +13,10 @@ default:
 # Build every component into bin/.
 build: authority::build cli::build
 
+# Remove build and test output: bin/, coverage/ and site/.
+clean:
+    rm -rf bin coverage site
+
 # Run the unit tests of every component.
 test: authority::test cli::test internal::test
 
