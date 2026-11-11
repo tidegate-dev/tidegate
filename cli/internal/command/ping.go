@@ -10,6 +10,12 @@ import (
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 )
 
+type pingResult struct {
+	Message string `json:"message" yaml:"message"`
+}
+
+func (r pingResult) String() string { return r.Message }
+
 func pingCommand() *cli.Command {
 	return &cli.Command{
 		Name:   "ping",
@@ -35,7 +41,5 @@ func ping(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("pinging the authority at %s: %w", server, err)
 	}
 
-	_, err = fmt.Fprintln(cmd.Root().Writer, response.Msg.GetMessage())
-
-	return err
+	return printResult(cmd, pingResult{Message: response.Msg.GetMessage()})
 }

@@ -12,6 +12,18 @@ import (
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 )
 
+type dummyWriteResult struct {
+	ID int64 `json:"id" yaml:"id"`
+}
+
+func (r dummyWriteResult) String() string { return strconv.FormatInt(r.ID, 10) }
+
+type dummyReadResult struct {
+	Text string `json:"text" yaml:"text"`
+}
+
+func (r dummyReadResult) String() string { return r.Text }
+
 func dummyCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "dummy",
@@ -50,9 +62,7 @@ func dummyWrite(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("storing the text at %s: %w", server, err)
 	}
 
-	_, err = fmt.Fprintln(cmd.Root().Writer, response.Msg.GetId())
-
-	return err
+	return printResult(cmd, dummyWriteResult{ID: response.Msg.GetId()})
 }
 
 func dummyRead(ctx context.Context, cmd *cli.Command) error {
@@ -77,7 +87,5 @@ func dummyRead(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("reading the text at %s: %w", server, err)
 	}
 
-	_, err = fmt.Fprintln(cmd.Root().Writer, response.Msg.GetText())
-
-	return err
+	return printResult(cmd, dummyReadResult{Text: response.Msg.GetText()})
 }

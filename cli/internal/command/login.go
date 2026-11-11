@@ -17,6 +17,12 @@ import (
 	"github.com/tidegate-dev/tidegate/internal/terminal"
 )
 
+type loginResult struct {
+	Token string `json:"token" yaml:"token"`
+}
+
+func (r loginResult) String() string { return r.Token }
+
 func loginCommand() *cli.Command {
 	return &cli.Command{
 		Name:   "login",
@@ -46,9 +52,7 @@ func login(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("signing in at %s: %w", server, err)
 	}
 
-	_, err = fmt.Fprintln(cmd.Root().Writer, response.Msg.GetToken())
-
-	return err
+	return printResult(cmd, loginResult{Token: response.Msg.GetToken()})
 }
 
 // readCredentials asks for the user name and the password on a terminal.

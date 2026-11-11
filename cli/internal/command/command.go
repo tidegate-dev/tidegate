@@ -9,6 +9,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/tidegate-dev/tidegate/cli/internal/authority"
+	"github.com/tidegate-dev/tidegate/cli/internal/output"
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
@@ -26,6 +27,17 @@ func New() *cli.Command {
 				Name:  "server",
 				Usage: "URL of the authority",
 				Value: defaultServer,
+			},
+			&cli.StringFlag{
+				Name:    "output",
+				Aliases: []string{"o"},
+				Usage:   "format of the result: text, json or yaml",
+				Value:   string(output.Text),
+				Validator: func(value string) error {
+					_, err := output.ParseFormat(value)
+
+					return err
+				},
 			},
 		},
 		Commands: []*cli.Command{
@@ -61,4 +73,8 @@ func enableSuggestions(cmd *cli.Command) {
 	for _, sub := range cmd.Commands {
 		enableSuggestions(sub)
 	}
+}
+
+func printResult(cmd *cli.Command, result output.Result) error {
+	return output.Print(cmd.Root().Writer, output.Format(cmd.String("output")), result)
 }
