@@ -4,9 +4,13 @@ package command
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/urfave/cli/v3"
+
+	"github.com/tidegate-dev/tidegate/cli/internal/authority"
+	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 // defaultServer matches the authority's default listen address.
@@ -38,6 +42,10 @@ func New() *cli.Command {
 	enableSuggestions(root)
 
 	return root
+}
+
+func dialAuthority(cmd *cli.Command) (*authority.Clients, error) {
+	return authority.Connect(cmd.String("server"), secret.New(os.Getenv("TIDEGATE_TOKEN")))
 }
 
 func unknownCommand(_ context.Context, cmd *cli.Command) error {

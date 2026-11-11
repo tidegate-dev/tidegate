@@ -4,15 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strconv"
 
 	"connectrpc.com/connect"
 	"github.com/urfave/cli/v3"
 
-	"github.com/tidegate-dev/tidegate/cli/internal/authority"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
-	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 func dummyCommand() *cli.Command {
@@ -43,7 +40,7 @@ func dummyWrite(ctx context.Context, cmd *cli.Command) error {
 
 	server := cmd.String("server")
 
-	clients, err := authority.Connect(server, secret.New(os.Getenv("TIDEGATE_TOKEN")))
+	clients, err := dialAuthority(cmd)
 	if err != nil {
 		return err
 	}
@@ -73,7 +70,7 @@ func dummyRead(ctx context.Context, cmd *cli.Command) error {
 
 	server := cmd.String("server")
 
-	clients, err := authority.Connect(server, secret.New(os.Getenv("TIDEGATE_TOKEN")))
+	clients, err := dialAuthority(cmd)
 	if err != nil {
 		return err
 	}
