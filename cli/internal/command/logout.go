@@ -3,13 +3,14 @@ package command
 import (
 	"context"
 	"fmt"
-	"net/http"
+	"os"
 
 	"connectrpc.com/connect"
 	"github.com/urfave/cli/v3"
 
+	"github.com/tidegate-dev/tidegate/cli/internal/authority"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
-	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
+	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 func logoutCommand() *cli.Command {
@@ -23,20 +24,15 @@ func logoutCommand() *cli.Command {
 func logout(ctx context.Context, cmd *cli.Command) error {
 	server := cmd.String("server")
 
-	err := checkServer(server)
+	clients, err := authority.Connect(server, secret.New(os.Getenv("TIDEGATE_TOKEN")))
 	if err != nil {
 		return err
 	}
 
-	client := authorityv1connect.NewLoginServiceClient(http.DefaultClient, server)
-
 	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
 
-	request := connect.NewRequest(&authorityv1.LogoutRequest{})
-	setToken(request.Header())
-
-	_, err = client.Logout(ctx, request)
+	_, err = clients.Login().Logout(ctx, connect.NewRequest(&authorityv1.LogoutRequest{}))
 	if err != nil {
 		return fmt.Errorf("signing out at %s: %w", server, err)
 	}

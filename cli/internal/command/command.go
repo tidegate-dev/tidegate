@@ -4,14 +4,15 @@ package command
 import (
 	"context"
 	"fmt"
-	"net/http"
+	"os"
 	"time"
 
 	"connectrpc.com/connect"
 	"github.com/urfave/cli/v3"
 
+	"github.com/tidegate-dev/tidegate/cli/internal/authority"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
-	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
+	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 // defaultServer matches the authority's default listen address.
@@ -69,12 +70,16 @@ func enableSuggestions(cmd *cli.Command) {
 
 func ping(ctx context.Context, cmd *cli.Command) error {
 	server := cmd.String("server")
-	client := authorityv1connect.NewPingServiceClient(http.DefaultClient, server)
+
+	clients, err := authority.Connect(server, secret.New(os.Getenv("TIDEGATE_TOKEN")))
+	if err != nil {
+		return err
+	}
 
 	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
 
-	response, err := client.Ping(ctx, connect.NewRequest(&authorityv1.PingRequest{}))
+	response, err := clients.Ping().Ping(ctx, connect.NewRequest(&authorityv1.PingRequest{}))
 	if connect.CodeOf(err) == connect.CodeUnavailable {
 		return fmt.Errorf("can't reach the authority at %s: %w", server, err)
 	}

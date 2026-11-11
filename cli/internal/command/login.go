@@ -6,14 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"strings"
 
 	"connectrpc.com/connect"
 	"github.com/urfave/cli/v3"
 
+	"github.com/tidegate-dev/tidegate/cli/internal/authority"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
-	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
+	"github.com/tidegate-dev/tidegate/internal/secret"
 	"github.com/tidegate-dev/tidegate/internal/terminal"
 )
 
@@ -28,7 +28,7 @@ func loginCommand() *cli.Command {
 func login(ctx context.Context, cmd *cli.Command) error {
 	server := cmd.String("server")
 
-	err := checkServer(server)
+	clients, err := authority.Connect(server, secret.String{})
 	if err != nil {
 		return err
 	}
@@ -38,12 +38,10 @@ func login(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	client := authorityv1connect.NewLoginServiceClient(http.DefaultClient, server)
-
 	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
 
-	response, err := client.Login(ctx, connect.NewRequest(&authorityv1.LoginRequest{
+	response, err := clients.Login().Login(ctx, connect.NewRequest(&authorityv1.LoginRequest{
 		UserName: userName,
 		Password: password,
 	}))
