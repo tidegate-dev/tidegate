@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 
 	"connectrpc.com/connect"
@@ -46,7 +47,10 @@ func dummyWrite(ctx context.Context, cmd *cli.Command) error {
 	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
 
-	response, err := client.Write(ctx, connect.NewRequest(&authorityv1.WriteRequest{Text: cmd.Args().First()}))
+	request := connect.NewRequest(&authorityv1.WriteRequest{Text: cmd.Args().First()})
+	setToken(request.Header())
+
+	response, err := client.Write(ctx, request)
 	if err != nil {
 		return fmt.Errorf("storing the text at %s: %w", server, err)
 	}
@@ -72,7 +76,10 @@ func dummyRead(ctx context.Context, cmd *cli.Command) error {
 	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
 
-	response, err := client.Read(ctx, connect.NewRequest(&authorityv1.ReadRequest{Id: id}))
+	request := connect.NewRequest(&authorityv1.ReadRequest{Id: id})
+	setToken(request.Header())
+
+	response, err := client.Read(ctx, request)
 	if err != nil {
 		return fmt.Errorf("reading the text at %s: %w", server, err)
 	}
@@ -80,4 +87,11 @@ func dummyRead(ctx context.Context, cmd *cli.Command) error {
 	_, err = fmt.Fprintln(cmd.Root().Writer, response.Msg.GetText())
 
 	return err
+}
+
+func setToken(header http.Header) {
+	token := os.Getenv("TIDEGATE_TOKEN")
+	if token != "" {
+		header.Set("Authorization", "Bearer "+token)
+	}
 }

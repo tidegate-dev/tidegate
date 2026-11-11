@@ -36,6 +36,7 @@ func newCommand() *cli.Command {
 				Usage:  "check that the authority can be reached",
 				Action: ping,
 			},
+			loginCommand(),
 			dummyCommand(),
 		},
 	}
