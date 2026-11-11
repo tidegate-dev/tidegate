@@ -2,7 +2,6 @@
 package authority
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -32,9 +31,9 @@ func Connect(server string, token secret.String) (*Clients, error) {
 		return nil, err
 	}
 
-	interceptors := []connect.Interceptor{timeout(requestTimeout)}
+	interceptors := []connect.Interceptor{timeoutInterceptor{limit: requestTimeout}}
 	if token.Reveal() != "" {
-		interceptors = append(interceptors, bearer(token))
+		interceptors = append(interceptors, sessionTokenInterceptor{token: token})
 	}
 
 	option := connect.WithInterceptors(interceptors...)
@@ -70,26 +69,5 @@ func checkServer(server string) error {
 		return nil
 	default:
 		return fmt.Errorf("refusing to send a password or a token over plain HTTP to %s, use https:// or a server on localhost", server)
-	}
-}
-
-func timeout(limit time.Duration) connect.UnaryInterceptorFunc {
-	return func(next connect.UnaryFunc) connect.UnaryFunc {
-		return func(ctx context.Context, request connect.AnyRequest) (connect.AnyResponse, error) {
-			ctx, cancel := context.WithTimeout(ctx, limit)
-			defer cancel()
-
-			return next(ctx, request)
-		}
-	}
-}
-
-func bearer(token secret.String) connect.UnaryInterceptorFunc {
-	return func(next connect.UnaryFunc) connect.UnaryFunc {
-		return func(ctx context.Context, request connect.AnyRequest) (connect.AnyResponse, error) {
-			request.Header().Set("Authorization", "Bearer "+token.Reveal())
-
-			return next(ctx, request)
-		}
 	}
 }
