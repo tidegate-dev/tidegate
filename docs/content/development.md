@@ -102,7 +102,7 @@ To change the database schema, add a migration to `authority/internal/db/migrati
 
 ## Tests
 
-tidegate has unit tests, integration tests and API tests, and CI runs all three. CI also measures their coverage, lists the changes that no test catches and fuzzes the code.
+tidegate has unit tests, integration tests, API tests and end-to-end tests, and CI runs all four. CI also measures their coverage, lists the changes that no test catches and fuzzes the code.
 
 ### Unit and integration tests
 
