@@ -1,4 +1,5 @@
-package main
+// Package command defines the tidegate command and its subcommands.
+package command
 
 import (
 	"context"
@@ -18,7 +19,8 @@ const defaultServer = "https://127.0.0.1:8080"
 
 const requestTimeout = 10 * time.Second
 
-func newCommand() *cli.Command {
+// New returns the tidegate command with all its subcommands.
+func New() *cli.Command {
 	root := &cli.Command{
 		Name:   "tidegate",
 		Usage:  "talk to the tidegate authority",
