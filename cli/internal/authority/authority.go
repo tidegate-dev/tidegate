@@ -22,6 +22,12 @@ type Clients struct {
 
 const requestTimeout = 10 * time.Second
 
+var httpClient = &http.Client{
+	CheckRedirect: func(*http.Request, []*http.Request) error {
+		return http.ErrUseLastResponse
+	},
+}
+
 // Connect refuses a plain HTTP server that isn't on this machine, and returns
 // clients that give every call 10 seconds and send token with it, if it isn't
 // empty.
@@ -39,9 +45,9 @@ func Connect(server string, token secret.String) (*Clients, error) {
 	option := connect.WithInterceptors(interceptors...)
 
 	return &Clients{
-		ping:  authorityv1connect.NewPingServiceClient(http.DefaultClient, server, option),
-		login: authorityv1connect.NewLoginServiceClient(http.DefaultClient, server, option),
-		dummy: authorityv1connect.NewDummyServiceClient(http.DefaultClient, server, option),
+		ping:  authorityv1connect.NewPingServiceClient(httpClient, server, option),
+		login: authorityv1connect.NewLoginServiceClient(httpClient, server, option),
+		dummy: authorityv1connect.NewDummyServiceClient(httpClient, server, option),
 	}, nil
 }
 
