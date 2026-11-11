@@ -68,9 +68,17 @@ export TIDEGATE_TEST_USER=alice
 export TIDEGATE_TEST_PASSWORD='correct horse battery staple'
 export TIDEGATE_TEST_CA_FILE="$root/dev/tls/ca.pem"
 
-hurl --cacert "$TIDEGATE_TEST_CA_FILE" --variable "authority=$TIDEGATE_TEST_AUTHORITY" \
-    --retry 50 --retry-interval 200 "$root/authority/api-tests/ping.hurl" >/dev/null || fail
-# The authority has migrated the database by the time it answers a ping.
+# The authority logs this line only after it migrated the database and opened its port.
+listening() {
+    jq -e -s 'any(.[]; .msg == "authority listening" and .server == "api")' "$work/log" >/dev/null 2>&1
+}
+for _ in $(seq 100); do
+    listening && break
+    kill -0 "$authority" 2>/dev/null || fail
+    sleep 0.1
+done
+listening || fail
+
 printf '%s\n' "$TIDEGATE_TEST_PASSWORD" |
     "$work/authority" create-initial-admin "$TIDEGATE_TEST_USER" >>"$work/log" 2>&1 || fail
 
