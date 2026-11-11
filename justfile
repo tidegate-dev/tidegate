@@ -13,6 +13,10 @@ default:
 # Build every component into bin/.
 build: authority::build cli::build
 
+# Remove build and test output: bin/, coverage/ and site/.
+clean:
+    rm -rf bin coverage site
+
 # Run the unit tests of every component.
 test: authority::test cli::test internal::test
 
@@ -68,6 +72,27 @@ images:
         grep -rnoE --include='*.yaml' "image: *$name[:@][^ ]+" dev .github/workflows >&2
     done
     [ -z "$names" ]
+
+# Check that every Go module in tidegate's binaries uses a license that
+# .grant.yaml allows, and that every license file syft can't identify is in
+# .licenses-reviewed.
+licenses: build
+    #!/usr/bin/env sh
+    set -eu
+    syft scan dir:bin --config .syft.yaml -q -o syft-json=bin/sbom.json
+    if ! jq -e 'any(.artifacts[]; .type == "go-module")' bin/sbom.json > /dev/null; then
+        echo "syft found no Go modules in bin/" >&2
+        exit 1
+    fi
+    # grant drops license entries that syft gives only a sha256 value.
+    unreviewed=$(jq -r '.artifacts[] | .name as $module | .licenses[]? | select(.value | startswith("sha256:")) | "\($module) \(.value) \(.urls[0] // "")"' bin/sbom.json \
+        | awk 'NR == FNR { if (!/^#/ && NF) reviewed[$1 " " $2] = 1; next } !reviewed[$1 " " $2]' .licenses-reviewed - | sort -u)
+    if [ -n "$unreviewed" ]; then
+        echo "syft can't identify these license files. Read them and add them to .licenses-reviewed:" >&2
+        echo "$unreviewed" >&2
+        exit 1
+    fi
+    grant check --config .grant.yaml bin/sbom.json
 
 # Format the code of every component in place.
 fmt: authority::fmt cli::fmt internal::fmt
@@ -157,4 +182,4 @@ kind-down:
     kind delete cluster --name tidegate
 
 # Run every check that CI runs, except fuzzing and mutate.
-ci: secrets arch images proto::ci authority::ci cli::ci internal::ci docs::build
+ci: secrets arch images licenses proto::ci authority::ci cli::ci internal::ci docs::build

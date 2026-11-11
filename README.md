@@ -37,8 +37,10 @@ If you don't use Nix, install these tools yourself:
 - [Go](https://go.dev/dl/) 1.27.4 or newer
 - [golangci-lint](https://golangci-lint.run/) 2.14 or newer
 - [govulncheck](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck) 1.9 or newer
+- [grant](https://github.com/anchore/grant) 0.7 or newer
 - [Helm](https://helm.sh/docs/intro/install/) 4.3 or newer
 - [Hurl](https://hurl.dev/docs/installation.html) 8.0 or newer
+- [jq](https://jqlang.org/download/) 1.8 or newer
 - [just](https://just.systems/)
 - [kind](https://kind.sigs.k8s.io/) 0.33 or newer
 - [kubectl](https://kubernetes.io/docs/tasks/tools/) 1.37 or newer
@@ -49,6 +51,7 @@ If you don't use Nix, install these tools yourself:
 - [protoc-gen-connect-go](https://connectrpc.com/docs/go/getting-started/) 1.21 or a newer 1.x release
 - [protoc-gen-doc](https://github.com/pseudomuto/protoc-gen-doc) 1.5 or newer
 - [sqlc](https://docs.sqlc.dev/en/latest/overview/install.html) 1.31 or newer
+- [syft](https://github.com/anchore/syft) 1.55 or newer
 - [Zensical](https://zensical.org/) 0.0.62 or newer, for the documentation site
 
 Then run `just` to see the recipes, for example `just build` and `just ci`. Note that `just ci` needs the services from `just dev-deps`, like Postgres.
