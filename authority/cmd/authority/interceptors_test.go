@@ -62,7 +62,7 @@ func TestRequestLogShowsTheCodeTheClientGets(t *testing.T) {
 	assert.Contains(t, out.String(), "code=internal")
 }
 
-func TestInterceptorsRefuseACallWithoutALoginToken(t *testing.T) {
+func TestInterceptorsRefuseACallWithoutASessionToken(t *testing.T) {
 	t.Parallel()
 
 	// arrange
@@ -75,7 +75,7 @@ func TestInterceptorsRefuseACallWithoutALoginToken(t *testing.T) {
 	assert.Equal(t, connect.CodeUnauthenticated, connect.CodeOf(err))
 }
 
-func TestInterceptorsLetLoginThroughWithoutALoginToken(t *testing.T) {
+func TestInterceptorsLetLoginThroughWithoutASessionToken(t *testing.T) {
 	t.Parallel()
 
 	// arrange

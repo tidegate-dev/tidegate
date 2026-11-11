@@ -18,8 +18,8 @@ LoginService signs users in to the authority.
 
 | Method | Request | Response | Description |
 | ------ | ------- | -------- | ----------- |
-| `Login` | [tidegate.authority.v1.LoginRequest](#tidegate.authority.v1.LoginRequest) | [tidegate.authority.v1.LoginResponse](#tidegate.authority.v1.LoginResponse) | Login checks a user's local password and returns a login token. All wrong credentials get the same error. |
-| `Logout` | [tidegate.authority.v1.LogoutRequest](#tidegate.authority.v1.LogoutRequest) | [tidegate.authority.v1.LogoutResponse](#tidegate.authority.v1.LogoutResponse) | Logout revokes the login token in the call's `Authorization: Bearer` header, so later calls with it fail. A missing, unknown or expired token fails with unauthenticated. |
+| `Login` | [tidegate.authority.v1.LoginRequest](#tidegate.authority.v1.LoginRequest) | [tidegate.authority.v1.LoginResponse](#tidegate.authority.v1.LoginResponse) | Login checks a user's local password and returns a session token. All wrong credentials get the same error. |
+| `Logout` | [tidegate.authority.v1.LogoutRequest](#tidegate.authority.v1.LogoutRequest) | [tidegate.authority.v1.LogoutResponse](#tidegate.authority.v1.LogoutResponse) | Logout revokes the session token in the call's `Authorization: Bearer` header, so later calls with it fail. A missing, unknown or expired token fails with unauthenticated. |
 
 ## tidegate.authority.v1.PingService { #tidegate.authority.v1.PingService }
 
@@ -86,7 +86,7 @@ LogoutRequest is the input of LoginService.Logout.
 
 | Field | Type | Description | Rules |
 | ----- | ---- | ----------- | ----- |
-| `all_sessions` | `bool` | AllSessions revokes every login token of the caller's user, not only the one the call carries. |  |
+| `all_sessions` | `bool` | AllSessions revokes every session token of the caller's user, not only the one the call carries. |  |
 
 ### tidegate.authority.v1.LogoutResponse { #tidegate.authority.v1.LogoutResponse }
 

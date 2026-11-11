@@ -41,10 +41,10 @@ const (
 
 // LoginServiceClient is a client for the tidegate.authority.v1.LoginService service.
 type LoginServiceClient interface {
-	// Login checks a user's local password and returns a login token. All
+	// Login checks a user's local password and returns a session token. All
 	// wrong credentials get the same error.
 	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error)
-	// Logout revokes the login token in the call's `Authorization: Bearer`
+	// Logout revokes the session token in the call's `Authorization: Bearer`
 	// header, so later calls with it fail. A missing, unknown or expired token
 	// fails with unauthenticated.
 	Logout(context.Context, *connect.Request[v1.LogoutRequest]) (*connect.Response[v1.LogoutResponse], error)
@@ -94,10 +94,10 @@ func (c *loginServiceClient) Logout(ctx context.Context, req *connect.Request[v1
 
 // LoginServiceHandler is an implementation of the tidegate.authority.v1.LoginService service.
 type LoginServiceHandler interface {
-	// Login checks a user's local password and returns a login token. All
+	// Login checks a user's local password and returns a session token. All
 	// wrong credentials get the same error.
 	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error)
-	// Logout revokes the login token in the call's `Authorization: Bearer`
+	// Logout revokes the session token in the call's `Authorization: Bearer`
 	// header, so later calls with it fail. A missing, unknown or expired token
 	// fails with unauthenticated.
 	Logout(context.Context, *connect.Request[v1.LogoutRequest]) (*connect.Response[v1.LogoutResponse], error)

@@ -13,17 +13,17 @@ type Dummy struct {
 	Text string
 }
 
-type LoginToken struct {
+type Project struct {
+	ID   pgtype.UUID
+	Name string
+}
+
+type Session struct {
 	ID        pgtype.UUID
 	TokenHash []byte
 	UserID    pgtype.UUID
 	CreatedAt pgtype.Timestamptz
 	ExpiresAt pgtype.Timestamptz
-}
-
-type Project struct {
-	ID   pgtype.UUID
-	Name string
 }
 
 type User struct {

@@ -8,7 +8,7 @@ The authority writes its log to standard error, one JSON object per line. It log
 
 If you read the log yourself instead of a log collector, set `TIDEGATE_AUTHORITY__LOG__FORMAT` to `text`. If you don't want a line for every call, set `TIDEGATE_AUTHORITY__LOG__LEVEL` to `warn`. This also leaves out the other lines at info level. The [configuration](config.md) page lists both settings.
 
-A line for a call never has the body of the request or the response. A failed login also logs the user name it was given, but the authority never logs a password or a login token.
+A line for a call never has the body of the request or the response. A failed login also logs the user name it was given, but the authority never logs a password or a session token.
 
 Some requests get no line, because the authority refuses them before the call starts. That happens when a request is too large, goes to a path that isn't an API method, isn't valid Connect, gRPC or gRPC-Web, or has a message that can't be decoded.
 

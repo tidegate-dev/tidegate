@@ -42,7 +42,7 @@ var _ = Describe("Issue", func() {
 	})
 
 	It("returns a token and stores only its hash", func(ctx SpecContext) {
-		token, err := NewLoginTokens(pool, rnd, 12*time.Hour).Issue(ctx, userID)
+		token, err := NewSessions(pool, rnd, 12*time.Hour).Issue(ctx, userID)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(token.Reveal()).To(MatchRegexp(`^[A-Za-z0-9_-]{43}$`))
@@ -56,7 +56,7 @@ var _ = Describe("Issue", func() {
 	})
 
 	It("returns a new token each time", func(ctx SpecContext) {
-		tokens := NewLoginTokens(pool, rnd, 12*time.Hour)
+		tokens := NewSessions(pool, rnd, 12*time.Hour)
 
 		first, err := tokens.Issue(ctx, userID)
 		Expect(err).NotTo(HaveOccurred())
@@ -69,18 +69,18 @@ var _ = Describe("Issue", func() {
 	})
 
 	It("stores the expiry one lifetime after issuing the token", func(ctx SpecContext) {
-		_, err := NewLoginTokens(pool, rnd, time.Second).Issue(ctx, userID)
+		_, err := NewSessions(pool, rnd, time.Second).Issue(ctx, userID)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("Lifetime", time.Second)))
 	})
 
 	It("deletes the user's expired tokens", func(ctx SpecContext) {
-		_, err := pool.Exec(ctx, `INSERT INTO login_tokens (token_hash, user_id, expires_at)
+		_, err := pool.Exec(ctx, `INSERT INTO sessions (token_hash, user_id, expires_at)
 			VALUES (sha256('expired'), $1, now() - interval '1 second')`, userID)
 		Expect(err).NotTo(HaveOccurred())
 
-		token, err := NewLoginTokens(pool, rnd, 12*time.Hour).Issue(ctx, userID)
+		token, err := NewSessions(pool, rnd, 12*time.Hour).Issue(ctx, userID)
 
 		Expect(err).NotTo(HaveOccurred())
 
@@ -92,7 +92,7 @@ var _ = Describe("Issue", func() {
 var _ = Describe("Logout", func() {
 	var (
 		pool   *pgxpool.Pool
-		tokens *LoginTokens
+		tokens *Sessions
 		logins *Logins
 		alice  pgtype.UUID
 		bob    pgtype.UUID
@@ -109,7 +109,7 @@ var _ = Describe("Logout", func() {
 		Expect(pool.QueryRow(ctx, "INSERT INTO users (name) VALUES ('alice') RETURNING id").Scan(&alice)).To(Succeed())
 		Expect(pool.QueryRow(ctx, "INSERT INTO users (name) VALUES ('bob') RETURNING id").Scan(&bob)).To(Succeed())
 
-		tokens = NewLoginTokens(pool, rnd, 12*time.Hour)
+		tokens = NewSessions(pool, rnd, 12*time.Hour)
 		logins = NewLogins(nil, tokens)
 	})
 
@@ -171,7 +171,7 @@ var _ = Describe("Logout", func() {
 var _ = Describe("Session", func() {
 	var (
 		pool   *pgxpool.Pool
-		tokens *LoginTokens
+		tokens *Sessions
 		alice  pgtype.UUID
 	)
 
@@ -185,7 +185,7 @@ var _ = Describe("Session", func() {
 
 		Expect(pool.QueryRow(ctx, "INSERT INTO users (name) VALUES ('alice') RETURNING id").Scan(&alice)).To(Succeed())
 
-		tokens = NewLoginTokens(pool, rnd, 12*time.Hour)
+		tokens = NewSessions(pool, rnd, 12*time.Hour)
 	})
 
 	It("returns the session of the token", func(ctx SpecContext) {
@@ -193,7 +193,7 @@ var _ = Describe("Session", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		var id pgtype.UUID
-		Expect(pool.QueryRow(ctx, "SELECT id FROM login_tokens").Scan(&id)).To(Succeed())
+		Expect(pool.QueryRow(ctx, "SELECT id FROM sessions").Scan(&id)).To(Succeed())
 
 		session, err := tokens.Session(ctx, token)
 
@@ -212,7 +212,7 @@ var _ = Describe("Session", func() {
 
 	It("refuses an expired token", func(ctx SpecContext) {
 		expired := secret.New("expired")
-		_, err := pool.Exec(ctx, `INSERT INTO login_tokens (token_hash, user_id, expires_at)
+		_, err := pool.Exec(ctx, `INSERT INTO sessions (token_hash, user_id, expires_at)
 			VALUES ($1, $2, now() - interval '1 second')`, hash(expired), alice)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -225,7 +225,7 @@ var _ = Describe("Session", func() {
 func storedTokens(ctx context.Context, pool *pgxpool.Pool) []storedToken {
 	GinkgoHelper()
 
-	rows, err := pool.Query(ctx, "SELECT token_hash, user_id, expires_at - created_at FROM login_tokens")
+	rows, err := pool.Query(ctx, "SELECT token_hash, user_id, expires_at - created_at FROM sessions")
 	Expect(err).NotTo(HaveOccurred())
 
 	tokens, err := pgx.CollectRows(rows, pgx.RowToStructByPos[storedToken])

@@ -130,7 +130,7 @@ func (x *LoginResponse) GetToken() string {
 // LogoutRequest is the input of LoginService.Logout.
 type LogoutRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// AllSessions revokes every login token of the caller's user, not only the
+	// AllSessions revokes every session token of the caller's user, not only the
 	// one the call carries.
 	AllSessions   bool `protobuf:"varint,1,opt,name=all_sessions,json=allSessions,proto3" json:"all_sessions,omitempty"`
 	unknownFields protoimpl.UnknownFields

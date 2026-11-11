@@ -202,7 +202,7 @@ func signIn(ctx context.Context, url string) secret.String {
 	var userID pgtype.UUID
 	Expect(pool.QueryRow(ctx, "INSERT INTO users (name) VALUES ('alice') RETURNING id").Scan(&userID)).To(Succeed())
 
-	token, err := service.NewLoginTokens(pool, random.NewCryptoRandom(), time.Hour).Issue(ctx, userID)
+	token, err := service.NewSessions(pool, random.NewCryptoRandom(), time.Hour).Issue(ctx, userID)
 	Expect(err).NotTo(HaveOccurred())
 
 	return token

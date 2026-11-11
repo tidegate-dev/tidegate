@@ -35,7 +35,7 @@ func NewLoginServiceHandler(logins *service.Logins, opts ...connect.HandlerOptio
 	return authorityv1connect.NewLoginServiceHandler(NewLoginService(logins), opts...)
 }
 
-// Login checks the user's local password and returns a new login token.
+// Login checks the user's local password and returns a new session token.
 func (s *LoginService) Login(
 	ctx context.Context,
 	req *connect.Request[authorityv1.LoginRequest],
@@ -52,7 +52,7 @@ func (s *LoginService) Login(
 	return connect.NewResponse(&authorityv1.LoginResponse{Token: token.Reveal()}), nil
 }
 
-// Logout revokes the caller's login token, or every login token of the
+// Logout revokes the caller's session token, or every session token of the
 // caller's user.
 func (s *LoginService) Logout(
 	ctx context.Context,

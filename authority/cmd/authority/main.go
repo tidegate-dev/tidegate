@@ -210,7 +210,7 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 		return err
 	}
 
-	tokens := service.NewLoginTokens(pool, rnd, cfg.Login.TokenLifetime)
+	tokens := service.NewSessions(pool, rnd, cfg.Login.TokenLifetime)
 	logins := service.NewLogins(authenticator, tokens)
 
 	notifier, err := systemd.Open()

@@ -14,12 +14,12 @@ import (
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
-// SessionLookup finds the session that a login token belongs to.
+// SessionLookup finds the session that a session token belongs to.
 type SessionLookup interface {
 	Session(ctx context.Context, token secret.String) (service.Session, error)
 }
 
-// NewSessionInterceptor returns an interceptor that requires a login token.
+// NewSessionInterceptor returns an interceptor that requires a session token.
 // It puts the session of the token into the call's context. A procedure in
 // public needs no token.
 func NewSessionInterceptor(sessions SessionLookup, public ...string) connect.Interceptor {

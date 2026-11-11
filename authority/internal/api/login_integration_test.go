@@ -58,7 +58,7 @@ var _ = Describe("Login", func() {
 		authenticator, err := service.NewAuthenticator(pool, randomtest.NewMock())
 		Expect(err).NotTo(HaveOccurred())
 
-		handler = NewLoginService(service.NewLogins(authenticator, service.NewLoginTokens(pool, randomtest.NewMock(), 12*time.Hour)))
+		handler = NewLoginService(service.NewLogins(authenticator, service.NewSessions(pool, randomtest.NewMock(), 12*time.Hour)))
 		logs = &bytes.Buffer{}
 	})
 
@@ -114,7 +114,7 @@ var _ = Describe("Login", func() {
 var _ = Describe("Logout", func() {
 	var (
 		handler *LoginService
-		tokens  *service.LoginTokens
+		tokens  *service.Sessions
 		token   secret.String
 		session service.Session
 	)
@@ -128,7 +128,7 @@ var _ = Describe("Logout", func() {
 		authenticator, err := service.NewAuthenticator(pool, randomtest.NewMock())
 		Expect(err).NotTo(HaveOccurred())
 
-		tokens = service.NewLoginTokens(pool, randomtest.NewMock(), 12*time.Hour)
+		tokens = service.NewSessions(pool, randomtest.NewMock(), 12*time.Hour)
 		handler = NewLoginService(service.NewLogins(authenticator, tokens))
 
 		var alice pgtype.UUID
