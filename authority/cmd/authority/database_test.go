@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"github.com/The127/go-random"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/pressly/goose/v3/lock"
@@ -17,8 +19,10 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/config"
 	"github.com/tidegate-dev/tidegate/authority/internal/db"
 	"github.com/tidegate-dev/tidegate/authority/internal/dbtest"
+	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
+	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 var _ = Describe("openDatabase", func() {
@@ -69,13 +73,14 @@ var _ = Describe("run", func() {
 			url := dbtest.NewDatabase()
 			Expect(migrate(ctx, config.Database{URL: url})).To(Succeed())
 			authority = serveAuthority(ctx, url)
+			token := signIn(ctx, url)
 
 			// The lock makes the authority's write wait until the spec ends,
 			// like a query to a Postgres that doesn't answer.
 			holder := connectToDatabase(ctx, url)
 			lockDummies(ctx, holder)
 
-			go writeDummy(authority.address)
+			go writeDummy(authority.address, token)
 
 			Eventually(ctx, countSessionsWaitingForALock).WithArguments(holder).Should(Equal(1), "the write never waited for the lock")
 		}, NodeTimeout(30*time.Second))
@@ -179,9 +184,28 @@ func listening(address string) error {
 
 // writeDummy sends a write that only ends with the authority. A request
 // whose client gives up would cancel its query without the shutdown.
-func writeDummy(address string) {
+func writeDummy(address string, token secret.String) {
 	client := authorityv1connect.NewDummyServiceClient(http.DefaultClient, "http://"+address)
-	_, _ = client.Write(context.Background(), connect.NewRequest(&authorityv1.WriteRequest{Text: "waits"}))
+	request := connect.NewRequest(&authorityv1.WriteRequest{Text: "waits"})
+	request.Header().Set("Authorization", "Bearer "+token.Reveal())
+
+	_, _ = client.Write(context.Background(), request)
+}
+
+func signIn(ctx context.Context, url string) secret.String {
+	GinkgoHelper()
+
+	pool, err := db.Open(ctx, url)
+	Expect(err).NotTo(HaveOccurred())
+	DeferCleanup(pool.Close)
+
+	var userID pgtype.UUID
+	Expect(pool.QueryRow(ctx, "INSERT INTO users (name) VALUES ('alice') RETURNING id").Scan(&userID)).To(Succeed())
+
+	token, err := service.NewSessions(pool, random.NewCryptoRandom(), time.Hour).Issue(ctx, userID)
+	Expect(err).NotTo(HaveOccurred())
+
+	return token
 }
 
 func connectToDatabase(ctx context.Context, url string) *pgx.Conn {

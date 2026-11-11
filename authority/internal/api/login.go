@@ -2,13 +2,11 @@ package api
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"slices"
 
 	"connectrpc.com/connect"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/password"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
@@ -19,7 +17,7 @@ import (
 // maxLoginRequestBytes bounds a LoginRequest.
 const maxLoginRequestBytes = 4096
 
-// LoginService signs users in.
+// LoginService signs users in and logs them out.
 type LoginService struct {
 	logins *service.Logins
 }
@@ -37,7 +35,7 @@ func NewLoginServiceHandler(logins *service.Logins, opts ...connect.HandlerOptio
 	return authorityv1connect.NewLoginServiceHandler(NewLoginService(logins), opts...)
 }
 
-// Login checks the user's local password and returns a new login token.
+// Login checks the user's local password and returns a new session token.
 func (s *LoginService) Login(
 	ctx context.Context,
 	req *connect.Request[authorityv1.LoginRequest],
@@ -51,22 +49,24 @@ func (s *LoginService) Login(
 		return nil, clientError(err)
 	}
 
-	logger.InfoContext(ctx, "login succeeded")
-
 	return connect.NewResponse(&authorityv1.LoginResponse{Token: token.Reveal()}), nil
 }
 
-// clientError hides why credentials are wrong, so clients can't tell which
-// user names exist.
-func clientError(err error) error {
-	switch {
-	case errors.Is(err, service.ErrWrongCredentials):
-		return connect.NewError(connect.CodeUnauthenticated, service.ErrWrongCredentials)
-	case errors.Is(err, password.ErrTooLong):
-		return connect.NewError(connect.CodeInvalidArgument, password.ErrTooLong)
-	case errors.Is(err, service.ErrBusy):
-		return connect.NewError(connect.CodeUnavailable, service.ErrBusy)
-	default:
-		return err
+// Logout revokes the caller's session token, or every session token of the
+// caller's user.
+func (s *LoginService) Logout(
+	ctx context.Context,
+	req *connect.Request[authorityv1.LogoutRequest],
+) (*connect.Response[authorityv1.LogoutResponse], error) {
+	session, err := sessionFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
+
+	err = s.logins.Logout(ctx, session, req.Msg.GetAllSessions())
+	if err != nil {
+		return nil, clientError(err)
+	}
+
+	return connect.NewResponse(&authorityv1.LogoutResponse{}), nil
 }

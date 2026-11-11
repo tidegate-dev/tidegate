@@ -11,6 +11,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/The127/go-random/randomtest"
+	"github.com/jackc/pgx/v5/pgtype"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -57,7 +58,7 @@ var _ = Describe("Login", func() {
 		authenticator, err := service.NewAuthenticator(pool, randomtest.NewMock())
 		Expect(err).NotTo(HaveOccurred())
 
-		handler = NewLoginService(service.NewLogins(authenticator, service.NewLoginTokens(pool, randomtest.NewMock(), 12*time.Hour)))
+		handler = NewLoginService(service.NewLogins(authenticator, service.NewSessions(pool, randomtest.NewMock(), 12*time.Hour)))
 		logs = &bytes.Buffer{}
 	})
 
@@ -76,18 +77,6 @@ var _ = Describe("Login", func() {
 		Expect(connect.CodeOf(wrongPassword)).To(Equal(connect.CodeUnauthenticated))
 		Expect(unknownUser).To(Equal(wrongPassword))
 		Expect(noPassword).To(Equal(wrongPassword))
-	})
-
-	It("logs a successful login with the user name and without the password or token", func(ctx SpecContext) {
-		token, err := login(ctx, "alice", alicePassword)
-
-		Expect(err).NotTo(HaveOccurred())
-		Expect(logs.String()).To(SatisfyAll(
-			ContainSubstring("login succeeded"),
-			ContainSubstring("user=alice"),
-			Not(ContainSubstring(alicePassword)),
-			Not(ContainSubstring(token)),
-		))
 	})
 
 	DescribeTable("logs a failed login with the user name and reason, without the password",
@@ -119,5 +108,56 @@ var _ = Describe("Login", func() {
 			ContainSubstring("login failed"),
 			ContainSubstring("user=alice"),
 		))
+	})
+})
+
+var _ = Describe("Logout", func() {
+	var (
+		handler *LoginService
+		tokens  *service.Sessions
+		token   secret.String
+		session service.Session
+	)
+
+	BeforeEach(func(ctx SpecContext) {
+		pool, err := db.Open(ctx, dbtest.NewDatabase())
+		Expect(err).NotTo(HaveOccurred())
+		DeferCleanup(pool.Close)
+		Expect(db.Migrate(ctx, pool)).To(Succeed())
+
+		authenticator, err := service.NewAuthenticator(pool, randomtest.NewMock())
+		Expect(err).NotTo(HaveOccurred())
+
+		tokens = service.NewSessions(pool, randomtest.NewMock(), 12*time.Hour)
+		handler = NewLoginService(service.NewLogins(authenticator, tokens))
+
+		var alice pgtype.UUID
+		Expect(pool.QueryRow(ctx, "INSERT INTO users (name) VALUES ('alice') RETURNING id").Scan(&alice)).To(Succeed())
+
+		token, err = tokens.Issue(ctx, alice)
+		Expect(err).NotTo(HaveOccurred())
+
+		session, err = tokens.Session(ctx, token)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("revokes the session of the call", func(ctx SpecContext) {
+		signedIn := context.WithValue(ctx, sessionKey{}, session)
+
+		_, err := handler.Logout(signedIn, connect.NewRequest(&authorityv1.LogoutRequest{}))
+
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = tokens.Session(ctx, token)
+		Expect(err).To(MatchError(service.ErrNotSignedIn))
+	})
+
+	It("fails without revoking anything if the call has no session", func(ctx SpecContext) {
+		_, err := handler.Logout(ctx, connect.NewRequest(&authorityv1.LogoutRequest{AllSessions: true}))
+
+		Expect(err).To(MatchError(errNoSession))
+
+		_, err = tokens.Session(ctx, token)
+		Expect(err).NotTo(HaveOccurred())
 	})
 })
