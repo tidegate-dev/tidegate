@@ -66,14 +66,21 @@ func checkServer(server string) error {
 		return fmt.Errorf("invalid --server %q: %w", server, err)
 	}
 
-	if parsed.Scheme != "http" {
-		return nil
+	if parsed.Host == "" {
+		return fmt.Errorf("invalid --server %q, want a URL like https://authority.example", server)
 	}
 
-	switch parsed.Hostname() {
-	case "localhost", "127.0.0.1", "::1":
+	switch parsed.Scheme {
+	case "https":
 		return nil
+	case "http":
+		switch parsed.Hostname() {
+		case "localhost", "127.0.0.1", "::1":
+			return nil
+		default:
+			return fmt.Errorf("refusing to send a password or a token over plain HTTP to %s, use https:// or a server on localhost", server)
+		}
 	default:
-		return fmt.Errorf("refusing to send a password or a token over plain HTTP to %s, use https:// or a server on localhost", server)
+		return fmt.Errorf("invalid --server %q, want https:// or http:// to localhost", server)
 	}
 }

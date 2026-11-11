@@ -40,3 +40,51 @@ func TestConnectDoesntFollowRedirects(t *testing.T) {
 	require.Error(t, err)
 	assert.False(t, reached.Load())
 }
+
+func TestCheckServerAcceptsHTTPSAndLocalHTTP(t *testing.T) {
+	t.Parallel()
+
+	for _, server := range []string{
+		"https://authority.example",
+		"https://authority.example:8443/prefix",
+		"HTTPS://authority.example",
+		"http://localhost:8080",
+		"http://127.0.0.1:8080",
+		"http://[::1]:8080",
+	} {
+		t.Run(server, func(t *testing.T) {
+			t.Parallel()
+
+			// act
+			err := checkServer(server)
+
+			// assert
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestCheckServerRefusesOtherServers(t *testing.T) {
+	t.Parallel()
+
+	for _, server := range []string{
+		"http://authority.example",
+		"http://10.0.0.5:8080",
+		"localhost:8080",
+		"authority.example",
+		"ftp://authority.example",
+		"//authority.example",
+		"https://",
+		"",
+	} {
+		t.Run(server, func(t *testing.T) {
+			t.Parallel()
+
+			// act
+			err := checkServer(server)
+
+			// assert
+			assert.Error(t, err)
+		})
+	}
+}
