@@ -33,10 +33,6 @@ func ping(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	response, err := clients.Ping().Ping(ctx, connect.NewRequest(&authorityv1.PingRequest{}))
-	if connect.CodeOf(err) == connect.CodeUnavailable {
-		return fmt.Errorf("can't reach the authority at %s: %w", server, err)
-	}
-
 	if err != nil {
 		return fmt.Errorf("pinging the authority at %s: %w", server, err)
 	}

@@ -48,6 +48,10 @@ func login(ctx context.Context, cmd *cli.Command) error {
 		UserName: userName,
 		Password: password,
 	}))
+	if connect.CodeOf(err) == connect.CodeUnauthenticated {
+		return fmt.Errorf("signing in at %s: wrong user name or password", server)
+	}
+
 	if err != nil {
 		return fmt.Errorf("signing in at %s: %w", server, err)
 	}

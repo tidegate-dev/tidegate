@@ -10,9 +10,11 @@ import (
 )
 
 func main() {
-	err := command.New().Run(context.Background(), os.Args)
+	root := command.New()
+
+	err := root.Run(context.Background(), os.Args)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %s\n", command.Message(root, err))
 		os.Exit(1)
 	}
 }
