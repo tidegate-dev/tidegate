@@ -33,6 +33,7 @@ login() {
     run --separate-stderr tidegate --server "$TIDEGATE_TEST_AUTHORITY" login \
         < <(printf '%s\n%s\n' nobody "$TIDEGATE_TEST_PASSWORD")
     [ "$status" -eq 1 ]
+    [ -z "$output" ]
     [[ $stderr == *"wrong user name or password"* ]]
 }
 

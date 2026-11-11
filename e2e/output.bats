@@ -22,6 +22,6 @@ setup() {
 
 @test "an unknown output format fails" {
     run tidegate --server "$TIDEGATE_TEST_AUTHORITY" -o xml ping
-    [ "$status" -ne 0 ]
+    [ "$status" -eq 1 ]
     [[ $output == *'unknown output format "xml"'* ]]
 }
