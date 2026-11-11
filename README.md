@@ -34,7 +34,7 @@ If you don't use Nix, install these tools yourself:
 
 - [buf](https://buf.build/docs/cli/installation/) 1.73 or newer
 - [gitleaks](https://github.com/gitleaks/gitleaks) 8.30 or newer
-- [Go](https://go.dev/dl/) 1.27.3 or newer
+- [Go](https://go.dev/dl/) 1.27.4 or newer
 - [golangci-lint](https://golangci-lint.run/) 2.14 or newer
 - [govulncheck](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck) 1.9 or newer
 - [Helm](https://helm.sh/docs/intro/install/) 4.3 or newer
