@@ -1,49 +1,52 @@
 package main
 
 import (
+	"context"
 	"io"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/tidegate-dev/tidegate/internal/terminal"
 )
 
-func TestAskPasswordTwiceReturnsMatchingEntries(t *testing.T) {
+func TestReadPasswordReturnsMatchingEntries(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	ask := answers("correct horse battery staple", "correct horse battery staple")
+	in := interactive("correct horse battery staple", "correct horse battery staple")
 
 	// act
-	password, err := askPasswordTwice(ask)
+	password, err := readPassword(t.Context(), in)
 
 	// assert
 	require.NoError(t, err)
 	assert.Equal(t, "correct horse battery staple", password.Reveal())
 }
 
-func TestAskPasswordTwiceAcceptsEntriesThatDifferOnlyInTheirEncoding(t *testing.T) {
+func TestReadPasswordAcceptsEntriesThatDifferOnlyInTheirEncoding(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	ask := answers("caf\u00e9 au lait, bitte", "cafe\u0301 au lait, bitte")
+	in := interactive("caf\u00e9 au lait, bitte", "cafe\u0301 au lait, bitte")
 
 	// act
-	_, err := askPasswordTwice(ask)
+	_, err := readPassword(t.Context(), in)
 
 	// assert
 	require.NoError(t, err)
 }
 
-func TestAskPasswordTwiceRefusesDifferentEntries(t *testing.T) {
+func TestReadPasswordRefusesDifferentEntries(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	ask := answers("correct horse battery staple", "correct horse battery stapel")
+	in := interactive("correct horse battery staple", "correct horse battery stapel")
 
 	// act
-	_, err := askPasswordTwice(ask)
+	_, err := readPassword(t.Context(), in)
 
 	// assert
 	require.ErrorIs(t, err, errPasswordsDiffer)
@@ -52,20 +55,37 @@ func TestAskPasswordTwiceRefusesDifferentEntries(t *testing.T) {
 func TestReadPasswordRefusesAnEmptyStdin(t *testing.T) {
 	t.Parallel()
 
+	// arrange
+	in := terminal.New(strings.NewReader(""), io.Discard)
+
 	// act
-	_, err := readPassword(t.Context(), strings.NewReader(""), io.Discard)
+	_, err := readPassword(t.Context(), in)
 
 	// assert
 	require.EqualError(t, err, "no password on stdin")
 }
 
-// answers returns a function that answers each prompt with the next of
-// entries.
-func answers(entries ...string) func(string) (string, error) {
-	return func(string) (string, error) {
-		entry := entries[0]
-		entries = entries[1:]
+// interactiveInput is a terminal where a person types entries, one for each
+// prompt.
+type interactiveInput struct {
+	entries []string
+}
 
-		return entry, nil
-	}
+func interactive(entries ...string) *interactiveInput {
+	return &interactiveInput{entries: entries}
+}
+
+func (*interactiveInput) Interactive() bool {
+	return true
+}
+
+func (*interactiveInput) ReadLine(context.Context) (string, error) {
+	return "", io.EOF
+}
+
+func (i *interactiveInput) ReadSecret(context.Context, string) (string, error) {
+	entry := i.entries[0]
+	i.entries = i.entries[1:]
+
+	return entry, nil
 }
