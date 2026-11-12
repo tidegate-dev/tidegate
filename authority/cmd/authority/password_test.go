@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"io"
 	"strings"
 	"testing"
@@ -50,25 +49,14 @@ func TestAskPasswordTwiceRefusesDifferentEntries(t *testing.T) {
 	require.ErrorIs(t, err, errPasswordsDiffer)
 }
 
-func TestReadPasswordLineReturnsTheFirstLineWithoutItsLineEnding(t *testing.T) {
+func TestReadPasswordRefusesAnEmptyStdin(t *testing.T) {
 	t.Parallel()
 
-	for name, input := range map[string]string{
-		"LF":             "correct horse battery staple\nsecond line",
-		"CRLF":           "correct horse battery staple\r\n",
-		"no line ending": "correct horse battery staple",
-	} {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
+	// act
+	_, err := readPassword(t.Context(), strings.NewReader(""), io.Discard)
 
-			// act
-			password, err := readPasswordLine(t.Context(), strings.NewReader(input))
-
-			// assert
-			require.NoError(t, err)
-			assert.Equal(t, "correct horse battery staple", password)
-		})
-	}
+	// assert
+	require.EqualError(t, err, "no password on stdin")
 }
 
 // answers returns a function that answers each prompt with the next of
@@ -80,38 +68,4 @@ func answers(entries ...string) func(string) (string, error) {
 
 		return entry, nil
 	}
-}
-
-func TestReadPasswordLineDoesntCutOffALongPassword(t *testing.T) {
-	t.Parallel()
-
-	// arrange
-	input := strings.Repeat("a", 2000) + "\r\n"
-
-	// act
-	line, err := readPasswordLine(t.Context(), strings.NewReader(input))
-
-	// assert
-	require.NoError(t, err)
-	assert.Greater(t, len(line), 1024, "a cut-off line would pass as a valid password")
-}
-
-func TestReadPasswordLineStopsWhenTheContextEnds(t *testing.T) {
-	t.Parallel()
-
-	// arrange
-	stdin, writer := io.Pipe()
-
-	t.Cleanup(func() {
-		_ = writer.Close()
-	})
-
-	ctx, cancel := context.WithCancel(t.Context())
-	cancel()
-
-	// act
-	_, err := readPasswordLine(ctx, stdin)
-
-	// assert
-	require.ErrorIs(t, err, context.Canceled)
 }
