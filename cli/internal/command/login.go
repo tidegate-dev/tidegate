@@ -68,7 +68,7 @@ func readCredentials(ctx context.Context, in io.Reader, prompts io.Writer) (stri
 		return "", "", err
 	}
 
-	userName, err := tty.ReadLine()
+	userName, err := tty.ReadLine(ctx)
 	if errors.Is(err, io.EOF) {
 		return "", "", errors.New("no user name on stdin")
 	}

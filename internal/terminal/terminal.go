@@ -40,18 +40,35 @@ func (t *Terminal) Interactive() bool {
 }
 
 // ReadLine reads one line without its line ending. It returns io.EOF if
-// the input has ended.
-func (t *Terminal) ReadLine() (string, error) {
-	line, err := t.lines.ReadString('\n')
-	if errors.Is(err, io.EOF) && line == "" {
-		return "", io.EOF
+// the input has ended. It stops waiting when ctx ends.
+func (t *Terminal) ReadLine(ctx context.Context) (string, error) {
+	type readResult struct {
+		line string
+		err  error
 	}
 
-	if err != nil && !errors.Is(err, io.EOF) {
-		return "", err
-	}
+	readResultChan := make(chan readResult, 1)
 
-	return strings.TrimSuffix(strings.TrimSuffix(line, "\n"), "\r"), nil
+	// A read from a pipe can't be canceled, so on ctx's end it's left running.
+	go func() {
+		line, err := t.lines.ReadString('\n')
+		readResultChan <- readResult{line, err}
+	}()
+
+	select {
+	case result := <-readResultChan:
+		if errors.Is(result.err, io.EOF) && result.line == "" {
+			return "", io.EOF
+		}
+
+		if result.err != nil && !errors.Is(result.err, io.EOF) {
+			return "", result.err
+		}
+
+		return strings.TrimSuffix(strings.TrimSuffix(result.line, "\n"), "\r"), nil
+	case <-ctx.Done():
+		return "", ctx.Err()
+	}
 }
 
 // Prompt writes text to the terminal. It writes nothing if the input isn't a
@@ -74,7 +91,7 @@ func (t *Terminal) Prompt(text string) error {
 // reads a line like ReadLine.
 func (t *Terminal) ReadSecret(ctx context.Context, prompt string) (string, error) {
 	if !t.Interactive() {
-		return t.ReadLine()
+		return t.ReadLine(ctx)
 	}
 
 	fd := int(t.in.Fd()) //nolint:gosec // A file descriptor fits in an int.
