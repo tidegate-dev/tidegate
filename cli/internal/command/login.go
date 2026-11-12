@@ -1,12 +1,10 @@
 package command
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
 	"io"
-	"strings"
 
 	"connectrpc.com/connect"
 	"github.com/urfave/cli/v3"
@@ -63,17 +61,14 @@ func login(ctx context.Context, cmd *cli.Command) error {
 // Otherwise it reads them from the first two lines of in, so a script can
 // pipe them in.
 func readCredentials(ctx context.Context, in io.Reader, prompts io.Writer) (string, string, error) {
-	lines := bufio.NewReader(in)
-	tty, isTerminal := terminal.New(in, prompts)
+	tty, _ := terminal.New(in, prompts)
 
-	if isTerminal {
-		_, err := fmt.Fprint(prompts, "User name: ")
-		if err != nil {
-			return "", "", err
-		}
+	err := tty.Prompt("User name: ")
+	if err != nil {
+		return "", "", err
 	}
 
-	userName, err := readLine(lines)
+	userName, err := tty.ReadLine()
 	if errors.Is(err, io.EOF) {
 		return "", "", errors.New("no user name on stdin")
 	}
@@ -82,16 +77,7 @@ func readCredentials(ctx context.Context, in io.Reader, prompts io.Writer) (stri
 		return "", "", fmt.Errorf("reading the user name: %w", err)
 	}
 
-	if isTerminal {
-		password, err := tty.ReadSecret(ctx, "Password: ")
-		if err != nil {
-			return "", "", fmt.Errorf("reading the password: %w", err)
-		}
-
-		return userName, password, nil
-	}
-
-	password, err := readLine(lines)
+	password, err := tty.ReadSecret(ctx, "Password: ")
 	if errors.Is(err, io.EOF) {
 		return "", "", errors.New("no password on stdin")
 	}
@@ -101,17 +87,4 @@ func readCredentials(ctx context.Context, in io.Reader, prompts io.Writer) (stri
 	}
 
 	return userName, password, nil
-}
-
-func readLine(lines *bufio.Reader) (string, error) {
-	line, err := lines.ReadString('\n')
-	if errors.Is(err, io.EOF) && line == "" {
-		return "", io.EOF
-	}
-
-	if err != nil && !errors.Is(err, io.EOF) {
-		return "", err
-	}
-
-	return strings.TrimSuffix(strings.TrimSuffix(line, "\n"), "\r"), nil
 }

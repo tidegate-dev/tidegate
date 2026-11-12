@@ -2,37 +2,76 @@
 package terminal
 
 import (
+	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"golang.org/x/term"
 )
 
-// Terminal is a terminal that a person types at.
+// Terminal reads what a person types at a terminal or what a script pipes
+// in.
 type Terminal struct {
 	in       *os.File
+	lines    *bufio.Reader
 	fallback io.Writer
 }
 
-// New returns the terminal that in reads from. It returns false if in isn't
-// a terminal. The terminal writes to fallback only if it can't be opened for
-// writing.
+// New returns a Terminal that reads from in. It returns false if in isn't a
+// terminal. The Terminal writes to fallback only if it can't open the
+// terminal for writing.
 func New(in io.Reader, fallback io.Writer) (*Terminal, bool) {
+	lines := bufio.NewReader(in)
+
 	file, ok := in.(*os.File)
 	if !ok || !term.IsTerminal(int(file.Fd())) { //nolint:gosec // A file descriptor fits in an int.
-		return nil, false
+		return &Terminal{lines: lines, fallback: fallback}, false
 	}
 
-	return &Terminal{in: file, fallback: fallback}, true
+	return &Terminal{in: file, lines: lines, fallback: fallback}, true
+}
+
+// ReadLine reads one line without its line ending. It returns io.EOF if
+// the input has ended.
+func (t *Terminal) ReadLine() (string, error) {
+	line, err := t.lines.ReadString('\n')
+	if errors.Is(err, io.EOF) && line == "" {
+		return "", io.EOF
+	}
+
+	if err != nil && !errors.Is(err, io.EOF) {
+		return "", err
+	}
+
+	return strings.TrimSuffix(strings.TrimSuffix(line, "\n"), "\r"), nil
+}
+
+// Prompt writes text to the terminal. It writes nothing if the input isn't a
+// terminal.
+func (t *Terminal) Prompt(text string) error {
+	if t.in == nil {
+		return nil
+	}
+
+	out, closeOutput := t.output()
+	defer closeOutput()
+
+	_, err := fmt.Fprint(out, text)
+
+	return err
 }
 
 // ReadSecret writes prompt to the terminal and reads a line without echoing
-// it. It stops waiting when ctx ends.
+// it. It stops waiting when ctx ends. If the input isn't a terminal, it
+// reads a line like ReadLine.
 func (t *Terminal) ReadSecret(ctx context.Context, prompt string) (string, error) {
-	out, closeOutput := t.output()
-	defer closeOutput()
+	if t.in == nil {
+		return t.ReadLine()
+	}
 
 	fd := int(t.in.Fd()) //nolint:gosec // A file descriptor fits in an int.
 
@@ -45,14 +84,14 @@ func (t *Terminal) ReadSecret(ctx context.Context, prompt string) (string, error
 		_ = term.Restore(fd, state)
 	}()
 
-	_, err = fmt.Fprint(out, prompt)
+	err = t.Prompt(prompt)
 	if err != nil {
 		return "", err
 	}
 
 	// The Enter isn't echoed either.
 	defer func() {
-		_, _ = fmt.Fprintln(out)
+		_ = t.Prompt("\n")
 	}()
 
 	type readResult struct {
