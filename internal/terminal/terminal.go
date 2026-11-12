@@ -10,32 +10,31 @@ import (
 	"golang.org/x/term"
 )
 
-// File returns in as a file if it's a terminal.
-func File(in io.Reader) (*os.File, bool) {
+// Terminal is a terminal that a person types at.
+type Terminal struct {
+	in       *os.File
+	fallback io.Writer
+}
+
+// New returns the terminal that in reads from. It returns false if in isn't
+// a terminal. The terminal writes to fallback only if it can't be opened for
+// writing.
+func New(in io.Reader, fallback io.Writer) (*Terminal, bool) {
 	file, ok := in.(*os.File)
 	if !ok || !term.IsTerminal(int(file.Fd())) { //nolint:gosec // A file descriptor fits in an int.
 		return nil, false
 	}
 
-	return file, true
+	return &Terminal{in: file, fallback: fallback}, true
 }
 
-// ReadSecret writes prompt to the terminal and reads a line from in without
-// echoing it. It writes to out only if it can't open the terminal. It stops
-// waiting when ctx ends.
-func ReadSecret(ctx context.Context, in *os.File, out io.Writer, prompt string) (string, error) {
-	// Like sudo and ssh, because stderr may go into a log file while the user
-	// types at the terminal.
-	tty, err := os.OpenFile("/dev/tty", os.O_WRONLY, 0)
-	if err == nil {
-		defer func() {
-			_ = tty.Close()
-		}()
+// ReadSecret writes prompt to the terminal and reads a line without echoing
+// it. It stops waiting when ctx ends.
+func (t *Terminal) ReadSecret(ctx context.Context, prompt string) (string, error) {
+	out, closeOutput := t.output()
+	defer closeOutput()
 
-		out = tty
-	}
-
-	fd := int(in.Fd()) //nolint:gosec // A file descriptor fits in an int.
+	fd := int(t.in.Fd()) //nolint:gosec // A file descriptor fits in an int.
 
 	state, err := term.GetState(fd)
 	if err != nil {
@@ -78,5 +77,18 @@ func ReadSecret(ctx context.Context, in *os.File, out io.Writer, prompt string) 
 		return string(result.secret), nil
 	case <-ctx.Done():
 		return "", ctx.Err()
+	}
+}
+
+// Like sudo and ssh, because stderr may go into a log file while the user
+// types at the terminal.
+func (t *Terminal) output() (io.Writer, func()) {
+	tty, err := os.OpenFile("/dev/tty", os.O_WRONLY, 0)
+	if err != nil {
+		return t.fallback, func() {}
+	}
+
+	return tty, func() {
+		_ = tty.Close()
 	}
 }

@@ -64,7 +64,7 @@ func login(ctx context.Context, cmd *cli.Command) error {
 // pipe them in.
 func readCredentials(ctx context.Context, in io.Reader, prompts io.Writer) (string, string, error) {
 	lines := bufio.NewReader(in)
-	file, isTerminal := terminal.File(in)
+	tty, isTerminal := terminal.New(in, prompts)
 
 	if isTerminal {
 		_, err := fmt.Fprint(prompts, "User name: ")
@@ -83,7 +83,7 @@ func readCredentials(ctx context.Context, in io.Reader, prompts io.Writer) (stri
 	}
 
 	if isTerminal {
-		password, err := terminal.ReadSecret(ctx, file, prompts, "Password: ")
+		password, err := tty.ReadSecret(ctx, "Password: ")
 		if err != nil {
 			return "", "", fmt.Errorf("reading the password: %w", err)
 		}
