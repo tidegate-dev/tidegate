@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/The127/go-random"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/config"
 	"github.com/tidegate-dev/tidegate/authority/internal/db"
@@ -36,14 +37,7 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 			"Only use this behind a proxy that terminates TLS")
 	}
 
-	if cfg.Database.MigrateOnStart {
-		err := db.MigrateAt(ctx, cfg.Database.URL)
-		if err != nil {
-			return err
-		}
-	}
-
-	pool, err := db.OpenMigrated(ctx, cfg.Database.URL)
+	pool, err := openDatabase(ctx, cfg.Database)
 	if err != nil {
 		return err
 	}
@@ -73,33 +67,27 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 		return err
 	}
 
-	if certificate != nil {
-		registration, err := certificate.ReportExpiry()
-		if err != nil {
-			return errors.Join(err, shutdownMetrics(context.Background()))
-		}
-
-		defer func() {
-			_ = registration.Unregister()
-		}()
-
-		go certificate.Watch(ctx)
+	stopWatching, err := watchCertificate(ctx, certificate)
+	if err != nil {
+		return errors.Join(err, shutdownMetrics(context.Background()))
 	}
-
-	metricsMux := http.NewServeMux()
-	metricsMux.Handle("GET /metrics", metricsHandler)
+	defer stopWatching()
 
 	err = serve(ctx, notifier, map[string]*http.Server{
-		"api": apiServer(cfg.Server.ListenAddress, certificate, pool, logins, tokens),
-		"metrics": {
-			Addr:              cfg.Metrics.ListenAddress,
-			Handler:           metricsMux,
-			ReadHeaderTimeout: 5 * time.Second,
-			// Longer than Prometheus's default scrape interval of one minute,
-			// so a scraper can reuse its connection.
-			IdleTimeout: 90 * time.Second,
-		},
+		"api":     apiServer(cfg.Server.ListenAddress, certificate, pool, logins, tokens),
+		"metrics": metricsServer(cfg.Metrics.ListenAddress, metricsHandler),
 	}, timeout)
 
 	return errors.Join(err, shutdownMetrics(context.Background()))
+}
+
+func openDatabase(ctx context.Context, cfg config.Database) (*pgxpool.Pool, error) {
+	if cfg.MigrateOnStart {
+		err := db.MigrateAt(ctx, cfg.URL)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return db.OpenMigrated(ctx, cfg.URL)
 }
