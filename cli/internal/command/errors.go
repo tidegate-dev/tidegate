@@ -5,25 +5,35 @@ import (
 	"fmt"
 
 	"connectrpc.com/connect"
+
+	"github.com/tidegate-dev/tidegate/cli/internal/connections"
 )
 
+// callError is a call to an authority that failed.
 type callError struct {
+	// action is what the command was doing, like "signing in".
 	action string
-	target target
-	err    error
-	hint   string
+	// connection is the connection that the call used.
+	connection connections.Connection
+	err        error
+	// hint is an extra sentence that tells the user what to do next.
+	hint string
 }
 
-func (e *callError) Error() string {
-	return fmt.Sprintf("%s at %s: %s", e.action, quoteIfUnprintable(e.target.server), e.err)
+func callFailed(action string, connection connections.Connection, err error) error {
+	return &callError{action: action, connection: connection, err: err}
 }
 
-func (e *callError) Unwrap() error { return e.err }
+func (callErr *callError) Error() string {
+	return fmt.Sprintf("%s at %s: %s", callErr.action, quoteIfUnprintable(callErr.connection.Server), callErr.err)
+}
+
+func (callErr *callError) Unwrap() error { return callErr.err }
 
 // Message returns the text that tidegate shows when a command ends with err.
 func Message(err error) string {
-	callErr, called := errors.AsType[*callError](err)
-	if !called {
+	callErr, isCallError := errors.AsType[*callError](err)
+	if !isCallError {
 		return err.Error()
 	}
 
@@ -35,20 +45,25 @@ func Message(err error) string {
 	return message
 }
 
-func (e *callError) message() string {
-	connectErr, connected := errors.AsType[*connect.Error](e.err)
-	unauthenticated := connect.CodeOf(e.err) == connect.CodeUnauthenticated
+func (callErr *callError) message() string {
+	connectErr, isConnectError := errors.AsType[*connect.Error](callErr.err)
+	notSignedIn := connect.CodeOf(callErr.err) == connect.CodeUnauthenticated
+	authorityUnreachable := connect.CodeOf(callErr.err) == connect.CodeUnavailable
+
+	// A connection from TIDEGATE_SERVER and TIDEGATE_TOKEN has no name.
+	fromEnvironment := callErr.connection.Name == ""
+	hasToken := callErr.connection.Token.Reveal() != ""
 
 	switch {
-	case unauthenticated && e.target.fromEnvironment && e.target.token.Reveal() != "":
+	case notSignedIn && fromEnvironment && hasToken:
 		return "the authority doesn't accept the session token in TIDEGATE_TOKEN. Get a new one with `tidegate login <url> --print-token`."
-	case unauthenticated && e.target.fromEnvironment:
+	case notSignedIn && fromEnvironment:
 		return "not signed in. Set TIDEGATE_TOKEN to a token from `tidegate login <url> --print-token`, or unset TIDEGATE_SERVER to use a saved connection."
-	case unauthenticated:
-		return fmt.Sprintf("not signed in, or the session expired. Run `tidegate login --connection %q`.", e.target.connection)
-	case connect.CodeOf(e.err) == connect.CodeUnavailable && connected:
-		return fmt.Sprintf("can't reach the authority at %s: %s", quoteIfUnprintable(e.target.server), connectErr.Message())
+	case notSignedIn:
+		return fmt.Sprintf("not signed in, or the session expired. Run `tidegate login --connection %q`.", callErr.connection.Name)
+	case authorityUnreachable && isConnectError:
+		return fmt.Sprintf("can't reach the authority at %s: %s", quoteIfUnprintable(callErr.connection.Server), connectErr.Message())
 	default:
-		return e.Error()
+		return callErr.Error()
 	}
 }

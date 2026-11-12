@@ -11,59 +11,60 @@ import (
 	"github.com/tidegate-dev/tidegate/cli/internal/connections"
 )
 
-func logoutCommand() *cli.Command {
+func logoutCommand(store connections.Store) *cli.Command {
 	return &cli.Command{
 		Name:  "logout",
 		Usage: "end the session and keep the connection",
 		Description: "Ends the session at the authority and removes it from the saved connection. The\n" +
 			"connection stays, so tidegate login --connection <name> signs in to it again\n" +
 			"without a URL. To remove the connection as well, run tidegate connections remove.",
-		Action: logout,
+		Action: func(ctx context.Context, cmd *cli.Command) error {
+			return logout(ctx, cmd, store)
+		},
 	}
 }
 
-func logout(ctx context.Context, cmd *cli.Command) error {
-	chosen, err := pickTargetForCommand(cmd)
+func logout(ctx context.Context, cmd *cli.Command, store connections.Store) error {
+	connection, err := store.Current(cmd.String("connection"))
 	if err != nil {
 		return err
 	}
 
-	usesConnection := chosen.connection != ""
-	if usesConnection && chosen.token.Reveal() == "" {
-		_, err = fmt.Fprintf(cmd.Root().ErrWriter, "%q is already signed out\n", chosen.connection)
+	// A connection from TIDEGATE_SERVER and TIDEGATE_TOKEN has no name and isn't saved.
+	isSaved := connection.Name != ""
+
+	if isSaved && connection.Token.Reveal() == "" {
+		_, err = fmt.Fprintf(cmd.Root().ErrWriter, "%q is already signed out\n", connection.Name)
 
 		return err
 	}
 
-	err = authority.SignOut(ctx, chosen.server, chosen.token)
-	if usesConnection && connect.CodeOf(err) == connect.CodeUnauthenticated {
+	err = authority.SignOut(ctx, connection.Server, connection.Token)
+
+	authorityForgotSession := connect.CodeOf(err) == connect.CodeUnauthenticated
+	if isSaved && authorityForgotSession {
 		err = nil
 	}
 
-	if err != nil && usesConnection {
+	if err != nil && isSaved {
 		return &callError{
-			action: "signing out",
-			target: chosen,
-			err:    err,
+			action:     "signing out",
+			connection: connection,
+			err:        err,
 			hint: fmt.Sprintf(
 				"The session of %q is still saved. Run `tidegate logout --connection %q` again later, or remove the connection with `tidegate connections remove %q`",
-				chosen.connection, chosen.connection, chosen.connection,
+				connection.Name, connection.Name, connection.Name,
 			),
 		}
 	}
 
 	if err != nil {
-		return chosen.newCallError("signing out", err)
+		return callFailed("signing out", connection, err)
 	}
 
-	if !usesConnection {
+	if !isSaved {
 		return nil
 	}
 
-	path, err := connections.DefaultPath()
-	if err != nil {
-		return err
-	}
-
-	return connections.SignOut(path, chosen.connection, chosen.token)
+	return store.SignOut(connection)
 }

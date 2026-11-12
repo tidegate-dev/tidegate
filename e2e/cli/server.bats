@@ -81,10 +81,10 @@ setup() {
     [[ $stderr != *"Signing in"* ]]
 }
 
-@test "a command without a configuration directory has no saved connections" {
+@test "a command that reads the saved connections fails without a configuration directory" {
     run --separate-stderr env -u HOME -u XDG_CONFIG_HOME tidegate --connection first ping
     [ "$status" -eq 1 ]
-    [[ $stderr == *'no saved connection named "first"'* ]]
+    [[ $stderr == *"finding the directory for the saved connections"* ]]
 }
 
 @test "saved connections that other users can read are refused" {

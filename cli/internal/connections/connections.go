@@ -1,69 +1,303 @@
-// Package connections keeps the authorities that the CLI is signed in to in a
-// file. Each one is saved under a name, with the session token for it.
+// Package connections remembers the authorities that the user signed in to.
 package connections
 
 import (
+	"cmp"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
-	"time"
+	"slices"
+	"strconv"
+	"strings"
 
-	"github.com/tidegate-dev/tidegate/internal/filelock"
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
-// Connection is one authority and the session token for it.
+// Connection is one authority that the user signed in to.
 type Connection struct {
+	// Name is what the user called the connection at login. Without a name
+	// from the user, it is the URL.
+	Name string
 	// Server is the URL of the authority, as the user gave it at login.
 	Server string
-	// Token is the session token that the authority at Server gave out. It is
-	// empty after the user signed out.
+	// Token is the session token that the authority gave out. It is empty
+	// after the user signed out.
 	Token secret.String
 }
 
-type fileContent struct {
-	Connections map[string]fileEntry `json:"connections"`
+// Store is everything the commands ask about connections and every change
+// they make to them.
+type Store interface {
+	// Current returns the connection that a command uses. connectionFlag is
+	// the value of --connection. Without it, Current takes the name from
+	// TIDEGATE_CONNECTION, and without that the only saved connection.
+	//
+	// If TIDEGATE_SERVER or TIDEGATE_TOKEN is set, Current returns a
+	// connection without a name that is made from these two, and uses
+	// nothing that is saved.
+	Current(connectionFlag string) (Connection, error)
+
+	// ForLogin returns the connection that tidegate login signs in to: its
+	// server, the name it will be saved under, and no token. url is the
+	// server the user gave, and is empty to sign in again to a saved
+	// connection. connectionFlag is the value of --connection.
+	ForLogin(url, connectionFlag string) (Connection, error)
+
+	// Save stores connection under its name and returns the connection that
+	// was stored under that name before.
+	Save(connection Connection) (Connection, error)
+
+	// SignOut removes the token of connection, if it is still the same
+	// token. The connection stays.
+	SignOut(connection Connection) error
+
+	// List returns all saved connections, sorted by name.
+	List() ([]Connection, error)
+
+	// Remove deletes the connection that is saved under name and returns it.
+	Remove(name string) (Connection, error)
 }
 
-type fileEntry struct {
-	Server string `json:"server"`
-	Token  string `json:"token,omitempty"`
+// NewStore returns the Store that keeps the connections in the file
+// tidegate/connections.json in the user's configuration directory.
+func NewStore() Store {
+	return fileStore{}
 }
 
-const lockWaitLimit = 10 * time.Second
+type fileStore struct{}
 
-// ErrNoConfigDir says that the user has no configuration directory, like in a
-// container that sets no HOME.
-var ErrNoConfigDir = errors.New("no configuration directory")
+func (fileStore) Current(connectionFlag string) (Connection, error) {
+	serverVariable := os.Getenv("TIDEGATE_SERVER")
+	tokenVariable := os.Getenv("TIDEGATE_TOKEN")
+	usesVariables := serverVariable != "" || tokenVariable != ""
 
-// DefaultPath returns tidegate/connections.json in the user's configuration
-// directory.
-func DefaultPath() (string, error) {
-	directory, err := os.UserConfigDir()
+	switch {
+	case usesVariables && connectionFlag != "":
+		return Connection{}, errors.New("give --connection, or TIDEGATE_SERVER and TIDEGATE_TOKEN, not both")
+	case usesVariables && serverVariable == "":
+		return Connection{}, errors.New("TIDEGATE_TOKEN is set, but TIDEGATE_SERVER isn't. Set both, or unset TIDEGATE_TOKEN to use a saved connection")
+	case usesVariables:
+		return Connection{Server: serverVariable, Token: secret.New(tokenVariable)}, nil
+	}
+
+	savedByName, err := readFile()
 	if err != nil {
-		return "", fmt.Errorf("finding the directory for the saved connections: %w: %w", ErrNoConfigDir, err)
+		return Connection{}, err
 	}
 
-	if !filepath.IsAbs(directory) {
-		return "", fmt.Errorf("the directory for the saved connections, %q, isn't an absolute path. Set HOME or XDG_CONFIG_HOME to an absolute path", directory)
-	}
-
-	return filepath.Join(directory, "tidegate", "connections.json"), nil
+	return findSaved(savedByName, connectionFlag)
 }
 
-// Load returns the connections in the file at path by name, and none if the
-// file doesn't exist. It refuses a file or a directory that another user can
-// use.
-func Load(path string) (map[string]Connection, error) {
-	err := errors.Join(checkOnlyOwnerHasAccess(filepath.Dir(path), true), checkOnlyOwnerHasAccess(path, false))
+func (fileStore) ForLogin(url, connectionFlag string) (Connection, error) {
+	savedByName, err := readFile()
+	if err != nil {
+		return Connection{}, err
+	}
+
+	if url == "" {
+		signInAgain, err := findSaved(savedByName, connectionFlag)
+		if err != nil {
+			return Connection{}, err
+		}
+
+		return Connection{Name: signInAgain.Name, Server: signInAgain.Server}, nil
+	}
+
+	name, err := nameForLogin(savedByName, url, connectionFlag)
+	if err != nil {
+		return Connection{}, err
+	}
+
+	return Connection{Name: name, Server: url}, nil
+}
+
+func (fileStore) Save(connection Connection) (Connection, error) {
+	savedByName, err := readFile()
+	if err != nil {
+		return Connection{}, err
+	}
+
+	replaced := savedByName[connection.Name]
+	savedByName[connection.Name] = connection
+
+	err = writeFile(savedByName)
+	if err != nil {
+		return Connection{}, err
+	}
+
+	return replaced, nil
+}
+
+func (fileStore) SignOut(connection Connection) error {
+	savedByName, err := readFile()
+	if err != nil {
+		return err
+	}
+
+	saved, isSaved := savedByName[connection.Name]
+	if !isSaved || saved.Token.Reveal() != connection.Token.Reveal() {
+		return nil
+	}
+
+	savedByName[connection.Name] = Connection{Name: saved.Name, Server: saved.Server}
+
+	return writeFile(savedByName)
+}
+
+func (fileStore) List() ([]Connection, error) {
+	savedByName, err := readFile()
 	if err != nil {
 		return nil, err
 	}
 
-	content, err := os.ReadFile(path) //nolint:gosec // The path is the user's own configuration file.
+	sortedByName := make([]Connection, 0, len(savedByName))
+	for _, name := range slices.Sorted(maps.Keys(savedByName)) {
+		sortedByName = append(sortedByName, savedByName[name])
+	}
+
+	return sortedByName, nil
+}
+
+func (fileStore) Remove(name string) (Connection, error) {
+	savedByName, err := readFile()
+	if err != nil {
+		return Connection{}, err
+	}
+
+	removed, isSaved := savedByName[name]
+	if !isSaved {
+		return Connection{}, noConnectionNamed(savedByName, name)
+	}
+
+	delete(savedByName, name)
+
+	err = writeFile(savedByName)
+	if err != nil {
+		return Connection{}, err
+	}
+
+	return removed, nil
+}
+
+// findSaved returns the saved connection that the user means. That is the one
+// named by connectionFlag, without it the one named in TIDEGATE_CONNECTION,
+// and without that the only saved connection.
+func findSaved(savedByName map[string]Connection, connectionFlag string) (Connection, error) {
+	wantedName := cmp.Or(connectionFlag, os.Getenv("TIDEGATE_CONNECTION"))
+	wanted, isSaved := savedByName[wantedName]
+
+	switch {
+	case isSaved:
+		return wanted, nil
+	case wantedName != "" && len(savedByName) == 0:
+		return Connection{}, fmt.Errorf(
+			"%w. To save it, run `tidegate login <url> --connection %q`",
+			noConnectionNamed(savedByName, wantedName), wantedName,
+		)
+	case wantedName != "":
+		return Connection{}, noConnectionNamed(savedByName, wantedName)
+	case len(savedByName) == 0:
+		return Connection{}, errors.New("no saved connections. Run `tidegate login <url>` to save one")
+	case len(savedByName) == 1:
+		onlyName := slices.Collect(maps.Keys(savedByName))[0]
+
+		return savedByName[onlyName], nil
+	default:
+		return Connection{}, fmt.Errorf(
+			"several saved connections: %s. Choose one with --connection or TIDEGATE_CONNECTION",
+			quotedNames(savedByName),
+		)
+	}
+}
+
+// nameForLogin returns the name under which a login at url is saved. That is
+// connectionFlag if the user gave it. Without it, it is the name of the only
+// saved connection that already has this URL, and the URL itself if none has
+// it. A name that is saved for another URL is refused.
+func nameForLogin(savedByName map[string]Connection, url, connectionFlag string) (string, error) {
+	name := connectionFlag
+
+	if name == "" {
+		savedWithThisURL := map[string]Connection{}
+
+		for savedName, saved := range savedByName {
+			if saved.Server == url {
+				savedWithThisURL[savedName] = saved
+			}
+		}
+
+		switch len(savedWithThisURL) {
+		case 0:
+			name = url
+		case 1:
+			return slices.Collect(maps.Keys(savedWithThisURL))[0], nil
+		default:
+			return "", fmt.Errorf("several saved connections use %s: %s. Choose one with --connection", url, quotedNames(savedWithThisURL))
+		}
+	}
+
+	savedUnderName, nameIsTaken := savedByName[name]
+	if nameIsTaken && savedUnderName.Server != url {
+		return "", fmt.Errorf(
+			"the connection %q is saved for %q. Choose another name, or remove it first with `tidegate connections remove %q`",
+			name, savedUnderName.Server, name,
+		)
+	}
+
+	return name, nil
+}
+
+// noConnectionNamed returns the error for a name that isn't saved. It lists
+// the names that are.
+func noConnectionNamed(savedByName map[string]Connection, name string) error {
+	if len(savedByName) == 0 {
+		return fmt.Errorf("no saved connection named %q", name)
+	}
+
+	return fmt.Errorf("no saved connection named %q. Saved connections: %s", name, quotedNames(savedByName))
+}
+
+// quotedNames returns the names of the connections, sorted, each in quotes,
+// with commas between them.
+func quotedNames(savedByName map[string]Connection) string {
+	names := slices.Sorted(maps.Keys(savedByName))
+	for position, name := range names {
+		names[position] = strconv.Quote(name)
+	}
+
+	return strings.Join(names, ", ")
+}
+
+// fileContent is the whole file. It keeps the connections by name.
+type fileContent struct {
+	Connections map[string]storedConnection `json:"connections"`
+}
+
+// storedConnection is how a Connection is written to the file. The name is
+// the key in fileContent, so it isn't a field here.
+type storedConnection struct {
+	Server string `json:"server"`
+	Token  string `json:"token,omitempty"`
+}
+
+// readFile returns the connections in the file by name. Before the first
+// login there is no file, and readFile returns no connections.
+func readFile() (map[string]Connection, error) {
+	path, err := filePath()
+	if err != nil {
+		return nil, err
+	}
+
+	err = errors.Join(checkOnlyOwnerHasAccess(filepath.Dir(path), true), checkOnlyOwnerHasAccess(path, false))
+	if err != nil {
+		return nil, err
+	}
+
+	fileText, err := os.ReadFile(path) //nolint:gosec // The path is the user's own configuration file.
 	if errors.Is(err, fs.ErrNotExist) {
 		return map[string]Connection{}, nil
 	}
@@ -72,152 +306,73 @@ func Load(path string) (map[string]Connection, error) {
 		return nil, fmt.Errorf("reading the saved connections: %w", err)
 	}
 
-	var stored fileContent
+	var content fileContent
 
-	err = json.Unmarshal(content, &stored)
+	err = json.Unmarshal(fileText, &content)
 	if err != nil {
 		return nil, fmt.Errorf("reading the saved connections in %s: %w", path, err)
 	}
 
-	connections := make(map[string]Connection, len(stored.Connections))
-	for name, entry := range stored.Connections {
-		connections[name] = Connection{Server: entry.Server, Token: secret.New(entry.Token)}
+	savedByName := make(map[string]Connection, len(content.Connections))
+	for name, stored := range content.Connections {
+		savedByName[name] = Connection{Name: name, Server: stored.Server, Token: secret.New(stored.Token)}
 	}
 
-	return connections, nil
+	return savedByName, nil
 }
 
-// SignIn saves connection under name in the file at path, and returns the
-// connection that was saved under that name before.
-func SignIn(path, name string, connection Connection) (Connection, error) {
-	var replaced Connection
-
-	err := editUnderLock(path, func(connections map[string]Connection) bool {
-		replaced = connections[name]
-		connections[name] = connection
-
-		return true
-	})
-
-	return replaced, err
-}
-
-// SignOut removes the token of the connection saved under name, if it is
-// still token. The connection stays.
-func SignOut(path, name string, token secret.String) error {
-	return editUnderLock(path, func(connections map[string]Connection) bool {
-		connection, ok := connections[name]
-		if !ok || connection.Token.Reveal() != token.Reveal() {
-			return false
-		}
-
-		connections[name] = Connection{Server: connection.Server}
-
-		return true
-	})
-}
-
-// Remove deletes the connection saved under name and returns it. It reports
-// whether there was one.
-func Remove(path, name string) (Connection, bool, error) {
-	var (
-		removed Connection
-		found   bool
-	)
-
-	err := editUnderLock(path, func(connections map[string]Connection) bool {
-		removed, found = connections[name]
-		delete(connections, name)
-
-		return found
-	})
-
-	return removed, found, err
-}
-
-// A reader sees the old file or the new one, never a part of it.
-func save(path string, connections map[string]Connection) error {
-	stored := fileContent{Connections: make(map[string]fileEntry, len(connections))}
-	for name, connection := range connections {
-		stored.Connections[name] = fileEntry{Server: connection.Server, Token: connection.Token.Reveal()}
+// writeFile replaces the file with the given connections. It creates the file
+// and its directory so that only the owner can use them.
+func writeFile(savedByName map[string]Connection) error {
+	path, err := filePath()
+	if err != nil {
+		return err
 	}
 
-	content, err := json.MarshalIndent(stored, "", "  ")
+	content := fileContent{Connections: make(map[string]storedConnection, len(savedByName))}
+	for name, saved := range savedByName {
+		content.Connections[name] = storedConnection{Server: saved.Server, Token: saved.Token.Reveal()}
+	}
+
+	fileText, err := json.MarshalIndent(content, "", "  ")
 	if err != nil {
 		return fmt.Errorf("saving the connections: %w", err)
 	}
 
 	directory := filepath.Dir(path)
 
-	err = createPrivateDirectory(directory)
-	if err != nil {
-		return err
-	}
-
-	// os.CreateTemp creates the file with mode 0600.
-	temporary, err := os.CreateTemp(directory, filepath.Base(path)+".*")
+	err = os.MkdirAll(directory, 0o700)
 	if err != nil {
 		return fmt.Errorf("saving the connections: %w", err)
 	}
 
-	err = writeAndClose(temporary, append(content, '\n'))
-	if err == nil {
-		err = os.Rename(temporary.Name(), path)
+	err = checkOnlyOwnerHasAccess(directory, true)
+	if err != nil {
+		return err
 	}
 
+	err = os.WriteFile(path, append(fileText, '\n'), 0o600)
 	if err != nil {
-		_ = os.Remove(temporary.Name())
-
 		return fmt.Errorf("saving the connections: %w", err)
 	}
 
 	return nil
 }
 
-func createPrivateDirectory(directory string) error {
-	err := os.MkdirAll(directory, 0o700)
+// filePath returns where the connections are saved: tidegate/connections.json
+// in the user's configuration directory.
+func filePath() (string, error) {
+	configDirectory, err := os.UserConfigDir()
 	if err != nil {
-		return fmt.Errorf("saving the connections: %w", err)
+		return "", fmt.Errorf("finding the directory for the saved connections: %w", err)
 	}
 
-	return checkOnlyOwnerHasAccess(directory, true)
-}
-
-func writeAndClose(target *os.File, content []byte) error {
-	_, err := target.Write(content)
-	if err == nil {
-		err = target.Sync()
+	if !filepath.IsAbs(configDirectory) {
+		return "", fmt.Errorf(
+			"the directory for the saved connections, %q, isn't an absolute path. Set HOME or XDG_CONFIG_HOME to an absolute path",
+			configDirectory,
+		)
 	}
 
-	return errors.Join(err, target.Close())
-}
-
-// editUnderLock loads the connections at path and saves them if edit reports
-// that it changed them. Two tidegate processes that do this at once take
-// turns, and one gives up after waiting 10 seconds for the other.
-func editUnderLock(path string, edit func(connections map[string]Connection) bool) (err error) {
-	err = createPrivateDirectory(filepath.Dir(path))
-	if err != nil {
-		return err
-	}
-
-	lock, err := filelock.Acquire(path+".lock", lockWaitLimit)
-	if err != nil {
-		return fmt.Errorf("saving the connections: %w", err)
-	}
-
-	defer func() {
-		err = errors.Join(err, lock.Release())
-	}()
-
-	connections, err := Load(path)
-	if err != nil {
-		return err
-	}
-
-	if !edit(connections) {
-		return nil
-	}
-
-	return save(path, connections)
+	return filepath.Join(configDirectory, "tidegate", "connections.json"), nil
 }

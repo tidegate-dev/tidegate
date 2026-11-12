@@ -7,10 +7,11 @@ import (
 	"os"
 
 	"github.com/tidegate-dev/tidegate/cli/internal/command"
+	"github.com/tidegate-dev/tidegate/cli/internal/connections"
 )
 
 func main() {
-	root := command.New()
+	root := command.New(connections.NewStore())
 
 	err := root.Run(context.Background(), os.Args)
 	if err != nil {
