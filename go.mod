@@ -9,6 +9,7 @@ require (
 	github.com/The127/go-clock v1.0.0
 	github.com/The127/go-random v1.0.0
 	github.com/fsnotify/fsnotify v1.10.1
+	github.com/gofrs/flock v0.13.2
 	github.com/jackc/pgx/v5 v5.12.0
 	github.com/knadh/koanf/providers/env/v2 v2.0.2
 	github.com/knadh/koanf/providers/structs v1.0.1

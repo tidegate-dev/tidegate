@@ -57,7 +57,7 @@ func TestCheckServerAcceptsHTTPSAndLocalHTTP(t *testing.T) {
 			t.Parallel()
 
 			// act
-			err := checkServer(server)
+			err := CheckServer(server)
 
 			// assert
 			assert.NoError(t, err)
@@ -82,7 +82,7 @@ func TestCheckServerRefusesOtherServers(t *testing.T) {
 			t.Parallel()
 
 			// act
-			err := checkServer(server)
+			err := CheckServer(server)
 
 			// assert
 			assert.Error(t, err)
@@ -114,7 +114,7 @@ func TestCheckServerRefusesCredentialsInTheURLWithoutShowingThem(t *testing.T) {
 			t.Parallel()
 
 			// act
-			err := checkServer(test.server.String())
+			err := CheckServer(test.server.String())
 
 			// assert
 			require.Error(t, err)
@@ -130,7 +130,7 @@ func TestCheckServerRefusesAnUnparsableURLWithoutShowingItsCredentials(t *testin
 	server := "https://" + url.UserPassword("alice", "hunter2").String() + "@%ZZ"
 
 	// act
-	err := checkServer(server)
+	err := CheckServer(server)
 
 	// assert
 	require.Error(t, err)
@@ -141,7 +141,7 @@ func TestCheckServerRefusesCredentialsWithoutASchemeWithoutShowingThem(t *testin
 	t.Parallel()
 
 	// act
-	err := checkServer("alice:hunter2@authority.example")
+	err := CheckServer("alice:hunter2@authority.example")
 
 	// assert
 	require.Error(t, err)
