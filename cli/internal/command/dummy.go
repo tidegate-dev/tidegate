@@ -50,16 +50,14 @@ func dummyWrite(ctx context.Context, cmd *cli.Command) error {
 		return errors.New("want exactly one text")
 	}
 
-	server := cmd.String("server")
-
-	clients, err := dialAuthorityAuthenticated(cmd)
+	clients, chosen, err := connectToTarget(cmd)
 	if err != nil {
 		return err
 	}
 
 	response, err := clients.Dummy().Write(ctx, connect.NewRequest(&authorityv1.WriteRequest{Text: cmd.Args().First()}))
 	if err != nil {
-		return fmt.Errorf("storing the text at %s: %w", server, err)
+		return chosen.newCallError("storing the text", err)
 	}
 
 	return printResult(cmd, dummyWriteResult{ID: response.Msg.GetId()})
@@ -75,16 +73,14 @@ func dummyRead(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("invalid ID %q, want a number", cmd.Args().First())
 	}
 
-	server := cmd.String("server")
-
-	clients, err := dialAuthorityAuthenticated(cmd)
+	clients, chosen, err := connectToTarget(cmd)
 	if err != nil {
 		return err
 	}
 
 	response, err := clients.Dummy().Read(ctx, connect.NewRequest(&authorityv1.ReadRequest{Id: id}))
 	if err != nil {
-		return fmt.Errorf("reading the text at %s: %w", server, err)
+		return chosen.newCallError("reading the text", err)
 	}
 
 	return printResult(cmd, dummyReadResult{Text: response.Msg.GetText()})

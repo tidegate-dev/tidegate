@@ -14,7 +14,7 @@ func main() {
 
 	err := root.Run(context.Background(), os.Args)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", command.Message(root, err))
+		fmt.Fprintf(os.Stderr, "Error: %s\n", command.Message(err))
 		os.Exit(1)
 	}
 }

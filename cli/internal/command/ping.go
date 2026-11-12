@@ -2,7 +2,6 @@ package command
 
 import (
 	"context"
-	"fmt"
 
 	"connectrpc.com/connect"
 	"github.com/urfave/cli/v3"
@@ -25,16 +24,14 @@ func pingCommand() *cli.Command {
 }
 
 func ping(ctx context.Context, cmd *cli.Command) error {
-	server := cmd.String("server")
-
-	clients, err := dialAuthorityUnauthenticated(cmd)
+	clients, chosen, err := connectToTarget(cmd)
 	if err != nil {
 		return err
 	}
 
 	response, err := clients.Ping().Ping(ctx, connect.NewRequest(&authorityv1.PingRequest{}))
 	if err != nil {
-		return fmt.Errorf("pinging the authority at %s: %w", server, err)
+		return chosen.newCallError("pinging the authority", err)
 	}
 
 	return printResult(cmd, pingResult{Message: response.Msg.GetMessage()})
