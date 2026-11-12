@@ -14,6 +14,11 @@ nav = [
     { "Logs" = "authority/logs.md" },
     { "Running under systemd" = "authority/systemd.md" },
   ] },
+  { "CLI" = [
+    { "Overview" = "cli/index.md" },
+    { "Signing in and out" = "cli/sign-in.md" },
+    { "Reference" = "cli/reference.md" },
+  ] },
   { "API reference" = "reference/api.md" },
   { "Development" = "development.md" },
 ]
