@@ -18,7 +18,6 @@ import (
 
 	"github.com/tidegate-dev/tidegate/authority/internal/api"
 	"github.com/tidegate-dev/tidegate/authority/internal/config"
-	"github.com/tidegate-dev/tidegate/authority/internal/db"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
 	"github.com/tidegate-dev/tidegate/internal/certreload"
@@ -106,28 +105,6 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	}, timeout)
 
 	return errors.Join(err, shutdownMetrics(context.Background()))
-}
-
-// openDatabase connects to the database at url. It refuses a schema that's
-// older than the authority expects.
-func openDatabase(ctx context.Context, url string) (*pgxpool.Pool, error) {
-	pool, err := db.Open(ctx, url)
-	if err != nil {
-		return nil, err
-	}
-
-	err = db.CheckSchema(ctx, pool)
-	if err != nil {
-		pool.Close()
-
-		if errors.Is(err, db.ErrSchemaTooOld) {
-			return nil, fmt.Errorf("%w. Run authority migrate first", err)
-		}
-
-		return nil, err
-	}
-
-	return pool, nil
 }
 
 // requestlog comes first, so it logs the code the client gets after
