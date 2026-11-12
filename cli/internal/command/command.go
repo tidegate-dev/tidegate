@@ -7,11 +7,14 @@ import (
 
 	"github.com/urfave/cli/v3"
 
+	"github.com/tidegate-dev/tidegate/cli/internal/authority"
+	"github.com/tidegate-dev/tidegate/cli/internal/connections"
 	"github.com/tidegate-dev/tidegate/cli/internal/output"
 )
 
-// New returns the tidegate command with all its subcommands.
-func New() *cli.Command {
+// New returns the tidegate command with all its subcommands. The subcommands
+// read and change the saved connections through store.
+func New(store connections.Store) *cli.Command {
 	root := &cli.Command{
 		Name:  "tidegate",
 		Usage: "talk to a tidegate authority",
@@ -38,17 +41,37 @@ func New() *cli.Command {
 			},
 		},
 		Commands: []*cli.Command{
-			pingCommand(),
-			loginCommand(),
-			logoutCommand(),
-			connectionsCommand(),
-			dummyCommand(),
+			pingCommand(store),
+			loginCommand(store),
+			logoutCommand(store),
+			connectionsCommand(store),
+			dummyCommand(store),
 		},
 	}
 
 	enableSuggestions(root)
 
 	return root
+}
+
+// connectToCurrent returns clients for the authority of the connection that
+// the command uses, and that connection.
+func connectToCurrent(cmd *cli.Command, store connections.Store) (*authority.Clients, connections.Connection, error) {
+	connection, err := store.Current(cmd.String("connection"))
+	if err != nil {
+		return nil, connections.Connection{}, err
+	}
+
+	clients, err := authority.Connect(connection.Server, connection.Token)
+	if err != nil {
+		return nil, connections.Connection{}, err
+	}
+
+	return clients, connection, nil
+}
+
+func printResult(cmd *cli.Command, result output.Result) error {
+	return output.Print(cmd.Root().Writer, output.Format(cmd.String("output")), result)
 }
 
 func printWarning(cmd *cli.Command, format string, arguments ...any) {
@@ -68,11 +91,7 @@ func enableSuggestions(cmd *cli.Command) {
 	cmd.Suggest = true
 
 	// Subcommands don't inherit Suggest from their parent.
-	for _, sub := range cmd.Commands {
-		enableSuggestions(sub)
+	for _, subcommand := range cmd.Commands {
+		enableSuggestions(subcommand)
 	}
-}
-
-func printResult(cmd *cli.Command, result output.Result) error {
-	return output.Print(cmd.Root().Writer, output.Format(cmd.String("output")), result)
 }

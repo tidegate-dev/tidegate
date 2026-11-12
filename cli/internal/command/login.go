@@ -19,9 +19,9 @@ type loginResult struct {
 	Token string `json:"token" yaml:"token"`
 }
 
-func (r loginResult) String() string { return r.Token }
+func (result loginResult) String() string { return result.Token }
 
-func loginCommand() *cli.Command {
+func loginCommand(store connections.Store) *cli.Command {
 	return &cli.Command{
 		Name:      "login",
 		Usage:     "sign in to an authority and save it as a connection",
@@ -38,48 +38,41 @@ func loginCommand() *cli.Command {
 				Usage: "print the session token and save nothing, needs a URL and takes no --connection",
 			},
 		},
-		Action: login,
+		Action: func(ctx context.Context, cmd *cli.Command) error {
+			return login(ctx, cmd, store)
+		},
 	}
 }
 
-func login(ctx context.Context, cmd *cli.Command) error {
+func login(ctx context.Context, cmd *cli.Command, store connections.Store) error {
 	if cmd.Args().Len() > 1 {
 		return errors.New("want at most one URL")
 	}
 
-	given := readTargetOptions(cmd)
-	options := loginOptions{
-		url:                   cmd.Args().First(),
-		connection:            given.connection,
-		environmentConnection: given.environmentConnection,
-		printToken:            cmd.Bool("print-token"),
+	url := cmd.Args().First()
+	connectionFlag := cmd.String("connection")
+
+	if cmd.Bool("print-token") {
+		return loginAndPrintToken(ctx, cmd, url, connectionFlag)
 	}
 
-	byName, err := loadConnectionsBeforeLogin(options)
+	connection, err := store.ForLogin(url, connectionFlag)
 	if err != nil {
 		return err
 	}
 
-	chosen, err := pickLoginTarget(options, byName)
+	connection.Token, err = promptAndSignIn(ctx, cmd, connection.Server)
 	if err != nil {
 		return err
 	}
 
-	token, err := promptAndSignIn(ctx, cmd, chosen.server)
+	replaced, err := store.Save(connection)
 	if err != nil {
-		return err
-	}
-
-	if options.printToken {
-		return printResult(cmd, loginResult{Token: token.Reveal()})
-	}
-
-	signedIn := connections.Connection{Server: chosen.server, Token: token}
-
-	replaced, err := saveConnection(chosen.connection, signedIn)
-	if err != nil {
-		if endSession(ctx, signedIn) != nil {
-			return fmt.Errorf("%w. The new session at %s couldn't be ended and stays valid until it expires", err, quoteIfUnprintable(chosen.server))
+		if endSession(ctx, connection) != nil {
+			return fmt.Errorf(
+				"%w. The new session at %s couldn't be ended and stays valid until it expires",
+				err, quoteIfUnprintable(connection.Server),
+			)
 		}
 
 		return err
@@ -87,33 +80,27 @@ func login(ctx context.Context, cmd *cli.Command) error {
 
 	err = endSession(ctx, replaced)
 	if err != nil {
-		printWarning(cmd, "signed in, but the session that %q had before is still valid: %s", chosen.connection, Message(err))
+		printWarning(cmd, "signed in, but the session that %q had before is still valid: %s", connection.Name, Message(err))
 	}
 
 	return nil
 }
 
-func saveConnection(name string, signedIn connections.Connection) (connections.Connection, error) {
-	path, err := connections.DefaultPath()
+func loginAndPrintToken(ctx context.Context, cmd *cli.Command, url, connectionFlag string) error {
+	if url == "" {
+		return errors.New("--print-token needs a URL: tidegate login <url> --print-token")
+	}
+
+	if connectionFlag != "" {
+		return errors.New("--print-token saves nothing, so it takes no --connection")
+	}
+
+	token, err := promptAndSignIn(ctx, cmd, url)
 	if err != nil {
-		return connections.Connection{}, err
+		return err
 	}
 
-	return connections.SignIn(path, name, signedIn)
-}
-
-func loadConnectionsBeforeLogin(options loginOptions) (map[string]connections.Connection, error) {
-	if options.printToken {
-		return map[string]connections.Connection{}, nil
-	}
-
-	// A container may have no configuration directory, and then login has no place to save.
-	_, err := connections.DefaultPath()
-	if err != nil {
-		return nil, err
-	}
-
-	return loadConnections()
+	return printResult(cmd, loginResult{Token: token.Reveal()})
 }
 
 func promptAndSignIn(ctx context.Context, cmd *cli.Command, server string) (secret.String, error) {
@@ -138,7 +125,7 @@ func promptAndSignIn(ctx context.Context, cmd *cli.Command, server string) (secr
 	}
 
 	if err != nil {
-		return secret.String{}, target{server: server}.newCallError("signing in", err)
+		return secret.String{}, callFailed("signing in", connections.Connection{Server: server}, err)
 	}
 
 	return token, nil

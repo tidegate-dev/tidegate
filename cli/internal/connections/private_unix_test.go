@@ -14,25 +14,22 @@ import (
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
-func TestLoadRefusesAFileThatOthersCanUse(t *testing.T) {
-	t.Parallel()
-
-	for name, mode := range map[string]os.FileMode{
+func TestCurrentRefusesAFileThatOtherUsersCanUse(t *testing.T) {
+	for description, fileMode := range map[string]os.FileMode{
 		"readable by the group":  0o640,
 		"writable by the group":  0o620,
 		"readable by others":     0o604,
 		"writable by others":     0o602,
 		"executable by everyone": 0o711,
 	} {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-
+		t.Run(description, func(t *testing.T) {
 			// arrange
-			path := savedIn(t, privateDirectory(t))
-			require.NoError(t, os.Chmod(path, mode))
+			store := newStore(t, onlyProductionFile)
+			path := savedConnectionsPath(t)
+			require.NoError(t, os.Chmod(path, fileMode))
 
 			// act
-			_, err := connections.Load(path)
+			_, err := store.Current("")
 
 			// assert
 			require.Error(t, err)
@@ -41,24 +38,20 @@ func TestLoadRefusesAFileThatOthersCanUse(t *testing.T) {
 	}
 }
 
-func TestLoadRefusesADirectoryThatOthersCanUse(t *testing.T) {
-	t.Parallel()
-
-	for name, mode := range map[string]os.FileMode{
+func TestCurrentRefusesADirectoryThatOtherUsersCanUse(t *testing.T) {
+	for description, directoryMode := range map[string]os.FileMode{
 		"usable by the group":  0o750,
 		"writable by others":   0o702,
 		"listable by everyone": 0o755,
 	} {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-
+		t.Run(description, func(t *testing.T) {
 			// arrange
-			directory := privateDirectory(t)
-			path := savedIn(t, directory)
-			require.NoError(t, os.Chmod(directory, mode))
+			store := newStore(t, onlyProductionFile)
+			directory := filepath.Dir(savedConnectionsPath(t))
+			require.NoError(t, os.Chmod(directory, directoryMode))
 
 			// act
-			_, err := connections.Load(path)
+			_, err := store.Current("")
 
 			// assert
 			require.Error(t, err)
@@ -67,94 +60,75 @@ func TestLoadRefusesADirectoryThatOthersCanUse(t *testing.T) {
 	}
 }
 
-func TestLoadRefusesAFileThatIsASymbolicLink(t *testing.T) {
-	t.Parallel()
-
+func TestCurrentRefusesAFileThatIsASymbolicLink(t *testing.T) {
 	// arrange
-	elsewhere := savedIn(t, privateDirectory(t))
-	path := filepath.Join(privateDirectory(t), "connections.json")
-	require.NoError(t, os.Symlink(elsewhere, path))
+	store := newStore(t, noFile)
+
+	realPath := filepath.Join(t.TempDir(), "connections.json")
+	require.NoError(t, os.WriteFile(realPath, []byte(onlyProductionFile), 0o600))
+
+	linkPath := savedConnectionsPath(t)
+	require.NoError(t, os.MkdirAll(filepath.Dir(linkPath), 0o700))
+	require.NoError(t, os.Symlink(realPath, linkPath))
 
 	// act
-	_, err := connections.Load(path)
+	_, err := store.Current("")
 
 	// assert
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "symbolic link")
 }
 
-func TestLoadRefusesADirectoryThatIsASymbolicLink(t *testing.T) {
-	t.Parallel()
-
+func TestCurrentRefusesADirectoryThatIsASymbolicLink(t *testing.T) {
 	// arrange
-	elsewhere := privateDirectory(t)
-	savedIn(t, elsewhere)
+	store := newStore(t, noFile)
 
-	directory := filepath.Join(t.TempDir(), "link")
-	require.NoError(t, os.Symlink(elsewhere, directory))
+	realDirectory := t.TempDir()
+	require.NoError(t, os.Chmod(realDirectory, 0o700)) //nolint:gosec // A directory needs the execute bit.
+	require.NoError(t, os.WriteFile(filepath.Join(realDirectory, "connections.json"), []byte(onlyProductionFile), 0o600))
+
+	linkDirectory := filepath.Dir(savedConnectionsPath(t))
+	require.NoError(t, os.MkdirAll(filepath.Dir(linkDirectory), 0o700))
+	require.NoError(t, os.Symlink(realDirectory, linkDirectory))
 
 	// act
-	_, err := connections.Load(filepath.Join(directory, "connections.json"))
+	_, err := store.Current("")
 
 	// assert
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "symbolic link")
 }
 
-func TestLoadReturnsNoConnectionsWhenTheDirectoryIsMissing(t *testing.T) {
-	t.Parallel()
-
-	// act
-	loaded, err := connections.Load(filepath.Join(t.TempDir(), "tidegate", "connections.json"))
-
-	// assert
-	require.NoError(t, err)
-	assert.Empty(t, loaded)
-}
-
-func TestSignInRefusesADirectoryThatOthersCanUseAndWritesNothing(t *testing.T) {
-	t.Parallel()
-
+func TestSaveRefusesADirectoryThatOtherUsersCanUseAndWritesNothing(t *testing.T) {
 	// arrange
-	directory := privateDirectory(t)
+	store := newStore(t, noFile)
+
+	directory := filepath.Dir(savedConnectionsPath(t))
+	require.NoError(t, os.MkdirAll(directory, 0o700))
 	require.NoError(t, os.Chmod(directory, 0o755)) //nolint:gosec // The test needs a directory that is open to others.
 
 	// act
-	_, err := connections.SignIn(
-		filepath.Join(directory, "connections.json"),
-		"production",
-		connections.Connection{Server: server, Token: secret.New(token)},
-	)
+	_, err := store.Save(connections.Connection{Name: "new", Server: newServer, Token: secret.New("new token")})
 
 	// assert
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "chmod 700 "+directory)
 
-	entries, err := os.ReadDir(directory)
+	filesInDirectory, err := os.ReadDir(directory)
 	require.NoError(t, err)
-	assert.Empty(t, entries)
+	assert.Empty(t, filesInDirectory)
 }
 
-func TestDefaultPathRefusesAConfigurationDirectoryThatIsNotAbsolute(t *testing.T) {
+func TestCurrentRefusesAConfigurationDirectoryThatIsNotAnAbsolutePath(t *testing.T) {
+	// arrange
+	store := newStore(t, noFile)
 	t.Setenv("XDG_CONFIG_HOME", "")
 	t.Setenv("HOME", "relative")
 
 	// act
-	_, err := connections.DefaultPath()
+	_, err := store.Current("")
 
 	// assert
 	require.Error(t, err)
-	assert.NotErrorIs(t, err, connections.ErrNoConfigDir)
-	assert.Contains(t, err.Error(), "absolute")
-}
-
-func TestDefaultPathSaysWhenThereIsNoConfigurationDirectory(t *testing.T) {
-	t.Setenv("XDG_CONFIG_HOME", "")
-	t.Setenv("HOME", "")
-
-	// act
-	_, err := connections.DefaultPath()
-
-	// assert
-	require.ErrorIs(t, err, connections.ErrNoConfigDir)
+	assert.Contains(t, err.Error(), "absolute path")
 }

@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
-	"slices"
 	"strconv"
 	"strings"
 	"text/tabwriter"
@@ -21,23 +19,61 @@ type connectionResult struct {
 	TokenSaved bool   `json:"tokenSaved" yaml:"tokenSaved"`
 }
 
-func newConnectionResult(name string, connection connections.Connection) connectionResult {
-	return connectionResult{Name: name, Server: connection.Server, TokenSaved: connection.Token.Reveal() != ""}
+func newConnectionResult(connection connections.Connection) connectionResult {
+	return connectionResult{
+		Name:       connection.Name,
+		Server:     connection.Server,
+		TokenSaved: connection.Token.Reveal() != "",
+	}
 }
 
-func (r connectionResult) String() string {
-	return strings.Join(r.tableRow(), "\t")
+func (result connectionResult) String() string {
+	return strings.Join(result.tableRow(), "\t")
 }
 
-func (r connectionResult) tableRow() []string {
-	token := "none"
-	if r.TokenSaved {
-		token = "saved"
+func (result connectionResult) tableRow() []string {
+	tokenColumn := "none"
+	if result.TokenSaved {
+		tokenColumn = "saved"
 	}
 
-	return []string{quoteIfUnprintable(r.Name), quoteIfUnprintable(r.Server), token}
+	return []string{quoteIfUnprintable(result.Name), quoteIfUnprintable(result.Server), tokenColumn}
 }
 
+type connectionsResult struct {
+	Connections []connectionResult `json:"connections" yaml:"connections"`
+}
+
+func newConnectionsResult(saved []connections.Connection) connectionsResult {
+	result := connectionsResult{Connections: make([]connectionResult, 0, len(saved))}
+	for _, connection := range saved {
+		result.Connections = append(result.Connections, newConnectionResult(connection))
+	}
+
+	return result
+}
+
+func (result connectionsResult) String() string {
+	if len(result.Connections) == 0 {
+		return "No saved connections. Run `tidegate login <url>` to save one."
+	}
+
+	var tableText strings.Builder
+
+	table := tabwriter.NewWriter(&tableText, 0, 0, 2, ' ', 0)
+	_, _ = fmt.Fprintln(table, "NAME\tSERVER\tTOKEN")
+
+	for _, connection := range result.Connections {
+		_, _ = fmt.Fprintln(table, strings.Join(connection.tableRow(), "\t"))
+	}
+
+	_ = table.Flush()
+
+	return strings.TrimSuffix(tableText.String(), "\n")
+}
+
+// quoteIfUnprintable returns text in quotes if a terminal would interpret a
+// part of it, like an escape sequence.
 func quoteIfUnprintable(text string) string {
 	quoted := strconv.Quote(text)
 	if quoted == `"`+text+`"` {
@@ -47,119 +83,70 @@ func quoteIfUnprintable(text string) string {
 	return quoted
 }
 
-type connectionsResult struct {
-	Connections []connectionResult `json:"connections" yaml:"connections"`
-}
-
-func newConnectionsResult(byName map[string]connections.Connection) connectionsResult {
-	result := connectionsResult{Connections: make([]connectionResult, 0, len(byName))}
-	for _, name := range slices.Sorted(maps.Keys(byName)) {
-		result.Connections = append(result.Connections, newConnectionResult(name, byName[name]))
-	}
-
-	return result
-}
-
-func (r connectionsResult) String() string {
-	if len(r.Connections) == 0 {
-		return "No saved connections. Run `tidegate login <url>` to save one."
-	}
-
-	var text strings.Builder
-
-	table := tabwriter.NewWriter(&text, 0, 0, 2, ' ', 0)
-	_, _ = fmt.Fprintln(table, "NAME\tSERVER\tTOKEN")
-
-	for _, connection := range r.Connections {
-		_, _ = fmt.Fprintln(table, strings.Join(connection.tableRow(), "\t"))
-	}
-
-	_ = table.Flush()
-
-	return strings.TrimSuffix(text.String(), "\n")
-}
-
-func connectionsCommand() *cli.Command {
+func connectionsCommand(store connections.Store) *cli.Command {
 	return &cli.Command{
 		Name:  "connections",
 		Usage: "list the saved connections, print the one in use, or remove one",
 		Commands: []*cli.Command{
 			{
-				Name:   "list",
-				Usage:  "print every saved connection, without its session token",
-				Action: connectionsList,
+				Name:  "list",
+				Usage: "print every saved connection, without its session token",
+				Action: func(_ context.Context, cmd *cli.Command) error {
+					return connectionsList(cmd, store)
+				},
 			},
 			{
-				Name:   "current",
-				Usage:  "print the saved connection that commands in this shell use",
-				Action: connectionsCurrent,
+				Name:  "current",
+				Usage: "print the saved connection that commands in this shell use",
+				Action: func(_ context.Context, cmd *cli.Command) error {
+					return connectionsCurrent(cmd, store)
+				},
 			},
 			{
 				Name:      "remove",
 				Usage:     "end the session of a saved connection and remove the connection",
 				ArgsUsage: "<name>",
-				Action:    connectionsRemove,
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					return connectionsRemove(ctx, cmd, store)
+				},
 			},
 		},
 	}
 }
 
-func connectionsList(_ context.Context, cmd *cli.Command) error {
-	byName, err := loadConnections()
+func connectionsList(cmd *cli.Command, store connections.Store) error {
+	saved, err := store.List()
 	if err != nil {
 		return err
 	}
 
-	return printResult(cmd, newConnectionsResult(byName))
+	return printResult(cmd, newConnectionsResult(saved))
 }
 
-func connectionsCurrent(_ context.Context, cmd *cli.Command) error {
-	options := readTargetOptions(cmd)
-	if !options.usesConnectionsFile() {
+func connectionsCurrent(cmd *cli.Command, store connections.Store) error {
+	connection, err := store.Current(cmd.String("connection"))
+	if err != nil {
+		return err
+	}
+
+	// A connection from TIDEGATE_SERVER and TIDEGATE_TOKEN has no name and isn't saved.
+	if connection.Name == "" {
 		return errors.New("TIDEGATE_SERVER or TIDEGATE_TOKEN is set, so commands in this shell use no saved connection")
 	}
 
-	byName, err := loadConnections()
-	if err != nil {
-		return err
-	}
-
-	chosen, err := pickConnection(options.connectionName(), byName)
-	if err != nil {
-		return err
-	}
-
-	return printResult(cmd, newConnectionResult(chosen.connection, byName[chosen.connection]))
+	return printResult(cmd, newConnectionResult(connection))
 }
 
-func connectionsRemove(ctx context.Context, cmd *cli.Command) error {
+func connectionsRemove(ctx context.Context, cmd *cli.Command, store connections.Store) error {
 	if cmd.Args().Len() != 1 {
 		return errors.New("want exactly one name")
 	}
 
 	name := cmd.Args().First()
 
-	byName, err := loadConnections()
+	removed, err := store.Remove(name)
 	if err != nil {
 		return err
-	}
-
-	if _, ok := byName[name]; !ok {
-		return connectionNotFound(name, byName)
-	}
-
-	path, err := connections.DefaultPath()
-	if err != nil {
-		return err
-	}
-
-	removed, found, err := connections.Remove(path, name)
-	if err != nil {
-		return err
-	}
-
-	if !found {
-		return connectionNotFound(name, nil)
 	}
 
 	err = endSession(ctx, removed)
