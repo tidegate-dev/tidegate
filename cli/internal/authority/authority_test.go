@@ -136,3 +136,14 @@ func TestCheckServerRefusesAnUnparsableURLWithoutShowingItsCredentials(t *testin
 	require.Error(t, err)
 	assert.NotContains(t, err.Error(), "hunter2")
 }
+
+func TestCheckServerRefusesCredentialsWithoutASchemeWithoutShowingThem(t *testing.T) {
+	t.Parallel()
+
+	// act
+	err := checkServer("alice:hunter2@authority.example")
+
+	// assert
+	require.Error(t, err)
+	assert.NotContains(t, err.Error(), "hunter2")
+}

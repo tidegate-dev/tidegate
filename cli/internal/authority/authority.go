@@ -72,7 +72,7 @@ func checkServer(server string) error {
 	}
 
 	if parsed.Host == "" {
-		return fmt.Errorf("invalid --server %q, want a URL like https://authority.example", server)
+		return errors.New("invalid --server, want a URL like https://authority.example")
 	}
 
 	switch parsed.Scheme {
