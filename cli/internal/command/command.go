@@ -17,7 +17,7 @@ import (
 func New(store connections.Store) *cli.Command {
 	root := &cli.Command{
 		Name:  "tidegate",
-		Usage: "talk to a tidegate authority",
+		Usage: "command line interface for a tidegate installation",
 		Description: "tidegate login <url> signs in and saves the authority as a connection. With one\n" +
 			"saved connection, commands use it. With several, choose one with --connection.\n\n" +
 			"A script that brings its own session token sets TIDEGATE_SERVER and\n" +
