@@ -1,6 +1,6 @@
 //go:build integration
 
-package main
+package command
 
 import (
 	"context"
@@ -41,7 +41,7 @@ var _ = Describe("authority create-initial-admin", func() {
 	})
 
 	It("refuses an invalid name before it reads a password", func(ctx SpecContext) {
-		command := newCommand()
+		command := New()
 		command.Reader = unreadable{}
 
 		err := command.Run(ctx, []string{"authority", "create-initial-admin", " alice"})
@@ -59,7 +59,7 @@ var _ = Describe("authority create-initial-admin", func() {
 })
 
 func runCreateInitialAdmin(ctx context.Context, name, stdin string) error {
-	command := newCommand()
+	command := New()
 	command.Reader = strings.NewReader(stdin)
 
 	return command.Run(ctx, []string{"authority", "create-initial-admin", name})

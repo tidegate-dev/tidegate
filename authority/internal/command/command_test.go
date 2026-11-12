@@ -1,4 +1,4 @@
-package main
+package command
 
 import (
 	"bytes"
@@ -20,7 +20,7 @@ func TestHelpWorksWithoutConfig(t *testing.T) {
 
 			var output bytes.Buffer
 
-			command := newCommand()
+			command := New()
 			command.Writer = &output
 
 			// act
@@ -44,7 +44,7 @@ func TestUnknownArgumentsAreRejected(t *testing.T) {
 			t.Parallel()
 
 			// act
-			err := newCommand().Run(t.Context(), args)
+			err := New().Run(t.Context(), args)
 
 			// assert
 			require.EqualError(t, err, `unknown command "bogus"`)
@@ -63,7 +63,7 @@ func TestCreateInitialAdminNeedsExactlyOneName(t *testing.T) {
 			t.Parallel()
 
 			// act
-			err := newCommand().Run(t.Context(), args)
+			err := New().Run(t.Context(), args)
 
 			// assert
 			require.EqualError(t, err, "create-initial-admin takes exactly one argument, the user's name")
