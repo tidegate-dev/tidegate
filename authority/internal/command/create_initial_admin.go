@@ -9,7 +9,6 @@ import (
 	"github.com/The127/go-random"
 	"github.com/urfave/cli/v3"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/config"
 	"github.com/tidegate-dev/tidegate/authority/internal/db"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	"github.com/tidegate-dev/tidegate/internal/terminal"
@@ -37,15 +36,15 @@ func createInitialAdminCommand() *cli.Command {
 				return err
 			}
 
-			return withMigrateHint(createInitialAdmin(ctx, cfg.Database, cmd.Args().First(), cmd.Reader, cmd.ErrWriter))
+			return withMigrateHint(createInitialAdmin(ctx, cfg.Database.URL, cmd.Args().First(), cmd.Reader, cmd.ErrWriter))
 		},
 	}
 }
 
 // createInitialAdmin checks the schema and looks for users before it asks
 // for the password, so the user doesn't type it for nothing.
-func createInitialAdmin(ctx context.Context, cfg config.Database, name string, in io.Reader, out io.Writer) error {
-	pool, err := db.OpenMigrated(ctx, cfg.URL)
+func createInitialAdmin(ctx context.Context, databaseURL, name string, in io.Reader, out io.Writer) error {
+	pool, err := db.OpenMigrated(ctx, databaseURL)
 	if err != nil {
 		return err
 	}

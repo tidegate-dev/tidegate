@@ -16,8 +16,8 @@ import (
 	"github.com/tidegate-dev/tidegate/internal/logging"
 )
 
-// ErrInvalidConfig marks errors that main prints as they are, because the
-// logger is only set up from a valid config.
+// ErrInvalidConfig means the config couldn't be loaded. No logger is set up
+// then.
 var ErrInvalidConfig = errors.New("invalid config")
 
 // New returns the authority command with all its subcommands.

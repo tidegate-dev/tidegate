@@ -1,15 +1,13 @@
 bats_require_minimum_version 1.5.0
 
-psql=(psql --quiet --no-psqlrc --set ON_ERROR_STOP=1)
+load database
 
 setup() {
-    database=test_$(od -An -N8 -tx1 /dev/urandom | tr -d ' \n')
-    "${psql[@]}" "$TIDEGATE_TEST_DATABASE_URL" --command "CREATE DATABASE $database"
-    export TIDEGATE_AUTHORITY__DATABASE__URL="$TIDEGATE_TEST_DATABASE_SERVER/$database$TIDEGATE_TEST_DATABASE_QUERY"
+    create_database
 }
 
 teardown() {
-    "${psql[@]}" "$TIDEGATE_TEST_DATABASE_URL" --command "DROP DATABASE $database WITH (FORCE)"
+    drop_database
 }
 
 user_names() {
