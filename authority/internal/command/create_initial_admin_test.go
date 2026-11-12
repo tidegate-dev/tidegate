@@ -75,7 +75,7 @@ func (unreadable) Read([]byte) (int, error) {
 func userNames(ctx context.Context, url string) []string {
 	GinkgoHelper()
 
-	conn := connectToDatabase(ctx, url)
+	conn := dbtest.Connect(ctx, url)
 
 	rows, err := conn.Query(ctx, "SELECT name FROM users")
 	Expect(err).NotTo(HaveOccurred())

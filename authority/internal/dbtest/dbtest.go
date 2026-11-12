@@ -51,6 +51,20 @@ func NewDatabase() string {
 	return databaseURL.String()
 }
 
+// Connect opens a connection to the database at url and closes it when the
+// spec ends.
+func Connect(ctx context.Context, url string) *pgx.Conn {
+	GinkgoHelper()
+
+	conn, err := pgx.Connect(ctx, url)
+	Expect(err).NotTo(HaveOccurred())
+	DeferCleanup(func() {
+		_ = conn.Close(context.Background())
+	})
+
+	return conn
+}
+
 func exec(serverURL, sql string) {
 	GinkgoHelper()
 

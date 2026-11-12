@@ -1,4 +1,5 @@
-package command
+// Package server runs the authority's API server and metrics server.
+package server
 
 import (
 	"context"
@@ -28,6 +29,14 @@ import (
 	"github.com/tidegate-dev/tidegate/internal/requestlog"
 	"github.com/tidegate-dev/tidegate/internal/systemd"
 )
+
+const shutdownTimeout = 10 * time.Second
+
+// Run serves the authority's API and metrics until ctx ends or a server
+// fails.
+func Run(ctx context.Context, cfg config.Config) error {
+	return run(ctx, cfg, shutdownTimeout)
+}
 
 func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	certificate, err := loadCertificate(cfg.Server.TLS)

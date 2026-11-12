@@ -7,16 +7,14 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"time"
 
 	"github.com/urfave/cli/v3"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/config"
 	"github.com/tidegate-dev/tidegate/authority/internal/db"
+	"github.com/tidegate-dev/tidegate/authority/internal/server"
 	"github.com/tidegate-dev/tidegate/internal/logging"
 )
-
-const shutdownTimeout = 10 * time.Second
 
 // ErrInvalidConfig marks errors that main prints as they are, because the
 // logger is only set up from a valid config.
@@ -33,7 +31,7 @@ func New() *cli.Command {
 				return err
 			}
 
-			return withMigrateHint(run(ctx, cfg, shutdownTimeout))
+			return withMigrateHint(server.Run(ctx, cfg))
 		},
 		Commands: []*cli.Command{
 			migrateCommand(),

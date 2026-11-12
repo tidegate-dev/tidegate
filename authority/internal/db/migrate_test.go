@@ -53,7 +53,7 @@ var _ = Describe("OpenMigrated", func() {
 var _ = Describe("MigrateAt", func() {
 	It("migrates once when two authorities wait for the lock", func(ctx SpecContext) {
 		url := dbtest.NewDatabase()
-		holder := connectToDatabase(ctx, url)
+		holder := dbtest.Connect(ctx, url)
 		takeMigrationLock(ctx, holder)
 
 		firstMigrationErrorChan := startMigration(ctx, url)
@@ -110,18 +110,6 @@ func releaseMigrationLock(ctx context.Context, conn *pgx.Conn) {
 
 	_, err := conn.Exec(ctx, "SELECT pg_advisory_unlock($1)", lock.DefaultLockID)
 	Expect(err).NotTo(HaveOccurred())
-}
-
-func connectToDatabase(ctx context.Context, url string) *pgx.Conn {
-	GinkgoHelper()
-
-	conn, err := pgx.Connect(ctx, url)
-	Expect(err).NotTo(HaveOccurred())
-	DeferCleanup(func() {
-		_ = conn.Close(context.Background())
-	})
-
-	return conn
 }
 
 func countSessionsTryingMigrationLock(ctx context.Context, conn *pgx.Conn) (int, error) {

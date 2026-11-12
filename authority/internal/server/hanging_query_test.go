@@ -1,6 +1,6 @@
 //go:build integration
 
-package command
+package server
 
 import (
 	"context"
@@ -36,7 +36,7 @@ var _ = Describe("run", func() {
 
 			// The lock makes the authority's write wait until the spec ends,
 			// like a query to a Postgres that doesn't answer.
-			holder := connectToDatabase(ctx, url)
+			holder := dbtest.Connect(ctx, url)
 			lockDummies(ctx, holder)
 
 			go writeDummy(authority.address, token)
@@ -139,16 +139,4 @@ func signIn(ctx context.Context, url string) secret.String {
 	Expect(err).NotTo(HaveOccurred())
 
 	return token
-}
-
-func connectToDatabase(ctx context.Context, url string) *pgx.Conn {
-	GinkgoHelper()
-
-	conn, err := pgx.Connect(ctx, url)
-	Expect(err).NotTo(HaveOccurred())
-	DeferCleanup(func() {
-		_ = conn.Close(context.Background())
-	})
-
-	return conn
 }
