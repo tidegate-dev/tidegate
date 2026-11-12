@@ -122,3 +122,17 @@ func TestCheckServerRefusesCredentialsInTheURLWithoutShowingThem(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckServerRefusesAnUnparsableURLWithoutShowingItsCredentials(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	server := "https://" + url.UserPassword("alice", "hunter2").String() + "@%ZZ"
+
+	// act
+	err := checkServer(server)
+
+	// assert
+	require.Error(t, err)
+	assert.NotContains(t, err.Error(), "hunter2")
+}

@@ -64,7 +64,7 @@ func (c *Clients) Dummy() authorityv1connect.DummyServiceClient { return c.dummy
 func checkServer(server string) error {
 	parsed, err := url.Parse(server)
 	if err != nil {
-		return fmt.Errorf("invalid --server %q: %w", server, err)
+		return errors.New("invalid --server, want a URL like https://authority.example")
 	}
 
 	if parsed.User != nil {
