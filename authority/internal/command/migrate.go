@@ -5,7 +5,6 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/config"
 	"github.com/tidegate-dev/tidegate/authority/internal/db"
 )
 
@@ -19,17 +18,7 @@ func migrateCommand() *cli.Command {
 				return err
 			}
 
-			return migrate(ctx, cfg.Database)
+			return db.MigrateAt(ctx, cfg.Database.URL)
 		},
 	}
-}
-
-func migrate(ctx context.Context, cfg config.Database) error {
-	pool, err := db.Open(ctx, cfg.URL)
-	if err != nil {
-		return err
-	}
-	defer pool.Close()
-
-	return db.Migrate(ctx, pool)
 }

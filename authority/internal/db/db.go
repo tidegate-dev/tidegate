@@ -58,6 +58,36 @@ func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
+// OpenMigrated connects to the database at url like Open. It returns
+// ErrSchemaTooOld if the database misses migrations.
+func OpenMigrated(ctx context.Context, url string) (*pgxpool.Pool, error) {
+	pool, err := Open(ctx, url)
+	if err != nil {
+		return nil, err
+	}
+
+	err = CheckSchema(ctx, pool)
+	if err != nil {
+		pool.Close()
+
+		return nil, err
+	}
+
+	return pool, nil
+}
+
+// MigrateAt connects to the database at url and applies every migration
+// that it doesn't have yet.
+func MigrateAt(ctx context.Context, url string) error {
+	pool, err := Open(ctx, url)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
+	return Migrate(ctx, pool)
+}
+
 // Migrate applies every migration that the database doesn't have yet.
 func Migrate(ctx context.Context, pool *pgxpool.Pool) (err error) {
 	provider, err := newProvider(pool)

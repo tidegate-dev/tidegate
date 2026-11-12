@@ -10,6 +10,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/config"
+	"github.com/tidegate-dev/tidegate/authority/internal/db"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	"github.com/tidegate-dev/tidegate/internal/terminal"
 )
@@ -36,7 +37,7 @@ func createInitialAdminCommand() *cli.Command {
 				return err
 			}
 
-			return createInitialAdmin(ctx, cfg.Database, cmd.Args().First(), cmd.Reader, cmd.ErrWriter)
+			return withMigrateHint(createInitialAdmin(ctx, cfg.Database, cmd.Args().First(), cmd.Reader, cmd.ErrWriter))
 		},
 	}
 }
@@ -44,7 +45,7 @@ func createInitialAdminCommand() *cli.Command {
 // createInitialAdmin checks the schema and looks for users before it asks
 // for the password, so the user doesn't type it for nothing.
 func createInitialAdmin(ctx context.Context, cfg config.Database, name string, in io.Reader, out io.Writer) error {
-	pool, err := openDatabase(ctx, cfg.URL)
+	pool, err := db.OpenMigrated(ctx, cfg.URL)
 	if err != nil {
 		return err
 	}

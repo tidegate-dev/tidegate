@@ -12,6 +12,7 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/config"
+	"github.com/tidegate-dev/tidegate/authority/internal/db"
 	"github.com/tidegate-dev/tidegate/internal/logging"
 )
 
@@ -32,7 +33,7 @@ func New() *cli.Command {
 				return err
 			}
 
-			return run(ctx, cfg, shutdownTimeout)
+			return withMigrateHint(run(ctx, cfg, shutdownTimeout))
 		},
 		Commands: []*cli.Command{
 			migrateCommand(),
@@ -62,4 +63,12 @@ func loadConfig() (config.Config, error) {
 	slog.Debug("loaded config", "listen_address", cfg.Server.ListenAddress)
 
 	return cfg, nil
+}
+
+func withMigrateHint(err error) error {
+	if errors.Is(err, db.ErrSchemaTooOld) {
+		return fmt.Errorf("%w. Run authority migrate first", err)
+	}
+
+	return err
 }

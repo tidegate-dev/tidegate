@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/config"
+	"github.com/tidegate-dev/tidegate/authority/internal/db"
 	"github.com/tidegate-dev/tidegate/authority/internal/dbtest"
 	"github.com/tidegate-dev/tidegate/authority/internal/password"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
@@ -23,7 +23,7 @@ var _ = Describe("authority create-initial-admin", func() {
 	BeforeEach(func(ctx SpecContext) {
 		url = dbtest.NewDatabase()
 		GinkgoT().Setenv("TIDEGATE_AUTHORITY__DATABASE__URL", url)
-		Expect(migrate(ctx, config.Database{URL: url})).To(Succeed())
+		Expect(db.MigrateAt(ctx, url)).To(Succeed())
 	})
 
 	It("creates the user with the password from stdin", func(ctx SpecContext) {

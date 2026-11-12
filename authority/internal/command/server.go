@@ -18,6 +18,7 @@ import (
 
 	"github.com/tidegate-dev/tidegate/authority/internal/api"
 	"github.com/tidegate-dev/tidegate/authority/internal/config"
+	"github.com/tidegate-dev/tidegate/authority/internal/db"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
 	"github.com/tidegate-dev/tidegate/internal/certreload"
@@ -40,13 +41,13 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	}
 
 	if cfg.Database.MigrateOnStart {
-		err := migrate(ctx, cfg.Database)
+		err := db.MigrateAt(ctx, cfg.Database.URL)
 		if err != nil {
 			return err
 		}
 	}
 
-	pool, err := openDatabase(ctx, cfg.Database.URL)
+	pool, err := db.OpenMigrated(ctx, cfg.Database.URL)
 	if err != nil {
 		return err
 	}
