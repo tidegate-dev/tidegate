@@ -1,8 +1,12 @@
 package connections_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -839,4 +843,92 @@ func TestRemoveDoesNotSayToRunLoginWhenNothingIsSaved(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), `no saved connection named "testing"`)
 	assert.NotContains(t, err.Error(), "tidegate login")
+}
+
+func TestListNeverSeesAHalfWrittenFile(t *testing.T) {
+	// arrange
+	const saveCount = 100
+
+	store := newStore(t, noFile)
+	longToken := secret.New(strings.Repeat("t", 4096))
+
+	var saveErr error
+
+	savingDone := make(chan struct{})
+
+	go func() {
+		defer close(savingDone)
+
+		for saveNumber := range saveCount {
+			_, err := store.Save(connections.Connection{Name: strconv.Itoa(saveNumber), Server: newServer, Token: longToken})
+			saveErr = errors.Join(saveErr, err)
+		}
+	}()
+
+	// act
+	var listErr error
+
+	for stillSaving := true; stillSaving && listErr == nil; {
+		select {
+		case <-savingDone:
+			stillSaving = false
+		default:
+			_, listErr = store.List()
+		}
+	}
+
+	<-savingDone
+
+	// assert
+	require.NoError(t, saveErr)
+	require.NoError(t, listErr)
+}
+
+func TestSaveKeepsEveryConnectionWhenManySaveAtOnce(t *testing.T) {
+	// arrange
+	const saveCount = 50
+
+	store := newStore(t, noFile)
+
+	var (
+		saves    sync.WaitGroup
+		saveErrs = make(chan error, saveCount)
+	)
+
+	// act
+	for saveNumber := range saveCount {
+		saves.Go(func() {
+			_, err := store.Save(connections.Connection{Name: strconv.Itoa(saveNumber), Server: newServer})
+			saveErrs <- err
+		})
+	}
+
+	saves.Wait()
+	close(saveErrs)
+
+	// assert
+	for err := range saveErrs {
+		require.NoError(t, err)
+	}
+
+	saved, err := store.List()
+	require.NoError(t, err)
+	assert.Len(t, saved, saveCount)
+}
+
+func TestSaveLeavesOnlyTheFileAndItsLockBehind(t *testing.T) {
+	// arrange
+	store := newStore(t, noFile)
+
+	// act
+	_, err := store.Save(connections.Connection{Name: "new", Server: newServer, Token: secret.New("new token")})
+
+	// assert
+	require.NoError(t, err)
+
+	filesInDirectory, err := os.ReadDir(filepath.Dir(savedConnectionsPath(t)))
+	require.NoError(t, err)
+	require.Len(t, filesInDirectory, 2)
+	assert.Equal(t, "connections.json", filesInDirectory[0].Name())
+	assert.Equal(t, "connections.json.lock", filesInDirectory[1].Name())
 }

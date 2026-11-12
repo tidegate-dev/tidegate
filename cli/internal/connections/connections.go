@@ -13,7 +13,9 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/tidegate-dev/tidegate/internal/filelock"
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
@@ -116,36 +118,29 @@ func (fileStore) ForLogin(url, connectionFlag string) (Connection, error) {
 }
 
 func (fileStore) Save(connection Connection) (Connection, error) {
-	savedByName, err := readFile()
-	if err != nil {
-		return Connection{}, err
-	}
+	var replaced Connection
 
-	replaced := savedByName[connection.Name]
-	savedByName[connection.Name] = connection
+	err := changeFile(func(savedByName map[string]Connection) (bool, error) {
+		replaced = savedByName[connection.Name]
+		savedByName[connection.Name] = connection
 
-	err = writeFile(savedByName)
-	if err != nil {
-		return Connection{}, err
-	}
+		return true, nil
+	})
 
-	return replaced, nil
+	return replaced, err
 }
 
 func (fileStore) SignOut(connection Connection) error {
-	savedByName, err := readFile()
-	if err != nil {
-		return err
-	}
+	return changeFile(func(savedByName map[string]Connection) (bool, error) {
+		saved, isSaved := savedByName[connection.Name]
+		if !isSaved || saved.Token.Reveal() != connection.Token.Reveal() {
+			return false, nil
+		}
 
-	saved, isSaved := savedByName[connection.Name]
-	if !isSaved || saved.Token.Reveal() != connection.Token.Reveal() {
-		return nil
-	}
+		savedByName[connection.Name] = Connection{Name: saved.Name, Server: saved.Server}
 
-	savedByName[connection.Name] = Connection{Name: saved.Name, Server: saved.Server}
-
-	return writeFile(savedByName)
+		return true, nil
+	})
 }
 
 func (fileStore) List() ([]Connection, error) {
@@ -163,24 +158,22 @@ func (fileStore) List() ([]Connection, error) {
 }
 
 func (fileStore) Remove(name string) (Connection, error) {
-	savedByName, err := readFile()
-	if err != nil {
-		return Connection{}, err
-	}
+	var removed Connection
 
-	removed, isSaved := savedByName[name]
-	if !isSaved {
-		return Connection{}, noConnectionNamed(savedByName, name)
-	}
+	err := changeFile(func(savedByName map[string]Connection) (bool, error) {
+		saved, isSaved := savedByName[name]
+		if !isSaved {
+			return false, noConnectionNamed(savedByName, name)
+		}
 
-	delete(savedByName, name)
+		removed = saved
 
-	err = writeFile(savedByName)
-	if err != nil {
-		return Connection{}, err
-	}
+		delete(savedByName, name)
 
-	return removed, nil
+		return true, nil
+	})
+
+	return removed, err
 }
 
 // findSaved returns the saved connection that the user means. That is the one
@@ -321,22 +314,19 @@ func readFile() (map[string]Connection, error) {
 	return savedByName, nil
 }
 
-// writeFile replaces the file with the given connections. It creates the file
-// and its directory so that only the owner can use them.
-func writeFile(savedByName map[string]Connection) error {
+const lockWaitLimit = 10 * time.Second
+
+// changeFile reads the connections from the file, lets change edit them, and
+// writes them back if change reports that it changed them. It creates the
+// directory of the file so that only the owner can use it.
+//
+// It holds a lock file next to the file meanwhile. Two tidegate processes
+// that change the file at once take turns, and one gives up after it waited
+// 10 seconds for the other.
+func changeFile(change func(savedByName map[string]Connection) (changed bool, err error)) (err error) {
 	path, err := filePath()
 	if err != nil {
 		return err
-	}
-
-	content := fileContent{Connections: make(map[string]storedConnection, len(savedByName))}
-	for name, saved := range savedByName {
-		content.Connections[name] = storedConnection{Server: saved.Server, Token: saved.Token.Reveal()}
-	}
-
-	fileText, err := json.MarshalIndent(content, "", "  ")
-	if err != nil {
-		return fmt.Errorf("saving the connections: %w", err)
 	}
 
 	directory := filepath.Dir(path)
@@ -351,8 +341,58 @@ func writeFile(savedByName map[string]Connection) error {
 		return err
 	}
 
-	err = os.WriteFile(path, append(fileText, '\n'), 0o600)
+	lock, err := filelock.Acquire(path+".lock", lockWaitLimit)
 	if err != nil {
+		return fmt.Errorf("saving the connections: %w", err)
+	}
+
+	defer func() {
+		err = errors.Join(err, lock.Release())
+	}()
+
+	savedByName, err := readFile()
+	if err != nil {
+		return err
+	}
+
+	changed, err := change(savedByName)
+	if err != nil || !changed {
+		return err
+	}
+
+	return writeFile(path, savedByName)
+}
+
+// writeFile replaces the file at path with the given connections. It writes a
+// temporary file and renames it, so a reader sees the old file or the new one
+// and never a part of it.
+func writeFile(path string, savedByName map[string]Connection) error {
+	content := fileContent{Connections: make(map[string]storedConnection, len(savedByName))}
+	for name, saved := range savedByName {
+		content.Connections[name] = storedConnection{Server: saved.Server, Token: saved.Token.Reveal()}
+	}
+
+	fileText, err := json.MarshalIndent(content, "", "  ")
+	if err != nil {
+		return fmt.Errorf("saving the connections: %w", err)
+	}
+
+	// os.CreateTemp creates the file with mode 0600.
+	temporaryFile, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path)+".*")
+	if err != nil {
+		return fmt.Errorf("saving the connections: %w", err)
+	}
+
+	_, err = temporaryFile.Write(append(fileText, '\n'))
+
+	err = errors.Join(err, temporaryFile.Close())
+	if err == nil {
+		err = os.Rename(temporaryFile.Name(), path)
+	}
+
+	if err != nil {
+		_ = os.Remove(temporaryFile.Name())
+
 		return fmt.Errorf("saving the connections: %w", err)
 	}
 
