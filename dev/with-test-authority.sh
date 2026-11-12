@@ -4,8 +4,11 @@
 # Starts an authority on its own database in TIDEGATE_TEST_DATABASE_URL,
 # creates the initial admin and runs the command. The command finds the
 # authority in TIDEGATE_TEST_AUTHORITY, the admin in TIDEGATE_TEST_USER and
-# TIDEGATE_TEST_PASSWORD, and the CA in TIDEGATE_TEST_CA_FILE. Afterwards the
-# authority's coverage is written to the coverage file.
+# TIDEGATE_TEST_PASSWORD, and the CA in TIDEGATE_TEST_CA_FILE. It finds the
+# authority binary on its PATH, and the URL of the test Postgres server
+# without a database in TIDEGATE_TEST_DATABASE_SERVER and
+# TIDEGATE_TEST_DATABASE_QUERY. Afterwards the authority's coverage is written
+# to the coverage file.
 set -euo pipefail
 
 if [ $# -lt 2 ]; then
@@ -49,8 +52,9 @@ fail() {
     exit 1
 }
 
-mkdir "$work/coverage"
-(cd "$root" && go build -cover -coverpkg=github.com/tidegate-dev/tidegate/... -o "$work/authority" ./authority/cmd/authority)
+mkdir "$work/bin" "$work/coverage"
+(cd "$root" && go build -cover -coverpkg=github.com/tidegate-dev/tidegate/... -o "$work/bin/authority" ./authority/cmd/authority)
+export PATH="$work/bin:$PATH"
 
 # Other ports than just dev, so both can run at the same time.
 export GOCOVERDIR="$work/coverage"
@@ -60,13 +64,15 @@ export TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE="$root/dev/tls/authority.pem"
 export TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE="$root/dev/tls/authority-key.pem"
 export TIDEGATE_AUTHORITY__DATABASE__URL="$server/$database$query"
 export TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START=true
-"$work/authority" >>"$work/log" 2>&1 &
+authority >>"$work/log" 2>&1 &
 authority=$!
 
 export TIDEGATE_TEST_AUTHORITY=https://127.0.0.1:18080
 export TIDEGATE_TEST_USER=alice
 export TIDEGATE_TEST_PASSWORD='correct horse battery staple'
 export TIDEGATE_TEST_CA_FILE="$root/dev/tls/ca.pem"
+export TIDEGATE_TEST_DATABASE_SERVER=$server
+export TIDEGATE_TEST_DATABASE_QUERY=$query
 
 # The authority logs this line only after it migrated the database and opened its port.
 listening() {
@@ -80,7 +86,7 @@ done
 listening || fail
 
 printf '%s\n' "$TIDEGATE_TEST_PASSWORD" |
-    "$work/authority" create-initial-admin "$TIDEGATE_TEST_USER" >>"$work/log" 2>&1 || fail
+    authority create-initial-admin "$TIDEGATE_TEST_USER" >>"$work/log" 2>&1 || fail
 
 "$@" || fail
 
