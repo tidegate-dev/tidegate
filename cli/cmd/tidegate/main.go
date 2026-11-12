@@ -1,4 +1,4 @@
-// Command tidegate is the command-line client for the tidegate authority.
+// Command tidegate is the command line interface for a tidegate installation.
 package main
 
 import (
