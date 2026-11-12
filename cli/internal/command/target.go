@@ -5,13 +5,71 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
 
+	"github.com/urfave/cli/v3"
+
+	"github.com/tidegate-dev/tidegate/cli/internal/authority"
 	"github.com/tidegate-dev/tidegate/cli/internal/connections"
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
+
+func connectToTarget(cmd *cli.Command) (*authority.Clients, target, error) {
+	chosen, err := pickTargetForCommand(cmd)
+	if err != nil {
+		return nil, target{}, err
+	}
+
+	clients, err := authority.Connect(chosen.server, chosen.token)
+	if err != nil {
+		return nil, target{}, err
+	}
+
+	return clients, chosen, nil
+}
+
+func pickTargetForCommand(cmd *cli.Command) (target, error) {
+	options := readTargetOptions(cmd)
+
+	var byName map[string]connections.Connection
+
+	if options.usesConnectionsFile() {
+		var err error
+
+		byName, err = loadConnections()
+		if err != nil {
+			return target{}, err
+		}
+	}
+
+	return pickTarget(options, byName)
+}
+
+func readTargetOptions(cmd *cli.Command) targetOptions {
+	return targetOptions{
+		connection:            cmd.String("connection"),
+		environmentConnection: os.Getenv("TIDEGATE_CONNECTION"),
+		server:                os.Getenv("TIDEGATE_SERVER"),
+		token:                 secret.New(os.Getenv("TIDEGATE_TOKEN")),
+	}
+}
+
+func loadConnections() (map[string]connections.Connection, error) {
+	path, err := connections.DefaultPath()
+	// A container may have no configuration directory.
+	if errors.Is(err, connections.ErrNoConfigDir) {
+		return map[string]connections.Connection{}, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return connections.Load(path)
+}
 
 // targetOptions holds --connection, TIDEGATE_CONNECTION, TIDEGATE_SERVER and TIDEGATE_TOKEN as the user gave them.
 type targetOptions struct {
@@ -89,58 +147,6 @@ func connectionNotFound(name string, byName map[string]connections.Connection) e
 	}
 
 	return fmt.Errorf("no saved connection named %q. Saved connections: %s", name, quotedNames(byName))
-}
-
-// loginOptions holds the URL and the flags of tidegate login, and TIDEGATE_CONNECTION, as the user gave them.
-type loginOptions struct {
-	url                   string
-	connection            string
-	environmentConnection string
-	printToken            bool
-}
-
-func pickLoginTarget(options loginOptions, byName map[string]connections.Connection) (target, error) {
-	switch {
-	case options.url == "" && options.printToken:
-		return target{}, errors.New("--print-token needs a URL: tidegate login <url> --print-token")
-	case options.url == "":
-		return pickConnection(cmp.Or(options.connection, options.environmentConnection), byName)
-	case options.printToken && options.connection != "":
-		return target{}, errors.New("--print-token saves nothing, so it takes no --connection")
-	case options.printToken:
-		return target{server: options.url}, nil
-	case options.connection != "":
-		return checkNameIsFree(options.connection, options.url, byName)
-	}
-
-	matching := map[string]connections.Connection{}
-
-	for name, connection := range byName {
-		if connection.Server == options.url {
-			matching[name] = connection
-		}
-	}
-
-	switch len(matching) {
-	case 0:
-		return checkNameIsFree(options.url, options.url, byName)
-	case 1:
-		return pickConnection("", matching)
-	default:
-		return target{}, fmt.Errorf("several saved connections use %s: %s. Choose one with --connection", options.url, quotedNames(matching))
-	}
-}
-
-func checkNameIsFree(name, url string, byName map[string]connections.Connection) (target, error) {
-	existing, ok := byName[name]
-	if ok && existing.Server != url {
-		return target{}, fmt.Errorf(
-			"the connection %q is saved for %s. Choose another name, or remove it first with `tidegate connections remove %q`",
-			name, quoteIfUnprintable(existing.Server), name,
-		)
-	}
-
-	return target{connection: name, server: url}, nil
 }
 
 func targetFor(name string, connection connections.Connection) target {
