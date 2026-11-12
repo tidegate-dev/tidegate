@@ -18,8 +18,8 @@ var errPasswordsDiffer = errors.New("the passwords differ")
 // readPassword asks for a password twice on a terminal. Otherwise it reads
 // the first line from in, so a script can pipe the password in.
 func readPassword(ctx context.Context, in io.Reader, out io.Writer) (secret.String, error) {
-	tty, ok := terminal.New(in, out)
-	if !ok {
+	tty := terminal.New(in, out)
+	if !tty.Interactive() {
 		line, err := readPasswordLine(ctx, in)
 
 		return secret.New(line), err

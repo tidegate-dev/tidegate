@@ -21,18 +21,22 @@ type Terminal struct {
 	fallback io.Writer
 }
 
-// New returns a Terminal that reads from in. It returns false if in isn't a
-// terminal. The Terminal writes to fallback only if it can't open the
-// terminal for writing.
-func New(in io.Reader, fallback io.Writer) (*Terminal, bool) {
+// New returns a Terminal that reads from in. The Terminal writes to fallback
+// only if it can't open the terminal for writing.
+func New(in io.Reader, fallback io.Writer) *Terminal {
 	lines := bufio.NewReader(in)
 
 	file, ok := in.(*os.File)
 	if !ok || !term.IsTerminal(int(file.Fd())) { //nolint:gosec // A file descriptor fits in an int.
-		return &Terminal{lines: lines, fallback: fallback}, false
+		return &Terminal{lines: lines, fallback: fallback}
 	}
 
-	return &Terminal{in: file, lines: lines, fallback: fallback}, true
+	return &Terminal{in: file, lines: lines, fallback: fallback}
+}
+
+// Interactive reports whether the input is a terminal.
+func (t *Terminal) Interactive() bool {
+	return t.in != nil
 }
 
 // ReadLine reads one line without its line ending. It returns io.EOF if
@@ -53,7 +57,7 @@ func (t *Terminal) ReadLine() (string, error) {
 // Prompt writes text to the terminal. It writes nothing if the input isn't a
 // terminal.
 func (t *Terminal) Prompt(text string) error {
-	if t.in == nil {
+	if !t.Interactive() {
 		return nil
 	}
 
@@ -69,7 +73,7 @@ func (t *Terminal) Prompt(text string) error {
 // it. It stops waiting when ctx ends. If the input isn't a terminal, it
 // reads a line like ReadLine.
 func (t *Terminal) ReadSecret(ctx context.Context, prompt string) (string, error) {
-	if t.in == nil {
+	if !t.Interactive() {
 		return t.ReadLine()
 	}
 

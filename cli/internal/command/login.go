@@ -61,7 +61,7 @@ func login(ctx context.Context, cmd *cli.Command) error {
 // Otherwise it reads them from the first two lines of in, so a script can
 // pipe them in.
 func readCredentials(ctx context.Context, in io.Reader, prompts io.Writer) (string, string, error) {
-	tty, _ := terminal.New(in, prompts)
+	tty := terminal.New(in, prompts)
 
 	err := tty.Prompt("User name: ")
 	if err != nil {
