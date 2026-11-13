@@ -610,6 +610,22 @@ func TestSaveReplacesTheTokenOfASavedConnection(t *testing.T) {
 	assert.Equal(t, "new token", current.Token.Reveal())
 }
 
+func TestSaveFailsForANameThatIsSavedForAnotherServerAndKeepsTheSavedConnection(t *testing.T) {
+	// arrange
+	store := newStore(t, onlyProductionFile)
+
+	// act
+	_, err := store.Save(connections.Connection{Name: "production", Server: newServer, Token: secret.New("new token")})
+
+	// assert
+	require.Error(t, err)
+
+	current, err := store.Current("production")
+	require.NoError(t, err)
+	assert.Equal(t, productionServer, current.Server)
+	assert.Equal(t, "production token", current.Token.Reveal())
+}
+
 func TestSaveKeepsTheOtherConnections(t *testing.T) {
 	// arrange
 	store := newStore(t, threeConnectionsFile)
