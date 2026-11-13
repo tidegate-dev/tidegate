@@ -37,7 +37,7 @@ type Session struct {
 	ID     SessionID
 	UserID UserID
 	// TokenHash is the SHA-256 hash of the session token, as 32 raw bytes.
-	TokenHash secret.String
+	TokenHash secret.Bytes
 	CreatedAt time.Time
 	ExpiresAt time.Time
 	// Version is the xmin of the row in Postgres at the time it was read or written.

@@ -20,9 +20,9 @@ type Sessions struct {
 
 // ActiveByTokenHash returns the session with the token hash that expires
 // after now, or model.ErrSessionNotFound.
-func (s *Sessions) ActiveByTokenHash(ctx context.Context, tokenHash secret.String, now time.Time) (*model.Session, error) {
+func (s *Sessions) ActiveByTokenHash(ctx context.Context, tokenHash secret.Bytes, now time.Time) (*model.Session, error) {
 	row, err := s.queries.GetActiveSessionByTokenHash(ctx, sqlc.GetActiveSessionByTokenHashParams{
-		TokenHash: []byte(tokenHash.Reveal()),
+		TokenHash: tokenHash.Reveal(),
 		Now:       databaseTime(now),
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -36,7 +36,7 @@ func (s *Sessions) ActiveByTokenHash(ctx context.Context, tokenHash secret.Strin
 	return &model.Session{
 		ID:        model.SessionID(row.ID.Bytes),
 		UserID:    model.UserID(row.UserID.Bytes),
-		TokenHash: secret.New(string(row.TokenHash)),
+		TokenHash: secret.NewBytes(row.TokenHash),
 		CreatedAt: row.CreatedAt.Time,
 		ExpiresAt: row.ExpiresAt.Time,
 		Version:   row.Xmin.Uint32,
@@ -59,7 +59,7 @@ func (s *UnitSessions) Add(session *model.Session) {
 		version, err := queries.InsertSession(ctx, sqlc.InsertSessionParams{
 			ID:        databaseID(session.ID),
 			UserID:    databaseID(session.UserID),
-			TokenHash: []byte(session.TokenHash.Reveal()),
+			TokenHash: session.TokenHash.Reveal(),
 			CreatedAt: databaseTime(session.CreatedAt),
 			ExpiresAt: databaseTime(session.ExpiresAt),
 		})
