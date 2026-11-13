@@ -121,6 +121,11 @@ func (fileStore) Save(connection Connection) (Connection, error) {
 	var replaced Connection
 
 	err := changeFile(func(savedByName map[string]Connection) (bool, error) {
+		err := nameSavedForAnotherServer(savedByName, connection.Name, connection.Server)
+		if err != nil {
+			return false, err
+		}
+
 		replaced = savedByName[connection.Name]
 		savedByName[connection.Name] = connection
 
@@ -233,15 +238,26 @@ func nameForLogin(savedByName map[string]Connection, url, connectionFlag string)
 		}
 	}
 
+	err := nameSavedForAnotherServer(savedByName, name, url)
+	if err != nil {
+		return "", err
+	}
+
+	return name, nil
+}
+
+// nameSavedForAnotherServer returns an error if name is saved for a server
+// other than server.
+func nameSavedForAnotherServer(savedByName map[string]Connection, name, server string) error {
 	savedUnderName, nameIsTaken := savedByName[name]
-	if nameIsTaken && savedUnderName.Server != url {
-		return "", fmt.Errorf(
+	if nameIsTaken && savedUnderName.Server != server {
+		return fmt.Errorf(
 			"the connection %q is saved for %q. Choose another name, or remove it first with `tidegate connections remove %q`",
 			name, savedUnderName.Server, name,
 		)
 	}
 
-	return name, nil
+	return nil
 }
 
 // noConnectionNamed returns the error for a name that isn't saved. It lists
