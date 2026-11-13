@@ -4,29 +4,30 @@ package command
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/urfave/cli/v3"
 
 	"github.com/tidegate-dev/tidegate/cli/internal/authority"
+	"github.com/tidegate-dev/tidegate/cli/internal/connections"
 	"github.com/tidegate-dev/tidegate/cli/internal/output"
-	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
-// defaultServer matches the authority's default listen address.
-const defaultServer = "https://127.0.0.1:8080"
-
-// New returns the tidegate command with all its subcommands.
-func New() *cli.Command {
+// New returns the tidegate command with all its subcommands. The subcommands
+// read and change the saved connections through store.
+func New(store connections.Store) *cli.Command {
 	root := &cli.Command{
-		Name:   "tidegate",
-		Usage:  "talk to the tidegate authority",
+		Name:  "tidegate",
+		Usage: "command line interface for a tidegate installation",
+		Description: "tidegate login <url> signs in and saves the authority as a connection. With one\n" +
+			"saved connection, commands use it. With several, choose one with --connection.\n\n" +
+			"A script that brings its own session token sets TIDEGATE_SERVER and\n" +
+			"TIDEGATE_TOKEN. Commands then use these and no saved connection.",
 		Action: unknownCommand,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  "server",
-				Usage: "URL of the authority",
-				Value: defaultServer,
+				Name:    "connection",
+				Aliases: []string{"c"},
+				Usage:   "name of the saved connection to use, by default the one in TIDEGATE_CONNECTION",
 			},
 			&cli.StringFlag{
 				Name:    "output",
@@ -41,10 +42,11 @@ func New() *cli.Command {
 			},
 		},
 		Commands: []*cli.Command{
-			pingCommand(),
-			loginCommand(),
-			logoutCommand(),
-			dummyCommand(),
+			pingCommand(store),
+			loginCommand(store),
+			logoutCommand(store),
+			connectionsCommand(store),
+			dummyCommand(store),
 		},
 	}
 
@@ -53,12 +55,28 @@ func New() *cli.Command {
 	return root
 }
 
-func dialAuthorityUnauthenticated(cmd *cli.Command) (*authority.Clients, error) {
-	return authority.Connect(cmd.String("server"), secret.New(""))
+// connectToCurrent returns clients for the authority of the connection that
+// the command uses, and that connection.
+func connectToCurrent(cmd *cli.Command, store connections.Store) (*authority.Clients, connections.Connection, error) {
+	connection, err := store.Current(cmd.String("connection"))
+	if err != nil {
+		return nil, connections.Connection{}, err
+	}
+
+	clients, err := authority.Connect(connection.Server, connection.Token)
+	if err != nil {
+		return nil, connections.Connection{}, err
+	}
+
+	return clients, connection, nil
 }
 
-func dialAuthorityAuthenticated(cmd *cli.Command) (*authority.Clients, error) {
-	return authority.Connect(cmd.String("server"), secret.New(os.Getenv("TIDEGATE_TOKEN")))
+func printResult(cmd *cli.Command, result output.Result) error {
+	return output.Print(cmd.Root().Writer, output.Format(cmd.String("output")), result)
+}
+
+func printWarning(cmd *cli.Command, format string, arguments ...any) {
+	_, _ = fmt.Fprintf(cmd.Root().ErrWriter, "Warning: "+format+"\n", arguments...)
 }
 
 func unknownCommand(_ context.Context, cmd *cli.Command) error {
@@ -74,11 +92,7 @@ func enableSuggestions(cmd *cli.Command) {
 	cmd.Suggest = true
 
 	// Subcommands don't inherit Suggest from their parent.
-	for _, sub := range cmd.Commands {
-		enableSuggestions(sub)
+	for _, subcommand := range cmd.Commands {
+		enableSuggestions(subcommand)
 	}
-}
-
-func printResult(cmd *cli.Command, result output.Result) error {
-	return output.Print(cmd.Root().Writer, output.Format(cmd.String("output")), result)
 }

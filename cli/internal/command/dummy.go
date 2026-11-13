@@ -9,6 +9,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/urfave/cli/v3"
 
+	"github.com/tidegate-dev/tidegate/cli/internal/connections"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 )
 
@@ -16,15 +17,15 @@ type dummyWriteResult struct {
 	ID int64 `json:"id" yaml:"id"`
 }
 
-func (r dummyWriteResult) String() string { return strconv.FormatInt(r.ID, 10) }
+func (result dummyWriteResult) String() string { return strconv.FormatInt(result.ID, 10) }
 
 type dummyReadResult struct {
 	Text string `json:"text" yaml:"text"`
 }
 
-func (r dummyReadResult) String() string { return r.Text }
+func (result dummyReadResult) String() string { return result.Text }
 
-func dummyCommand() *cli.Command {
+func dummyCommand(store connections.Store) *cli.Command {
 	return &cli.Command{
 		Name:  "dummy",
 		Usage: "store texts in the authority's database and read them back",
@@ -33,39 +34,43 @@ func dummyCommand() *cli.Command {
 				Name:      "write",
 				Usage:     "store a text and print its ID",
 				ArgsUsage: "<text>",
-				Action:    dummyWrite,
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					return dummyWrite(ctx, cmd, store)
+				},
 			},
 			{
 				Name:      "read",
 				Usage:     "print the text with the given ID",
 				ArgsUsage: "<id>",
-				Action:    dummyRead,
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					return dummyRead(ctx, cmd, store)
+				},
 			},
 		},
 	}
 }
 
-func dummyWrite(ctx context.Context, cmd *cli.Command) error {
+func dummyWrite(ctx context.Context, cmd *cli.Command, store connections.Store) error {
 	if cmd.Args().Len() != 1 {
 		return errors.New("want exactly one text")
 	}
 
-	server := cmd.String("server")
+	text := cmd.Args().First()
 
-	clients, err := dialAuthorityAuthenticated(cmd)
+	clients, connection, err := connectToCurrent(cmd, store)
 	if err != nil {
 		return err
 	}
 
-	response, err := clients.Dummy().Write(ctx, connect.NewRequest(&authorityv1.WriteRequest{Text: cmd.Args().First()}))
+	response, err := clients.Dummy().Write(ctx, connect.NewRequest(&authorityv1.WriteRequest{Text: text}))
 	if err != nil {
-		return fmt.Errorf("storing the text at %s: %w", server, err)
+		return callFailed("storing the text", connection, err)
 	}
 
 	return printResult(cmd, dummyWriteResult{ID: response.Msg.GetId()})
 }
 
-func dummyRead(ctx context.Context, cmd *cli.Command) error {
+func dummyRead(ctx context.Context, cmd *cli.Command, store connections.Store) error {
 	if cmd.Args().Len() != 1 {
 		return errors.New("want exactly one ID")
 	}
@@ -75,16 +80,14 @@ func dummyRead(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("invalid ID %q, want a number", cmd.Args().First())
 	}
 
-	server := cmd.String("server")
-
-	clients, err := dialAuthorityAuthenticated(cmd)
+	clients, connection, err := connectToCurrent(cmd, store)
 	if err != nil {
 		return err
 	}
 
 	response, err := clients.Dummy().Read(ctx, connect.NewRequest(&authorityv1.ReadRequest{Id: id}))
 	if err != nil {
-		return fmt.Errorf("reading the text at %s: %w", server, err)
+		return callFailed("reading the text", connection, err)
 	}
 
 	return printResult(cmd, dummyReadResult{Text: response.Msg.GetText()})

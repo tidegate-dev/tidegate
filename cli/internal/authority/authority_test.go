@@ -42,6 +42,33 @@ func TestConnectDoesntFollowRedirects(t *testing.T) {
 	assert.False(t, reached.Load())
 }
 
+func TestConnectSendsNoTokenWithAPing(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	var authorization atomic.Pointer[string]
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		received := r.Header.Get("Authorization")
+		authorization.Store(&received)
+
+		// An empty body of this type is an empty message in the Connect protocol.
+		w.Header().Set("Content-Type", "application/proto")
+	}))
+	defer server.Close()
+
+	clients, err := Connect(server.URL, secret.New("token"))
+	require.NoError(t, err)
+
+	// act
+	_, err = clients.Ping().Ping(t.Context(), connect.NewRequest(&authorityv1.PingRequest{}))
+
+	// assert
+	require.NoError(t, err)
+	require.NotNil(t, authorization.Load())
+	assert.Empty(t, *authorization.Load())
+}
+
 func TestCheckServerAcceptsHTTPSAndLocalHTTP(t *testing.T) {
 	t.Parallel()
 
@@ -57,7 +84,7 @@ func TestCheckServerAcceptsHTTPSAndLocalHTTP(t *testing.T) {
 			t.Parallel()
 
 			// act
-			err := checkServer(server)
+			err := CheckServer(server)
 
 			// assert
 			assert.NoError(t, err)
@@ -82,7 +109,7 @@ func TestCheckServerRefusesOtherServers(t *testing.T) {
 			t.Parallel()
 
 			// act
-			err := checkServer(server)
+			err := CheckServer(server)
 
 			// assert
 			assert.Error(t, err)
@@ -114,7 +141,7 @@ func TestCheckServerRefusesCredentialsInTheURLWithoutShowingThem(t *testing.T) {
 			t.Parallel()
 
 			// act
-			err := checkServer(test.server.String())
+			err := CheckServer(test.server.String())
 
 			// assert
 			require.Error(t, err)
@@ -130,7 +157,7 @@ func TestCheckServerRefusesAnUnparsableURLWithoutShowingItsCredentials(t *testin
 	server := "https://" + url.UserPassword("alice", "hunter2").String() + "@%ZZ"
 
 	// act
-	err := checkServer(server)
+	err := CheckServer(server)
 
 	// assert
 	require.Error(t, err)
@@ -141,7 +168,7 @@ func TestCheckServerRefusesCredentialsWithoutASchemeWithoutShowingThem(t *testin
 	t.Parallel()
 
 	// act
-	err := checkServer("alice:hunter2@authority.example")
+	err := CheckServer("alice:hunter2@authority.example")
 
 	// assert
 	require.Error(t, err)
