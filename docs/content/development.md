@@ -98,6 +98,8 @@ The reference shows that paragraph in its own column.
 
 The authority's SQL queries are in `authority/internal/db/queries/`, and sqlc generates Go code for them in `authority/internal/db/sqlc/`. After you change a query, run `just generate` and commit the result.
 
+`just generate` and `just check-generated` need Postgres, so start it first with `just dev-deps`. sqlc checks the queries against a real database, because some of them use `xmin`, a column that Postgres adds to every table and that sqlc doesn't know by itself. Note that sqlc keeps databases named `sqlc_managed_...` on that server. `just dev-reset` deletes them with the rest of the data.
+
 To change the database schema, add a migration to `authority/internal/db/migrations/`, numbered after the last one. A migration only goes forward and only adds to the schema. To remove a table or a column, wait a release after the code stops using it, so an old and a new authority can share the database during an update. `just dev` and `just kind` migrate when the authority starts.
 
 ## Tests

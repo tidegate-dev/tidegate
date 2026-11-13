@@ -8,4 +8,19 @@ SELECT EXISTS (SELECT 1 FROM users);
 INSERT INTO users (name, password_hash) VALUES ($1, $2);
 
 -- name: GetUserByName :one
-SELECT id, password_hash FROM users WHERE lower(name) = lower(@name);
+SELECT id, name, password_hash, xmin FROM users WHERE lower(name) = lower(@name);
+
+-- name: UserExists :one
+SELECT EXISTS (SELECT 1 FROM users WHERE id = @id);
+
+-- name: InsertUser :one
+INSERT INTO users (id, name, password_hash) VALUES (@id, @name, @password_hash)
+RETURNING xmin;
+
+-- name: UpdateUser :one
+UPDATE users SET name = @name, password_hash = @password_hash
+WHERE id = @id AND xmin = @version
+RETURNING xmin;
+
+-- name: DeleteUser :execrows
+DELETE FROM users WHERE id = @id AND xmin = @version;

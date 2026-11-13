@@ -36,20 +36,62 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 	return err
 }
 
+const deleteUser = `-- name: DeleteUser :execrows
+DELETE FROM users WHERE id = $1 AND xmin = $2
+`
+
+type DeleteUserParams struct {
+	ID      pgtype.UUID
+	Version pgtype.Uint32
+}
+
+func (q *Queries) DeleteUser(ctx context.Context, arg DeleteUserParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteUser, arg.ID, arg.Version)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const getUserByName = `-- name: GetUserByName :one
-SELECT id, password_hash FROM users WHERE lower(name) = lower($1)
+SELECT id, name, password_hash, xmin FROM users WHERE lower(name) = lower($1)
 `
 
 type GetUserByNameRow struct {
 	ID           pgtype.UUID
+	Name         string
 	PasswordHash pgtype.Text
+	Xmin         pgtype.Uint32
 }
 
 func (q *Queries) GetUserByName(ctx context.Context, name string) (GetUserByNameRow, error) {
 	row := q.db.QueryRow(ctx, getUserByName, name)
 	var i GetUserByNameRow
-	err := row.Scan(&i.ID, &i.PasswordHash)
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.PasswordHash,
+		&i.Xmin,
+	)
 	return i, err
+}
+
+const insertUser = `-- name: InsertUser :one
+INSERT INTO users (id, name, password_hash) VALUES ($1, $2, $3)
+RETURNING xmin
+`
+
+type InsertUserParams struct {
+	ID           pgtype.UUID
+	Name         string
+	PasswordHash pgtype.Text
+}
+
+func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (pgtype.Uint32, error) {
+	row := q.db.QueryRow(ctx, insertUser, arg.ID, arg.Name, arg.PasswordHash)
+	var xmin pgtype.Uint32
+	err := row.Scan(&xmin)
+	return xmin, err
 }
 
 const lockTransaction = `-- name: LockTransaction :exec
@@ -59,4 +101,40 @@ SELECT pg_advisory_xact_lock($1::bigint)
 func (q *Queries) LockTransaction(ctx context.Context, lockID int64) error {
 	_, err := q.db.Exec(ctx, lockTransaction, lockID)
 	return err
+}
+
+const updateUser = `-- name: UpdateUser :one
+UPDATE users SET name = $1, password_hash = $2
+WHERE id = $3 AND xmin = $4
+RETURNING xmin
+`
+
+type UpdateUserParams struct {
+	Name         pgtype.Text
+	PasswordHash pgtype.Text
+	ID           pgtype.UUID
+	Version      pgtype.Uint32
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (pgtype.Uint32, error) {
+	row := q.db.QueryRow(ctx, updateUser,
+		arg.Name,
+		arg.PasswordHash,
+		arg.ID,
+		arg.Version,
+	)
+	var xmin pgtype.Uint32
+	err := row.Scan(&xmin)
+	return xmin, err
+}
+
+const userExists = `-- name: UserExists :one
+SELECT EXISTS (SELECT 1 FROM users WHERE id = $1)
+`
+
+func (q *Queries) UserExists(ctx context.Context, id pgtype.UUID) (bool, error) {
+	row := q.db.QueryRow(ctx, userExists, id)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }

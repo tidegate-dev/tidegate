@@ -52,6 +52,21 @@ dependenciesRules:
       internal:
         - '^github.com/tidegate-dev/tidegate/authority/internal/db.**'
 
+  - package: '^github.com/tidegate-dev/tidegate/authority/internal/model$'
+    shouldOnlyDependsOn:
+      internal:
+        - '^github.com/tidegate-dev/tidegate/internal/secret$'
+    shouldNotDependsOn:
+      external:
+        - github.com/jackc/pgx/v5.**
+
+  - package: '^github.com/tidegate-dev/tidegate/authority/internal/store$'
+    shouldOnlyDependsOn:
+      internal:
+        - '^github.com/tidegate-dev/tidegate/authority/internal/db/sqlc$'
+        - '^github.com/tidegate-dev/tidegate/authority/internal/model$'
+        - '^github.com/tidegate-dev/tidegate/internal/secret$'
+
   - package: '^github.com/tidegate-dev/tidegate/authority/internal/service$'
     shouldOnlyDependsOn:
       internal:
