@@ -132,14 +132,14 @@ This creates a database of its own on the test Postgres server, starts the autho
 
 ### End-to-end tests
 
-End-to-end tests use tidegate the way a user does. They run the `tidegate` CLI against a running authority with [Bats](https://bats-core.readthedocs.io/) and check what it prints. They live in `e2e/` at the root of the repository. Start the services first, then run the tests:
+End-to-end tests use tidegate the way a user does. They run its binaries with [Bats](https://bats-core.readthedocs.io/) and check what they print. The tests in `e2e/cli` run the `tidegate` CLI against a running authority. The tests in `e2e/authority` run the commands of the `authority` binary, like `authority create-initial-admin`. Start the services first, then run the tests:
 
 ```sh
 just dev-deps
 just test-e2e
 ```
 
-Like `just test-api`, this starts the authority on a database of its own and creates the initial admin. A test finds the authority in `TIDEGATE_TEST_AUTHORITY` and the admin's user name and password in `TIDEGATE_TEST_USER` and `TIDEGATE_TEST_PASSWORD`.
+Like `just test-api`, this starts the authority on a database of its own and creates the initial admin. A test finds the authority in `TIDEGATE_TEST_AUTHORITY` and the admin's user name and password in `TIDEGATE_TEST_USER` and `TIDEGATE_TEST_PASSWORD`. If a test needs an empty database, it creates one in `setup` and drops it in `teardown`. `e2e/authority/create-initial-admin.bats` shows how.
 
 ### Coverage
 

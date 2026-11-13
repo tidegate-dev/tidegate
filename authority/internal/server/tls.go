@@ -1,6 +1,7 @@
-package main
+package server
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -35,4 +36,24 @@ func loadCertificate(cfg config.TLS) (*certreload.Certificate, error) {
 	}
 
 	return certificate, nil
+}
+
+// watchCertificate reports certificate's expiry as a metric and watches
+// its files until ctx ends. The returned function stops the reporting. It
+// does nothing if certificate is nil.
+func watchCertificate(ctx context.Context, certificate *certreload.Certificate) (func(), error) {
+	if certificate == nil {
+		return func() {}, nil
+	}
+
+	registration, err := certificate.ReportExpiry()
+	if err != nil {
+		return nil, err
+	}
+
+	go certificate.Watch(ctx)
+
+	return func() {
+		_ = registration.Unregister()
+	}, nil
 }

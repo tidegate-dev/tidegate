@@ -27,8 +27,8 @@ test-integration: authority::test-integration
 test-api: authority::test-api
 
 # Run the end-to-end tests in e2e/ with Bats. They start an authority on its
-# own database and use it through the tidegate CLI. Like the API tests, they
-# need Postgres.
+# own database and use it through the tidegate CLI, and they run the authority
+# binary's own commands. Like the API tests, they need Postgres.
 test-e2e:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -37,7 +37,7 @@ test-e2e:
     mkdir "$work/bin" "$work/coverage"
     go build -cover -coverpkg=github.com/tidegate-dev/tidegate/... -o "$work/bin/tidegate" ./cli/cmd/tidegate
     PATH="$work/bin:$PATH" dev/with-test-authority.sh coverage/authority-e2e.out \
-        env GOCOVERDIR="$work/coverage" bats e2e/
+        env GOCOVERDIR="$work/coverage" bats --recursive e2e/
     go tool covdata textfmt -i="$work/coverage" -o coverage/cli-e2e.out
 
 # Change each line the branch changed since it split off from base, and list

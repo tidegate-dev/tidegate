@@ -1,6 +1,6 @@
 //go:build integration
 
-package main
+package server
 
 import (
 	"testing"
@@ -11,5 +11,5 @@ import (
 
 func TestIntegration(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "authority command integration")
+	RunSpecs(t, "authority server integration")
 }
