@@ -23,6 +23,11 @@ func (s *Store) Users() *Users {
 	return &Users{queries: sqlc.New(s.pool)}
 }
 
+// Sessions returns the queries for the sessions table.
+func (s *Store) Sessions() *Sessions {
+	return &Sessions{queries: sqlc.New(s.pool)}
+}
+
 // NewUnit returns an empty unit of work.
 func (s *Store) NewUnit() *Unit {
 	return &Unit{pool: s.pool}

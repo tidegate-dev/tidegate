@@ -32,6 +32,12 @@ func (u *Unit) Users() *UnitUsers {
 	return &UnitUsers{queries: sqlc.New(u.pool), unit: u}
 }
 
+// Sessions returns the sessions table for this unit. Its reads run right
+// away, its writes at Commit.
+func (u *Unit) Sessions() *UnitSessions {
+	return &UnitSessions{queries: sqlc.New(u.pool), unit: u}
+}
+
 // Commit runs the pending writes in the order they were added, in one
 // transaction. If one fails, none is kept. It returns model.ErrConflict if a
 // row changed after it was read. A unit can be committed once.
@@ -62,6 +68,10 @@ func (u *Unit) add(w write) {
 
 func isUniqueViolation(err error) bool {
 	return hasCode(err, pgerrcode.UniqueViolation)
+}
+
+func isForeignKeyViolation(err error) bool {
+	return hasCode(err, pgerrcode.ForeignKeyViolation)
 }
 
 func hasCode(err error, code string) bool {

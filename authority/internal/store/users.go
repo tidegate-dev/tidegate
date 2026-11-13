@@ -186,19 +186,3 @@ func userExists(ctx context.Context, queries *sqlc.Queries, id model.UserID) (bo
 
 	return exists, nil
 }
-
-func databaseID(id model.UserID) pgtype.UUID {
-	return pgtype.UUID{Bytes: id, Valid: true}
-}
-
-func databaseHash(hash *secret.String) pgtype.Text {
-	if hash == nil {
-		return pgtype.Text{}
-	}
-
-	return pgtype.Text{String: hash.Reveal(), Valid: true}
-}
-
-func databaseVersion(version uint32) pgtype.Uint32 {
-	return pgtype.Uint32{Uint32: version, Valid: true}
-}
