@@ -33,6 +33,7 @@ import (
 	"github.com/tidegate-dev/tidegate/internal/metrics"
 	"github.com/tidegate-dev/tidegate/internal/requestlog"
 	"github.com/tidegate-dev/tidegate/internal/systemd"
+	"github.com/tidegate-dev/tidegate/internal/terminal"
 )
 
 const shutdownTimeout = 10 * time.Second
@@ -164,7 +165,7 @@ func createInitialAdmin(ctx context.Context, cfg config.Database, name string, i
 		return service.ErrUserExists
 	}
 
-	plaintext, err := readPassword(ctx, in, out)
+	plaintext, err := readPassword(ctx, terminal.New(in, out))
 	if err != nil {
 		return err
 	}

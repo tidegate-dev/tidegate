@@ -32,6 +32,7 @@ The Nix shell also installs a pre-commit hook that runs `just lint`, `just test`
 
 If you don't use Nix, install these tools yourself:
 
+- [Bats](https://bats-core.readthedocs.io/en/stable/installation.html) 1.14 or newer
 - [buf](https://buf.build/docs/cli/installation/) 1.73 or newer
 - [gitleaks](https://github.com/gitleaks/gitleaks) 8.30 or newer
 - [Go](https://go.dev/dl/) 1.27.4 or newer

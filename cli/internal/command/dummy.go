@@ -1,18 +1,28 @@
-package main
+package command
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"connectrpc.com/connect"
 	"github.com/urfave/cli/v3"
 
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
-	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
 )
+
+type dummyWriteResult struct {
+	ID int64 `json:"id" yaml:"id"`
+}
+
+func (r dummyWriteResult) String() string { return strconv.FormatInt(r.ID, 10) }
+
+type dummyReadResult struct {
+	Text string `json:"text" yaml:"text"`
+}
+
+func (r dummyReadResult) String() string { return r.Text }
 
 func dummyCommand() *cli.Command {
 	return &cli.Command{
@@ -41,19 +51,18 @@ func dummyWrite(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	server := cmd.String("server")
-	client := authorityv1connect.NewDummyServiceClient(http.DefaultClient, server)
 
-	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
-	defer cancel()
+	clients, err := dialAuthorityAuthenticated(cmd)
+	if err != nil {
+		return err
+	}
 
-	response, err := client.Write(ctx, connect.NewRequest(&authorityv1.WriteRequest{Text: cmd.Args().First()}))
+	response, err := clients.Dummy().Write(ctx, connect.NewRequest(&authorityv1.WriteRequest{Text: cmd.Args().First()}))
 	if err != nil {
 		return fmt.Errorf("storing the text at %s: %w", server, err)
 	}
 
-	_, err = fmt.Fprintln(cmd.Root().Writer, response.Msg.GetId())
-
-	return err
+	return printResult(cmd, dummyWriteResult{ID: response.Msg.GetId()})
 }
 
 func dummyRead(ctx context.Context, cmd *cli.Command) error {
@@ -67,17 +76,16 @@ func dummyRead(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	server := cmd.String("server")
-	client := authorityv1connect.NewDummyServiceClient(http.DefaultClient, server)
 
-	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
-	defer cancel()
+	clients, err := dialAuthorityAuthenticated(cmd)
+	if err != nil {
+		return err
+	}
 
-	response, err := client.Read(ctx, connect.NewRequest(&authorityv1.ReadRequest{Id: id}))
+	response, err := clients.Dummy().Read(ctx, connect.NewRequest(&authorityv1.ReadRequest{Id: id}))
 	if err != nil {
 		return fmt.Errorf("reading the text at %s: %w", server, err)
 	}
 
-	_, err = fmt.Fprintln(cmd.Root().Writer, response.Msg.GetText())
-
-	return err
+	return printResult(cmd, dummyReadResult{Text: response.Msg.GetText()})
 }

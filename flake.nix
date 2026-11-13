@@ -90,6 +90,7 @@
       devShells = forEachSystem (pkgs: {
         default = pkgs.mkShell {
           packages = tools pkgs ++ [
+            pkgs.bats
             pkgs.gitleaks
             pkgs.govulncheck
             (grant pkgs)

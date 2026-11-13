@@ -31,67 +31,8 @@ test-integration:
 # and write the authority's coverage to coverage/ at the root of the
 # repository. Like the integration tests, they need Postgres.
 test-api:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    ../dev/tls-setup.sh
-    mkdir -p ../coverage
-    server=${TIDEGATE_TEST_DATABASE_URL%%\?*}
-    query=${TIDEGATE_TEST_DATABASE_URL#"$server"}
-    # libpq lets these replace the database in the path.
-    case $query in *dbname=* | *database=*)
-        echo "TIDEGATE_TEST_DATABASE_URL must not name a database in its query." >&2
-        exit 1
-        ;;
-    esac
-    case ${server#*://} in */*) server=${server%/*} ;; esac
-    database=test_api_$(od -An -N8 -tx1 /dev/urandom | tr -d ' \n')
-    psql=(psql --quiet --no-psqlrc --set ON_ERROR_STOP=1 "$TIDEGATE_TEST_DATABASE_URL")
-    "${psql[@]}" --command "CREATE DATABASE $database"
-    work=$(mktemp -d)
-    authority=
-    cleanup() {
-        if [ -n "$authority" ]; then
-            kill "$authority" 2>/dev/null || true
-            wait "$authority" 2>/dev/null || true
-        fi
-        rm -rf "$work"
-        "${psql[@]}" --command "DROP DATABASE $database WITH (FORCE)"
-    }
-    trap cleanup EXIT
-    fail() {
-        cat "$work/log" >&2
-        exit 1
-    }
-    mkdir "$work/coverage"
-    go build -cover -coverpkg=github.com/tidegate-dev/tidegate/... -o "$work/authority" ./cmd/authority
-    # Other ports than just dev, so both can run at the same time.
-    export GOCOVERDIR="$work/coverage"
-    export TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=127.0.0.1:18080
-    export TIDEGATE_AUTHORITY__METRICS__LISTEN_ADDRESS=127.0.0.1:19464
-    export TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE=../dev/tls/authority.pem
-    export TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE=../dev/tls/authority-key.pem
-    export TIDEGATE_AUTHORITY__DATABASE__URL="$server/$database$query"
-    export TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START=true
-    "$work/authority" >>"$work/log" 2>&1 &
-    authority=$!
-    user=alice
-    password='correct horse battery staple'
-    options=(
-        --cacert ../dev/tls/ca.pem
-        --variable authority=https://127.0.0.1:18080
-        --variable "user=$user"
-        --variable "password=$password"
-    )
-    hurl "${options[@]}" --retry 50 --retry-interval 200 api-tests/ping.hurl >/dev/null || fail
-    # The authority has migrated the database by the time it answers a ping.
-    printf '%s\n' "$password" | "$work/authority" create-initial-admin "$user" >>"$work/log" 2>&1 || fail
-    hurl --test "${options[@]}" api-tests/*.hurl || fail
-    # The authority writes its coverage only when it stops cleanly.
-    kill "$authority"
-    stopped=$authority
-    authority=
-    wait "$stopped" || fail
-    go tool covdata textfmt -i="$work/coverage" -o ../coverage/authority-api.out
+    ../dev/with-test-authority.sh ../coverage/authority-api.out \
+        sh -c 'hurl --test --cacert "$TIDEGATE_TEST_CA_FILE" --variable "authority=$TIDEGATE_TEST_AUTHORITY" --variable "user=$TIDEGATE_TEST_USER" --variable "password=$TIDEGATE_TEST_PASSWORD" api-tests/*.hurl'
 
 # Lint the authority.
 lint:
