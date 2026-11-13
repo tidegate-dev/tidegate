@@ -52,7 +52,7 @@ func dummyWrite(ctx context.Context, cmd *cli.Command) error {
 
 	server := cmd.String("server")
 
-	clients, err := dialAuthority(cmd)
+	clients, err := dialAuthorityAuthenticated(cmd)
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func dummyRead(ctx context.Context, cmd *cli.Command) error {
 
 	server := cmd.String("server")
 
-	clients, err := dialAuthority(cmd)
+	clients, err := dialAuthorityAuthenticated(cmd)
 	if err != nil {
 		return err
 	}

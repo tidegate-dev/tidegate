@@ -21,7 +21,7 @@ func logoutCommand() *cli.Command {
 func logout(ctx context.Context, cmd *cli.Command) error {
 	server := cmd.String("server")
 
-	clients, err := dialAuthority(cmd)
+	clients, err := dialAuthorityAuthenticated(cmd)
 	if err != nil {
 		return err
 	}

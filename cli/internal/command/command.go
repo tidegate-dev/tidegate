@@ -53,7 +53,11 @@ func New() *cli.Command {
 	return root
 }
 
-func dialAuthority(cmd *cli.Command) (*authority.Clients, error) {
+func dialAuthorityUnauthenticated(cmd *cli.Command) (*authority.Clients, error) {
+	return authority.Connect(cmd.String("server"), secret.New(""))
+}
+
+func dialAuthorityAuthenticated(cmd *cli.Command) (*authority.Clients, error) {
 	return authority.Connect(cmd.String("server"), secret.New(os.Getenv("TIDEGATE_TOKEN")))
 }
 

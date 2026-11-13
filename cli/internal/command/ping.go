@@ -27,7 +27,7 @@ func pingCommand() *cli.Command {
 func ping(ctx context.Context, cmd *cli.Command) error {
 	server := cmd.String("server")
 
-	clients, err := dialAuthority(cmd)
+	clients, err := dialAuthorityUnauthenticated(cmd)
 	if err != nil {
 		return err
 	}
