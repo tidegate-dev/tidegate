@@ -12,8 +12,8 @@ import (
 )
 
 const createSession = `-- name: CreateSession :exec
-INSERT INTO sessions (token_hash, user_id, expires_at)
-VALUES ($1, $2, now() + $3::interval)
+INSERT INTO sessions (token_hash, user_id, created_at, expires_at)
+VALUES ($1, $2, now(), now() + $3::interval)
 `
 
 type CreateSessionParams struct {

@@ -1,6 +1,6 @@
 -- name: CreateSession :exec
-INSERT INTO sessions (token_hash, user_id, expires_at)
-VALUES (@token_hash, @user_id, now() + @lifetime::interval);
+INSERT INTO sessions (token_hash, user_id, created_at, expires_at)
+VALUES (@token_hash, @user_id, now(), now() + @lifetime::interval);
 
 -- name: DeleteExpiredSessions :exec
 DELETE FROM sessions WHERE user_id = @user_id AND expires_at <= now();
