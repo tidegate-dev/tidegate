@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"connectrpc.com/connect"
 	"github.com/urfave/cli/v3"
 
 	"github.com/tidegate-dev/tidegate/cli/internal/authority"
@@ -40,9 +39,7 @@ func logout(ctx context.Context, cmd *cli.Command, store connections.Store) erro
 	}
 
 	err = authority.SignOut(ctx, connection.Server, connection.Token)
-
-	authorityForgotSession := connect.CodeOf(err) == connect.CodeUnauthenticated
-	if isSaved && authorityForgotSession {
+	if isSaved && sessionEnded(err) {
 		err = nil
 	}
 

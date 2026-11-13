@@ -16,11 +16,14 @@ func endSession(ctx context.Context, connection connections.Connection) error {
 	}
 
 	err := authority.SignOut(ctx, connection.Server, connection.Token)
-
-	authorityForgotSession := connect.CodeOf(err) == connect.CodeUnauthenticated
-	if err != nil && !authorityForgotSession {
+	if err != nil && !sessionEnded(err) {
 		return callFailed("signing out", connection, err)
 	}
 
 	return nil
+}
+
+// The authority answers Unauthenticated for a session that expired or was revoked.
+func sessionEnded(err error) bool {
+	return connect.CodeOf(err) == connect.CodeUnauthenticated
 }
