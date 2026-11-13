@@ -68,7 +68,7 @@ Inside a component, `service` does the work and may use the database, but doesn'
 
 ### Secrets
 
-Keep passwords, tokens and other secrets in a `secret.String` from `internal/secret`. It prints and logs as `****`, and only `Reveal()` returns the value. `just lint` fails if an exported field or parameter with a name like `password` or `token` is a plain `string`.
+Keep passwords, tokens and other secrets in a `secret.String` from `internal/secret`. If the secret is binary, like a hash, keep it in a `secret.Bytes`. Both print and log as `****`, and only `Reveal()` returns the value. `just lint` fails if an exported field or parameter with a name like `password` or `token` is a plain `string` or `[]byte`.
 
 ### Time and randomness
 

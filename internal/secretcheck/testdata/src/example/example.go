@@ -5,7 +5,7 @@ type Token string
 type Login struct {
 	Name     string
 	Password string // want `Login.Password holds a secret as string, use secret.String`
-	APIKey   []byte // want `Login.APIKey holds a secret as \[\]byte, use secret.String`
+	APIKey   []byte // want `Login.APIKey holds a secret as \[\]byte, use secret.Bytes`
 	Token    Token  // want `Login.Token holds a secret as Token, use secret.String`
 	password string
 	Lifetime int
