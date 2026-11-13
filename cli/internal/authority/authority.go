@@ -33,24 +33,26 @@ var httpClient = &http.Client{
 
 // Connect refuses a plain HTTP server that isn't on this machine, and returns
 // clients that give every call 10 seconds and send token with it, if it isn't
-// empty.
+// empty. A ping never gets the token, because the authority answers it
+// without a login.
 func Connect(server string, token secret.String) (*Clients, error) {
 	err := CheckServer(server)
 	if err != nil {
 		return nil, err
 	}
 
-	interceptors := []connect.Interceptor{timeoutInterceptor{limit: requestTimeout}}
+	timeout := timeoutInterceptor{limit: requestTimeout}
+	withoutToken := connect.WithInterceptors(timeout)
+	withToken := withoutToken
+
 	if token.Reveal() != "" {
-		interceptors = append(interceptors, sessionTokenInterceptor{token: token})
+		withToken = connect.WithInterceptors(timeout, sessionTokenInterceptor{token: token})
 	}
 
-	option := connect.WithInterceptors(interceptors...)
-
 	return &Clients{
-		ping:  authorityv1connect.NewPingServiceClient(httpClient, server, option),
-		login: authorityv1connect.NewLoginServiceClient(httpClient, server, option),
-		dummy: authorityv1connect.NewDummyServiceClient(httpClient, server, option),
+		ping:  authorityv1connect.NewPingServiceClient(httpClient, server, withoutToken),
+		login: authorityv1connect.NewLoginServiceClient(httpClient, server, withToken),
+		dummy: authorityv1connect.NewDummyServiceClient(httpClient, server, withToken),
 	}, nil
 }
 

@@ -42,6 +42,33 @@ func TestConnectDoesntFollowRedirects(t *testing.T) {
 	assert.False(t, reached.Load())
 }
 
+func TestConnectSendsNoTokenWithAPing(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	var authorization atomic.Pointer[string]
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		received := r.Header.Get("Authorization")
+		authorization.Store(&received)
+
+		// An empty body of this type is an empty message in the Connect protocol.
+		w.Header().Set("Content-Type", "application/proto")
+	}))
+	defer server.Close()
+
+	clients, err := Connect(server.URL, secret.New("token"))
+	require.NoError(t, err)
+
+	// act
+	_, err = clients.Ping().Ping(t.Context(), connect.NewRequest(&authorityv1.PingRequest{}))
+
+	// assert
+	require.NoError(t, err)
+	require.NotNil(t, authorization.Load())
+	assert.Empty(t, *authorization.Load())
+}
+
 func TestCheckServerAcceptsHTTPSAndLocalHTTP(t *testing.T) {
 	t.Parallel()
 
