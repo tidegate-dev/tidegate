@@ -25,8 +25,9 @@ func New(store connections.Store) *cli.Command {
 		Action: unknownCommand,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  "connection",
-				Usage: "name of the saved connection to use, by default the one in TIDEGATE_CONNECTION",
+				Name:    "connection",
+				Aliases: []string{"c"},
+				Usage:   "name of the saved connection to use, by default the one in TIDEGATE_CONNECTION",
 			},
 			&cli.StringFlag{
 				Name:    "output",

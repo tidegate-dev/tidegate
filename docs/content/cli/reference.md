@@ -24,7 +24,7 @@ Global flags work before or after the command. A command that fails prints `Erro
 
 | Flag | Commands | Values |
 |---|---|---|
-| `--connection <name>` | All | The name of a saved connection. With `tidegate login <url>`, the name to save the connection under. |
+| `--connection <name>`, `-c <name>` | All | The name of a saved connection. With `tidegate login <url>`, the name to save the connection under. |
 | `--output <format>`, `-o <format>` | All | `text`, `json` or `yaml`. The default is `text`. |
 | `--print-token` | `login <url>` | Writes the session token to stdout and saves no connection. Can't be combined with `--connection`. |
 
