@@ -47,8 +47,9 @@ func (u *Unit) Dummies() model.DummyReadWriter {
 
 // Commit runs the pending writes in the order they were added, in one
 // transaction. If one fails, none is kept. It returns
-// model.ErrChangedSinceRead if a row changed after it was read. A unit can be
-// committed once.
+// model.ErrChangedSinceRead if a row changed after it was read. If it fails,
+// the models it wrote may hold versions that were never stored, so read them
+// again before you write them. A unit can be committed once.
 func (u *Unit) Commit(ctx context.Context) error {
 	if u.committed {
 		return errUnitCommitted
