@@ -244,7 +244,7 @@ func countWaitingForUsersEmptyLock(ctx context.Context, pool *pgxpool.Pool) (int
 	// pg_locks splits a bigint advisory key into objid (low 32 bits) and
 	// classid (high 32 bits).
 	err := pool.QueryRow(ctx,
-		"SELECT count(*) FROM pg_locks WHERE locktype = 'advisory' AND NOT granted AND ((classid::bigint << 32) | objid::bigint) = $1",
+		"SELECT count(*) FROM pg_locks WHERE locktype = 'advisory' AND NOT granted AND ((classid::bigint << 32) | objid::bigint) = $1 AND database = (SELECT oid FROM pg_database WHERE datname = current_database())",
 		usersEmptyLockID,
 	).Scan(&waiting)
 
