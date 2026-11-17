@@ -403,7 +403,7 @@ func writeFile(path string, savedByName map[string]Connection) error {
 
 	err = errors.Join(err, temporaryFile.Close())
 	if err == nil {
-		err = os.Rename(temporaryFile.Name(), path)
+		err = replaceFile(temporaryFile.Name(), path)
 	}
 
 	if err != nil {
