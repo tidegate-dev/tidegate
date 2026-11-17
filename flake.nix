@@ -21,6 +21,7 @@
 
       # When you change this list, update the tool list in README.md too.
       tools = pkgs: [
+        pkgs.actionlint
         pkgs.buf
         pkgs.go_1_27
         pkgs.golangci-lint
@@ -90,7 +91,6 @@
       devShells = forEachSystem (pkgs: {
         default = pkgs.mkShell {
           packages = tools pkgs ++ [
-            pkgs.actionlint
             pkgs.bats
             pkgs.gitleaks
             pkgs.govulncheck
