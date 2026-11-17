@@ -13,14 +13,14 @@ import (
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
-// Sessions queries the sessions table on the connection pool.
-type Sessions struct {
+// SessionReader queries the sessions table on the connection pool.
+type SessionReader struct {
 	queries *sqlc.Queries
 }
 
 // ActiveByTokenHash returns the session with the token hash that expires
 // after now, or model.ErrSessionNotFound.
-func (s *Sessions) ActiveByTokenHash(ctx context.Context, tokenHash secret.Bytes, now time.Time) (*model.Session, error) {
+func (s *SessionReader) ActiveByTokenHash(ctx context.Context, tokenHash secret.Bytes, now time.Time) (*model.Session, error) {
 	row, err := s.queries.GetActiveSessionByTokenHash(ctx, sqlc.GetActiveSessionByTokenHashParams{
 		TokenHash: tokenHash.Reveal(),
 		Now:       databaseTime(now),
@@ -43,10 +43,10 @@ func (s *Sessions) ActiveByTokenHash(ctx context.Context, tokenHash secret.Bytes
 	}, nil
 }
 
-// UnitSessions belongs to a unit of work. It queries like Sessions and
+// SessionReadWriter belongs to a unit of work. It queries like SessionReader and
 // records writes, which the unit runs at Commit.
-type UnitSessions struct {
-	Sessions
+type SessionReadWriter struct {
+	SessionReader
 
 	unit *Unit
 }
@@ -54,7 +54,7 @@ type UnitSessions struct {
 // Add records the insert of session. Commit returns model.ErrConflict if
 // another session has the token hash, and model.ErrUserNotFound if the user
 // of the session is gone.
-func (s *UnitSessions) Add(session *model.Session) {
+func (s *SessionReadWriter) Add(session *model.Session) {
 	s.unit.add(func(ctx context.Context, queries *sqlc.Queries) error {
 		version, err := queries.InsertSession(ctx, sqlc.InsertSessionParams{
 			ID:        databaseID(session.ID),
@@ -82,7 +82,7 @@ func (s *UnitSessions) Add(session *model.Session) {
 // Remove records the delete of session. Commit returns model.ErrConflict if
 // the row changed since session was read. A row that is already gone counts
 // as removed.
-func (s *UnitSessions) Remove(session *model.Session) {
+func (s *SessionReadWriter) Remove(session *model.Session) {
 	s.unit.add(func(ctx context.Context, queries *sqlc.Queries) error {
 		deleted, err := queries.DeleteSession(ctx, sqlc.DeleteSessionParams{
 			ID:      databaseID(session.ID),
@@ -111,7 +111,7 @@ func (s *UnitSessions) Remove(session *model.Session) {
 
 // RemoveOfUser records the delete of every session of the user, whatever
 // their versions are at Commit.
-func (s *UnitSessions) RemoveOfUser(userID model.UserID) {
+func (s *SessionReadWriter) RemoveOfUser(userID model.UserID) {
 	s.unit.add(func(ctx context.Context, queries *sqlc.Queries) error {
 		err := queries.DeleteSessionsOfUser(ctx, databaseID(userID))
 		if err != nil {
@@ -124,7 +124,7 @@ func (s *UnitSessions) RemoveOfUser(userID model.UserID) {
 
 // RemoveExpiredOfUser records the delete of every session of the user that
 // expires at now or earlier, whatever their versions are at Commit.
-func (s *UnitSessions) RemoveExpiredOfUser(userID model.UserID, now time.Time) {
+func (s *SessionReadWriter) RemoveExpiredOfUser(userID model.UserID, now time.Time) {
 	s.unit.add(func(ctx context.Context, queries *sqlc.Queries) error {
 		err := queries.DeleteExpiredSessionsOfUser(ctx, sqlc.DeleteExpiredSessionsOfUserParams{
 			UserID: databaseID(userID),

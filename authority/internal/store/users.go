@@ -17,14 +17,14 @@ import (
 // goose uses its own lock ID for migrations.
 const usersEmptyLockID int64 = 0x7469646567617465 // "tidegate" in ASCII
 
-// Users queries the users table on the connection pool.
-type Users struct {
+// UserReader queries the users table on the connection pool.
+type UserReader struct {
 	queries *sqlc.Queries
 }
 
 // ByName returns the user with the name, ignoring letter case, or
 // model.ErrUserNotFound.
-func (u *Users) ByName(ctx context.Context, name string) (*model.User, error) {
+func (u *UserReader) ByName(ctx context.Context, name string) (*model.User, error) {
 	row, err := u.queries.GetUserByName(ctx, name)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, model.ErrUserNotFound
@@ -45,7 +45,7 @@ func (u *Users) ByName(ctx context.Context, name string) (*model.User, error) {
 }
 
 // Any reports whether the table holds a user.
-func (u *Users) Any(ctx context.Context) (bool, error) {
+func (u *UserReader) Any(ctx context.Context) (bool, error) {
 	exists, err := u.queries.AnyUserExists(ctx)
 	if err != nil {
 		return false, fmt.Errorf("checking for users: %w", err)
@@ -54,17 +54,17 @@ func (u *Users) Any(ctx context.Context) (bool, error) {
 	return exists, nil
 }
 
-// UnitUsers belongs to a unit of work. It queries like Users and records
+// UserReadWriter belongs to a unit of work. It queries like UserReader and records
 // writes, which the unit runs at Commit.
-type UnitUsers struct {
-	Users
+type UserReadWriter struct {
+	UserReader
 
 	unit *Unit
 }
 
 // Add records the insert of user. Commit returns model.ErrConflict if another
 // user has the name.
-func (u *UnitUsers) Add(user *model.User) {
+func (u *UserReadWriter) Add(user *model.User) {
 	u.unit.add(func(ctx context.Context, queries *sqlc.Queries) error {
 		return insertUser(ctx, queries, user)
 	})
@@ -72,7 +72,7 @@ func (u *UnitUsers) Add(user *model.User) {
 
 // AddIfNoneExist records the insert of user into an empty table. Commit
 // returns model.ErrUsersExist if the table holds a user by then.
-func (u *UnitUsers) AddIfNoneExist(user *model.User) {
+func (u *UserReadWriter) AddIfNoneExist(user *model.User) {
 	u.unit.add(func(ctx context.Context, queries *sqlc.Queries) error {
 		// Two runs that both see an empty table must not both insert.
 		err := queries.LockTransaction(ctx, usersEmptyLockID)
@@ -96,7 +96,7 @@ func (u *UnitUsers) AddIfNoneExist(user *model.User) {
 // Update records the update of every column of user. Commit returns
 // model.ErrConflict if the row changed since user was read, and
 // model.ErrUserNotFound if it's gone.
-func (u *UnitUsers) Update(user *model.User) {
+func (u *UserReadWriter) Update(user *model.User) {
 	u.unit.add(func(ctx context.Context, queries *sqlc.Queries) error {
 		version, err := queries.UpdateUser(ctx, sqlc.UpdateUserParams{
 			ID:           databaseID(user.ID),
@@ -132,7 +132,7 @@ func (u *UnitUsers) Update(user *model.User) {
 // Remove records the delete of user. Commit returns model.ErrConflict if the
 // row changed since user was read. A row that is already gone counts as
 // removed.
-func (u *UnitUsers) Remove(user *model.User) {
+func (u *UserReadWriter) Remove(user *model.User) {
 	u.unit.add(func(ctx context.Context, queries *sqlc.Queries) error {
 		deleted, err := queries.DeleteUser(ctx, sqlc.DeleteUserParams{
 			ID:      databaseID(user.ID),

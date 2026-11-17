@@ -19,13 +19,13 @@ func New(pool *pgxpool.Pool) *Store {
 }
 
 // Users returns the queries for the users table.
-func (s *Store) Users() *Users {
-	return &Users{queries: sqlc.New(s.pool)}
+func (s *Store) Users() *UserReader {
+	return &UserReader{queries: sqlc.New(s.pool)}
 }
 
 // Sessions returns the queries for the sessions table.
-func (s *Store) Sessions() *Sessions {
-	return &Sessions{queries: sqlc.New(s.pool)}
+func (s *Store) Sessions() *SessionReader {
+	return &SessionReader{queries: sqlc.New(s.pool)}
 }
 
 // NewUnit returns an empty unit of work.

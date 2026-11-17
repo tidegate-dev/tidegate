@@ -28,14 +28,14 @@ type Unit struct {
 
 // Users returns the users table for this unit. Its reads run right away, its
 // writes at Commit.
-func (u *Unit) Users() *UnitUsers {
-	return &UnitUsers{queries: sqlc.New(u.pool), unit: u}
+func (u *Unit) Users() *UserReadWriter {
+	return &UserReadWriter{queries: sqlc.New(u.pool), unit: u}
 }
 
 // Sessions returns the sessions table for this unit. Its reads run right
 // away, its writes at Commit.
-func (u *Unit) Sessions() *UnitSessions {
-	return &UnitSessions{queries: sqlc.New(u.pool), unit: u}
+func (u *Unit) Sessions() *SessionReadWriter {
+	return &SessionReadWriter{queries: sqlc.New(u.pool), unit: u}
 }
 
 // Commit runs the pending writes in the order they were added, in one
