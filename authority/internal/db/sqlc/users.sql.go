@@ -22,8 +22,14 @@ func (q *Queries) AnyUserExists(ctx context.Context) (bool, error) {
 	return exists, err
 }
 
-const deleteUser = `-- name: DeleteUser :execrows
-DELETE FROM users WHERE id = $1 AND xmin = $2
+const deleteUser = `-- name: DeleteUser :one
+WITH deleted AS (
+    DELETE FROM users WHERE id = $1 AND xmin = $2
+    RETURNING id
+)
+SELECT
+    EXISTS (SELECT 1 FROM deleted) AS deleted,
+    EXISTS (SELECT 1 FROM users WHERE id = $1) AS found
 `
 
 type DeleteUserParams struct {
@@ -31,12 +37,16 @@ type DeleteUserParams struct {
 	Version pgtype.Uint32
 }
 
-func (q *Queries) DeleteUser(ctx context.Context, arg DeleteUserParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteUser, arg.ID, arg.Version)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
+type DeleteUserRow struct {
+	Deleted bool
+	Found   bool
+}
+
+func (q *Queries) DeleteUser(ctx context.Context, arg DeleteUserParams) (DeleteUserRow, error) {
+	row := q.db.QueryRow(ctx, deleteUser, arg.ID, arg.Version)
+	var i DeleteUserRow
+	err := row.Scan(&i.Deleted, &i.Found)
+	return i, err
 }
 
 const getUserByName = `-- name: GetUserByName :one
@@ -90,37 +100,36 @@ func (q *Queries) LockTransaction(ctx context.Context, lockID int64) error {
 }
 
 const updateUser = `-- name: UpdateUser :one
-UPDATE users SET name = $1, password_hash = $2
-WHERE id = $3 AND xmin = $4
-RETURNING xmin
+WITH updated AS (
+    UPDATE users SET name = $2, password_hash = $3
+    WHERE id = $1 AND xmin = $4
+    RETURNING xmin
+)
+SELECT
+    (SELECT xmin FROM updated) AS version,
+    EXISTS (SELECT 1 FROM users WHERE id = $1) AS found
 `
 
 type UpdateUserParams struct {
+	ID           pgtype.UUID
 	Name         pgtype.Text
 	PasswordHash pgtype.Text
-	ID           pgtype.UUID
 	Version      pgtype.Uint32
 }
 
-func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (pgtype.Uint32, error) {
-	row := q.db.QueryRow(ctx, updateUser,
-		arg.Name,
-		arg.PasswordHash,
-		arg.ID,
-		arg.Version,
-	)
-	var xmin pgtype.Uint32
-	err := row.Scan(&xmin)
-	return xmin, err
+type UpdateUserRow struct {
+	Version pgtype.Uint32
+	Found   pgtype.Bool
 }
 
-const userExists = `-- name: UserExists :one
-SELECT EXISTS (SELECT 1 FROM users WHERE id = $1)
-`
-
-func (q *Queries) UserExists(ctx context.Context, id pgtype.UUID) (bool, error) {
-	row := q.db.QueryRow(ctx, userExists, id)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error) {
+	row := q.db.QueryRow(ctx, updateUser,
+		arg.ID,
+		arg.Name,
+		arg.PasswordHash,
+		arg.Version,
+	)
+	var i UpdateUserRow
+	err := row.Scan(&i.Version, &i.Found)
+	return i, err
 }

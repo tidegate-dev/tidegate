@@ -98,7 +98,7 @@ func (u *UserReadWriter) AddIfNoneExist(user *model.User) {
 // model.ErrUserNotFound if it's gone.
 func (u *UserReadWriter) Update(user *model.User) {
 	u.unit.add(func(ctx context.Context, queries *sqlc.Queries) error {
-		version, err := queries.UpdateUser(ctx, sqlc.UpdateUserParams{
+		result, err := queries.UpdateUser(ctx, sqlc.UpdateUserParams{
 			ID:           databaseID(user.ID),
 			Name:         pgtype.Text{String: user.Name, Valid: true},
 			PasswordHash: databaseHash(user.PasswordHash),
@@ -106,17 +106,18 @@ func (u *UserReadWriter) Update(user *model.User) {
 		})
 
 		switch {
-		case errors.Is(err, pgx.ErrNoRows):
-			return changedIfExists(ctx, queries.UserExists, databaseID(user.ID), "user", model.ErrUserNotFound)
 		case isUniqueViolation(err):
 			return model.ErrUserNameTaken
 		case err != nil:
 			return fmt.Errorf("updating the user: %w", err)
+		case result.Version.Valid:
+			user.Version = result.Version.Uint32
+			return nil
+		case result.Found.Bool:
+			return model.ErrChangedSinceRead
+		default:
+			return model.ErrUserNotFound
 		}
-
-		user.Version = version.Uint32
-
-		return nil
 	})
 }
 
@@ -125,7 +126,7 @@ func (u *UserReadWriter) Update(user *model.User) {
 // that is already gone counts as removed.
 func (u *UserReadWriter) Remove(user *model.User) {
 	u.unit.add(func(ctx context.Context, queries *sqlc.Queries) error {
-		deleted, err := queries.DeleteUser(ctx, sqlc.DeleteUserParams{
+		result, err := queries.DeleteUser(ctx, sqlc.DeleteUserParams{
 			ID:      databaseID(user.ID),
 			Version: databaseVersion(user.Version),
 		})
@@ -133,11 +134,11 @@ func (u *UserReadWriter) Remove(user *model.User) {
 			return fmt.Errorf("deleting the user: %w", err)
 		}
 
-		if deleted > 0 {
-			return nil
+		if !result.Deleted && result.Found {
+			return model.ErrChangedSinceRead
 		}
 
-		return changedIfExists(ctx, queries.UserExists, databaseID(user.ID), "user", nil)
+		return nil
 	})
 }
 

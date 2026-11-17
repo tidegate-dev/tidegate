@@ -3,12 +3,10 @@ package store
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
@@ -74,26 +72,6 @@ func (u *Unit) Commit(ctx context.Context) error {
 
 func (u *Unit) add(w write) {
 	u.writes = append(u.writes, w)
-}
-
-// A version check that matched no row can't tell a changed row from a deleted one.
-func changedIfExists(
-	ctx context.Context,
-	exists func(context.Context, pgtype.UUID) (bool, error),
-	id pgtype.UUID,
-	row string,
-	gone error,
-) error {
-	found, err := exists(ctx, id)
-	if err != nil {
-		return fmt.Errorf("checking that the %s exists: %w", row, err)
-	}
-
-	if found {
-		return model.ErrChangedSinceRead
-	}
-
-	return gone
 }
 
 func isUniqueViolation(err error) bool {
