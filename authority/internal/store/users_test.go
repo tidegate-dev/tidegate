@@ -85,7 +85,7 @@ var _ = Describe("UserReadWriter", func() {
 			unit := data.NewUnit()
 			unit.Users().Add(newUser("Alice"))
 
-			Expect(unit.Commit(ctx)).To(MatchError(model.ErrConflict))
+			Expect(unit.Commit(ctx)).To(MatchError(model.ErrUserNameTaken))
 			Expect(count(ctx, pool, "users")).To(Equal(1))
 		})
 	})
@@ -163,7 +163,7 @@ var _ = Describe("UserReadWriter", func() {
 			second := data.NewUnit()
 			second.Users().Update(stale)
 
-			Expect(second.Commit(ctx)).To(MatchError(model.ErrConflict))
+			Expect(second.Commit(ctx)).To(MatchError(model.ErrChangedSinceRead))
 			Expect(data.Users().ByName(ctx, "alicia")).NotTo(BeNil())
 		})
 
@@ -175,7 +175,7 @@ var _ = Describe("UserReadWriter", func() {
 			unit := data.NewUnit()
 			unit.Users().Update(bob)
 
-			Expect(unit.Commit(ctx)).To(MatchError(model.ErrConflict))
+			Expect(unit.Commit(ctx)).To(MatchError(model.ErrUserNameTaken))
 		})
 
 		It("returns ErrUserNotFound for a user that is gone", func(ctx SpecContext) {
@@ -209,7 +209,7 @@ var _ = Describe("UserReadWriter", func() {
 			second := data.NewUnit()
 			second.Users().Remove(&stale)
 
-			Expect(second.Commit(ctx)).To(MatchError(model.ErrConflict))
+			Expect(second.Commit(ctx)).To(MatchError(model.ErrChangedSinceRead))
 			Expect(count(ctx, pool, "users")).To(Equal(1))
 		})
 

@@ -51,9 +51,8 @@ type SessionReadWriter struct {
 	unit *Unit
 }
 
-// Add records the insert of session. Commit returns model.ErrConflict if
-// another session has the token hash, and model.ErrUserNotFound if the user
-// of the session is gone.
+// Add records the insert of session. Commit returns model.ErrUserNotFound if
+// the user of the session is gone.
 func (s *SessionReadWriter) Add(session *model.Session) {
 	s.unit.add(func(ctx context.Context, queries *sqlc.Queries) error {
 		version, err := queries.InsertSession(ctx, sqlc.InsertSessionParams{
@@ -66,7 +65,7 @@ func (s *SessionReadWriter) Add(session *model.Session) {
 
 		switch {
 		case isUniqueViolation(err):
-			return model.ErrConflict
+			return errors.New("creating the session: token hash already in use")
 		case isForeignKeyViolation(err):
 			return model.ErrUserNotFound
 		case err != nil:

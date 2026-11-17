@@ -57,7 +57,7 @@ var _ = Describe("Unit", func() {
 		unit.Users().Add(newUser("bob"))
 		unit.Users().Add(newUser("alice"))
 
-		Expect(unit.Commit(ctx)).To(MatchError(model.ErrConflict))
+		Expect(unit.Commit(ctx)).To(MatchError(model.ErrUserNameTaken))
 		Expect(count(ctx, pool, "users")).To(Equal(1))
 	})
 

@@ -12,8 +12,8 @@ type Unit interface {
 	// Dummies returns the dummies for this unit.
 	Dummies() DummyReadWriter
 	// Commit runs the pending writes in the order they were added. If one
-	// fails, none is kept. It returns ErrConflict if a row changed after it
-	// was read. A unit can be committed once.
+	// fails, none is kept. It returns ErrChangedSinceRead if a row changed
+	// after it was read. A unit can be committed once.
 	Commit(ctx context.Context) error
 }
 

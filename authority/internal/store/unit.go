@@ -48,8 +48,9 @@ func (u *Unit) Dummies() model.DummyReadWriter {
 }
 
 // Commit runs the pending writes in the order they were added, in one
-// transaction. If one fails, none is kept. It returns model.ErrConflict if a
-// row changed after it was read. A unit can be committed once.
+// transaction. If one fails, none is kept. It returns
+// model.ErrChangedSinceRead if a row changed after it was read. A unit can be
+// committed once.
 func (u *Unit) Commit(ctx context.Context) error {
 	if u.committed {
 		return errUnitCommitted
@@ -76,7 +77,7 @@ func (u *Unit) add(w write) {
 }
 
 // A version check that matched no row can't tell a changed row from a deleted one.
-func conflictIfExists(
+func changedIfExists(
 	ctx context.Context,
 	exists func(context.Context, pgtype.UUID) (bool, error),
 	id pgtype.UUID,
@@ -89,7 +90,7 @@ func conflictIfExists(
 	}
 
 	if found {
-		return model.ErrConflict
+		return model.ErrChangedSinceRead
 	}
 
 	return gone

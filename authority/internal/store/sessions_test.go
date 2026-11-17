@@ -89,7 +89,7 @@ var _ = Describe("SessionReadWriter", func() {
 			unit := data.NewUnit()
 			unit.Sessions().Add(newSession(alice.ID, "token"))
 
-			Expect(unit.Commit(ctx)).To(MatchError(model.ErrConflict))
+			Expect(unit.Commit(ctx)).To(MatchError(ContainSubstring("token hash already in use")))
 			Expect(count(ctx, pool, "sessions")).To(Equal(1))
 		})
 

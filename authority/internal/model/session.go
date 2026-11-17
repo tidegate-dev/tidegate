@@ -51,9 +51,8 @@ type SessionReadWriter interface {
 	// ActiveByTokenHash returns the session with the token hash that expires
 	// after now, or ErrSessionNotFound.
 	ActiveByTokenHash(ctx context.Context, tokenHash secret.Bytes, now time.Time) (*Session, error)
-	// Add records the insert of session. Commit returns ErrConflict if
-	// another session has the token hash, and ErrUserNotFound if the user of
-	// the session is gone.
+	// Add records the insert of session. Commit returns ErrUserNotFound if the
+	// user of the session is gone.
 	Add(session *Session)
 	// Remove records the delete of session, also if it changed since it was
 	// read. A session that is already gone counts as removed.

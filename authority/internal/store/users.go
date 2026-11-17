@@ -61,8 +61,8 @@ type UserReadWriter struct {
 	unit *Unit
 }
 
-// Add records the insert of user. Commit returns model.ErrConflict if another
-// user has the name.
+// Add records the insert of user. Commit returns model.ErrUserNameTaken if
+// another user has the name.
 func (u *UserReadWriter) Add(user *model.User) {
 	u.unit.add(func(ctx context.Context, queries *sqlc.Queries) error {
 		return insertUser(ctx, queries, user)
@@ -93,7 +93,8 @@ func (u *UserReadWriter) AddIfNoneExist(user *model.User) {
 }
 
 // Update records the update of every column of user. Commit returns
-// model.ErrConflict if the row changed since user was read, and
+// model.ErrChangedSinceRead if the row changed since user was read,
+// model.ErrUserNameTaken if another user has the name, and
 // model.ErrUserNotFound if it's gone.
 func (u *UserReadWriter) Update(user *model.User) {
 	u.unit.add(func(ctx context.Context, queries *sqlc.Queries) error {
@@ -106,9 +107,9 @@ func (u *UserReadWriter) Update(user *model.User) {
 
 		switch {
 		case errors.Is(err, pgx.ErrNoRows):
-			return conflictIfExists(ctx, queries.UserExists, databaseID(user.ID), "user", model.ErrUserNotFound)
+			return changedIfExists(ctx, queries.UserExists, databaseID(user.ID), "user", model.ErrUserNotFound)
 		case isUniqueViolation(err):
-			return model.ErrConflict
+			return model.ErrUserNameTaken
 		case err != nil:
 			return fmt.Errorf("updating the user: %w", err)
 		}
@@ -119,9 +120,9 @@ func (u *UserReadWriter) Update(user *model.User) {
 	})
 }
 
-// Remove records the delete of user. Commit returns model.ErrConflict if the
-// row changed since user was read. A row that is already gone counts as
-// removed.
+// Remove records the delete of user. Commit returns
+// model.ErrChangedSinceRead if the row changed since user was read. A row
+// that is already gone counts as removed.
 func (u *UserReadWriter) Remove(user *model.User) {
 	u.unit.add(func(ctx context.Context, queries *sqlc.Queries) error {
 		deleted, err := queries.DeleteUser(ctx, sqlc.DeleteUserParams{
@@ -136,7 +137,7 @@ func (u *UserReadWriter) Remove(user *model.User) {
 			return nil
 		}
 
-		return conflictIfExists(ctx, queries.UserExists, databaseID(user.ID), "user", nil)
+		return changedIfExists(ctx, queries.UserExists, databaseID(user.ID), "user", nil)
 	})
 }
 
@@ -147,7 +148,7 @@ func insertUser(ctx context.Context, queries *sqlc.Queries, user *model.User) er
 		PasswordHash: databaseHash(user.PasswordHash),
 	})
 	if isUniqueViolation(err) {
-		return model.ErrConflict
+		return model.ErrUserNameTaken
 	}
 
 	if err != nil {

@@ -16,6 +16,9 @@ var (
 	ErrUserNotFound = errors.New("user not found")
 	// ErrUsersExist means a user already existed.
 	ErrUsersExist = errors.New("a user already exists")
+	// ErrUserNameTaken means another user already has the name. Nothing was
+	// written.
+	ErrUserNameTaken = errors.New("the user name is taken")
 )
 
 // UserID identifies a user.
@@ -54,18 +57,19 @@ type UserReadWriter interface {
 	ByName(ctx context.Context, name string) (*User, error)
 	// Any reports whether a user exists.
 	Any(ctx context.Context) (bool, error)
-	// Add records the insert of user. Commit returns ErrConflict if another
-	// user has the name.
+	// Add records the insert of user. Commit returns ErrUserNameTaken if
+	// another user has the name.
 	Add(user *User)
 	// AddIfNoneExist records the insert of user as the first user. Commit
 	// returns ErrUsersExist if a user exists by then.
 	AddIfNoneExist(user *User)
 	// Update records the update of every field of user. Commit returns
-	// ErrConflict if the user changed since it was read, and ErrUserNotFound
-	// if it's gone.
+	// ErrChangedSinceRead if the user changed since it was read,
+	// ErrUserNameTaken if another user has the name, and ErrUserNotFound if
+	// it's gone.
 	Update(user *User)
-	// Remove records the delete of user. Commit returns ErrConflict if the
-	// user changed since it was read. A user that is already gone counts as
-	// removed.
+	// Remove records the delete of user. Commit returns ErrChangedSinceRead if
+	// the user changed since it was read. A user that is already gone counts
+	// as removed.
 	Remove(user *User)
 }
