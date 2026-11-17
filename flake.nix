@@ -28,25 +28,37 @@
         pkgs.just
       ];
 
-      # nixpkgs doesn't package grant.
+      # nixpkgs doesn't package grant, so cache.nixos.org has no build of it to download.
       grant =
         pkgs:
-        pkgs.buildGoModule (finalAttrs: {
+        let
+          releases = {
+            x86_64-linux = {
+              platform = "linux_amd64";
+              hash = "sha256-4CEj6pKGYR0Bul/y1xujQieZFAKsWqZo3B0fQFc4Jfc=";
+            };
+            aarch64-linux = {
+              platform = "linux_arm64";
+              hash = "sha256-zAhggkGNN1y3gU5RChj+1f5ZIWQnMJlZXGZyvKiVff0=";
+            };
+            aarch64-darwin = {
+              platform = "darwin_arm64";
+              hash = "sha256-q/f8UhzwcrnYtBPiR8iFMExvsnUNJ0awIEu0wPyXMuc=";
+            };
+          };
+          release = releases.${pkgs.stdenv.hostPlatform.system};
+        in
+        pkgs.stdenvNoCC.mkDerivation (finalAttrs: {
           pname = "grant";
           version = "0.7.1";
-          src = pkgs.fetchFromGitHub {
-            owner = "anchore";
-            repo = "grant";
-            tag = "v${finalAttrs.version}";
-            hash = "sha256-Zznac28Gb7b3+uMzUbzPASs27SpYv8i75QzydTKtjhk=";
+          src = pkgs.fetchurl {
+            url = "https://github.com/anchore/grant/releases/download/v${finalAttrs.version}/grant_${finalAttrs.version}_${release.platform}.tar.gz";
+            inherit (release) hash;
           };
-          vendorHash = "sha256-2d+G5z+DS9BDqO8WhogTD019qJZVNcj6xYLctFIBC00=";
-          subPackages = [ "cmd/grant" ];
-          ldflags = [
-            "-s"
-            "-w"
-            "-X main.version=${finalAttrs.version}"
-          ];
+          sourceRoot = ".";
+          installPhase = ''
+            install -D -m 755 grant $out/bin/grant
+          '';
         });
 
       hooks =
