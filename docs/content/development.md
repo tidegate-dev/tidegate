@@ -62,7 +62,7 @@ Other tools take the CA file as a flag, like `buf curl --cacert dev/tls/ca.pem`.
 
 `arch-go.yml` says which packages may import which. Shared code in `internal/` imports nothing from a component or from `gen/`. A component imports only its own packages, `internal/` and the generated code in `gen/`. Every package needs a rule in `arch-go.yml`, so when you add a top-level directory, like a new component, add a rule for it too.
 
-Inside a component, `api` turns Connect calls into calls to `service` and never reads the database itself. `service` does the work with the types from `model`, and imports neither Connect nor the database packages. `store` is the only package that runs SQL, and it implements the storage interfaces that `model` declares. The authority's rules in `arch-go.yml` enforce this split.
+Inside a component, `api` turns Connect calls into calls to `service` and never reads the database itself. `service` does the work with the types from `model`, and imports neither Connect nor the database packages. `store` is the only package that queries the database tables, and it implements the storage interfaces that `model` declares. The authority's rules in `arch-go.yml` enforce this split.
 
 `just arch` checks the rules, and `just ci` and the pre-commit hook run it. Note that arch-go reads packages like `go build` does, so it doesn't check imports in test files or in files behind a build tag.
 

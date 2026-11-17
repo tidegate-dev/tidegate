@@ -1,5 +1,5 @@
 // Package store reads and writes the authority's data in Postgres. It is the
-// only package that runs SQL against the authority's tables.
+// only package that queries the authority's tables.
 package store
 
 import (
@@ -30,8 +30,8 @@ func (s *Store) Sessions() *SessionReader {
 }
 
 // Dummies returns the queries for the dummies table.
-func (s *Store) Dummies() *DummyReadWriter {
-	return &DummyReadWriter{queries: sqlc.New(s.pool)}
+func (s *Store) Dummies() *DummyReader {
+	return &DummyReader{queries: sqlc.New(s.pool)}
 }
 
 // NewUnit returns an empty unit of work.

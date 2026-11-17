@@ -11,32 +11,43 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/model"
 )
 
-// DummyReadWriter queries the dummies table on the connection pool. It
-// writes right away, without a unit of work.
-type DummyReadWriter struct {
+// DummyReader queries the dummies table on the connection pool.
+type DummyReader struct {
 	queries *sqlc.Queries
 }
 
-// Add stores text and returns its ID.
-func (d *DummyReadWriter) Add(ctx context.Context, text string) (int64, error) {
-	id, err := d.queries.CreateDummy(ctx, text)
-	if err != nil {
-		return 0, fmt.Errorf("storing the text: %w", err)
-	}
-
-	return id, nil
-}
-
-// ByID returns the text with the ID, or model.ErrDummyNotFound.
-func (d *DummyReadWriter) ByID(ctx context.Context, id int64) (string, error) {
+// ByID returns the dummy with the ID, or model.ErrDummyNotFound.
+func (d *DummyReader) ByID(ctx context.Context, id int64) (*model.Dummy, error) {
 	text, err := d.queries.GetDummy(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return "", model.ErrDummyNotFound
+		return nil, model.ErrDummyNotFound
 	}
 
 	if err != nil {
-		return "", fmt.Errorf("reading the text: %w", err)
+		return nil, fmt.Errorf("reading the dummy: %w", err)
 	}
 
-	return text, nil
+	return &model.Dummy{ID: id, Text: text}, nil
+}
+
+// DummyReadWriter belongs to a unit of work. It queries like DummyReader and
+// records writes, which the unit runs at Commit.
+type DummyReadWriter struct {
+	DummyReader
+
+	unit *Unit
+}
+
+// Add records the insert of dummy. Commit gives dummy its ID.
+func (d *DummyReadWriter) Add(dummy *model.Dummy) {
+	d.unit.add(func(ctx context.Context, queries *sqlc.Queries) error {
+		id, err := queries.CreateDummy(ctx, dummy.Text)
+		if err != nil {
+			return fmt.Errorf("storing the dummy: %w", err)
+		}
+
+		dummy.ID = id
+
+		return nil
+	})
 }

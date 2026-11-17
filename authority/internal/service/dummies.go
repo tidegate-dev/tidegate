@@ -1,31 +1,50 @@
 package service
 
-import "context"
+import (
+	"context"
 
-// DummyStore stores texts.
-type DummyStore interface {
-	// Add stores text and returns its ID.
-	Add(ctx context.Context, text string) (int64, error)
-	// ByID returns the text with the ID, or model.ErrDummyNotFound.
-	ByID(ctx context.Context, id int64) (string, error)
+	"github.com/tidegate-dev/tidegate/authority/internal/model"
+)
+
+// DummyFinder finds a dummy by its ID.
+type DummyFinder interface {
+	// ByID returns the dummy with the ID, or model.ErrDummyNotFound.
+	ByID(ctx context.Context, id int64) (*model.Dummy, error)
 }
 
 // Dummies checks the path from a client into the database and back.
 type Dummies struct {
-	store DummyStore
+	dummies DummyFinder
+	units   model.UnitFactory
 }
 
-// NewDummies returns Dummies that keep their texts in store.
-func NewDummies(store DummyStore) *Dummies {
-	return &Dummies{store: store}
+// NewDummies returns Dummies that read from dummies and write in units of
+// work from units.
+func NewDummies(dummies DummyFinder, units model.UnitFactory) *Dummies {
+	return &Dummies{dummies: dummies, units: units}
 }
 
 // Write stores text and returns its ID.
 func (d *Dummies) Write(ctx context.Context, text string) (int64, error) {
-	return d.store.Add(ctx, text)
+	dummy := &model.Dummy{Text: text}
+
+	unit := d.units.NewUnit()
+	unit.Dummies().Add(dummy)
+
+	err := unit.Commit(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	return dummy.ID, nil
 }
 
 // Read returns the text with the given ID, or model.ErrDummyNotFound.
 func (d *Dummies) Read(ctx context.Context, id int64) (string, error) {
-	return d.store.ByID(ctx, id)
+	dummy, err := d.dummies.ByID(ctx, id)
+	if err != nil {
+		return "", err
+	}
+
+	return dummy.Text, nil
 }

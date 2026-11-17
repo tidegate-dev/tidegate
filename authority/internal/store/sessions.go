@@ -96,16 +96,7 @@ func (s *SessionReadWriter) Remove(session *model.Session) {
 			return nil
 		}
 
-		exists, err := queries.SessionExists(ctx, databaseID(session.ID))
-		if err != nil {
-			return fmt.Errorf("checking that the session exists: %w", err)
-		}
-
-		if exists {
-			return model.ErrConflict
-		}
-
-		return nil
+		return conflictIfExists(ctx, queries.SessionExists, databaseID(session.ID), "session", nil)
 	})
 }
 

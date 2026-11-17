@@ -14,7 +14,7 @@ import (
 var (
 	// ErrUserNotFound means no user has the given ID or name.
 	ErrUserNotFound = errors.New("user not found")
-	// ErrUsersExist means the users table already held a user.
+	// ErrUsersExist means a user already existed.
 	ErrUsersExist = errors.New("a user already exists")
 )
 
@@ -42,7 +42,7 @@ type User struct {
 	Name string
 	// PasswordHash is nil for a user without a local password.
 	PasswordHash *secret.String
-	// Version is the xmin of the row in Postgres at the time it was read or written.
+	// Version changes with every write. The store compares it at Commit.
 	Version uint32
 }
 

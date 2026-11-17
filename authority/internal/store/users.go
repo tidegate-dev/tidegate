@@ -13,8 +13,7 @@ import (
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
-// usersEmptyLockID is the Postgres advisory lock that AddIfNoneExist takes.
-// goose uses its own lock ID for migrations.
+// goose takes a different advisory lock ID for migrations.
 const usersEmptyLockID int64 = 0x7469646567617465 // "tidegate" in ASCII
 
 // UserReader queries the users table on the connection pool.
@@ -74,7 +73,7 @@ func (u *UserReadWriter) Add(user *model.User) {
 // returns model.ErrUsersExist if the table holds a user by then.
 func (u *UserReadWriter) AddIfNoneExist(user *model.User) {
 	u.unit.add(func(ctx context.Context, queries *sqlc.Queries) error {
-		// Two runs that both see an empty table must not both insert.
+		// Postgres can't lock rows that don't exist yet.
 		err := queries.LockTransaction(ctx, usersEmptyLockID)
 		if err != nil {
 			return fmt.Errorf("waiting for the lock on the empty users table: %w", err)
@@ -107,16 +106,7 @@ func (u *UserReadWriter) Update(user *model.User) {
 
 		switch {
 		case errors.Is(err, pgx.ErrNoRows):
-			exists, err := userExists(ctx, queries, user.ID)
-			if err != nil {
-				return err
-			}
-
-			if !exists {
-				return model.ErrUserNotFound
-			}
-
-			return model.ErrConflict
+			return conflictIfExists(ctx, queries.UserExists, databaseID(user.ID), "user", model.ErrUserNotFound)
 		case isUniqueViolation(err):
 			return model.ErrConflict
 		case err != nil:
@@ -146,16 +136,7 @@ func (u *UserReadWriter) Remove(user *model.User) {
 			return nil
 		}
 
-		exists, err := userExists(ctx, queries, user.ID)
-		if err != nil {
-			return err
-		}
-
-		if exists {
-			return model.ErrConflict
-		}
-
-		return nil
+		return conflictIfExists(ctx, queries.UserExists, databaseID(user.ID), "user", nil)
 	})
 }
 
@@ -176,13 +157,4 @@ func insertUser(ctx context.Context, queries *sqlc.Queries, user *model.User) er
 	user.Version = version.Uint32
 
 	return nil
-}
-
-func userExists(ctx context.Context, queries *sqlc.Queries, id model.UserID) (bool, error) {
-	exists, err := queries.UserExists(ctx, databaseID(id))
-	if err != nil {
-		return false, fmt.Errorf("checking that the user exists: %w", err)
-	}
-
-	return exists, nil
 }

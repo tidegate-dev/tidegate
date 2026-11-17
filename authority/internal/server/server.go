@@ -56,7 +56,7 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 
 	sessions := service.NewSessions(data.Sessions(), data, rnd, clk, cfg.Login.TokenLifetime)
 	logins := service.NewLogins(authenticator, sessions)
-	dummies := service.NewDummies(data.Dummies())
+	dummies := service.NewDummies(data.Dummies(), data)
 
 	notifier, err := systemd.Open()
 	if err != nil {

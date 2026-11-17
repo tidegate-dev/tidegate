@@ -16,14 +16,18 @@ var _ = Describe("DummyReadWriter", func() {
 		_, data = newStore(ctx)
 	})
 
-	It("returns a stored text by its ID", func(ctx SpecContext) {
-		id, err := data.Dummies().Add(ctx, "hello")
-		Expect(err).NotTo(HaveOccurred())
+	It("gives a stored dummy its ID at Commit", func(ctx SpecContext) {
+		dummy := &model.Dummy{Text: "hello"}
 
-		Expect(data.Dummies().ByID(ctx, id)).To(Equal("hello"))
+		unit := data.NewUnit()
+		unit.Dummies().Add(dummy)
+		Expect(dummy.ID).To(BeZero())
+
+		Expect(unit.Commit(ctx)).To(Succeed())
+		Expect(data.Dummies().ByID(ctx, dummy.ID)).To(Equal(dummy))
 	})
 
-	It("returns ErrDummyNotFound for an ID that no text has", func(ctx SpecContext) {
+	It("returns ErrDummyNotFound for an ID that no dummy has", func(ctx SpecContext) {
 		_, err := data.Dummies().ByID(ctx, 1)
 
 		Expect(err).To(MatchError(model.ErrDummyNotFound))

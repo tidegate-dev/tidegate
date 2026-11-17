@@ -3,10 +3,12 @@ package store
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
@@ -39,6 +41,12 @@ func (u *Unit) Sessions() model.SessionReadWriter {
 	return &SessionReadWriter{queries: sqlc.New(u.pool), unit: u}
 }
 
+// Dummies returns the dummies table for this unit. Its reads run right away,
+// its writes at Commit.
+func (u *Unit) Dummies() model.DummyReadWriter {
+	return &DummyReadWriter{queries: sqlc.New(u.pool), unit: u}
+}
+
 // Commit runs the pending writes in the order they were added, in one
 // transaction. If one fails, none is kept. It returns model.ErrConflict if a
 // row changed after it was read. A unit can be committed once.
@@ -65,6 +73,26 @@ func (u *Unit) Commit(ctx context.Context) error {
 
 func (u *Unit) add(w write) {
 	u.writes = append(u.writes, w)
+}
+
+// A version check that matched no row can't tell a changed row from a deleted one.
+func conflictIfExists(
+	ctx context.Context,
+	exists func(context.Context, pgtype.UUID) (bool, error),
+	id pgtype.UUID,
+	row string,
+	gone error,
+) error {
+	found, err := exists(ctx, id)
+	if err != nil {
+		return fmt.Errorf("checking that the %s exists: %w", row, err)
+	}
+
+	if found {
+		return model.ErrConflict
+	}
+
+	return gone
 }
 
 func isUniqueViolation(err error) bool {

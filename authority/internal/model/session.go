@@ -41,7 +41,7 @@ type Session struct {
 	TokenHash secret.Bytes
 	CreatedAt time.Time
 	ExpiresAt time.Time
-	// Version is the xmin of the row in Postgres at the time it was read or written.
+	// Version changes with every write. The store compares it at Commit.
 	Version uint32
 }
 
