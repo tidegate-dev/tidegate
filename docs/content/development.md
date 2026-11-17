@@ -62,7 +62,7 @@ Other tools take the CA file as a flag, like `buf curl --cacert dev/tls/ca.pem`.
 
 `arch-go.yml` says which packages may import which. Shared code in `internal/` imports nothing from a component or from `gen/`. A component imports only its own packages, `internal/` and the generated code in `gen/`. Every package needs a rule in `arch-go.yml`, so when you add a top-level directory, like a new component, add a rule for it too.
 
-Inside a component, `service` does the work and may use the database, but doesn't import Connect. `api` turns Connect calls into calls to `service` and never reads the database itself. The authority's rules in `arch-go.yml` enforce this split.
+Inside a component, `api` turns Connect calls into calls to `service` and never reads the database itself. `service` does the work with the types from `model`, and imports neither Connect nor the database packages. `store` is the only package that runs SQL, and it implements the storage interfaces that `model` declares. The authority's rules in `arch-go.yml` enforce this split.
 
 `just arch` checks the rules, and `just ci` and the pre-commit hook run it. Note that arch-go reads packages like `go build` does, so it doesn't check imports in test files or in files behind a build tag.
 
@@ -108,7 +108,7 @@ tidegate has unit tests, integration tests, API tests and end-to-end tests, and 
 
 ### Unit and integration tests
 
-Unit tests use the standard `testing` package with testify. Integration tests are [Ginkgo](https://onsi.github.io/ginkgo/) specs with [Gomega](https://onsi.github.io/gomega/) assertions. Their files start with `//go:build integration`, so `just test` and `go test ./...` leave them out. To create a database for a spec, call `dbtest.NewDatabase` from `authority/internal/dbtest`.
+Unit tests use the standard `testing` package with testify. Integration tests are [Ginkgo](https://onsi.github.io/ginkgo/) specs with [Gomega](https://onsi.github.io/gomega/) assertions. Their files start with `//go:build integration`, so `just test` and `go test ./...` leave them out. To create a database for a spec, call `dbtest.NewDatabase` from `authority/internal/dbtest`. If the spec needs the authority's store, call `storetest.New` from `authority/internal/storetest`, which also runs the migrations.
 
 The integration tests run against Postgres. Start the services first, then run the tests:
 

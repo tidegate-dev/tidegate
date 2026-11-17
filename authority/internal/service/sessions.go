@@ -8,51 +8,66 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/The127/go-clock"
 	"github.com/The127/go-random"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
+	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 const tokenBytes = 32
 
-// Session is one login of a user, found by its session token.
-type Session struct {
-	ID     pgtype.UUID
-	UserID pgtype.UUID
+// SessionFinder finds a session by the hash of its token.
+type SessionFinder interface {
+	// ActiveByTokenHash returns the session with the token hash that expires
+	// after now, or model.ErrSessionNotFound.
+	ActiveByTokenHash(ctx context.Context, tokenHash secret.Bytes, now time.Time) (*model.Session, error)
 }
 
 // Sessions issues, looks up and revokes the tokens that signed-in users
 // send with API calls.
 type Sessions struct {
-	queries  *sqlc.Queries
+	sessions SessionFinder
+	units    model.UnitFactory
 	rnd      random.Service
+	clk      clock.Service
 	lifetime time.Duration
 }
 
-// NewSessions returns Sessions that last lifetime, with their bytes
-// from rnd.
-func NewSessions(pool *pgxpool.Pool, rnd random.Service, lifetime time.Duration) *Sessions {
-	return &Sessions{queries: sqlc.New(pool), rnd: rnd, lifetime: lifetime}
+// NewSessions returns Sessions that last lifetime from the time on clk, with
+// their bytes from rnd. It reads sessions from sessions and writes them in
+// units of work from units.
+func NewSessions(
+	sessions SessionFinder,
+	units model.UnitFactory,
+	rnd random.Service,
+	clk clock.Service,
+	lifetime time.Duration,
+) *Sessions {
+	return &Sessions{sessions: sessions, units: units, rnd: rnd, clk: clk, lifetime: lifetime}
 }
 
 // Issue returns a new token for the user and deletes their expired ones.
-func (s *Sessions) Issue(ctx context.Context, userID pgtype.UUID) (secret.String, error) {
-	err := s.queries.DeleteExpiredSessions(ctx, userID)
+func (s *Sessions) Issue(ctx context.Context, userID model.UserID) (secret.String, error) {
+	id, err := model.NewSessionID()
 	if err != nil {
-		return secret.String{}, fmt.Errorf("deleting expired session tokens: %w", err)
+		return secret.String{}, err
 	}
 
 	token := secret.New(base64.RawURLEncoding.EncodeToString(s.rnd.Bytes(tokenBytes)))
+	now := s.clk.Now()
 
-	err = s.queries.CreateSession(ctx, sqlc.CreateSessionParams{
-		TokenHash: hash(token),
+	unit := s.units.NewUnit()
+	unit.Sessions().RemoveExpiredOfUser(userID, now)
+	unit.Sessions().Add(&model.Session{
+		ID:        id,
 		UserID:    userID,
-		Lifetime:  pgtype.Interval{Microseconds: s.lifetime.Microseconds(), Valid: true},
+		TokenHash: hash(token),
+		CreatedAt: now,
+		ExpiresAt: now.Add(s.lifetime),
 	})
+
+	err = unit.Commit(ctx)
 	if err != nil {
 		return secret.String{}, fmt.Errorf("storing the session token: %w", err)
 	}
@@ -62,22 +77,25 @@ func (s *Sessions) Issue(ctx context.Context, userID pgtype.UUID) (secret.String
 
 // Session returns the session of the token. It returns ErrNotSignedIn if the
 // token is unknown or expired.
-func (s *Sessions) Session(ctx context.Context, token secret.String) (Session, error) {
-	row, err := s.queries.GetSession(ctx, hash(token))
-	if errors.Is(err, pgx.ErrNoRows) {
-		return Session{}, fmt.Errorf("%w: unknown or expired token", ErrNotSignedIn)
+func (s *Sessions) Session(ctx context.Context, token secret.String) (model.Session, error) {
+	session, err := s.sessions.ActiveByTokenHash(ctx, hash(token), s.clk.Now())
+	if errors.Is(err, model.ErrSessionNotFound) {
+		return model.Session{}, fmt.Errorf("%w: unknown or expired token", ErrNotSignedIn)
 	}
 
 	if err != nil {
-		return Session{}, fmt.Errorf("looking up the session token: %w", err)
+		return model.Session{}, fmt.Errorf("looking up the session token: %w", err)
 	}
 
-	return Session{ID: row.ID, UserID: row.UserID}, nil
+	return *session, nil
 }
 
 // Revoke deletes the token of the session.
-func (s *Sessions) Revoke(ctx context.Context, sessionID pgtype.UUID) error {
-	err := s.queries.RevokeSession(ctx, sessionID)
+func (s *Sessions) Revoke(ctx context.Context, session model.Session) error {
+	unit := s.units.NewUnit()
+	unit.Sessions().Remove(&session)
+
+	err := unit.Commit(ctx)
 	if err != nil {
 		return fmt.Errorf("revoking a session token: %w", err)
 	}
@@ -86,8 +104,11 @@ func (s *Sessions) Revoke(ctx context.Context, sessionID pgtype.UUID) error {
 }
 
 // RevokeAll deletes every token of the user.
-func (s *Sessions) RevokeAll(ctx context.Context, userID pgtype.UUID) error {
-	err := s.queries.RevokeUserSessions(ctx, userID)
+func (s *Sessions) RevokeAll(ctx context.Context, userID model.UserID) error {
+	unit := s.units.NewUnit()
+	unit.Sessions().RemoveOfUser(userID)
+
+	err := unit.Commit(ctx)
 	if err != nil {
 		return fmt.Errorf("revoking a user's session tokens: %w", err)
 	}
@@ -95,8 +116,8 @@ func (s *Sessions) RevokeAll(ctx context.Context, userID pgtype.UUID) error {
 	return nil
 }
 
-func hash(token secret.String) []byte {
+func hash(token secret.String) secret.Bytes {
 	sum := sha256.Sum256([]byte(token.Reveal()))
 
-	return sum[:]
+	return secret.NewBytes(sum[:])
 }

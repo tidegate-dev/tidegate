@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
+	"github.com/tidegate-dev/tidegate/authority/internal/model"
 )
 
 var errUnitCommitted = errors.New("the unit of work was already committed")
@@ -28,13 +29,13 @@ type Unit struct {
 
 // Users returns the users table for this unit. Its reads run right away, its
 // writes at Commit.
-func (u *Unit) Users() *UserReadWriter {
+func (u *Unit) Users() model.UserReadWriter {
 	return &UserReadWriter{queries: sqlc.New(u.pool), unit: u}
 }
 
 // Sessions returns the sessions table for this unit. Its reads run right
 // away, its writes at Commit.
-func (u *Unit) Sessions() *SessionReadWriter {
+func (u *Unit) Sessions() model.SessionReadWriter {
 	return &SessionReadWriter{queries: sqlc.New(u.pool), unit: u}
 }
 

@@ -8,12 +8,14 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/The127/go-clock"
 	"github.com/The127/go-random"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/config"
 	"github.com/tidegate-dev/tidegate/authority/internal/db"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
+	"github.com/tidegate-dev/tidegate/authority/internal/store"
 	"github.com/tidegate-dev/tidegate/internal/metrics"
 	"github.com/tidegate-dev/tidegate/internal/systemd"
 )
@@ -44,14 +46,17 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	defer pool.Close()
 
 	rnd := random.NewCryptoRandom()
+	clk := clock.NewSystemClock()
+	data := store.New(pool)
 
-	authenticator, err := service.NewAuthenticator(pool, rnd)
+	authenticator, err := service.NewAuthenticator(data.Users(), rnd)
 	if err != nil {
 		return err
 	}
 
-	tokens := service.NewSessions(pool, rnd, cfg.Login.TokenLifetime)
-	logins := service.NewLogins(authenticator, tokens)
+	sessions := service.NewSessions(data.Sessions(), data, rnd, clk, cfg.Login.TokenLifetime)
+	logins := service.NewLogins(authenticator, sessions)
+	dummies := service.NewDummies(data.Dummies())
 
 	notifier, err := systemd.Open()
 	if err != nil {
@@ -74,7 +79,7 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	defer stopWatching()
 
 	err = serve(ctx, notifier, map[string]*http.Server{
-		"api":     apiServer(cfg.Server.ListenAddress, certificate, pool, logins, tokens),
+		"api":     apiServer(cfg.Server.ListenAddress, certificate, clk, dummies, logins, sessions),
 		"metrics": metricsServer(cfg.Metrics.ListenAddress, metricsHandler),
 	}, timeout)
 

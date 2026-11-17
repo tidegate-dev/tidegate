@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"github.com/The127/go-clock"
 	"github.com/The127/go-random"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -19,6 +19,8 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/db"
 	"github.com/tidegate-dev/tidegate/authority/internal/dbtest"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
+	"github.com/tidegate-dev/tidegate/authority/internal/store"
+	"github.com/tidegate-dev/tidegate/authority/internal/storetest"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
 	"github.com/tidegate-dev/tidegate/internal/secret"
@@ -132,10 +134,10 @@ func signIn(ctx context.Context, url string) secret.String {
 	Expect(err).NotTo(HaveOccurred())
 	DeferCleanup(pool.Close)
 
-	var userID pgtype.UUID
-	Expect(pool.QueryRow(ctx, "INSERT INTO users (name) VALUES ('alice') RETURNING id").Scan(&userID)).To(Succeed())
+	data := store.New(pool)
+	sessions := service.NewSessions(data.Sessions(), data, random.NewCryptoRandom(), clock.NewSystemClock(), time.Hour)
 
-	token, err := service.NewSessions(pool, random.NewCryptoRandom(), time.Hour).Issue(ctx, userID)
+	token, err := sessions.Issue(ctx, storetest.AddUser(ctx, data, "alice"))
 	Expect(err).NotTo(HaveOccurred())
 
 	return token

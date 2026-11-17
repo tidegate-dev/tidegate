@@ -22,20 +22,6 @@ func (q *Queries) AnyUserExists(ctx context.Context) (bool, error) {
 	return exists, err
 }
 
-const createUser = `-- name: CreateUser :exec
-INSERT INTO users (name, password_hash) VALUES ($1, $2)
-`
-
-type CreateUserParams struct {
-	Name         string
-	PasswordHash pgtype.Text
-}
-
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
-	_, err := q.db.Exec(ctx, createUser, arg.Name, arg.PasswordHash)
-	return err
-}
-
 const deleteUser = `-- name: DeleteUser :execrows
 DELETE FROM users WHERE id = $1 AND xmin = $2
 `

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -42,4 +43,25 @@ type Session struct {
 	ExpiresAt time.Time
 	// Version is the xmin of the row in Postgres at the time it was read or written.
 	Version uint32
+}
+
+// SessionReadWriter belongs to a Unit. It reads sessions right away and
+// records writes, which the unit runs at Commit.
+type SessionReadWriter interface {
+	// ActiveByTokenHash returns the session with the token hash that expires
+	// after now, or ErrSessionNotFound.
+	ActiveByTokenHash(ctx context.Context, tokenHash secret.Bytes, now time.Time) (*Session, error)
+	// Add records the insert of session. Commit returns ErrConflict if
+	// another session has the token hash, and ErrUserNotFound if the user of
+	// the session is gone.
+	Add(session *Session)
+	// Remove records the delete of session. Commit returns ErrConflict if the
+	// session changed since it was read. A session that is already gone
+	// counts as removed.
+	Remove(session *Session)
+	// RemoveOfUser records the delete of every session of the user.
+	RemoveOfUser(userID UserID)
+	// RemoveExpiredOfUser records the delete of every session of the user
+	// that expires at now or earlier.
+	RemoveExpiredOfUser(userID UserID, now time.Time)
 }

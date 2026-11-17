@@ -12,10 +12,10 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
@@ -27,12 +27,12 @@ func TestSessionInterceptorPutsTheSessionIntoTheContext(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	session := service.Session{
-		ID:     pgtype.UUID{Bytes: [16]byte{1}, Valid: true},
-		UserID: pgtype.UUID{Bytes: [16]byte{2}, Valid: true},
+	session := model.Session{
+		ID:     model.SessionID{1},
+		UserID: model.UserID{2},
 	}
-	sessions := &fakeSessions{byToken: map[string]service.Session{"abc": session}}
-	found := make(chan service.Session, 1)
+	sessions := &fakeSessions{byToken: map[string]model.Session{"abc": session}}
+	found := make(chan model.Session, 1)
 	client := pingClient(t, NewSessionInterceptor(sessions), connect.UnaryInterceptorFunc(
 		func(next connect.UnaryFunc) connect.UnaryFunc {
 			return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
@@ -58,11 +58,11 @@ func TestSessionInterceptorAddsTheUserAndTheSessionToTheLogger(t *testing.T) {
 	// arrange
 	var out bytes.Buffer
 
-	session := service.Session{
-		ID:     pgtype.UUID{Bytes: [16]byte{1}, Valid: true},
-		UserID: pgtype.UUID{Bytes: [16]byte{2}, Valid: true},
+	session := model.Session{
+		ID:     model.SessionID{1},
+		UserID: model.UserID{2},
 	}
-	sessions := &fakeSessions{byToken: map[string]service.Session{"abc": session}}
+	sessions := &fakeSessions{byToken: map[string]model.Session{"abc": session}}
 	handler := NewSessionInterceptor(sessions).WrapUnary(
 		func(ctx context.Context, _ connect.AnyRequest) (connect.AnyResponse, error) {
 			logging.FromContext(ctx).InfoContext(ctx, "handled")
@@ -197,21 +197,21 @@ func TestBearerTokenReadsTheAuthorizationHeader(t *testing.T) {
 }
 
 type fakeSessions struct {
-	byToken map[string]service.Session
+	byToken map[string]model.Session
 	err     error
 	called  atomic.Bool
 }
 
-func (f *fakeSessions) Session(_ context.Context, token secret.String) (service.Session, error) {
+func (f *fakeSessions) Session(_ context.Context, token secret.String) (model.Session, error) {
 	f.called.Store(true)
 
 	if f.err != nil {
-		return service.Session{}, f.err
+		return model.Session{}, f.err
 	}
 
 	session, ok := f.byToken[token.Reveal()]
 	if !ok {
-		return service.Session{}, fmt.Errorf("%w: unknown or expired token", service.ErrNotSignedIn)
+		return model.Session{}, fmt.Errorf("%w: unknown or expired token", service.ErrNotSignedIn)
 	}
 
 	return session, nil

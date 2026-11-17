@@ -2,6 +2,7 @@
 package model
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -14,7 +15,7 @@ var (
 	// ErrUserNotFound means no user has the given ID or name.
 	ErrUserNotFound = errors.New("user not found")
 	// ErrUsersExist means the users table already held a user.
-	ErrUsersExist = errors.New("users already exist")
+	ErrUsersExist = errors.New("a user already exists")
 )
 
 // UserID identifies a user.
@@ -43,4 +44,28 @@ type User struct {
 	PasswordHash *secret.String
 	// Version is the xmin of the row in Postgres at the time it was read or written.
 	Version uint32
+}
+
+// UserReadWriter belongs to a Unit. It reads users right away and records
+// writes, which the unit runs at Commit.
+type UserReadWriter interface {
+	// ByName returns the user with the name, ignoring letter case, or
+	// ErrUserNotFound.
+	ByName(ctx context.Context, name string) (*User, error)
+	// Any reports whether a user exists.
+	Any(ctx context.Context) (bool, error)
+	// Add records the insert of user. Commit returns ErrConflict if another
+	// user has the name.
+	Add(user *User)
+	// AddIfNoneExist records the insert of user as the first user. Commit
+	// returns ErrUsersExist if a user exists by then.
+	AddIfNoneExist(user *User)
+	// Update records the update of every field of user. Commit returns
+	// ErrConflict if the user changed since it was read, and ErrUserNotFound
+	// if it's gone.
+	Update(user *User)
+	// Remove records the delete of user. Commit returns ErrConflict if the
+	// user changed since it was read. A user that is already gone counts as
+	// removed.
+	Remove(user *User)
 }

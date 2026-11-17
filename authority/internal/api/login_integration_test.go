@@ -10,15 +10,15 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"github.com/The127/go-clock"
 	"github.com/The127/go-random/randomtest"
-	"github.com/jackc/pgx/v5/pgtype"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/db"
-	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
-	"github.com/tidegate-dev/tidegate/authority/internal/dbtest"
+	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
+	"github.com/tidegate-dev/tidegate/authority/internal/store"
+	"github.com/tidegate-dev/tidegate/authority/internal/storetest"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 	"github.com/tidegate-dev/tidegate/internal/logging"
 	"github.com/tidegate-dev/tidegate/internal/secret"
@@ -47,18 +47,15 @@ var _ = Describe("Login", func() {
 	}
 
 	BeforeEach(func(ctx SpecContext) {
-		pool, err := db.Open(ctx, dbtest.NewDatabase())
-		Expect(err).NotTo(HaveOccurred())
-		DeferCleanup(pool.Close)
-		Expect(db.Migrate(ctx, pool)).To(Succeed())
+		_, data := storetest.New(ctx)
 
-		Expect(service.CreateInitialAdmin(ctx, pool, randomtest.NewMock(), "alice", secret.New(alicePassword))).To(Succeed())
-		Expect(sqlc.New(pool).CreateUser(ctx, sqlc.CreateUserParams{Name: "bob"})).To(Succeed())
+		Expect(service.NewUsers(data.Users(), data, randomtest.NewMock()).CreateInitialAdmin(ctx, "alice", secret.New(alicePassword))).To(Succeed())
+		storetest.AddUser(ctx, data, "bob")
 
-		authenticator, err := service.NewAuthenticator(pool, randomtest.NewMock())
+		authenticator, err := service.NewAuthenticator(data.Users(), randomtest.NewMock())
 		Expect(err).NotTo(HaveOccurred())
 
-		handler = NewLoginService(service.NewLogins(authenticator, service.NewSessions(pool, randomtest.NewMock(), 12*time.Hour)))
+		handler = NewLoginService(service.NewLogins(authenticator, newSessions(data)))
 		logs = &bytes.Buffer{}
 	})
 
@@ -113,31 +110,25 @@ var _ = Describe("Login", func() {
 
 var _ = Describe("Logout", func() {
 	var (
-		handler *LoginService
-		tokens  *service.Sessions
-		token   secret.String
-		session service.Session
+		handler  *LoginService
+		sessions *service.Sessions
+		token    secret.String
+		session  model.Session
 	)
 
 	BeforeEach(func(ctx SpecContext) {
-		pool, err := db.Open(ctx, dbtest.NewDatabase())
-		Expect(err).NotTo(HaveOccurred())
-		DeferCleanup(pool.Close)
-		Expect(db.Migrate(ctx, pool)).To(Succeed())
+		_, data := storetest.New(ctx)
 
-		authenticator, err := service.NewAuthenticator(pool, randomtest.NewMock())
+		authenticator, err := service.NewAuthenticator(data.Users(), randomtest.NewMock())
 		Expect(err).NotTo(HaveOccurred())
 
-		tokens = service.NewSessions(pool, randomtest.NewMock(), 12*time.Hour)
-		handler = NewLoginService(service.NewLogins(authenticator, tokens))
+		sessions = newSessions(data)
+		handler = NewLoginService(service.NewLogins(authenticator, sessions))
 
-		var alice pgtype.UUID
-		Expect(pool.QueryRow(ctx, "INSERT INTO users (name) VALUES ('alice') RETURNING id").Scan(&alice)).To(Succeed())
-
-		token, err = tokens.Issue(ctx, alice)
+		token, err = sessions.Issue(ctx, storetest.AddUser(ctx, data, "alice"))
 		Expect(err).NotTo(HaveOccurred())
 
-		session, err = tokens.Session(ctx, token)
+		session, err = sessions.Session(ctx, token)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -148,7 +139,7 @@ var _ = Describe("Logout", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = tokens.Session(ctx, token)
+		_, err = sessions.Session(ctx, token)
 		Expect(err).To(MatchError(service.ErrNotSignedIn))
 	})
 
@@ -157,7 +148,11 @@ var _ = Describe("Logout", func() {
 
 		Expect(err).To(MatchError(errNoSession))
 
-		_, err = tokens.Session(ctx, token)
+		_, err = sessions.Session(ctx, token)
 		Expect(err).NotTo(HaveOccurred())
 	})
 })
+
+func newSessions(data *store.Store) *service.Sessions {
+	return service.NewSessions(data.Sessions(), data, randomtest.NewMock(), clock.NewSystemClock(), 12*time.Hour)
+}

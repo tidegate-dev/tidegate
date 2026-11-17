@@ -3,31 +3,18 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/The127/go-random"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
+	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/authority/internal/password"
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
-var (
-	// ErrUserExists means the initial admin can't be created, because a user
-	// exists.
-	ErrUserExists = errors.New("a user already exists")
-	// ErrInvalidName means a user name is empty, starts or ends with
-	// whitespace, or has NUL.
-	ErrInvalidName = errors.New("the name must not be empty, start or end with whitespace, or contain NUL")
-)
-
-// initialAdminLockID is the Postgres advisory lock that CreateInitialAdmin
-// takes. goose uses its own lock ID for migrations.
-const initialAdminLockID int64 = 0x7469646567617465 // "tidegate" in ASCII
+// ErrInvalidName means a user name is empty, starts or ends with whitespace,
+// or has NUL.
+var ErrInvalidName = errors.New("the name must not be empty, start or end with whitespace, or contain NUL")
 
 // ValidateName returns ErrInvalidName if name is empty, starts or ends with
 // whitespace, or has NUL, which Postgres refuses in text.
@@ -39,55 +26,53 @@ func ValidateName(name string) error {
 	return nil
 }
 
-// AnyExist reports whether the database holds a user.
-func AnyExist(ctx context.Context, pool *pgxpool.Pool) (bool, error) {
-	exists, err := sqlc.New(pool).AnyUserExists(ctx)
-	if err != nil {
-		return false, fmt.Errorf("checking for users: %w", err)
-	}
-
-	return exists, nil
+// UserChecker checks whether a user exists.
+type UserChecker interface {
+	// Any reports whether a user exists.
+	Any(ctx context.Context) (bool, error)
 }
 
-// CreateInitialAdmin creates the first user, with a local password hashed
-// with a salt from rnd. It returns ErrUserExists if any user exists, also when
-// another run creates one at the same time.
-func CreateInitialAdmin(ctx context.Context, pool *pgxpool.Pool, rnd random.Service, name string, plaintext secret.String) error {
+// Users creates users and reports whether any exist.
+type Users struct {
+	users UserChecker
+	units model.UnitFactory
+	rnd   random.Service
+}
+
+// NewUsers returns Users that read from users and write in units of work
+// from units. They take the salts of password hashes from rnd.
+func NewUsers(users UserChecker, units model.UnitFactory, rnd random.Service) *Users {
+	return &Users{users: users, units: units, rnd: rnd}
+}
+
+// AnyExist reports whether a user exists.
+func (u *Users) AnyExist(ctx context.Context) (bool, error) {
+	return u.users.Any(ctx)
+}
+
+// CreateInitialAdmin creates the first user, with a local password. It
+// returns model.ErrUsersExist if any user exists, also when another run
+// creates one at the same time.
+func (u *Users) CreateInitialAdmin(ctx context.Context, name string, plaintext secret.String) error {
 	err := ValidateName(name)
 	if err != nil {
 		return err
 	}
 
-	hash, err := password.Hash(rnd, plaintext)
+	hash, err := password.Hash(u.rnd, plaintext)
 	if err != nil {
 		return err
 	}
 
-	return pgx.BeginFunc(ctx, pool, func(tx pgx.Tx) error {
-		queries := sqlc.New(tx)
+	id, err := model.NewUserID()
+	if err != nil {
+		return err
+	}
 
-		err := queries.LockTransaction(ctx, initialAdminLockID)
-		if err != nil {
-			return fmt.Errorf("waiting for other runs that create the initial admin: %w", err)
-		}
+	passwordHash := secret.New(hash)
 
-		exists, err := queries.AnyUserExists(ctx)
-		if err != nil {
-			return fmt.Errorf("checking for users: %w", err)
-		}
+	unit := u.units.NewUnit()
+	unit.Users().AddIfNoneExist(&model.User{ID: id, Name: name, PasswordHash: &passwordHash})
 
-		if exists {
-			return ErrUserExists
-		}
-
-		err = queries.CreateUser(ctx, sqlc.CreateUserParams{
-			Name:         name,
-			PasswordHash: pgtype.Text{String: hash, Valid: true},
-		})
-		if err != nil {
-			return fmt.Errorf("creating the user: %w", err)
-		}
-
-		return nil
-	})
+	return unit.Commit(ctx)
 }

@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/service"
+	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
 	"github.com/tidegate-dev/tidegate/internal/logging"
 	"github.com/tidegate-dev/tidegate/internal/secret"
@@ -106,6 +106,6 @@ func clientOfSucceedingHandler(t *testing.T, procedure string) *connect.Client[e
 
 type anySession struct{}
 
-func (anySession) Session(context.Context, secret.String) (service.Session, error) {
-	return service.Session{}, nil
+func (anySession) Session(context.Context, secret.String) (model.Session, error) {
+	return model.Session{}, nil
 }

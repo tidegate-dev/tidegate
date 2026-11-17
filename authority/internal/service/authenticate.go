@@ -7,12 +7,9 @@ import (
 	"time"
 
 	"github.com/The127/go-random"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
+	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/authority/internal/password"
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
@@ -30,25 +27,32 @@ var (
 	ErrBusy = errors.New("too many logins at once, try again")
 )
 
+// UserFinder finds a user by name.
+type UserFinder interface {
+	// ByName returns the user with the name, ignoring letter case, or
+	// model.ErrUserNotFound.
+	ByName(ctx context.Context, name string) (*model.User, error)
+}
+
 // Authenticator checks users' local passwords.
 type Authenticator struct {
-	queries   *sqlc.Queries
+	users     UserFinder
 	checks    *semaphore.Weighted
 	checkWait time.Duration
 	// fixedHash makes unknown users take as long as a wrong password.
 	fixedHash string
 }
 
-// NewAuthenticator returns an Authenticator for the users in pool. It takes
-// the password and salt of fixedHash from rnd.
-func NewAuthenticator(pool *pgxpool.Pool, rnd random.Service) (*Authenticator, error) {
+// NewAuthenticator returns an Authenticator for users. It takes the password
+// and salt of fixedHash from rnd.
+func NewAuthenticator(users UserFinder, rnd random.Service) (*Authenticator, error) {
 	fixedHash, err := password.Hash(rnd, secret.New(rnd.Text()))
 	if err != nil {
 		return nil, fmt.Errorf("hashing the password for unknown users: %w", err)
 	}
 
 	return &Authenticator{
-		queries:   sqlc.New(pool),
+		users:     users,
 		checks:    semaphore.NewWeighted(maxConcurrentChecks),
 		checkWait: maxCheckWait,
 		fixedHash: fixedHash,
@@ -56,48 +60,53 @@ func NewAuthenticator(pool *pgxpool.Pool, rnd random.Service) (*Authenticator, e
 }
 
 // Authenticate returns the user's ID if plaintext is their local password.
-func (a *Authenticator) Authenticate(ctx context.Context, name string, plaintext secret.String) (pgtype.UUID, error) {
+func (a *Authenticator) Authenticate(ctx context.Context, name string, plaintext secret.String) (model.UserID, error) {
 	// Checked before queueing for a password check, so it never ends in ErrBusy.
 	err := password.CheckMaxBytes(plaintext)
 	if err != nil {
-		return pgtype.UUID{}, err
+		return model.UserID{}, err
 	}
 
 	user, err := a.findUser(ctx, name)
 
-	hash, failure := user.PasswordHash.String, error(nil)
+	var (
+		hash    string
+		failure error
+	)
 
 	switch {
-	case errors.Is(err, pgx.ErrNoRows):
+	case errors.Is(err, model.ErrUserNotFound):
 		hash, failure = a.fixedHash, fmt.Errorf("%w: unknown user", ErrWrongCredentials)
 	case err != nil:
-		return pgtype.UUID{}, fmt.Errorf("looking up the user: %w", err)
-	case !user.PasswordHash.Valid:
+		return model.UserID{}, fmt.Errorf("looking up the user: %w", err)
+	case user.PasswordHash == nil:
 		hash, failure = a.fixedHash, fmt.Errorf("%w: no local password", ErrWrongCredentials)
+	default:
+		hash = user.PasswordHash.Reveal()
 	}
 
 	ok, err := a.verify(ctx, plaintext, hash)
 
 	switch {
 	case err != nil:
-		return pgtype.UUID{}, err
+		return model.UserID{}, err
 	case failure != nil:
-		return pgtype.UUID{}, failure
+		return model.UserID{}, failure
 	case !ok:
-		return pgtype.UUID{}, fmt.Errorf("%w: wrong password", ErrWrongCredentials)
+		return model.UserID{}, fmt.Errorf("%w: wrong password", ErrWrongCredentials)
 	}
 
 	return user.ID, nil
 }
 
-// findUser returns pgx.ErrNoRows for a name that no user can have, because
-// Postgres refuses some of those names in a query.
-func (a *Authenticator) findUser(ctx context.Context, name string) (sqlc.GetUserByNameRow, error) {
+// findUser returns model.ErrUserNotFound for a name that no user can have,
+// because Postgres refuses some of those names in a query.
+func (a *Authenticator) findUser(ctx context.Context, name string) (*model.User, error) {
 	if ValidateName(name) != nil {
-		return sqlc.GetUserByNameRow{}, pgx.ErrNoRows
+		return nil, model.ErrUserNotFound
 	}
 
-	return a.queries.GetUserByName(ctx, name)
+	return a.users.ByName(ctx, name)
 }
 
 func (a *Authenticator) verify(ctx context.Context, plaintext secret.String, hash string) (bool, error) {

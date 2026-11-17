@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
+	"github.com/tidegate-dev/tidegate/authority/internal/model"
 )
 
 // Store gives access to the authority's tables.
@@ -28,7 +29,12 @@ func (s *Store) Sessions() *SessionReader {
 	return &SessionReader{queries: sqlc.New(s.pool)}
 }
 
+// Dummies returns the queries for the dummies table.
+func (s *Store) Dummies() *DummyReadWriter {
+	return &DummyReadWriter{queries: sqlc.New(s.pool)}
+}
+
 // NewUnit returns an empty unit of work.
-func (s *Store) NewUnit() *Unit {
+func (s *Store) NewUnit() model.Unit {
 	return &Unit{pool: s.pool}
 }

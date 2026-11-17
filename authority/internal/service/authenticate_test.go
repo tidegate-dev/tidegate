@@ -7,43 +7,34 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/jackc/pgx/v5/pgxpool"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/db"
-	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
-	"github.com/tidegate-dev/tidegate/authority/internal/dbtest"
+	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/authority/internal/password"
+	"github.com/tidegate-dev/tidegate/authority/internal/storetest"
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 var _ = Describe("Authenticate", func() {
 	var (
-		pool          *pgxpool.Pool
 		authenticator *Authenticator
-		aliceID       pgtype.UUID
+		aliceID       model.UserID
 	)
 
 	BeforeEach(func(ctx SpecContext) {
-		var err error
+		_, data := storetest.New(ctx)
 
-		pool, err = db.Open(ctx, dbtest.NewDatabase())
-		Expect(err).NotTo(HaveOccurred())
-		DeferCleanup(pool.Close)
-		Expect(db.Migrate(ctx, pool)).To(Succeed())
+		Expect(NewUsers(data.Users(), data, rnd).CreateInitialAdmin(ctx, "alice", secret.New(validPassword))).To(Succeed())
+		storetest.AddUser(ctx, data, "bob")
 
-		Expect(CreateInitialAdmin(ctx, pool, rnd, "alice", secret.New(validPassword))).To(Succeed())
-		Expect(sqlc.New(pool).CreateUser(ctx, sqlc.CreateUserParams{Name: "bob"})).To(Succeed())
-
-		alice, err := sqlc.New(pool).GetUserByName(ctx, "alice")
+		alice, err := data.Users().ByName(ctx, "alice")
 		Expect(err).NotTo(HaveOccurred())
 
 		aliceID = alice.ID
 
-		authenticator, err = NewAuthenticator(pool, rnd)
+		authenticator, err = NewAuthenticator(data.Users(), rnd)
 		Expect(err).NotTo(HaveOccurred())
 	})
 

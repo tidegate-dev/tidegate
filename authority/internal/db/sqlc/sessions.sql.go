@@ -11,31 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createSession = `-- name: CreateSession :exec
-INSERT INTO sessions (token_hash, user_id, created_at, expires_at)
-VALUES ($1, $2, now(), now() + $3::interval)
-`
-
-type CreateSessionParams struct {
-	TokenHash []byte
-	UserID    pgtype.UUID
-	Lifetime  pgtype.Interval
-}
-
-func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) error {
-	_, err := q.db.Exec(ctx, createSession, arg.TokenHash, arg.UserID, arg.Lifetime)
-	return err
-}
-
-const deleteExpiredSessions = `-- name: DeleteExpiredSessions :exec
-DELETE FROM sessions WHERE user_id = $1 AND expires_at <= now()
-`
-
-func (q *Queries) DeleteExpiredSessions(ctx context.Context, userID pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, deleteExpiredSessions, userID)
-	return err
-}
-
 const deleteExpiredSessionsOfUser = `-- name: DeleteExpiredSessionsOfUser :exec
 DELETE FROM sessions WHERE user_id = $1 AND expires_at <= $2
 `
@@ -109,22 +84,6 @@ func (q *Queries) GetActiveSessionByTokenHash(ctx context.Context, arg GetActive
 	return i, err
 }
 
-const getSession = `-- name: GetSession :one
-SELECT id, user_id FROM sessions WHERE token_hash = $1 AND expires_at > now()
-`
-
-type GetSessionRow struct {
-	ID     pgtype.UUID
-	UserID pgtype.UUID
-}
-
-func (q *Queries) GetSession(ctx context.Context, tokenHash []byte) (GetSessionRow, error) {
-	row := q.db.QueryRow(ctx, getSession, tokenHash)
-	var i GetSessionRow
-	err := row.Scan(&i.ID, &i.UserID)
-	return i, err
-}
-
 const insertSession = `-- name: InsertSession :one
 INSERT INTO sessions (id, user_id, token_hash, created_at, expires_at)
 VALUES ($1, $2, $3, $4, $5)
@@ -150,24 +109,6 @@ func (q *Queries) InsertSession(ctx context.Context, arg InsertSessionParams) (p
 	var xmin pgtype.Uint32
 	err := row.Scan(&xmin)
 	return xmin, err
-}
-
-const revokeSession = `-- name: RevokeSession :exec
-DELETE FROM sessions WHERE id = $1
-`
-
-func (q *Queries) RevokeSession(ctx context.Context, id pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, revokeSession, id)
-	return err
-}
-
-const revokeUserSessions = `-- name: RevokeUserSessions :exec
-DELETE FROM sessions WHERE user_id = $1
-`
-
-func (q *Queries) RevokeUserSessions(ctx context.Context, userID pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, revokeUserSessions, userID)
-	return err
 }
 
 const sessionExists = `-- name: SessionExists :one

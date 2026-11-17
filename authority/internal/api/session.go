@@ -9,6 +9,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	"github.com/tidegate-dev/tidegate/internal/logging"
 	"github.com/tidegate-dev/tidegate/internal/secret"
@@ -16,7 +17,7 @@ import (
 
 // SessionLookup finds the session that a session token belongs to.
 type SessionLookup interface {
-	Session(ctx context.Context, token secret.String) (service.Session, error)
+	Session(ctx context.Context, token secret.String) (model.Session, error)
 }
 
 // NewSessionInterceptor returns an interceptor that requires a session token.
@@ -92,10 +93,10 @@ type sessionKey struct{}
 
 var errNoSession = errors.New("the call has no session")
 
-func sessionFromContext(ctx context.Context) (service.Session, error) {
-	session, ok := ctx.Value(sessionKey{}).(service.Session)
+func sessionFromContext(ctx context.Context) (model.Session, error) {
+	session, ok := ctx.Value(sessionKey{}).(model.Session)
 	if !ok {
-		return service.Session{}, errNoSession
+		return model.Session{}, errNoSession
 	}
 
 	return session, nil
