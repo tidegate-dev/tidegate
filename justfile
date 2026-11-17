@@ -55,9 +55,13 @@ mutate $base="origin/main":
 # Generate code from the .proto files.
 generate: proto::generate authority::generate
 
-# Lint every component, and report secrets in exported APIs that aren't a
-# secret.String.
-lint: authority::lint cli::lint internal::lint proto::lint
+# Check the GitHub workflows for mistakes.
+workflows:
+    actionlint
+
+# Lint every component and the GitHub workflows, and report secrets in
+# exported APIs that aren't a secret.String.
+lint: workflows authority::lint cli::lint internal::lint proto::lint
     go tool secretcheck ./...
 
 # Check the dependencies of every component and of the Go tools for known
@@ -196,4 +200,4 @@ kind-down:
     kind delete cluster --name tidegate
 
 # Run every check that CI runs, except fuzzing and mutate.
-ci: secrets arch images licenses proto::ci authority::ci cli::ci test-e2e internal::ci docs::build
+ci: secrets arch images licenses workflows proto::ci authority::ci cli::ci test-e2e internal::ci docs::build

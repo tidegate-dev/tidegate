@@ -32,6 +32,7 @@ The Nix shell also installs a pre-commit hook that runs `just lint`, `just test`
 
 If you don't use Nix, install these tools yourself:
 
+- [actionlint](https://github.com/rhysd/actionlint) 1.7 or newer
 - [Bats](https://bats-core.readthedocs.io/en/stable/installation.html) 1.14 or newer
 - [buf](https://buf.build/docs/cli/installation/) 1.73 or newer
 - [gitleaks](https://github.com/gitleaks/gitleaks) 8.30 or newer
@@ -51,6 +52,7 @@ If you don't use Nix, install these tools yourself:
 - [protoc-gen-go](https://pkg.go.dev/google.golang.org/protobuf/cmd/protoc-gen-go) 1.36 or newer
 - [protoc-gen-connect-go](https://connectrpc.com/docs/go/getting-started/) 1.21 or a newer 1.x release
 - [protoc-gen-doc](https://github.com/pseudomuto/protoc-gen-doc) 1.5 or newer
+- [ShellCheck](https://github.com/koalaman/shellcheck) 0.11 or newer, which actionlint needs to check the shell scripts in the workflows
 - [sqlc](https://docs.sqlc.dev/en/latest/overview/install.html) 1.31 or newer
 - [syft](https://github.com/anchore/syft) 1.55 or newer
 - [Zensical](https://zensical.org/) 0.0.62 or newer, for the documentation site

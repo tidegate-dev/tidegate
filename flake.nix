@@ -21,6 +21,7 @@
 
       # When you change this list, update the tool list in README.md too.
       tools = pkgs: [
+        pkgs.actionlint
         pkgs.buf
         pkgs.go_1_27
         pkgs.golangci-lint
