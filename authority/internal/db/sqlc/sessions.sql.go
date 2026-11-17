@@ -25,21 +25,13 @@ func (q *Queries) DeleteExpiredSessionsOfUser(ctx context.Context, arg DeleteExp
 	return err
 }
 
-const deleteSession = `-- name: DeleteSession :execrows
-DELETE FROM sessions WHERE id = $1 AND xmin = $2
+const deleteSession = `-- name: DeleteSession :exec
+DELETE FROM sessions WHERE id = $1
 `
 
-type DeleteSessionParams struct {
-	ID      pgtype.UUID
-	Version pgtype.Uint32
-}
-
-func (q *Queries) DeleteSession(ctx context.Context, arg DeleteSessionParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteSession, arg.ID, arg.Version)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
+func (q *Queries) DeleteSession(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteSession, id)
+	return err
 }
 
 const deleteSessionsOfUser = `-- name: DeleteSessionsOfUser :exec
@@ -109,15 +101,4 @@ func (q *Queries) InsertSession(ctx context.Context, arg InsertSessionParams) (p
 	var xmin pgtype.Uint32
 	err := row.Scan(&xmin)
 	return xmin, err
-}
-
-const sessionExists = `-- name: SessionExists :one
-SELECT EXISTS (SELECT 1 FROM sessions WHERE id = $1)
-`
-
-func (q *Queries) SessionExists(ctx context.Context, id pgtype.UUID) (bool, error) {
-	row := q.db.QueryRow(ctx, sessionExists, id)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
 }

@@ -79,24 +79,16 @@ func (s *SessionReadWriter) Add(session *model.Session) {
 	})
 }
 
-// Remove records the delete of session. Commit returns model.ErrConflict if
-// the row changed since session was read. A row that is already gone counts
-// as removed.
+// Remove records the delete of session, whatever its version is at Commit. A
+// row that is already gone counts as removed.
 func (s *SessionReadWriter) Remove(session *model.Session) {
 	s.unit.add(func(ctx context.Context, queries *sqlc.Queries) error {
-		deleted, err := queries.DeleteSession(ctx, sqlc.DeleteSessionParams{
-			ID:      databaseID(session.ID),
-			Version: databaseVersion(session.Version),
-		})
+		err := queries.DeleteSession(ctx, databaseID(session.ID))
 		if err != nil {
 			return fmt.Errorf("deleting the session: %w", err)
 		}
 
-		if deleted > 0 {
-			return nil
-		}
-
-		return conflictIfExists(ctx, queries.SessionExists, databaseID(session.ID), "session", nil)
+		return nil
 	})
 }
 

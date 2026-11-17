@@ -55,9 +55,8 @@ type SessionReadWriter interface {
 	// another session has the token hash, and ErrUserNotFound if the user of
 	// the session is gone.
 	Add(session *Session)
-	// Remove records the delete of session. Commit returns ErrConflict if the
-	// session changed since it was read. A session that is already gone
-	// counts as removed.
+	// Remove records the delete of session, also if it changed since it was
+	// read. A session that is already gone counts as removed.
 	Remove(session *Session)
 	// RemoveOfUser records the delete of every session of the user.
 	RemoveOfUser(userID UserID)

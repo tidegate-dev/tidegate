@@ -116,7 +116,7 @@ var _ = Describe("SessionReadWriter", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("refuses a session that changed since it was read", func(ctx SpecContext) {
+		It("deletes a session that changed since it was read", func(ctx SpecContext) {
 			session := addSession(ctx, data, alice.ID, "token")
 			_, err := pool.Exec(ctx, "UPDATE sessions SET expires_at = expires_at + interval '1 hour'")
 			Expect(err).NotTo(HaveOccurred())
@@ -124,8 +124,8 @@ var _ = Describe("SessionReadWriter", func() {
 			unit := data.NewUnit()
 			unit.Sessions().Remove(session)
 
-			Expect(unit.Commit(ctx)).To(MatchError(model.ErrConflict))
-			Expect(count(ctx, pool, "sessions")).To(Equal(1))
+			Expect(unit.Commit(ctx)).To(Succeed())
+			Expect(count(ctx, pool, "sessions")).To(Equal(0))
 		})
 
 		It("succeeds for a session that is already gone", func(ctx SpecContext) {
