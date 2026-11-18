@@ -111,9 +111,11 @@ func serveAuthority(ctx context.Context, url string) runningAuthority {
 
 	internalCertFile, internalKeyFile := writeKeyPair(GinkgoTB())
 
+	addresses := freeAddresses(GinkgoTB(), 2)
+
 	authority := runningAuthority{
-		externalAddress:  freeAddress(GinkgoTB()),
-		internalAddress:  freeAddress(GinkgoTB()),
+		externalAddress:  addresses[0],
+		internalAddress:  addresses[1],
 		internalCertFile: internalCertFile,
 		stop:             stop,
 		runErrorChan:     make(chan error, 1),

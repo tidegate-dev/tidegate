@@ -138,13 +138,27 @@ func openNotifier(t *testing.T) *systemd.Notifier {
 func freeAddress(t testing.TB) string {
 	t.Helper()
 
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
+	return freeAddresses(t, 1)[0]
+}
 
-	address := listener.Addr().String()
-	require.NoError(t, listener.Close())
+func freeAddresses(t testing.TB, count int) []string {
+	t.Helper()
 
-	return address
+	addresses := make([]string, 0, count)
+
+	// The system can hand out a port again once its listener is closed.
+	for range count {
+		listener, err := net.Listen("tcp", "127.0.0.1:0")
+		require.NoError(t, err)
+
+		defer func() {
+			require.NoError(t, listener.Close())
+		}()
+
+		addresses = append(addresses, listener.Addr().String())
+	}
+
+	return addresses
 }
 
 func receive(t *testing.T, socket net.PacketConn) string {

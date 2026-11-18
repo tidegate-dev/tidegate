@@ -176,6 +176,91 @@ func TestInvalidValuesNameTheirVariable(t *testing.T) {
 	}
 }
 
+func TestOverlappingListenAddressesAreRejected(t *testing.T) {
+	t.Parallel()
+
+	const (
+		external = "TIDEGATE_AUTHORITY__EXTERNAL_API__LISTEN_ADDRESS"
+		internal = "TIDEGATE_AUTHORITY__INTERNAL_API__LISTEN_ADDRESS"
+		metrics  = "TIDEGATE_AUTHORITY__METRICS__LISTEN_ADDRESS"
+	)
+
+	tests := map[string]struct {
+		variables []string
+		want      string
+	}{
+		"same address": {
+			variables: []string{external + "=127.0.0.1:9000", internal + "=127.0.0.1:9000"},
+			want:      internal + `: "127.0.0.1:9000" overlaps with "127.0.0.1:9000" in ` + external,
+		},
+		"every interface and a default": {
+			variables: []string{external + "=:8081"},
+			want:      internal + `: "127.0.0.1:8081" overlaps with ":8081" in ` + external,
+		},
+		"every IPv4 interface": {
+			variables: []string{external + "=10.0.0.1:9000", internal + "=0.0.0.0:9000"},
+			want:      internal + `: "0.0.0.0:9000" overlaps with "10.0.0.1:9000" in ` + external,
+		},
+		"every IPv6 interface": {
+			variables: []string{external + "=[::]:9000", internal + "=127.0.0.1:9000"},
+			want:      internal + `: "127.0.0.1:9000" overlaps with "[::]:9000" in ` + external,
+		},
+		"one IP written in two ways": {
+			variables: []string{external + "=[::1]:9000", internal + "=[0:0:0:0:0:0:0:1]:9000"},
+			want:      internal + `: "[0:0:0:0:0:0:0:1]:9000" overlaps with "[::1]:9000" in ` + external,
+		},
+		"one name in two cases": {
+			variables: []string{external + "=localhost:9000", internal + "=LOCALHOST:9000"},
+			want:      internal + `: "LOCALHOST:9000" overlaps with "localhost:9000" in ` + external,
+		},
+		"metrics and an API": {
+			variables: []string{metrics + "=:8080"},
+			want:      metrics + `: ":8080" overlaps with "127.0.0.1:8080" in ` + external,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			// act
+			_, err := config.Load(withDatabaseURL(tt.variables...))
+
+			// assert
+			assert.EqualError(t, err, tt.want)
+		})
+	}
+}
+
+func TestListenAddressesThatCanBothBeBoundAreAccepted(t *testing.T) {
+	t.Parallel()
+
+	const (
+		external = "TIDEGATE_AUTHORITY__EXTERNAL_API__LISTEN_ADDRESS"
+		internal = "TIDEGATE_AUTHORITY__INTERNAL_API__LISTEN_ADDRESS"
+	)
+
+	tests := map[string][]string{
+		"one port on two IPs":          {external + "=127.0.0.1:9000", internal + "=127.0.0.2:9000"},
+		"two ports on every interface": {external + "=:9000", internal + "=:9001"},
+		"a port the system picks":      {external + "=127.0.0.1:0", internal + "=127.0.0.1:0"},
+		// A name can resolve to any address, so only the bind can tell.
+		"a name and an IP": {external + "=localhost:9000", internal + "=127.0.0.1:9000"},
+	}
+
+	for name, variables := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			// act
+			_, err := config.Load(withDatabaseURL(variables...))
+
+			// assert
+			assert.NoError(t, err)
+		})
+	}
+}
+
 func TestExternalTLSFilesCanBeSet(t *testing.T) {
 	t.Parallel()
 

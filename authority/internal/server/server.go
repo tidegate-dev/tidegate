@@ -77,17 +77,20 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 		return err
 	}
 
-	stopWatchingExternal, err := watchCertificate(ctx, externalCertificate)
-	if err != nil {
-		return errors.Join(err, shutdownMetrics(context.Background()))
-	}
-	defer stopWatchingExternal()
+	watching, stopWatching := context.WithCancel(ctx)
+	defer stopWatching()
 
-	stopWatchingInternal, err := watchCertificate(ctx, internalCertificate)
+	stopReportingExternal, err := watchCertificate(watching, externalCertificate)
 	if err != nil {
 		return errors.Join(err, shutdownMetrics(context.Background()))
 	}
-	defer stopWatchingInternal()
+	defer stopReportingExternal()
+
+	stopReportingInternal, err := watchCertificate(watching, internalCertificate)
+	if err != nil {
+		return errors.Join(err, shutdownMetrics(context.Background()))
+	}
+	defer stopReportingInternal()
 
 	err = serve(ctx, notifier, map[string]*http.Server{
 		"external-api": externalAPIServer(cfg.ExternalAPI.ListenAddress, externalCertificate, clk, dummies, logins, sessions),

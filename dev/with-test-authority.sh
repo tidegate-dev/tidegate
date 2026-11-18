@@ -77,9 +77,10 @@ export TIDEGATE_TEST_CA_FILE="$root/dev/tls/ca.pem"
 export TIDEGATE_TEST_DATABASE_SERVER=$server
 export TIDEGATE_TEST_DATABASE_QUERY=$query
 
-# The authority logs this line only after it migrated the database and opened its port.
+# The authority logs this line once for each of its three servers, after it
+# migrated the database and opened that server's port.
 listening() {
-    jq -e -s 'any(.[]; .msg == "authority listening" and .server == "external-api")' "$work/log" >/dev/null 2>&1
+    jq -e -s '[.[] | select(.msg == "authority listening")] | length == 3' "$work/log" >/dev/null 2>&1
 }
 for _ in $(seq 100); do
     listening && break

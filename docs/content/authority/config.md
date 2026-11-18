@@ -10,7 +10,7 @@ authority
 
 This makes the external API, which the CLI and the browser call, listen on port 8080 on every network interface, and sets the log level to debug.
 
-Every variable starts with `TIDEGATE_AUTHORITY__`. Two underscores separate the parts of a name, like `EXTERNAL_API` and `LISTEN_ADDRESS`. After the prefix, upper and lower case don't matter, in names or in values.
+Every variable starts with `TIDEGATE_AUTHORITY__`. Two underscores separate the parts of a name, like `EXTERNAL_API` and `LISTEN_ADDRESS`. After the prefix, upper and lower case don't matter in names, or in values like `true` and `debug`. A path or the database URL is used as you write it.
 
 The authority checks every variable when it starts. If a value is invalid, or a variable starts with `TIDEGATE_AUTHORITY__` but isn't a setting, the authority stops and lists each problem:
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"net/netip"
 	"reflect"
 	"strconv"
 	"strings"
@@ -241,6 +242,8 @@ func validate(raw rawConfig, set map[string]bool) (Config, error) {
 	metricsListenAddress, err := parseListenAddress(raw.Metrics.ListenAddress)
 	v.check(&raw.Metrics.ListenAddress, err)
 
+	v.checkOverlaps(&raw.ExternalAPI.ListenAddress, &raw.InternalAPI.ListenAddress, &raw.Metrics.ListenAddress)
+
 	v.check(&raw.Database.URL, checkDatabaseURL(raw.Database.URL))
 
 	migrateOnStart, err := parseBool(raw.Database.MigrateOnStart)
@@ -300,6 +303,16 @@ type validator struct {
 func (v *validator) check(field *string, err error) {
 	if err != nil {
 		v.errs = append(v.errs, fmt.Errorf("%s: %w", variableFromKey(v.keys[field]), err))
+	}
+}
+
+func (v *validator) checkOverlaps(listenAddresses ...*string) {
+	for i, address := range listenAddresses {
+		for _, earlier := range listenAddresses[:i] {
+			if overlap(*address, *earlier) {
+				v.check(address, fmt.Errorf("%q overlaps with %q in %s", *address, *earlier, variableFromKey(v.keys[earlier])))
+			}
+		}
 	}
 }
 
@@ -387,6 +400,44 @@ func parseListenAddress(value string) (string, error) {
 	}
 
 	return value, nil
+}
+
+// overlap reports only what is certain, so it doesn't resolve names.
+func overlap(listenAddress, other string) bool {
+	host, port, err := net.SplitHostPort(listenAddress)
+	if err != nil {
+		return false
+	}
+
+	otherHost, otherPort, err := net.SplitHostPort(other)
+	if err != nil {
+		return false
+	}
+
+	number, err := strconv.ParseUint(port, 10, 16)
+	if err != nil || number == 0 {
+		return false
+	}
+
+	otherNumber, err := strconv.ParseUint(otherPort, 10, 16)
+	if err != nil || number != otherNumber {
+		return false
+	}
+
+	ip, err := netip.ParseAddr(host)
+	otherIP, otherErr := netip.ParseAddr(otherHost)
+
+	// Go binds an unspecified address to IPv4 and IPv6 where the system has
+	// dual-stack sockets, as Linux does.
+	if host == "" || otherHost == "" || ip.IsUnspecified() || otherIP.IsUnspecified() {
+		return true
+	}
+
+	if err == nil && otherErr == nil {
+		return ip.Unmap() == otherIP.Unmap()
+	}
+
+	return strings.EqualFold(host, otherHost)
 }
 
 func parseBool(value string) (bool, error) {
