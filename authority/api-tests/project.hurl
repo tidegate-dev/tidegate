@@ -72,4 +72,4 @@ Authorization: Bearer {{token}}
 {}
 HTTP 200
 [Asserts]
-jsonpath "$.projects[?(@.id == '{{project_id}}')].name" contains "api-tests"
+jsonpath "$.projects[?(@.id == '{{project_id}}')].name" == "api-tests"
