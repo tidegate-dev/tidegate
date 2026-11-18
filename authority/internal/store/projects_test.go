@@ -36,6 +36,18 @@ var _ = Describe("ProjectReadWriter", func() {
 		Expect(unit.Commit(ctx)).To(MatchError(model.ErrProjectNameTaken))
 	})
 
+	It("doesn't call the name taken at Commit when another project has the ID", func(ctx SpecContext) {
+		addProject(ctx, data, model.ProjectID{1}, "payments")
+
+		unit := data.NewUnit()
+		unit.Projects().Add(&model.Project{ID: model.ProjectID{1}, Name: "search"})
+
+		err := unit.Commit(ctx)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err).NotTo(MatchError(model.ErrProjectNameTaken))
+	})
+
 	It("returns the projects ordered by name, ignoring letter case", func(ctx SpecContext) {
 		addProject(ctx, data, model.ProjectID{1}, "search")
 		addProject(ctx, data, model.ProjectID{2}, "Payments")

@@ -43,7 +43,7 @@ func (p *ProjectReadWriter) Add(project *model.Project) {
 			ID:   databaseID(project.ID),
 			Name: project.Name,
 		})
-		if isUniqueViolation(err) {
+		if isUniqueViolationOf(err, "projects_name_key") {
 			return model.ErrProjectNameTaken
 		}
 

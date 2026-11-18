@@ -85,6 +85,12 @@ func isUniqueViolation(err error) bool {
 	return hasCode(err, pgerrcode.UniqueViolation)
 }
 
+func isUniqueViolationOf(err error, index string) bool {
+	var pgErr *pgconn.PgError
+
+	return isUniqueViolation(err) && errors.As(err, &pgErr) && pgErr.ConstraintName == index
+}
+
 func isForeignKeyViolation(err error) bool {
 	return hasCode(err, pgerrcode.ForeignKeyViolation)
 }
