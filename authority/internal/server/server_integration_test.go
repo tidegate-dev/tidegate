@@ -52,17 +52,37 @@ var _ = Describe("run", func() {
 			Eventually(ctx, authority.runErrorChan).WithTimeout(5*time.Second).Should(Receive(), "the authority didn't stop")
 		}, SpecTimeout(30*time.Second))
 	})
+
+	When("Ping is called on the internal address", func() {
+		var authority runningAuthority
+
+		BeforeEach(func(ctx SpecContext) {
+			url := dbtest.NewDatabase()
+			Expect(db.MigrateAt(ctx, url)).To(Succeed())
+			authority = serveAuthority(ctx, url)
+		}, NodeTimeout(30*time.Second))
+
+		It("isn't served", func(ctx SpecContext) {
+			client := authorityv1connect.NewPingServiceClient(http.DefaultClient, "http://"+authority.internalAddress)
+
+			_, err := client.Ping(ctx, connect.NewRequest(&authorityv1.PingRequest{}))
+
+			Expect(err).To(HaveOccurred())
+			Expect(connect.CodeOf(err)).To(Equal(connect.CodeUnimplemented))
+		}, SpecTimeout(30*time.Second))
+	})
 })
 
 // runningAuthority is an authority that serves in the background.
 type runningAuthority struct {
-	address      string
-	stop         context.CancelFunc
-	runErrorChan chan error
+	address         string
+	internalAddress string
+	stop            context.CancelFunc
+	runErrorChan    chan error
 }
 
 // serveAuthority runs the authority on the database at url and returns once
-// its API listens. It waits only 100 milliseconds for running requests when
+// both of its APIs listen. It waits only 100 milliseconds for running requests when
 // it stops, so the spec doesn't wait the full shutdown timeout.
 func serveAuthority(ctx context.Context, url string) runningAuthority {
 	GinkgoHelper()
@@ -71,20 +91,23 @@ func serveAuthority(ctx context.Context, url string) runningAuthority {
 	DeferCleanup(stop)
 
 	authority := runningAuthority{
-		address:      freeAddress(GinkgoTB()),
-		stop:         stop,
-		runErrorChan: make(chan error, 1),
+		address:         freeAddress(GinkgoTB()),
+		internalAddress: freeAddress(GinkgoTB()),
+		stop:            stop,
+		runErrorChan:    make(chan error, 1),
 	}
 
 	go func() {
 		authority.runErrorChan <- run(runCtx, config.Config{
 			Server:   config.Server{ListenAddress: authority.address, TLS: config.TLS{Disabled: true}},
+			Internal: config.Internal{ListenAddress: authority.internalAddress},
 			Metrics:  config.Metrics{ListenAddress: "127.0.0.1:0"},
 			Database: config.Database{URL: url},
 		}, 100*time.Millisecond)
 	}()
 
 	Eventually(ctx, listening).WithArguments(authority.address).Should(Succeed())
+	Eventually(ctx, listening).WithArguments(authority.internalAddress).Should(Succeed())
 
 	return authority
 }

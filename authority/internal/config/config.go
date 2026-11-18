@@ -30,6 +30,7 @@ const (
 // arrive as strings and validate needs the original value for its errors.
 type rawConfig struct {
 	Server   rawServer   `koanf:"server"`
+	Internal rawInternal `koanf:"internal"`
 	Metrics  rawMetrics  `koanf:"metrics"`
 	Database rawDatabase `koanf:"database"`
 	Login    rawLogin    `koanf:"login"`
@@ -45,6 +46,10 @@ type rawTLS struct {
 	Disabled string `koanf:"disabled"`
 	CertFile string `koanf:"cert_file"`
 	KeyFile  string `koanf:"key_file"`
+}
+
+type rawInternal struct {
+	ListenAddress string `koanf:"listen_address"`
 }
 
 type rawMetrics struct {
@@ -75,6 +80,9 @@ var defaults = rawConfig{
 			KeyFile:  "/etc/tidegate/authority/tls/tls.key",
 		},
 	},
+	Internal: rawInternal{
+		ListenAddress: "127.0.0.1:8081",
+	},
 	Metrics: rawMetrics{
 		ListenAddress: "127.0.0.1:9464",
 	},
@@ -93,13 +101,15 @@ var defaults = rawConfig{
 // Config holds the authority's settings.
 type Config struct {
 	Server   Server
+	Internal Internal
 	Metrics  Metrics
 	Database Database
 	Login    Login
 	Log      Log
 }
 
-// Server holds the settings of the authority's API server.
+// Server holds the settings of the server for the user-facing API, which
+// the CLI and the browser call.
 type Server struct {
 	ListenAddress string
 	TLS           TLS
@@ -111,6 +121,12 @@ type TLS struct {
 	Disabled bool
 	CertFile string
 	KeyFile  string
+}
+
+// Internal holds the settings of the server for the internal API, which
+// gateways and workers call.
+type Internal struct {
+	ListenAddress string
 }
 
 // Metrics holds the settings of the server that serves the metrics.
@@ -200,6 +216,9 @@ func validate(raw rawConfig, set map[string]bool) (Config, error) {
 
 	tls := v.tls(&raw.Server.TLS)
 
+	internalListenAddress, err := parseListenAddress(raw.Internal.ListenAddress)
+	v.check(&raw.Internal.ListenAddress, err)
+
 	metricsListenAddress, err := parseListenAddress(raw.Metrics.ListenAddress)
 	v.check(&raw.Metrics.ListenAddress, err)
 
@@ -223,6 +242,7 @@ func validate(raw rawConfig, set map[string]bool) (Config, error) {
 
 	return Config{
 		Server:   Server{ListenAddress: listenAddress, TLS: tls},
+		Internal: Internal{ListenAddress: internalListenAddress},
 		Metrics:  Metrics{ListenAddress: metricsListenAddress},
 		Database: Database{URL: raw.Database.URL, MigrateOnStart: migrateOnStart},
 		Login:    Login{TokenLifetime: tokenLifetime},

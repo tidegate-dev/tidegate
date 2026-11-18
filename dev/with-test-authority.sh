@@ -59,6 +59,7 @@ export PATH="$work/bin:$PATH"
 # Other ports than just dev, so both can run at the same time.
 export GOCOVERDIR="$work/coverage"
 export TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=127.0.0.1:18080
+export TIDEGATE_AUTHORITY__INTERNAL__LISTEN_ADDRESS=127.0.0.1:18081
 export TIDEGATE_AUTHORITY__METRICS__LISTEN_ADDRESS=127.0.0.1:19464
 export TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE="$root/dev/tls/authority.pem"
 export TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE="$root/dev/tls/authority-key.pem"

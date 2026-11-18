@@ -31,7 +31,6 @@ func interceptors(clk clock.Service, sessions api.SessionLookup) []connect.Inter
 	}
 }
 
-// apiServer serves plain HTTP if certificate is nil.
 func apiServer(
 	address string,
 	certificate *certreload.Certificate,
@@ -47,6 +46,15 @@ func apiServer(
 	mux.Handle(authorityv1connect.NewDummyServiceHandler(api.NewDummyService(dummies), options))
 	mux.Handle(api.NewLoginServiceHandler(logins, options))
 
+	return newServer(address, certificate, mux)
+}
+
+func internalServer(address string, certificate *certreload.Certificate) *http.Server {
+	return newServer(address, certificate, http.NewServeMux())
+}
+
+// newServer serves plain HTTP if certificate is nil.
+func newServer(address string, certificate *certreload.Certificate, handler http.Handler) *http.Server {
 	// gRPC clients need HTTP/2, and the CLI's Connect client uses HTTP/1.1
 	// by default.
 	var protocols http.Protocols
@@ -64,7 +72,7 @@ func apiServer(
 
 	return &http.Server{
 		Addr:              address,
-		Handler:           mux,
+		Handler:           handler,
 		Protocols:         &protocols,
 		TLSConfig:         tlsConfig,
 		ReadHeaderTimeout: 5 * time.Second,

@@ -1,4 +1,4 @@
-// Package server runs the authority's API server and metrics server.
+// Package server runs the authority's API servers and metrics server.
 package server
 
 import (
@@ -35,7 +35,7 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	}
 
 	if certificate == nil {
-		slog.Warn("the API serves plain HTTP, because TIDEGATE_AUTHORITY__SERVER__TLS__DISABLED is true. " +
+		slog.Warn("both APIs serve plain HTTP, because TIDEGATE_AUTHORITY__SERVER__TLS__DISABLED is true. " +
 			"Only use this behind a proxy that terminates TLS")
 	}
 
@@ -79,8 +79,9 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	defer stopWatching()
 
 	err = serve(ctx, notifier, map[string]*http.Server{
-		"api":     apiServer(cfg.Server.ListenAddress, certificate, clk, dummies, logins, sessions),
-		"metrics": metricsServer(cfg.Metrics.ListenAddress, metricsHandler),
+		"api":      apiServer(cfg.Server.ListenAddress, certificate, clk, dummies, logins, sessions),
+		"internal": internalServer(cfg.Internal.ListenAddress, certificate),
+		"metrics":  metricsServer(cfg.Metrics.ListenAddress, metricsHandler),
 	}, timeout)
 
 	return errors.Join(err, shutdownMetrics(context.Background()))

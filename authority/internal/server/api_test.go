@@ -88,6 +88,32 @@ func TestInterceptorsLetLoginThroughWithoutASessionToken(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestInternalServerDoesNotServeTheUserFacingAPI(t *testing.T) {
+	t.Parallel()
+
+	procedures := []string{
+		authorityv1connect.LoginServiceLoginProcedure,
+		authorityv1connect.PingServicePingProcedure,
+	}
+
+	for _, procedure := range procedures {
+		t.Run(procedure, func(t *testing.T) {
+			t.Parallel()
+
+			// arrange
+			server := internalServer("", nil)
+			response := httptest.NewRecorder()
+			request := httptest.NewRequestWithContext(t.Context(), http.MethodPost, procedure, nil)
+
+			// act
+			server.Handler.ServeHTTP(response, request)
+
+			// assert
+			assert.Equal(t, http.StatusNotFound, response.Code)
+		})
+	}
+}
+
 func clientOfSucceedingHandler(t *testing.T, procedure string) *connect.Client[emptypb.Empty, emptypb.Empty] {
 	t.Helper()
 

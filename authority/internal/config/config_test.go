@@ -30,6 +30,7 @@ func TestVariablesOverrideDefaults(t *testing.T) {
 	// arrange
 	environ := withDatabaseURL(
 		"TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=:9090",
+		"TIDEGATE_AUTHORITY__INTERNAL__LISTEN_ADDRESS=:9091",
 		"TIDEGATE_AUTHORITY__METRICS__LISTEN_ADDRESS=:9100",
 		"TIDEGATE_AUTHORITY__LOG__LEVEL=debug",
 		"TIDEGATE_AUTHORITY__LOG__FORMAT=text",
@@ -44,6 +45,7 @@ func TestVariablesOverrideDefaults(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, config.Config{
 		Server:   config.Server{ListenAddress: ":9090", TLS: defaultConfig().Server.TLS},
+		Internal: config.Internal{ListenAddress: ":9091"},
 		Metrics:  config.Metrics{ListenAddress: ":9100"},
 		Database: config.Database{URL: databaseURL, MigrateOnStart: true},
 		Login:    config.Login{TokenLifetime: 90 * time.Minute},
@@ -150,6 +152,7 @@ func TestInvalidValuesNameTheirVariable(t *testing.T) {
 		"log format":     {variable: "TIDEGATE_AUTHORITY__LOG__FORMAT=xml", want: `TIDEGATE_AUTHORITY__LOG__FORMAT: unknown log format "xml", want json or text`},
 		"listen address": {variable: "TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=8080", want: `TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS: invalid listen address "8080", want host:port`},
 		"port":           {variable: "TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=:99999", want: `TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS: invalid port in listen address ":99999"`},
+		"internal":       {variable: "TIDEGATE_AUTHORITY__INTERNAL__LISTEN_ADDRESS=8081", want: `TIDEGATE_AUTHORITY__INTERNAL__LISTEN_ADDRESS: invalid listen address "8081", want host:port`},
 		"unknown":        {variable: "TIDEGATE_AUTHORITY__LOG__LEVL=debug", want: "TIDEGATE_AUTHORITY__LOG__LEVL: unknown setting"},
 		"too deep":       {variable: "TIDEGATE_AUTHORITY__LOG__LEVEL__X=debug", want: "TIDEGATE_AUTHORITY__LOG__LEVEL__X: unknown setting"},
 		"single level":   {variable: "TIDEGATE_AUTHORITY__LOG_LEVEL=debug", want: "TIDEGATE_AUTHORITY__LOG_LEVEL: unknown setting"},
@@ -269,6 +272,7 @@ func defaultConfig() config.Config {
 			ListenAddress: "127.0.0.1:8080",
 			TLS:           config.TLS{CertFile: "/etc/tidegate/authority/tls/tls.crt", KeyFile: "/etc/tidegate/authority/tls/tls.key"},
 		},
+		Internal: config.Internal{ListenAddress: "127.0.0.1:8081"},
 		Metrics:  config.Metrics{ListenAddress: "127.0.0.1:9464"},
 		Database: config.Database{URL: databaseURL},
 		Login:    config.Login{TokenLifetime: 12 * time.Hour},
