@@ -25,7 +25,7 @@ func callFailed(action string, connection connections.Connection, err error) err
 }
 
 func (callErr *callError) Error() string {
-	return fmt.Sprintf("%s at %s: %s", callErr.action, quoteIfUnprintable(callErr.connection.Server), callErr.err)
+	return fmt.Sprintf("%s at %s: %s", callErr.action, quoteIfUnprintable(callErr.connection.Server), quoteIfUnprintable(fmt.Sprint(callErr.err)))
 }
 
 func (callErr *callError) Unwrap() error { return callErr.err }
@@ -62,7 +62,7 @@ func (callErr *callError) message() string {
 	case notSignedIn:
 		return fmt.Sprintf("not signed in, or the session expired. Run `tidegate login --connection %q`.", callErr.connection.Name)
 	case authorityUnreachable && isConnectError:
-		return fmt.Sprintf("can't reach the authority at %s: %s", quoteIfUnprintable(callErr.connection.Server), connectErr.Message())
+		return fmt.Sprintf("can't reach the authority at %s: %s", quoteIfUnprintable(callErr.connection.Server), quoteIfUnprintable(connectErr.Message()))
 	default:
 		return callErr.Error()
 	}

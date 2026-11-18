@@ -18,9 +18,10 @@ import (
 
 // Clients talks to one authority.
 type Clients struct {
-	ping  authorityv1connect.PingServiceClient
-	login authorityv1connect.LoginServiceClient
-	dummy authorityv1connect.DummyServiceClient
+	ping    authorityv1connect.PingServiceClient
+	login   authorityv1connect.LoginServiceClient
+	dummy   authorityv1connect.DummyServiceClient
+	project authorityv1connect.ProjectServiceClient
 }
 
 const requestTimeout = 10 * time.Second
@@ -50,9 +51,10 @@ func Connect(server string, token secret.String) (*Clients, error) {
 	}
 
 	return &Clients{
-		ping:  authorityv1connect.NewPingServiceClient(httpClient, server, withoutToken),
-		login: authorityv1connect.NewLoginServiceClient(httpClient, server, withToken),
-		dummy: authorityv1connect.NewDummyServiceClient(httpClient, server, withToken),
+		ping:    authorityv1connect.NewPingServiceClient(httpClient, server, withoutToken),
+		login:   authorityv1connect.NewLoginServiceClient(httpClient, server, withToken),
+		dummy:   authorityv1connect.NewDummyServiceClient(httpClient, server, withToken),
+		project: authorityv1connect.NewProjectServiceClient(httpClient, server, withToken),
 	}, nil
 }
 
@@ -61,6 +63,9 @@ func (c *Clients) Ping() authorityv1connect.PingServiceClient { return c.ping }
 
 // Dummy returns the client for the DummyService.
 func (c *Clients) Dummy() authorityv1connect.DummyServiceClient { return c.dummy }
+
+// Project returns the client for the ProjectService.
+func (c *Clients) Project() authorityv1connect.ProjectServiceClient { return c.project }
 
 // SignIn checks the user name and the password at the authority at server and
 // returns the token of a new session.

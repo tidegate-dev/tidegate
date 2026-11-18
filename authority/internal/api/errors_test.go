@@ -9,6 +9,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/authority/internal/password"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
 )
@@ -31,11 +32,12 @@ func TestClientErrorGivesEachErrorItsCode(t *testing.T) {
 		err  error
 		code connect.Code
 	}{
-		"password too long": {fmt.Errorf("checking: %w", password.ErrTooLong), connect.CodeInvalidArgument},
-		"not signed in":     {fmt.Errorf("%w: expired token", service.ErrNotSignedIn), connect.CodeUnauthenticated},
-		"busy":              {service.ErrBusy, connect.CodeUnavailable},
-		"canceled":          {context.Canceled, connect.CodeUnknown},
-		"anything else":     {errors.New("database down"), connect.CodeUnknown},
+		"password too long":  {fmt.Errorf("checking: %w", password.ErrTooLong), connect.CodeInvalidArgument},
+		"not signed in":      {fmt.Errorf("%w: expired token", service.ErrNotSignedIn), connect.CodeUnauthenticated},
+		"busy":               {service.ErrBusy, connect.CodeUnavailable},
+		"project name taken": {model.ErrProjectNameTaken, connect.CodeAlreadyExists},
+		"canceled":           {context.Canceled, connect.CodeUnknown},
+		"anything else":      {errors.New("database down"), connect.CodeUnknown},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()

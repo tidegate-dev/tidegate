@@ -16,6 +16,8 @@ Global flags work before or after the command. A command that fails prints `Erro
 | `tidegate connections list` | Prints the name and the URL of every saved connection and whether it holds a session token |
 | `tidegate connections current` | Prints the saved connection that a command selects |
 | `tidegate connections remove <name>` | Revokes the session token and deletes the connection |
+| `tidegate project create <name>` | Creates a project and prints its name and ID |
+| `tidegate project list` | Prints the name and the ID of every project |
 | `tidegate ping` | Checks that the authority can be reached and prints `pong` |
 | `tidegate dummy write <text>` | Stores a text in the authority's database and prints its ID |
 | `tidegate dummy read <id>` | Prints the text with the ID |
@@ -61,7 +63,7 @@ If several saved connections have this URL and no name is given, the command fai
 
 | Format | Result |
 |---|---|
-| `text` | The bare value, like `pong`. `connections list` prints a table. |
+| `text` | The bare value, like `pong`. `connections list` and `project list` print a table. |
 | `json` | An object with the result's fields, like `{"message": "pong"}` |
 | `yaml` | A mapping with the result's fields, like `message: pong` |
 

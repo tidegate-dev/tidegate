@@ -38,6 +38,7 @@ func externalAPIServer(
 	clk clock.Service,
 	dummies *service.Dummies,
 	logins *service.Logins,
+	projects *service.Projects,
 	sessions api.SessionLookup,
 ) *http.Server {
 	options := connect.WithInterceptors(interceptors(clk, sessions)...)
@@ -46,6 +47,7 @@ func externalAPIServer(
 	mux.Handle(authorityv1connect.NewPingServiceHandler(api.PingService{}, options))
 	mux.Handle(authorityv1connect.NewDummyServiceHandler(api.NewDummyService(dummies), options))
 	mux.Handle(api.NewLoginServiceHandler(logins, options))
+	mux.Handle(authorityv1connect.NewProjectServiceHandler(api.NewProjectService(projects), options))
 
 	var tlsConfig *tls.Config
 	if certificate != nil {

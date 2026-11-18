@@ -45,6 +45,12 @@ func (u *Unit) Dummies() model.DummyReadWriter {
 	return &DummyReadWriter{queries: sqlc.New(u.pool), unit: u}
 }
 
+// Projects returns the projects table for this unit. Its writes run at
+// Commit.
+func (u *Unit) Projects() model.ProjectReadWriter {
+	return &ProjectReadWriter{unit: u}
+}
+
 // Commit runs the pending writes in the order they were added, in one
 // transaction. If one fails, none is kept. It returns
 // model.ErrChangedSinceRead if a row changed after it was read. If it fails,
@@ -77,6 +83,12 @@ func (u *Unit) add(w write) {
 
 func isUniqueViolation(err error) bool {
 	return hasCode(err, pgerrcode.UniqueViolation)
+}
+
+func isUniqueViolationOf(err error, index string) bool {
+	var pgErr *pgconn.PgError
+
+	return isUniqueViolation(err) && errors.As(err, &pgErr) && pgErr.ConstraintName == index
 }
 
 func isForeignKeyViolation(err error) bool {

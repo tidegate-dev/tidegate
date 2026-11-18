@@ -1,4 +1,4 @@
-bats_require_minimum_version 1.5.0
+bats_require_minimum_version 1.7.0
 
 @test "authority --help works without a config" {
     TIDEGATE_AUTHORITY__DATABASE__URL='' run authority --help

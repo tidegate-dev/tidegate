@@ -34,6 +34,11 @@ func (s *Store) Dummies() *DummyReader {
 	return &DummyReader{queries: sqlc.New(s.pool)}
 }
 
+// Projects returns the queries for the projects table.
+func (s *Store) Projects() *ProjectReader {
+	return &ProjectReader{queries: sqlc.New(s.pool)}
+}
+
 // NewUnit returns an empty unit of work.
 func (s *Store) NewUnit() model.Unit {
 	return &Unit{pool: s.pool}
