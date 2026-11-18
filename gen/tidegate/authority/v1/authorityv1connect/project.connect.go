@@ -43,7 +43,8 @@ const (
 
 // ProjectServiceClient is a client for the tidegate.authority.v1.ProjectService service.
 type ProjectServiceClient interface {
-	// CreateProject creates a project and returns it.
+	// CreateProject creates a project and returns it. A name that another
+	// project has fails with already_exists.
 	CreateProject(context.Context, *connect.Request[v1.CreateProjectRequest]) (*connect.Response[v1.CreateProjectResponse], error)
 	// ListProjects returns every project.
 	ListProjects(context.Context, *connect.Request[v1.ListProjectsRequest]) (*connect.Response[v1.ListProjectsResponse], error)
@@ -93,7 +94,8 @@ func (c *projectServiceClient) ListProjects(ctx context.Context, req *connect.Re
 
 // ProjectServiceHandler is an implementation of the tidegate.authority.v1.ProjectService service.
 type ProjectServiceHandler interface {
-	// CreateProject creates a project and returns it.
+	// CreateProject creates a project and returns it. A name that another
+	// project has fails with already_exists.
 	CreateProject(context.Context, *connect.Request[v1.CreateProjectRequest]) (*connect.Response[v1.CreateProjectResponse], error)
 	// ListProjects returns every project.
 	ListProjects(context.Context, *connect.Request[v1.ListProjectsRequest]) (*connect.Response[v1.ListProjectsResponse], error)

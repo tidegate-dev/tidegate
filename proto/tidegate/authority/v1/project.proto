@@ -9,7 +9,8 @@ option go_package = "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;
 // ProjectService creates and lists projects. A project holds assets, roles and
 // bindings.
 service ProjectService {
-  // CreateProject creates a project and returns it.
+  // CreateProject creates a project and returns it. A name that another
+  // project has fails with already_exists.
   rpc CreateProject(CreateProjectRequest) returns (CreateProjectResponse);
   // ListProjects returns every project.
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);

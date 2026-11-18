@@ -36,7 +36,7 @@ bindings.
 
 | Method | Request | Response | Description |
 | ------ | ------- | -------- | ----------- |
-| `CreateProject` | [tidegate.authority.v1.CreateProjectRequest](#tidegate.authority.v1.CreateProjectRequest) | [tidegate.authority.v1.CreateProjectResponse](#tidegate.authority.v1.CreateProjectResponse) | CreateProject creates a project and returns it. |
+| `CreateProject` | [tidegate.authority.v1.CreateProjectRequest](#tidegate.authority.v1.CreateProjectRequest) | [tidegate.authority.v1.CreateProjectResponse](#tidegate.authority.v1.CreateProjectResponse) | CreateProject creates a project and returns it. A name that another project has fails with already_exists. |
 | `ListProjects` | [tidegate.authority.v1.ListProjectsRequest](#tidegate.authority.v1.ListProjectsRequest) | [tidegate.authority.v1.ListProjectsResponse](#tidegate.authority.v1.ListProjectsResponse) | ListProjects returns every project. |
 
 ## Types

@@ -63,7 +63,7 @@ If several saved connections have this URL and no name is given, the command fai
 
 | Format | Result |
 |---|---|
-| `text` | The bare value, like `pong`. `connections list` prints a table. |
+| `text` | The bare value, like `pong`. `connections list` and `project list` print a table. |
 | `json` | An object with the result's fields, like `{"message": "pong"}` |
 | `yaml` | A mapping with the result's fields, like `message: pong` |
 
