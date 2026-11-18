@@ -1,6 +1,6 @@
 # TLS
 
-Each of the authority's [two APIs](config.md#settings) serves HTTPS with its own certificate. The authority reads each certificate and its key from these files:
+Each of the authority's [two APIs](config.md) serves HTTPS with its own certificate. The authority reads each certificate and its key from these files:
 
 ```
 /etc/tidegate/authority/external-api-tls/tls.crt

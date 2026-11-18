@@ -59,7 +59,6 @@ func internalAPIServer(address string, certificate *certreload.Certificate) *htt
 	return newServer(address, &tls.Config{GetCertificate: certificate.Get}, http.NewServeMux())
 }
 
-// newServer serves plain HTTP if tlsConfig is nil.
 func newServer(address string, tlsConfig *tls.Config, handler http.Handler) *http.Server {
 	// gRPC clients need HTTP/2, and Connect clients use HTTP/1.1 by default.
 	var protocols http.Protocols

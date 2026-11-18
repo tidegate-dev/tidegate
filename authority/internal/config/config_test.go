@@ -261,7 +261,7 @@ func TestInternalTLSFilesCanBeSet(t *testing.T) {
 	assert.Equal(t, config.InternalTLS{CertFile: "/srv/tls/cert.pem", KeyFile: "/srv/tls/key.pem"}, cfg.InternalAPI.TLS)
 }
 
-func TestInternalTLSCanNotBeDisabled(t *testing.T) {
+func TestInternalTLSCantBeDisabled(t *testing.T) {
 	t.Parallel()
 
 	// act

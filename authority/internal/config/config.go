@@ -76,8 +76,7 @@ type rawLog struct {
 	Format string `koanf:"format"`
 }
 
-// The certificate paths are the file names of a Kubernetes TLS Secret, in a
-// folder per certificate.
+// tls.crt and tls.key are the file names in a Kubernetes TLS Secret.
 var defaults = rawConfig{
 	ExternalAPI: rawExternalAPI{
 		ListenAddress: "127.0.0.1:8080",

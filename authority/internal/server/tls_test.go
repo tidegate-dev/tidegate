@@ -126,8 +126,6 @@ func TestLoadExternalCertificateDoesntSuggestPlainHTTPForAnInvalidCertificate(t 
 	assert.NotContains(t, err.Error(), "plain HTTP")
 }
 
-// writeKeyPair writes a certificate that a client can verify for 127.0.0.1
-// if it trusts the certificate itself.
 func writeKeyPair(t testing.TB) (certFile, keyFile string) {
 	t.Helper()
 

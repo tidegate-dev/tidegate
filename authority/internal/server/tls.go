@@ -32,8 +32,6 @@ func loadInternalCertificate(cfg config.InternalTLS) (*certreload.Certificate, e
 	return loadCertificate("internal", cfg.CertFile, cfg.KeyFile)
 }
 
-// loadCertificate names the API in its errors, because the authority loads
-// one certificate per API.
 func loadCertificate(apiName, certFile, keyFile string) (*certreload.Certificate, error) {
 	certificate, err := certreload.Load(certFile, keyFile)
 

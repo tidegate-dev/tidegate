@@ -8,7 +8,7 @@ TIDEGATE_AUTHORITY__LOG__LEVEL=debug \
 authority
 ```
 
-This sets the authority's external API to listen on port 8080 on every network interface, and the authority to log at the debug level.
+This makes the external API, which the CLI and the browser call, listen on port 8080 on every network interface, and sets the log level to debug.
 
 Every variable starts with `TIDEGATE_AUTHORITY__`. Two underscores separate the parts of a name, like `EXTERNAL_API` and `LISTEN_ADDRESS`. After the prefix, upper and lower case don't matter, in names or in values.
 
@@ -24,7 +24,7 @@ TIDEGATE_AUTHORITY__LOG__LEVEL: unknown log level "loud", want debug, info, warn
 
 A setting keeps its default when its variable isn't set or is empty. `TIDEGATE_AUTHORITY__DATABASE__URL` is the only setting without a default. The pages on the [database](database.md), [TLS](tls.md) and [metrics](metrics.md) explain their settings.
 
-The authority serves two APIs, each on its own address and with its own certificate. The external API is the one the CLI and the browser call. The internal API is for tidegate's other components, like gateways, and has no services yet. Don't make its address reachable for users.
+The authority serves two APIs, each on its own address and with its own certificate. Besides the external API, there is an internal API for tidegate's other components, like gateways. It has no services yet. Don't make its address reachable for users.
 
 | Variable | Default | Values |
 |---|---|---|

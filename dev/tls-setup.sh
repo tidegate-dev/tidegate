@@ -12,7 +12,7 @@ if [ ! -f "$directory/ca.pem" ]; then
         -keyout "$directory/ca-key.pem" -out "$directory/ca.pem" 2>/dev/null
 fi
 
-# Usage: issue <name>. Writes <name>.pem and <name>-key.pem.
+# Usage: issue <name>
 issue() {
     name=$1
 

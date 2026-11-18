@@ -57,7 +57,7 @@ var _ = Describe("run", func() {
 		}, SpecTimeout(30*time.Second))
 	})
 
-	When("a procedure of the external API is called on the internal API's address", func() {
+	When("one of the external API's procedures is called on the internal API's address", func() {
 		var authority runningAuthority
 
 		BeforeEach(func(ctx SpecContext) {
@@ -66,8 +66,6 @@ var _ = Describe("run", func() {
 			authority = serveAuthority(ctx, url)
 		}, NodeTimeout(30*time.Second))
 
-		// The client trusts only the internal API's certificate, and the
-		// external API runs without TLS.
 		It("isn't found, over TLS with the internal API's own certificate", func(ctx SpecContext) {
 			client := clientTrusting(authority.internalCertFile)
 			procedures := []string{
@@ -158,8 +156,6 @@ func countSessionsWaitingForALock(ctx context.Context, conn *pgx.Conn) (int, err
 	return sessions, err
 }
 
-// clientTrusting returns an HTTP client that trusts only the certificate in
-// certFile.
 func clientTrusting(certFile string) *http.Client {
 	GinkgoHelper()
 
