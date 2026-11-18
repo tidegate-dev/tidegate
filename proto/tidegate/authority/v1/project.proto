@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package tidegate.authority.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;authorityv1";
+
+// ProjectService creates and lists projects. A project holds assets, roles and
+// bindings.
+service ProjectService {
+  // CreateProject creates a project and returns it.
+  rpc CreateProject(CreateProjectRequest) returns (CreateProjectResponse);
+  // ListProjects returns every project.
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+}
+
+// Project is a project as the authority stores it.
+message Project {
+  // ID identifies the project. It is a UUID.
+  string id = 1;
+  // Name is the project's name.
+  string name = 2;
+}
+
+// CreateProjectRequest is the input of ProjectService.CreateProject.
+message CreateProjectRequest {
+  // Name is the name of the new project.
+  //
+  // Rules: Not empty.
+  string name = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+// CreateProjectResponse is the result of ProjectService.CreateProject.
+message CreateProjectResponse {
+  // Project is the new project.
+  Project project = 1;
+}
+
+// ListProjectsRequest is the input of ProjectService.ListProjects.
+message ListProjectsRequest {}
+
+// ListProjectsResponse is the result of ProjectService.ListProjects.
+message ListProjectsResponse {
+  // Projects are all projects.
+  repeated Project projects = 1;
+}

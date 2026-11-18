@@ -29,6 +29,16 @@ PingService checks that a client can reach the authority.
 | ------ | ------- | -------- | ----------- |
 | `Ping` | [tidegate.authority.v1.PingRequest](#tidegate.authority.v1.PingRequest) | [tidegate.authority.v1.PingResponse](#tidegate.authority.v1.PingResponse) | Ping answers with pong. |
 
+## tidegate.authority.v1.ProjectService { #tidegate.authority.v1.ProjectService }
+
+ProjectService creates and lists projects. A project holds assets, roles and
+bindings.
+
+| Method | Request | Response | Description |
+| ------ | ------- | -------- | ----------- |
+| `CreateProject` | [tidegate.authority.v1.CreateProjectRequest](#tidegate.authority.v1.CreateProjectRequest) | [tidegate.authority.v1.CreateProjectResponse](#tidegate.authority.v1.CreateProjectResponse) | CreateProject creates a project and returns it. |
+| `ListProjects` | [tidegate.authority.v1.ListProjectsRequest](#tidegate.authority.v1.ListProjectsRequest) | [tidegate.authority.v1.ListProjectsResponse](#tidegate.authority.v1.ListProjectsResponse) | ListProjects returns every project. |
+
 ## Types
 
 ### tidegate.authority.v1.ReadRequest { #tidegate.authority.v1.ReadRequest }
@@ -103,4 +113,41 @@ PingResponse is the result of PingService.Ping.
 | Field | Type | Description | Rules |
 | ----- | ---- | ----------- | ----- |
 | `message` | `string` | Message is always "pong". |  |
+
+### tidegate.authority.v1.CreateProjectRequest { #tidegate.authority.v1.CreateProjectRequest }
+
+CreateProjectRequest is the input of ProjectService.CreateProject.
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `name` | `string` | Name is the name of the new project. | Not empty. |
+
+### tidegate.authority.v1.CreateProjectResponse { #tidegate.authority.v1.CreateProjectResponse }
+
+CreateProjectResponse is the result of ProjectService.CreateProject.
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `project` | `tidegate.authority.v1.Project` | Project is the new project. |  |
+
+### tidegate.authority.v1.ListProjectsRequest { #tidegate.authority.v1.ListProjectsRequest }
+
+ListProjectsRequest is the input of ProjectService.ListProjects.
+
+### tidegate.authority.v1.ListProjectsResponse { #tidegate.authority.v1.ListProjectsResponse }
+
+ListProjectsResponse is the result of ProjectService.ListProjects.
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `projects` | `repeated tidegate.authority.v1.Project` | Projects are all projects. |  |
+
+### tidegate.authority.v1.Project { #tidegate.authority.v1.Project }
+
+Project is a project as the authority stores it.
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `id` | `string` | ID identifies the project. It is a UUID. |  |
+| `name` | `string` | Name is the project's name. |  |
 

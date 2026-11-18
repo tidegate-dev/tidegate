@@ -46,6 +46,7 @@ func externalAPIServer(
 	mux.Handle(authorityv1connect.NewPingServiceHandler(api.PingService{}, options))
 	mux.Handle(authorityv1connect.NewDummyServiceHandler(api.NewDummyService(dummies), options))
 	mux.Handle(api.NewLoginServiceHandler(logins, options))
+	mux.Handle(authorityv1connect.NewProjectServiceHandler(authorityv1connect.UnimplementedProjectServiceHandler{}, options))
 
 	var tlsConfig *tls.Config
 	if certificate != nil {
