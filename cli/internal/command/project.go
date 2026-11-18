@@ -108,6 +108,10 @@ func projectCreate(ctx context.Context, cmd *cli.Command, store connections.Stor
 }
 
 func projectList(ctx context.Context, cmd *cli.Command, store connections.Store) error {
+	if cmd.Args().Len() != 0 {
+		return errors.New("want no arguments")
+	}
+
 	clients, connection, err := connectToCurrent(cmd, store)
 	if err != nil {
 		return err

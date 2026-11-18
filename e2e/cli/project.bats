@@ -12,12 +12,13 @@ setup() {
 
     run tidegate project create "$name"
     [ "$status" -eq 0 ]
-    [[ $output == "$name"* ]]
+    [[ $output == "$name"$'\t'?* ]]
+    id=${output#*$'\t'}
 
     run tidegate project list
     [ "$status" -eq 0 ]
     [[ ${lines[0]} == NAME*ID ]]
-    [[ $output == *"$name"* ]]
+    grep -qE "^$name +$id\$" <<<"$output"
 }
 
 @test "project create and project list print json" {
@@ -51,4 +52,23 @@ setup() {
     run --separate-stderr tidegate project create first second
     [ "$status" -eq 1 ]
     [[ $stderr == *"want exactly one name"* ]]
+}
+
+@test "project list wants no arguments" {
+    run --separate-stderr tidegate project list "$name"
+    [ "$status" -eq 1 ]
+    [ -z "$output" ]
+    [[ $stderr == *"want no arguments"* ]]
+}
+
+@test "an unknown project subcommand fails and names a similar one" {
+    run --separate-stderr tidegate project lsit
+    [ "$status" -eq 1 ]
+    [[ $stderr == *'unknown command "lsit". Did you mean "list"?'* ]]
+}
+
+@test "project without a subcommand prints its subcommands" {
+    run tidegate project
+    [ "$status" -eq 0 ]
+    [[ $output == *create*list* ]]
 }
