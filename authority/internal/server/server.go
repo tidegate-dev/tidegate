@@ -22,7 +22,7 @@ import (
 
 const shutdownTimeout = 10 * time.Second
 
-// Run serves the authority's API and metrics until ctx ends or a server
+// Run serves the authority's APIs and metrics until ctx ends or a server
 // fails.
 func Run(ctx context.Context, cfg config.Config) error {
 	return run(ctx, cfg, shutdownTimeout)

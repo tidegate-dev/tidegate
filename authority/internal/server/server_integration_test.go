@@ -6,6 +6,7 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"connectrpc.com/connect"
@@ -53,7 +54,7 @@ var _ = Describe("run", func() {
 		}, SpecTimeout(30*time.Second))
 	})
 
-	When("Ping is called on the internal address", func() {
+	When("a user-facing procedure is called on the internal address", func() {
 		var authority runningAuthority
 
 		BeforeEach(func(ctx SpecContext) {
@@ -63,12 +64,24 @@ var _ = Describe("run", func() {
 		}, NodeTimeout(30*time.Second))
 
 		It("isn't served", func(ctx SpecContext) {
-			client := authorityv1connect.NewPingServiceClient(http.DefaultClient, "http://"+authority.internalAddress)
+			procedures := []string{
+				authorityv1connect.LoginServiceLoginProcedure,
+				authorityv1connect.PingServicePingProcedure,
+			}
 
-			_, err := client.Ping(ctx, connect.NewRequest(&authorityv1.PingRequest{}))
+			for _, procedure := range procedures {
+				url := "http://" + authority.internalAddress + procedure
 
-			Expect(err).To(HaveOccurred())
-			Expect(connect.CodeOf(err)).To(Equal(connect.CodeUnimplemented))
+				request, err := http.NewRequestWithContext(ctx, http.MethodPost, url, strings.NewReader("{}"))
+				Expect(err).NotTo(HaveOccurred())
+				request.Header.Set("Content-Type", "application/json")
+
+				response, err := http.DefaultClient.Do(request)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(response.Body.Close()).To(Succeed())
+
+				Expect(response.StatusCode).To(Equal(http.StatusNotFound), procedure)
+			}
 		}, SpecTimeout(30*time.Second))
 	})
 })

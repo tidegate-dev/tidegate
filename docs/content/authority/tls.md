@@ -15,11 +15,11 @@ TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE=/srv/tls/key.pem \
 authority
 ```
 
-If a file is missing, the authority doesn't start and names the file. Only `authority` without a command, which serves the API, reads the files. `authority migrate` and `authority create-initial-admin` work without them.
+If a file is missing, the authority doesn't start and names the file. Only `authority` without a command, which serves the APIs, reads the files. `authority migrate` and `authority create-initial-admin` work without them.
 
 To serve plain HTTP, for example behind a proxy that terminates TLS, set `TIDEGATE_AUTHORITY__SERVER__TLS__DISABLED=true`. Both APIs then serve plain HTTP, and the authority logs a warning when it starts. If you also set the path of the certificate or the key, it doesn't start.
 
-Note that the connection from the proxy to the authority is then unencrypted, including the passwords and tokens of logins. Set `TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS` so that only the proxy reaches the API, for example `127.0.0.1:8080` when the proxy runs on the same host or in the same Pod. The same goes for `TIDEGATE_AUTHORITY__INTERNAL__LISTEN_ADDRESS`. The container image listens on every interface by default.
+Note that the connection from the proxy to the authority is then unencrypted, including the passwords and tokens of logins. Set `TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS` so that only the proxy reaches the API, for example `127.0.0.1:8080` when the proxy runs on the same host or in the same Pod. The container image listens on every interface by default.
 
 The certificate's key needs at least 2048 bits for RSA or 224 bits for an elliptic curve, the minimum NIST sets for use through 2030. The authority doesn't start with a shorter key.
 

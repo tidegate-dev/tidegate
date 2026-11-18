@@ -10,7 +10,7 @@ import (
 	"github.com/tidegate-dev/tidegate/internal/certreload"
 )
 
-// loadCertificate loads the API server's certificate. It returns nil when TLS
+// loadCertificate loads the certificate of both API servers. It returns nil when TLS
 // is disabled.
 func loadCertificate(cfg config.TLS) (*certreload.Certificate, error) {
 	if cfg.Disabled {

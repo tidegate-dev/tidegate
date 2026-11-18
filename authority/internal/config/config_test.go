@@ -148,19 +148,19 @@ func TestInvalidValuesNameTheirVariable(t *testing.T) {
 		variable string
 		want     string
 	}{
-		"log level":      {variable: "TIDEGATE_AUTHORITY__LOG__LEVEL=loud", want: `TIDEGATE_AUTHORITY__LOG__LEVEL: unknown log level "loud", want debug, info, warn or error`},
-		"log format":     {variable: "TIDEGATE_AUTHORITY__LOG__FORMAT=xml", want: `TIDEGATE_AUTHORITY__LOG__FORMAT: unknown log format "xml", want json or text`},
-		"listen address": {variable: "TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=8080", want: `TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS: invalid listen address "8080", want host:port`},
-		"port":           {variable: "TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=:99999", want: `TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS: invalid port in listen address ":99999"`},
-		"internal":       {variable: "TIDEGATE_AUTHORITY__INTERNAL__LISTEN_ADDRESS=8081", want: `TIDEGATE_AUTHORITY__INTERNAL__LISTEN_ADDRESS: invalid listen address "8081", want host:port`},
-		"unknown":        {variable: "TIDEGATE_AUTHORITY__LOG__LEVL=debug", want: "TIDEGATE_AUTHORITY__LOG__LEVL: unknown setting"},
-		"too deep":       {variable: "TIDEGATE_AUTHORITY__LOG__LEVEL__X=debug", want: "TIDEGATE_AUTHORITY__LOG__LEVEL__X: unknown setting"},
-		"single level":   {variable: "TIDEGATE_AUTHORITY__LOG_LEVEL=debug", want: "TIDEGATE_AUTHORITY__LOG_LEVEL: unknown setting"},
-		"prefix only":    {variable: "TIDEGATE_AUTHORITY__=debug", want: "TIDEGATE_AUTHORITY__: unknown setting"},
-		"migrate":        {variable: "TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START=yes", want: `TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START: invalid value "yes", want true or false`},
-		"token lifetime": {variable: "TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME=12", want: `TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME: invalid duration "12", want a number with a unit, like 12h or 30m`},
-		"short lifetime": {variable: "TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME=999ms", want: `TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME: must be at least 1s`},
-		"negative":       {variable: "TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME=-1h", want: `TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME: must be at least 1s`},
+		"log level":               {variable: "TIDEGATE_AUTHORITY__LOG__LEVEL=loud", want: `TIDEGATE_AUTHORITY__LOG__LEVEL: unknown log level "loud", want debug, info, warn or error`},
+		"log format":              {variable: "TIDEGATE_AUTHORITY__LOG__FORMAT=xml", want: `TIDEGATE_AUTHORITY__LOG__FORMAT: unknown log format "xml", want json or text`},
+		"listen address":          {variable: "TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=8080", want: `TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS: invalid listen address "8080", want host:port`},
+		"port":                    {variable: "TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=:99999", want: `TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS: invalid port in listen address ":99999"`},
+		"internal listen address": {variable: "TIDEGATE_AUTHORITY__INTERNAL__LISTEN_ADDRESS=8081", want: `TIDEGATE_AUTHORITY__INTERNAL__LISTEN_ADDRESS: invalid listen address "8081", want host:port`},
+		"unknown":                 {variable: "TIDEGATE_AUTHORITY__LOG__LEVL=debug", want: "TIDEGATE_AUTHORITY__LOG__LEVL: unknown setting"},
+		"too deep":                {variable: "TIDEGATE_AUTHORITY__LOG__LEVEL__X=debug", want: "TIDEGATE_AUTHORITY__LOG__LEVEL__X: unknown setting"},
+		"single level":            {variable: "TIDEGATE_AUTHORITY__LOG_LEVEL=debug", want: "TIDEGATE_AUTHORITY__LOG_LEVEL: unknown setting"},
+		"prefix only":             {variable: "TIDEGATE_AUTHORITY__=debug", want: "TIDEGATE_AUTHORITY__: unknown setting"},
+		"migrate":                 {variable: "TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START=yes", want: `TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START: invalid value "yes", want true or false`},
+		"token lifetime":          {variable: "TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME=12", want: `TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME: invalid duration "12", want a number with a unit, like 12h or 30m`},
+		"short lifetime":          {variable: "TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME=999ms", want: `TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME: must be at least 1s`},
+		"negative":                {variable: "TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME=-1h", want: `TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME: must be at least 1s`},
 	}
 
 	for name, tt := range tests {

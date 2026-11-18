@@ -108,15 +108,15 @@ type Config struct {
 	Log      Log
 }
 
-// Server holds the settings of the server for the user-facing API, which
-// the CLI and the browser call.
+// Server holds the listen address of the user-facing API, which the CLI and
+// the browser call, and the TLS settings of both APIs.
 type Server struct {
 	ListenAddress string
 	TLS           TLS
 }
 
-// TLS holds where the API server finds its certificate, or that it serves
-// plain HTTP.
+// TLS holds where both API servers find their certificate, or that they
+// serve plain HTTP.
 type TLS struct {
 	Disabled bool
 	CertFile string
