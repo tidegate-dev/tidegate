@@ -1,6 +1,6 @@
 # TLS
 
-The authority has two APIs, and each serves HTTPS with its own certificate. The external API is the one the CLI and the browser call. The internal API is for tidegate's other components, like gateways. The authority reads each certificate and its key from these files:
+Each of the authority's [two APIs](config.md#settings) serves HTTPS with its own certificate. The authority reads each certificate and its key from these files:
 
 ```
 /etc/tidegate/authority/external-api-tls/tls.crt

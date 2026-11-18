@@ -19,6 +19,8 @@ spec:
   privateKey:
     algorithm: ECDSA
     size: 256
+  usages:
+    - server auth
   dnsNames:
     - localhost
   ipAddresses:
@@ -36,6 +38,8 @@ spec:
   privateKey:
     algorithm: ECDSA
     size: 256
+  usages:
+    - server auth
   dnsNames:
     - localhost
   ipAddresses:

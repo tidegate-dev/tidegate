@@ -45,7 +45,7 @@ var _ = Describe("run", func() {
 			holder := dbtest.Connect(ctx, url)
 			lockDummies(ctx, holder)
 
-			go writeDummy(authority.address, token)
+			go writeDummy(authority.externalAddress, token)
 
 			Eventually(ctx, countSessionsWaitingForALock).WithArguments(holder).Should(Equal(1), "the write never waited for the lock")
 		}, NodeTimeout(30*time.Second))
@@ -94,7 +94,7 @@ var _ = Describe("run", func() {
 
 // runningAuthority is an authority that serves in the background.
 type runningAuthority struct {
-	address          string
+	externalAddress  string
 	internalAddress  string
 	internalCertFile string
 	stop             context.CancelFunc
@@ -102,8 +102,9 @@ type runningAuthority struct {
 }
 
 // serveAuthority runs the authority on the database at url and returns once
-// both of its APIs listen. The external API serves plain HTTP. It waits only 100 milliseconds for running requests when
-// it stops, so the spec doesn't wait the full shutdown timeout.
+// both of its APIs listen. The external API serves plain HTTP. It waits only
+// 100 milliseconds for running requests when it stops, so the spec doesn't
+// wait the full shutdown timeout.
 func serveAuthority(ctx context.Context, url string) runningAuthority {
 	GinkgoHelper()
 
@@ -113,7 +114,7 @@ func serveAuthority(ctx context.Context, url string) runningAuthority {
 	internalCertFile, internalKeyFile := writeKeyPair(GinkgoTB())
 
 	authority := runningAuthority{
-		address:          freeAddress(GinkgoTB()),
+		externalAddress:  freeAddress(GinkgoTB()),
 		internalAddress:  freeAddress(GinkgoTB()),
 		internalCertFile: internalCertFile,
 		stop:             stop,
@@ -122,7 +123,7 @@ func serveAuthority(ctx context.Context, url string) runningAuthority {
 
 	go func() {
 		authority.runErrorChan <- run(runCtx, config.Config{
-			ExternalAPI: config.ExternalAPI{ListenAddress: authority.address, TLS: config.ExternalTLS{Disabled: true}},
+			ExternalAPI: config.ExternalAPI{ListenAddress: authority.externalAddress, TLS: config.ExternalTLS{Disabled: true}},
 			InternalAPI: config.InternalAPI{
 				ListenAddress: authority.internalAddress,
 				TLS:           config.InternalTLS{CertFile: internalCertFile, KeyFile: internalKeyFile},
@@ -132,7 +133,7 @@ func serveAuthority(ctx context.Context, url string) runningAuthority {
 		}, 100*time.Millisecond)
 	}()
 
-	Eventually(ctx, listening).WithArguments(authority.address).Should(Succeed())
+	Eventually(ctx, listening).WithArguments(authority.externalAddress).Should(Succeed())
 	Eventually(ctx, listening).WithArguments(authority.internalAddress).Should(Succeed())
 
 	return authority

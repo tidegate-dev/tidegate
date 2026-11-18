@@ -34,16 +34,16 @@ func loadInternalCertificate(cfg config.InternalTLS) (*certreload.Certificate, e
 
 // loadCertificate names the API in its errors, because the authority loads
 // one certificate per API.
-func loadCertificate(api, certFile, keyFile string) (*certreload.Certificate, error) {
+func loadCertificate(apiName, certFile, keyFile string) (*certreload.Certificate, error) {
 	certificate, err := certreload.Load(certFile, keyFile)
 
 	if errors.Is(err, fs.ErrPermission) {
 		return nil, fmt.Errorf("loading the %s API's TLS certificate: %w. "+
-			"In Kubernetes, set the Pod's fsGroup to 65532, the user ID of the container image", api, err)
+			"In Kubernetes, set the Pod's fsGroup to 65532, the user ID of the container image", apiName, err)
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("loading the %s API's TLS certificate: %w", api, err)
+		return nil, fmt.Errorf("loading the %s API's TLS certificate: %w", apiName, err)
 	}
 
 	return certificate, nil
