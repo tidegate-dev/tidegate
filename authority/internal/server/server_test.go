@@ -13,15 +13,17 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/config"
 )
 
-func TestRunStopsAtAMissingCertificateBeforeTheDatabase(t *testing.T) {
+const unreachableDatabaseURL = "postgres://tidegate@127.0.0.1:1/tidegate?sslmode=disable"
+
+func TestRunStopsAtAMissingExternalCertificateBeforeTheDatabase(t *testing.T) {
 	t.Parallel()
 
 	// arrange
 	_, keyFile := writeKeyPair(t)
 	missing := filepath.Join(t.TempDir(), "tls.crt")
 	cfg := config.Config{
-		Server:   config.Server{TLS: config.TLS{CertFile: missing, KeyFile: keyFile}},
-		Database: config.Database{URL: "postgres://tidegate@127.0.0.1:1/tidegate?sslmode=disable"},
+		ExternalAPI: config.ExternalAPI{TLS: config.ExternalTLS{CertFile: missing, KeyFile: keyFile}},
+		Database:    config.Database{URL: unreachableDatabaseURL},
 	}
 
 	// act
@@ -33,7 +35,28 @@ func TestRunStopsAtAMissingCertificateBeforeTheDatabase(t *testing.T) {
 	assert.NotContains(t, err.Error(), "database")
 }
 
-func TestRunWarnsWhenTLSIsDisabled(t *testing.T) {
+func TestRunStopsAtAMissingInternalCertificateBeforeTheDatabase(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	_, keyFile := writeKeyPair(t)
+	missing := filepath.Join(t.TempDir(), "tls.crt")
+	cfg := config.Config{
+		ExternalAPI: config.ExternalAPI{TLS: config.ExternalTLS{Disabled: true}},
+		InternalAPI: config.InternalAPI{TLS: config.InternalTLS{CertFile: missing, KeyFile: keyFile}},
+		Database:    config.Database{URL: unreachableDatabaseURL},
+	}
+
+	// act
+	err := run(t.Context(), cfg, time.Second)
+
+	// assert
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), missing)
+	assert.NotContains(t, err.Error(), "database")
+}
+
+func TestRunWarnsWhenTLSIsDisabledForTheExternalAPI(t *testing.T) {
 	// The warning goes to the default logger, which is global.
 
 	// arrange
@@ -46,9 +69,11 @@ func TestRunWarnsWhenTLSIsDisabled(t *testing.T) {
 		slog.SetDefault(previous)
 	})
 
+	certFile, keyFile := writeKeyPair(t)
 	cfg := config.Config{
-		Server:   config.Server{TLS: config.TLS{Disabled: true}},
-		Database: config.Database{URL: "postgres://tidegate@127.0.0.1:1/tidegate?sslmode=disable"},
+		ExternalAPI: config.ExternalAPI{TLS: config.ExternalTLS{Disabled: true}},
+		InternalAPI: config.InternalAPI{TLS: config.InternalTLS{CertFile: certFile, KeyFile: keyFile}},
+		Database:    config.Database{URL: unreachableDatabaseURL},
 	}
 
 	// act
@@ -56,5 +81,5 @@ func TestRunWarnsWhenTLSIsDisabled(t *testing.T) {
 
 	// assert
 	assert.Contains(t, logs.String(), "level=WARN")
-	assert.Contains(t, logs.String(), "plain HTTP")
+	assert.Contains(t, logs.String(), "the external API serves plain HTTP")
 }

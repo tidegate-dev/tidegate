@@ -29,14 +29,19 @@ func Run(ctx context.Context, cfg config.Config) error {
 }
 
 func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
-	certificate, err := loadCertificate(cfg.Server.TLS)
+	externalCertificate, err := loadExternalCertificate(cfg.ExternalAPI.TLS)
 	if err != nil {
 		return err
 	}
 
-	if certificate == nil {
-		slog.Warn("both APIs serve plain HTTP, because TIDEGATE_AUTHORITY__SERVER__TLS__DISABLED is true. " +
+	if externalCertificate == nil {
+		slog.Warn("the external API serves plain HTTP, because " + config.ExternalTLSDisabledVariable() + " is true. " +
 			"Only use this behind a proxy that terminates TLS")
+	}
+
+	internalCertificate, err := loadInternalCertificate(cfg.InternalAPI.TLS)
+	if err != nil {
+		return err
 	}
 
 	pool, err := openDatabase(ctx, cfg.Database)
@@ -72,16 +77,22 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 		return err
 	}
 
-	stopWatching, err := watchCertificate(ctx, certificate)
+	stopWatchingExternal, err := watchCertificate(ctx, externalCertificate)
 	if err != nil {
 		return errors.Join(err, shutdownMetrics(context.Background()))
 	}
-	defer stopWatching()
+	defer stopWatchingExternal()
+
+	stopWatchingInternal, err := watchCertificate(ctx, internalCertificate)
+	if err != nil {
+		return errors.Join(err, shutdownMetrics(context.Background()))
+	}
+	defer stopWatchingInternal()
 
 	err = serve(ctx, notifier, map[string]*http.Server{
-		"api":      apiServer(cfg.Server.ListenAddress, certificate, clk, dummies, logins, sessions),
-		"internal": internalServer(cfg.Internal.ListenAddress, certificate),
-		"metrics":  metricsServer(cfg.Metrics.ListenAddress, metricsHandler),
+		"external-api": externalAPIServer(cfg.ExternalAPI.ListenAddress, externalCertificate, clk, dummies, logins, sessions),
+		"internal-api": internalAPIServer(cfg.InternalAPI.ListenAddress, internalCertificate),
+		"metrics":      metricsServer(cfg.Metrics.ListenAddress, metricsHandler),
 	}, timeout)
 
 	return errors.Join(err, shutdownMetrics(context.Background()))

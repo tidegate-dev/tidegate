@@ -4,8 +4,11 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -54,7 +57,7 @@ var _ = Describe("run", func() {
 		}, SpecTimeout(30*time.Second))
 	})
 
-	When("a user-facing procedure is called on the internal address", func() {
+	When("a procedure of the external API is called on the internal API's address", func() {
 		var authority runningAuthority
 
 		BeforeEach(func(ctx SpecContext) {
@@ -63,20 +66,23 @@ var _ = Describe("run", func() {
 			authority = serveAuthority(ctx, url)
 		}, NodeTimeout(30*time.Second))
 
-		It("isn't served", func(ctx SpecContext) {
+		// The client trusts only the internal API's certificate, and the
+		// external API runs without TLS.
+		It("isn't found, over TLS with the internal API's own certificate", func(ctx SpecContext) {
+			client := clientTrusting(authority.internalCertFile)
 			procedures := []string{
 				authorityv1connect.LoginServiceLoginProcedure,
 				authorityv1connect.PingServicePingProcedure,
 			}
 
 			for _, procedure := range procedures {
-				url := "http://" + authority.internalAddress + procedure
+				url := "https://" + authority.internalAddress + procedure
 
 				request, err := http.NewRequestWithContext(ctx, http.MethodPost, url, strings.NewReader("{}"))
 				Expect(err).NotTo(HaveOccurred())
 				request.Header.Set("Content-Type", "application/json")
 
-				response, err := http.DefaultClient.Do(request)
+				response, err := client.Do(request)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(response.Body.Close()).To(Succeed())
 
@@ -88,14 +94,15 @@ var _ = Describe("run", func() {
 
 // runningAuthority is an authority that serves in the background.
 type runningAuthority struct {
-	address         string
-	internalAddress string
-	stop            context.CancelFunc
-	runErrorChan    chan error
+	address          string
+	internalAddress  string
+	internalCertFile string
+	stop             context.CancelFunc
+	runErrorChan     chan error
 }
 
 // serveAuthority runs the authority on the database at url and returns once
-// both of its APIs listen. It waits only 100 milliseconds for running requests when
+// both of its APIs listen. The external API serves plain HTTP. It waits only 100 milliseconds for running requests when
 // it stops, so the spec doesn't wait the full shutdown timeout.
 func serveAuthority(ctx context.Context, url string) runningAuthority {
 	GinkgoHelper()
@@ -103,17 +110,23 @@ func serveAuthority(ctx context.Context, url string) runningAuthority {
 	runCtx, stop := context.WithCancel(context.Background())
 	DeferCleanup(stop)
 
+	internalCertFile, internalKeyFile := writeKeyPair(GinkgoTB())
+
 	authority := runningAuthority{
-		address:         freeAddress(GinkgoTB()),
-		internalAddress: freeAddress(GinkgoTB()),
-		stop:            stop,
-		runErrorChan:    make(chan error, 1),
+		address:          freeAddress(GinkgoTB()),
+		internalAddress:  freeAddress(GinkgoTB()),
+		internalCertFile: internalCertFile,
+		stop:             stop,
+		runErrorChan:     make(chan error, 1),
 	}
 
 	go func() {
 		authority.runErrorChan <- run(runCtx, config.Config{
-			Server:   config.Server{ListenAddress: authority.address, TLS: config.TLS{Disabled: true}},
-			Internal: config.Internal{ListenAddress: authority.internalAddress},
+			ExternalAPI: config.ExternalAPI{ListenAddress: authority.address, TLS: config.ExternalTLS{Disabled: true}},
+			InternalAPI: config.InternalAPI{
+				ListenAddress: authority.internalAddress,
+				TLS:           config.InternalTLS{CertFile: internalCertFile, KeyFile: internalKeyFile},
+			},
 			Metrics:  config.Metrics{ListenAddress: "127.0.0.1:0"},
 			Database: config.Database{URL: url},
 		}, 100*time.Millisecond)
@@ -142,6 +155,23 @@ func countSessionsWaitingForALock(ctx context.Context, conn *pgx.Conn) (int, err
 	).Scan(&sessions)
 
 	return sessions, err
+}
+
+// clientTrusting returns an HTTP client that trusts only the certificate in
+// certFile.
+func clientTrusting(certFile string) *http.Client {
+	GinkgoHelper()
+
+	certificate, err := os.ReadFile(certFile) //nolint:gosec // The test wrote the file.
+	Expect(err).NotTo(HaveOccurred())
+
+	pool := x509.NewCertPool()
+	Expect(pool.AppendCertsFromPEM(certificate)).To(BeTrue())
+
+	transport := &http.Transport{TLSClientConfig: &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS13}}
+	DeferCleanup(transport.CloseIdleConnections)
+
+	return &http.Client{Transport: transport}
 }
 
 func listening(address string) error {

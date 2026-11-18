@@ -29,8 +29,8 @@ func TestVariablesOverrideDefaults(t *testing.T) {
 
 	// arrange
 	environ := withDatabaseURL(
-		"TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=:9090",
-		"TIDEGATE_AUTHORITY__INTERNAL__LISTEN_ADDRESS=:9091",
+		"TIDEGATE_AUTHORITY__EXTERNAL_API__LISTEN_ADDRESS=:9090",
+		"TIDEGATE_AUTHORITY__INTERNAL_API__LISTEN_ADDRESS=:9091",
 		"TIDEGATE_AUTHORITY__METRICS__LISTEN_ADDRESS=:9100",
 		"TIDEGATE_AUTHORITY__LOG__LEVEL=debug",
 		"TIDEGATE_AUTHORITY__LOG__FORMAT=text",
@@ -44,12 +44,12 @@ func TestVariablesOverrideDefaults(t *testing.T) {
 	// assert
 	require.NoError(t, err)
 	assert.Equal(t, config.Config{
-		Server:   config.Server{ListenAddress: ":9090", TLS: defaultConfig().Server.TLS},
-		Internal: config.Internal{ListenAddress: ":9091"},
-		Metrics:  config.Metrics{ListenAddress: ":9100"},
-		Database: config.Database{URL: databaseURL, MigrateOnStart: true},
-		Login:    config.Login{TokenLifetime: 90 * time.Minute},
-		Log:      config.Log{Level: slog.LevelDebug, Format: logging.FormatText},
+		ExternalAPI: config.ExternalAPI{ListenAddress: ":9090", TLS: defaultConfig().ExternalAPI.TLS},
+		InternalAPI: config.InternalAPI{ListenAddress: ":9091", TLS: defaultConfig().InternalAPI.TLS},
+		Metrics:     config.Metrics{ListenAddress: ":9100"},
+		Database:    config.Database{URL: databaseURL, MigrateOnStart: true},
+		Login:       config.Login{TokenLifetime: 90 * time.Minute},
+		Log:         config.Log{Level: slog.LevelDebug, Format: logging.FormatText},
 	}, cfg)
 }
 
@@ -111,11 +111,11 @@ func TestValueMayContainEqualsSign(t *testing.T) {
 	t.Parallel()
 
 	// act
-	cfg, err := config.Load(withDatabaseURL("TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=a=b:80"))
+	cfg, err := config.Load(withDatabaseURL("TIDEGATE_AUTHORITY__EXTERNAL_API__LISTEN_ADDRESS=a=b:80"))
 
 	// assert
 	require.NoError(t, err)
-	assert.Equal(t, "a=b:80", cfg.Server.ListenAddress)
+	assert.Equal(t, "a=b:80", cfg.ExternalAPI.ListenAddress)
 }
 
 func TestEveryProblemIsReported(t *testing.T) {
@@ -126,7 +126,7 @@ func TestEveryProblemIsReported(t *testing.T) {
 		"TIDEGATE_AUTHORITY__LOG__LEVEL=loud",
 		"TIDEGATE_AUTHORITY__LOG__LEVL=debug",
 		"TIDEGATE_AUTHORITY__LOG__FORMAT=xml",
-		"TIDEGATE_AUTHORITY__SERVER__PORT=80",
+		"TIDEGATE_AUTHORITY__EXTERNAL_API__PORT=80",
 	)
 
 	// act
@@ -135,7 +135,7 @@ func TestEveryProblemIsReported(t *testing.T) {
 	// assert
 	assert.EqualError(t, err, strings.Join([]string{
 		"TIDEGATE_AUTHORITY__LOG__LEVL: unknown setting",
-		"TIDEGATE_AUTHORITY__SERVER__PORT: unknown setting",
+		"TIDEGATE_AUTHORITY__EXTERNAL_API__PORT: unknown setting",
 		`TIDEGATE_AUTHORITY__LOG__LEVEL: unknown log level "loud", want debug, info, warn or error`,
 		`TIDEGATE_AUTHORITY__LOG__FORMAT: unknown log format "xml", want json or text`,
 	}, "\n"))
@@ -148,19 +148,19 @@ func TestInvalidValuesNameTheirVariable(t *testing.T) {
 		variable string
 		want     string
 	}{
-		"log level":               {variable: "TIDEGATE_AUTHORITY__LOG__LEVEL=loud", want: `TIDEGATE_AUTHORITY__LOG__LEVEL: unknown log level "loud", want debug, info, warn or error`},
-		"log format":              {variable: "TIDEGATE_AUTHORITY__LOG__FORMAT=xml", want: `TIDEGATE_AUTHORITY__LOG__FORMAT: unknown log format "xml", want json or text`},
-		"listen address":          {variable: "TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=8080", want: `TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS: invalid listen address "8080", want host:port`},
-		"port":                    {variable: "TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=:99999", want: `TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS: invalid port in listen address ":99999"`},
-		"internal listen address": {variable: "TIDEGATE_AUTHORITY__INTERNAL__LISTEN_ADDRESS=8081", want: `TIDEGATE_AUTHORITY__INTERNAL__LISTEN_ADDRESS: invalid listen address "8081", want host:port`},
-		"unknown":                 {variable: "TIDEGATE_AUTHORITY__LOG__LEVL=debug", want: "TIDEGATE_AUTHORITY__LOG__LEVL: unknown setting"},
-		"too deep":                {variable: "TIDEGATE_AUTHORITY__LOG__LEVEL__X=debug", want: "TIDEGATE_AUTHORITY__LOG__LEVEL__X: unknown setting"},
-		"single level":            {variable: "TIDEGATE_AUTHORITY__LOG_LEVEL=debug", want: "TIDEGATE_AUTHORITY__LOG_LEVEL: unknown setting"},
-		"prefix only":             {variable: "TIDEGATE_AUTHORITY__=debug", want: "TIDEGATE_AUTHORITY__: unknown setting"},
-		"migrate":                 {variable: "TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START=yes", want: `TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START: invalid value "yes", want true or false`},
-		"token lifetime":          {variable: "TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME=12", want: `TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME: invalid duration "12", want a number with a unit, like 12h or 30m`},
-		"short lifetime":          {variable: "TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME=999ms", want: `TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME: must be at least 1s`},
-		"negative":                {variable: "TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME=-1h", want: `TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME: must be at least 1s`},
+		"log level":        {variable: "TIDEGATE_AUTHORITY__LOG__LEVEL=loud", want: `TIDEGATE_AUTHORITY__LOG__LEVEL: unknown log level "loud", want debug, info, warn or error`},
+		"log format":       {variable: "TIDEGATE_AUTHORITY__LOG__FORMAT=xml", want: `TIDEGATE_AUTHORITY__LOG__FORMAT: unknown log format "xml", want json or text`},
+		"listen address":   {variable: "TIDEGATE_AUTHORITY__EXTERNAL_API__LISTEN_ADDRESS=8080", want: `TIDEGATE_AUTHORITY__EXTERNAL_API__LISTEN_ADDRESS: invalid listen address "8080", want host:port`},
+		"port":             {variable: "TIDEGATE_AUTHORITY__EXTERNAL_API__LISTEN_ADDRESS=:99999", want: `TIDEGATE_AUTHORITY__EXTERNAL_API__LISTEN_ADDRESS: invalid port in listen address ":99999"`},
+		"internal address": {variable: "TIDEGATE_AUTHORITY__INTERNAL_API__LISTEN_ADDRESS=8081", want: `TIDEGATE_AUTHORITY__INTERNAL_API__LISTEN_ADDRESS: invalid listen address "8081", want host:port`},
+		"unknown":          {variable: "TIDEGATE_AUTHORITY__LOG__LEVL=debug", want: "TIDEGATE_AUTHORITY__LOG__LEVL: unknown setting"},
+		"too deep":         {variable: "TIDEGATE_AUTHORITY__LOG__LEVEL__X=debug", want: "TIDEGATE_AUTHORITY__LOG__LEVEL__X: unknown setting"},
+		"single level":     {variable: "TIDEGATE_AUTHORITY__LOG_LEVEL=debug", want: "TIDEGATE_AUTHORITY__LOG_LEVEL: unknown setting"},
+		"prefix only":      {variable: "TIDEGATE_AUTHORITY__=debug", want: "TIDEGATE_AUTHORITY__: unknown setting"},
+		"migrate":          {variable: "TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START=yes", want: `TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START: invalid value "yes", want true or false`},
+		"token lifetime":   {variable: "TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME=12", want: `TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME: invalid duration "12", want a number with a unit, like 12h or 30m`},
+		"short lifetime":   {variable: "TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME=999ms", want: `TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME: must be at least 1s`},
+		"negative":         {variable: "TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME=-1h", want: `TIDEGATE_AUTHORITY__LOGIN__TOKEN_LIFETIME: must be at least 1s`},
 	}
 
 	for name, tt := range tests {
@@ -176,50 +176,99 @@ func TestInvalidValuesNameTheirVariable(t *testing.T) {
 	}
 }
 
-func TestTLSFilesCanBeSet(t *testing.T) {
+func TestExternalTLSFilesCanBeSet(t *testing.T) {
 	t.Parallel()
 
 	// act
 	cfg, err := config.Load(withDatabaseURL(
-		"TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE=/srv/tls/cert.pem",
-		"TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE=/srv/tls/key.pem",
+		"TIDEGATE_AUTHORITY__EXTERNAL_API__TLS__CERT_FILE=/srv/tls/cert.pem",
+		"TIDEGATE_AUTHORITY__EXTERNAL_API__TLS__KEY_FILE=/srv/tls/key.pem",
 	))
 
 	// assert
 	require.NoError(t, err)
-	assert.Equal(t, config.TLS{CertFile: "/srv/tls/cert.pem", KeyFile: "/srv/tls/key.pem"}, cfg.Server.TLS)
+	assert.Equal(t, config.ExternalTLS{CertFile: "/srv/tls/cert.pem", KeyFile: "/srv/tls/key.pem"}, cfg.ExternalAPI.TLS)
 }
 
-func TestTLSCanBeDisabled(t *testing.T) {
+func TestExternalTLSCanBeDisabled(t *testing.T) {
 	t.Parallel()
 
 	// act
-	cfg, err := config.Load(withDatabaseURL("TIDEGATE_AUTHORITY__SERVER__TLS__DISABLED=true"))
+	cfg, err := config.Load(withDatabaseURL("TIDEGATE_AUTHORITY__EXTERNAL_API__TLS__DISABLED=true"))
 
 	// assert
 	require.NoError(t, err)
-	assert.True(t, cfg.Server.TLS.Disabled)
+	assert.True(t, cfg.ExternalAPI.TLS.Disabled)
 }
 
-func TestDisabledTLSRejectsTLSFiles(t *testing.T) {
+func TestDisabledExternalTLSRejectsItsFiles(t *testing.T) {
 	t.Parallel()
 
 	for name, variable := range map[string]string{
-		"certificate":                     "TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE=/srv/tls/cert.pem",
-		"key":                             "TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE=/srv/tls/key.pem",
-		"certificate at its default path": "TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE=/etc/tidegate/authority/tls/tls.crt",
+		"certificate":                     "TIDEGATE_AUTHORITY__EXTERNAL_API__TLS__CERT_FILE=/srv/tls/cert.pem",
+		"key":                             "TIDEGATE_AUTHORITY__EXTERNAL_API__TLS__KEY_FILE=/srv/tls/key.pem",
+		"certificate at its default path": "TIDEGATE_AUTHORITY__EXTERNAL_API__TLS__CERT_FILE=/etc/tidegate/authority/external-api-tls/tls.crt",
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			// act
-			_, err := config.Load(withDatabaseURL("TIDEGATE_AUTHORITY__SERVER__TLS__DISABLED=true", variable))
+			_, err := config.Load(withDatabaseURL("TIDEGATE_AUTHORITY__EXTERNAL_API__TLS__DISABLED=true", variable))
 
 			// assert
-			assert.EqualError(t, err, "TIDEGATE_AUTHORITY__SERVER__TLS__DISABLED: "+
-				"can't be true while TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE or TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE is set")
+			assert.EqualError(t, err, "TIDEGATE_AUTHORITY__EXTERNAL_API__TLS__DISABLED: "+
+				"can't be true while TIDEGATE_AUTHORITY__EXTERNAL_API__TLS__CERT_FILE or TIDEGATE_AUTHORITY__EXTERNAL_API__TLS__KEY_FILE is set")
 		})
 	}
+}
+
+func TestDisabledExternalTLSAllowsInternalTLSFiles(t *testing.T) {
+	t.Parallel()
+
+	// act
+	_, err := config.Load(withDatabaseURL(
+		"TIDEGATE_AUTHORITY__EXTERNAL_API__TLS__DISABLED=true",
+		"TIDEGATE_AUTHORITY__INTERNAL_API__TLS__CERT_FILE=/srv/tls/cert.pem",
+		"TIDEGATE_AUTHORITY__INTERNAL_API__TLS__KEY_FILE=/srv/tls/key.pem",
+	))
+
+	// assert
+	assert.NoError(t, err)
+}
+
+func TestExternalTLSDisabledVariableNamesTheSettingThatLoadReads(t *testing.T) {
+	t.Parallel()
+
+	// act
+	cfg, err := config.Load(withDatabaseURL(config.ExternalTLSDisabledVariable() + "=true"))
+
+	// assert
+	require.NoError(t, err)
+	assert.True(t, cfg.ExternalAPI.TLS.Disabled)
+}
+
+func TestInternalTLSFilesCanBeSet(t *testing.T) {
+	t.Parallel()
+
+	// act
+	cfg, err := config.Load(withDatabaseURL(
+		"TIDEGATE_AUTHORITY__INTERNAL_API__TLS__CERT_FILE=/srv/tls/cert.pem",
+		"TIDEGATE_AUTHORITY__INTERNAL_API__TLS__KEY_FILE=/srv/tls/key.pem",
+	))
+
+	// assert
+	require.NoError(t, err)
+	assert.Equal(t, config.InternalTLS{CertFile: "/srv/tls/cert.pem", KeyFile: "/srv/tls/key.pem"}, cfg.InternalAPI.TLS)
+}
+
+func TestInternalTLSCanNotBeDisabled(t *testing.T) {
+	t.Parallel()
+
+	// act
+	_, err := config.Load(withDatabaseURL("TIDEGATE_AUTHORITY__INTERNAL_API__TLS__DISABLED=true"))
+
+	// assert
+	assert.EqualError(t, err, "TIDEGATE_AUTHORITY__INTERNAL_API__TLS__DISABLED: unknown setting")
 }
 
 func TestDatabaseURLIsRequired(t *testing.T) {
@@ -268,11 +317,17 @@ func withDatabaseURL(variables ...string) []string {
 
 func defaultConfig() config.Config {
 	return config.Config{
-		Server: config.Server{
+		ExternalAPI: config.ExternalAPI{
 			ListenAddress: "127.0.0.1:8080",
-			TLS:           config.TLS{CertFile: "/etc/tidegate/authority/tls/tls.crt", KeyFile: "/etc/tidegate/authority/tls/tls.key"},
+			TLS:           config.ExternalTLS{CertFile: "/etc/tidegate/authority/external-api-tls/tls.crt", KeyFile: "/etc/tidegate/authority/external-api-tls/tls.key"},
 		},
-		Internal: config.Internal{ListenAddress: "127.0.0.1:8081"},
+		InternalAPI: config.InternalAPI{
+			ListenAddress: "127.0.0.1:8081",
+			TLS: config.InternalTLS{
+				CertFile: "/etc/tidegate/authority/internal-api-tls/tls.crt",
+				KeyFile:  "/etc/tidegate/authority/internal-api-tls/tls.key",
+			},
+		},
 		Metrics:  config.Metrics{ListenAddress: "127.0.0.1:9464"},
 		Database: config.Database{URL: databaseURL},
 		Login:    config.Login{TokenLifetime: 12 * time.Hour},

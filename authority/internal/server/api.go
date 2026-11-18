@@ -31,7 +31,8 @@ func interceptors(clk clock.Service, sessions api.SessionLookup) []connect.Inter
 	}
 }
 
-func apiServer(
+// externalAPIServer serves plain HTTP if certificate is nil.
+func externalAPIServer(
 	address string,
 	certificate *certreload.Certificate,
 	clk clock.Service,
@@ -46,25 +47,26 @@ func apiServer(
 	mux.Handle(authorityv1connect.NewDummyServiceHandler(api.NewDummyService(dummies), options))
 	mux.Handle(api.NewLoginServiceHandler(logins, options))
 
-	return newServer(address, certificate, mux)
+	var tlsConfig *tls.Config
+	if certificate != nil {
+		tlsConfig = &tls.Config{GetCertificate: certificate.Get}
+	}
+
+	return newServer(address, tlsConfig, mux)
 }
 
-func internalServer(address string, certificate *certreload.Certificate) *http.Server {
-	return newServer(address, certificate, http.NewServeMux())
+func internalAPIServer(address string, certificate *certreload.Certificate) *http.Server {
+	return newServer(address, &tls.Config{GetCertificate: certificate.Get}, http.NewServeMux())
 }
 
-// newServer serves plain HTTP if certificate is nil.
-func newServer(address string, certificate *certreload.Certificate, handler http.Handler) *http.Server {
+// newServer serves plain HTTP if tlsConfig is nil.
+func newServer(address string, tlsConfig *tls.Config, handler http.Handler) *http.Server {
 	// gRPC clients need HTTP/2, and the CLI's Connect client uses HTTP/1.1
 	// by default.
 	var protocols http.Protocols
 	protocols.SetHTTP1(true)
 
-	var tlsConfig *tls.Config
-
-	if certificate != nil {
-		tlsConfig = &tls.Config{GetCertificate: certificate.Get}
-
+	if tlsConfig != nil {
 		protocols.SetHTTP2(true)
 	} else {
 		protocols.SetUnencryptedHTTP2(true)

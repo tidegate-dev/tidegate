@@ -29,16 +29,23 @@ spec:
             - name: TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START
               value: "true"
           volumeMounts:
-            - name: tls
-              mountPath: /etc/tidegate/authority/tls
+            - name: external-api-tls
+              mountPath: /etc/tidegate/authority/external-api-tls
+              readOnly: true
+            - name: internal-api-tls
+              mountPath: /etc/tidegate/authority/internal-api-tls
               readOnly: true
           ports:
             - name: http
               containerPort: 8080
       volumes:
-        - name: tls
+        - name: external-api-tls
           secret:
-            secretName: authority-tls
+            secretName: authority-external-api-tls
+            defaultMode: 0440
+        - name: internal-api-tls
+          secret:
+            secretName: authority-internal-api-tls
             defaultMode: 0440
 ---
 apiVersion: v1

@@ -46,7 +46,7 @@ This builds the components' container images, creates the cluster if it doesn't 
 
 ## Trust the local CA
 
-Both `just dev` and `just kind` serve the authority over HTTPS on port 8080, with a certificate from a local CA. They create the CA in `dev/tls/` the first time, and in `just kind`, cert-manager issues the authority's certificate from it. To trust the CA, point `SSL_CERT_FILE` to it:
+Both `just dev` and `just kind` serve the authority's external API over HTTPS on port 8080, with a certificate from a local CA. They create the CA in `dev/tls/` the first time, and in `just kind`, cert-manager issues the authority's certificates from it. To trust the CA, point `SSL_CERT_FILE` to it:
 
 ```sh
 SSL_CERT_FILE=dev/tls/ca.pem TIDEGATE_SERVER=https://127.0.0.1:8080 tidegate ping

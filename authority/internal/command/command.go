@@ -58,7 +58,9 @@ func loadConfig() (config.Config, error) {
 	}
 
 	slog.SetDefault(logging.New(os.Stderr, cfg.Log.Level, cfg.Log.Format))
-	slog.Debug("loaded config", "listen_address", cfg.Server.ListenAddress)
+	slog.Debug("loaded config",
+		"external_api_listen_address", cfg.ExternalAPI.ListenAddress,
+		"internal_api_listen_address", cfg.InternalAPI.ListenAddress)
 
 	return cfg, nil
 }
