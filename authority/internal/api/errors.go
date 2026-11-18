@@ -5,6 +5,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/authority/internal/password"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
 )
@@ -22,6 +23,10 @@ func clientError(err error) error {
 		return connect.NewError(connect.CodeInvalidArgument, password.ErrTooLong)
 	case errors.Is(err, service.ErrBusy):
 		return connect.NewError(connect.CodeUnavailable, service.ErrBusy)
+	case errors.Is(err, service.ErrInvalidName):
+		return connect.NewError(connect.CodeInvalidArgument, service.ErrInvalidName)
+	case errors.Is(err, model.ErrProjectNameTaken):
+		return connect.NewError(connect.CodeAlreadyExists, model.ErrProjectNameTaken)
 	default:
 		return err
 	}

@@ -11,6 +11,8 @@ type Unit interface {
 	Sessions() SessionReadWriter
 	// Dummies returns the dummies for this unit.
 	Dummies() DummyReadWriter
+	// Projects returns the projects for this unit.
+	Projects() ProjectReadWriter
 	// Commit runs the pending writes in the order they were added. If one
 	// fails, none is kept. It returns ErrChangedSinceRead if a row changed
 	// after it was read. If it fails, the models it wrote may hold versions
