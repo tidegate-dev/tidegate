@@ -52,6 +52,7 @@ func New(store connections.Store) *cli.Command {
 	}
 
 	enableSuggestions(root)
+	refuseUnknownSubcommands(root)
 
 	return root
 }
@@ -82,11 +83,26 @@ func printWarning(cmd *cli.Command, format string, arguments ...any) {
 
 func unknownCommand(_ context.Context, cmd *cli.Command) error {
 	name := cmd.Args().First()
-	if name == "" {
+	if name == "" && cmd == cmd.Root() {
 		return cli.ShowRootCommandHelp(cmd)
 	}
 
+	if name == "" {
+		return cli.ShowSubcommandHelp(cmd)
+	}
+
 	return fmt.Errorf("unknown command %q. Did you mean %q?", name, cli.SuggestCommand(cmd.Commands, name))
+}
+
+// urfave/cli answers an unknown subcommand of a command without an action with status 3 and no "Error:".
+func refuseUnknownSubcommands(cmd *cli.Command) {
+	for _, subcommand := range cmd.Commands {
+		if len(subcommand.Commands) > 0 && subcommand.Action == nil {
+			subcommand.Action = unknownCommand
+		}
+
+		refuseUnknownSubcommands(subcommand)
+	}
 }
 
 func enableSuggestions(cmd *cli.Command) {
