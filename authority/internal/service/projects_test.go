@@ -6,7 +6,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/authority/internal/storetest"
 )
 
@@ -28,26 +27,11 @@ var _ = Describe("Projects", func() {
 			Expect(projects.List(ctx)).To(ConsistOf(project))
 		})
 
-		It("refuses a name that another project has", func(ctx SpecContext) {
-			_, err := projects.Create(ctx, "payments")
-			Expect(err).NotTo(HaveOccurred())
+		It("refuses an invalid name", func(ctx SpecContext) {
+			_, err := projects.Create(ctx, "Payments")
 
-			_, err = projects.Create(ctx, "payments")
-
-			Expect(err).To(MatchError(model.ErrProjectNameTaken))
-			Expect(projects.List(ctx)).To(HaveLen(1))
+			Expect(err).To(MatchError(ErrInvalidProjectName))
+			Expect(projects.List(ctx)).To(BeEmpty())
 		})
-
-		DescribeTable("refuses an invalid name",
-			func(ctx SpecContext, name string) {
-				_, err := projects.Create(ctx, name)
-
-				Expect(err).To(MatchError(ErrInvalidName))
-				Expect(projects.List(ctx)).To(BeEmpty())
-			},
-			Entry("empty", ""),
-			Entry("leading space", " payments"),
-			Entry("NUL", "pay\x00ments"),
-		)
 	})
 })

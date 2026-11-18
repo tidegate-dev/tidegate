@@ -23,8 +23,8 @@ func clientError(err error) error {
 		return connect.NewError(connect.CodeInvalidArgument, password.ErrTooLong)
 	case errors.Is(err, service.ErrBusy):
 		return connect.NewError(connect.CodeUnavailable, service.ErrBusy)
-	case errors.Is(err, service.ErrInvalidName):
-		return connect.NewError(connect.CodeInvalidArgument, service.ErrInvalidName)
+	case errors.Is(err, service.ErrInvalidProjectName):
+		return connect.NewError(connect.CodeInvalidArgument, service.ErrInvalidProjectName)
 	case errors.Is(err, model.ErrProjectNameTaken):
 		return connect.NewError(connect.CodeAlreadyExists, model.ErrProjectNameTaken)
 	default:

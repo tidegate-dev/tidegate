@@ -12,8 +12,8 @@ import (
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
-// ErrInvalidName means the name of a user or a project is empty, starts or
-// ends with whitespace, or has NUL.
+// ErrInvalidName means a user name is empty, starts or ends with whitespace,
+// or has NUL.
 var ErrInvalidName = errors.New("the name must not be empty, start or end with whitespace, or contain NUL")
 
 // ValidateName returns ErrInvalidName if name is empty, starts or ends with

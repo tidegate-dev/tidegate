@@ -27,8 +27,9 @@ message Project {
 message CreateProjectRequest {
   // Name is the name of the new project.
   //
-  // Rules: Not empty.
-  string name = 1 [(buf.validate.field).string.min_len = 1];
+  // Rules: Starts with a lowercase letter, goes on with lowercase letters,
+  // digits and dashes, and ends with a letter or digit. At most 63 characters.
+  string name = 1 [(buf.validate.field).string.pattern = "^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$"];
 }
 
 // CreateProjectResponse is the result of ProjectService.CreateProject.

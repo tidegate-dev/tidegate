@@ -32,13 +32,13 @@ func TestClientErrorGivesEachErrorItsCode(t *testing.T) {
 		err  error
 		code connect.Code
 	}{
-		"password too long":  {fmt.Errorf("checking: %w", password.ErrTooLong), connect.CodeInvalidArgument},
-		"not signed in":      {fmt.Errorf("%w: expired token", service.ErrNotSignedIn), connect.CodeUnauthenticated},
-		"busy":               {service.ErrBusy, connect.CodeUnavailable},
-		"invalid name":       {service.ErrInvalidName, connect.CodeInvalidArgument},
-		"project name taken": {model.ErrProjectNameTaken, connect.CodeAlreadyExists},
-		"canceled":           {context.Canceled, connect.CodeUnknown},
-		"anything else":      {errors.New("database down"), connect.CodeUnknown},
+		"password too long":    {fmt.Errorf("checking: %w", password.ErrTooLong), connect.CodeInvalidArgument},
+		"not signed in":        {fmt.Errorf("%w: expired token", service.ErrNotSignedIn), connect.CodeUnauthenticated},
+		"busy":                 {service.ErrBusy, connect.CodeUnavailable},
+		"invalid project name": {service.ErrInvalidProjectName, connect.CodeInvalidArgument},
+		"project name taken":   {model.ErrProjectNameTaken, connect.CodeAlreadyExists},
+		"canceled":             {context.Canceled, connect.CodeUnknown},
+		"anything else":        {errors.New("database down"), connect.CodeUnknown},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()

@@ -42,7 +42,7 @@ jsonpath "$.project.name" == "api-tests"
 POST {{authority}}/tidegate.authority.v1.ProjectService/CreateProject
 Content-Type: application/json
 Authorization: Bearer {{token}}
-{"name": "API-Tests"}
+{"name": "api-tests"}
 HTTP 409
 [Asserts]
 jsonpath "$.code" == "already_exists"
@@ -51,7 +51,16 @@ jsonpath "$.message" == "the project name is taken"
 POST {{authority}}/tidegate.authority.v1.ProjectService/CreateProject
 Content-Type: application/json
 Authorization: Bearer {{token}}
-{"name": " api-tests"}
+{"name": "API-tests"}
+HTTP 400
+[Asserts]
+jsonpath "$.code" == "invalid_argument"
+
+# 64 characters, one more than a name may have.
+POST {{authority}}/tidegate.authority.v1.ProjectService/CreateProject
+Content-Type: application/json
+Authorization: Bearer {{token}}
+{"name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
 HTTP 400
 [Asserts]
 jsonpath "$.code" == "invalid_argument"

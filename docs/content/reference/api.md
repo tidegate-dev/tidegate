@@ -120,7 +120,7 @@ CreateProjectRequest is the input of ProjectService.CreateProject.
 
 | Field | Type | Description | Rules |
 | ----- | ---- | ----------- | ----- |
-| `name` | `string` | Name is the name of the new project. | Not empty. |
+| `name` | `string` | Name is the name of the new project. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
 
 ### tidegate.authority.v1.CreateProjectResponse { #tidegate.authority.v1.CreateProjectResponse }
 

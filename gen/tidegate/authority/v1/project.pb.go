@@ -82,7 +82,8 @@ type CreateProjectRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Name is the name of the new project.
 	//
-	// Rules: Not empty.
+	// Rules: Starts with a lowercase letter, goes on with lowercase letters,
+	// digits and dashes, and ends with a letter or digit. At most 63 characters.
 	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -261,9 +262,9 @@ const file_tidegate_authority_v1_project_proto_rawDesc = "" +
 	"#tidegate/authority/v1/project.proto\x12\x15tidegate.authority.v1\x1a\x1bbuf/validate/validate.proto\"-\n" +
 	"\aProject\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"3\n" +
-	"\x14CreateProjectRequest\x12\x1b\n" +
-	"\x04name\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x10\x01R\x04name\"Q\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"T\n" +
+	"\x14CreateProjectRequest\x12<\n" +
+	"\x04name\x18\x01 \x01(\tB(\xbaH%r#2!^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$R\x04name\"Q\n" +
 	"\x15CreateProjectResponse\x128\n" +
 	"\aproject\x18\x01 \x01(\v2\x1e.tidegate.authority.v1.ProjectR\aproject\"\x15\n" +
 	"\x13ListProjectsRequest\"R\n" +
