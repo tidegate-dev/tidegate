@@ -38,7 +38,7 @@ func externalAPIServer(
 	clk clock.Service,
 	dummies *service.Dummies,
 	logins *service.Logins,
-	projects api.Projects,
+	projects *service.Projects,
 	sessions api.SessionLookup,
 ) *http.Server {
 	options := connect.WithInterceptors(interceptors(clk, sessions)...)

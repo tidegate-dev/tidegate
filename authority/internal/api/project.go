@@ -6,24 +6,17 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/model"
+	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 )
 
-// Projects creates and lists projects.
-type Projects interface {
-	// Create creates a project with the name and returns it.
-	Create(ctx context.Context, name string) (*model.Project, error)
-	// List returns every project.
-	List(ctx context.Context) ([]*model.Project, error)
-}
-
 // ProjectService creates and lists projects.
 type ProjectService struct {
-	projects Projects
+	projects *service.Projects
 }
 
 // NewProjectService returns a ProjectService.
-func NewProjectService(projects Projects) *ProjectService {
+func NewProjectService(projects *service.Projects) *ProjectService {
 	return &ProjectService{projects: projects}
 }
 
