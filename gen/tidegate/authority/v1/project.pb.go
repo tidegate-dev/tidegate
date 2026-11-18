@@ -262,9 +262,10 @@ const file_tidegate_authority_v1_project_proto_rawDesc = "" +
 	"#tidegate/authority/v1/project.proto\x12\x15tidegate.authority.v1\x1a\x1bbuf/validate/validate.proto\"-\n" +
 	"\aProject\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"T\n" +
-	"\x14CreateProjectRequest\x12<\n" +
-	"\x04name\x18\x01 \x01(\tB(\xbaH%r#2!^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$R\x04name\"Q\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\x89\x02\n" +
+	"\x14CreateProjectRequest\x12\xf0\x01\n" +
+	"\x04name\x18\x01 \x01(\tB\xdb\x01\xbaH\xd7\x01\xba\x01\xd3\x01\n" +
+	"\fproject.name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\x04name\"Q\n" +
 	"\x15CreateProjectResponse\x128\n" +
 	"\aproject\x18\x01 \x01(\v2\x1e.tidegate.authority.v1.ProjectR\aproject\"\x15\n" +
 	"\x13ListProjectsRequest\"R\n" +

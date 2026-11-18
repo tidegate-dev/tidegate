@@ -26,12 +26,5 @@ var _ = Describe("Projects", func() {
 			Expect(project.ID).NotTo(BeZero())
 			Expect(projects.List(ctx)).To(ConsistOf(project))
 		})
-
-		It("refuses an invalid name", func(ctx SpecContext) {
-			_, err := projects.Create(ctx, "Payments")
-
-			Expect(err).To(MatchError(ErrInvalidProjectName))
-			Expect(projects.List(ctx)).To(BeEmpty())
-		})
 	})
 })

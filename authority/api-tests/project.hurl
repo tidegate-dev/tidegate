@@ -55,6 +55,7 @@ Authorization: Bearer {{token}}
 HTTP 400
 [Asserts]
 jsonpath "$.code" == "invalid_argument"
+jsonpath "$.message" contains "must start with a lowercase letter"
 
 # 64 characters, one more than a name may have.
 POST {{authority}}/tidegate.authority.v1.ProjectService/CreateProject
