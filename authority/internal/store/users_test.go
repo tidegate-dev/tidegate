@@ -88,6 +88,18 @@ var _ = Describe("UserReadWriter", func() {
 			Expect(unit.Commit(ctx)).To(MatchError(model.ErrUserNameTaken))
 			Expect(count(ctx, pool, "users")).To(Equal(1))
 		})
+
+		It("doesn't call the name taken when another user has the ID", func(ctx SpecContext) {
+			alice := addUser(ctx, data, "alice")
+
+			unit := data.NewUnit()
+			unit.Users().Add(&model.User{ID: alice.ID, Name: "bob"})
+
+			err := unit.Commit(ctx)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err).NotTo(MatchError(model.ErrUserNameTaken))
+		})
 	})
 
 	Describe("AddIfNoneExist", func() {

@@ -148,7 +148,7 @@ func insertUser(ctx context.Context, queries *sqlc.Queries, user *model.User) er
 		Name:         user.Name,
 		PasswordHash: databaseHash(user.PasswordHash),
 	})
-	if isUniqueViolation(err) {
+	if isUniqueViolationOf(err, "users_name_key") {
 		return model.ErrUserNameTaken
 	}
 
