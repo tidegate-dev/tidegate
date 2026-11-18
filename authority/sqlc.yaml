@@ -1,8 +1,13 @@
 version: "2"
+servers:
+  - engine: postgresql
+    uri: ${TIDEGATE_TEST_DATABASE_URL}
 sql:
   - engine: postgresql
     schema: internal/db/migrations
     queries: internal/db/queries
+    database:
+      managed: true
     gen:
       go:
         package: sqlc

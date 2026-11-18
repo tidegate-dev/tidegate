@@ -11,61 +11,94 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createSession = `-- name: CreateSession :exec
-INSERT INTO sessions (token_hash, user_id, expires_at)
-VALUES ($1, $2, now() + $3::interval)
+const deleteExpiredSessionsOfUser = `-- name: DeleteExpiredSessionsOfUser :exec
+DELETE FROM sessions WHERE user_id = $1 AND expires_at <= $2
 `
 
-type CreateSessionParams struct {
-	TokenHash []byte
-	UserID    pgtype.UUID
-	Lifetime  pgtype.Interval
-}
-
-func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) error {
-	_, err := q.db.Exec(ctx, createSession, arg.TokenHash, arg.UserID, arg.Lifetime)
-	return err
-}
-
-const deleteExpiredSessions = `-- name: DeleteExpiredSessions :exec
-DELETE FROM sessions WHERE user_id = $1 AND expires_at <= now()
-`
-
-func (q *Queries) DeleteExpiredSessions(ctx context.Context, userID pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, deleteExpiredSessions, userID)
-	return err
-}
-
-const getSession = `-- name: GetSession :one
-SELECT id, user_id FROM sessions WHERE token_hash = $1 AND expires_at > now()
-`
-
-type GetSessionRow struct {
-	ID     pgtype.UUID
+type DeleteExpiredSessionsOfUserParams struct {
 	UserID pgtype.UUID
+	Now    pgtype.Timestamptz
 }
 
-func (q *Queries) GetSession(ctx context.Context, tokenHash []byte) (GetSessionRow, error) {
-	row := q.db.QueryRow(ctx, getSession, tokenHash)
-	var i GetSessionRow
-	err := row.Scan(&i.ID, &i.UserID)
-	return i, err
+func (q *Queries) DeleteExpiredSessionsOfUser(ctx context.Context, arg DeleteExpiredSessionsOfUserParams) error {
+	_, err := q.db.Exec(ctx, deleteExpiredSessionsOfUser, arg.UserID, arg.Now)
+	return err
 }
 
-const revokeSession = `-- name: RevokeSession :exec
+const deleteSession = `-- name: DeleteSession :exec
 DELETE FROM sessions WHERE id = $1
 `
 
-func (q *Queries) RevokeSession(ctx context.Context, id pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, revokeSession, id)
+func (q *Queries) DeleteSession(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteSession, id)
 	return err
 }
 
-const revokeUserSessions = `-- name: RevokeUserSessions :exec
+const deleteSessionsOfUser = `-- name: DeleteSessionsOfUser :exec
 DELETE FROM sessions WHERE user_id = $1
 `
 
-func (q *Queries) RevokeUserSessions(ctx context.Context, userID pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, revokeUserSessions, userID)
+func (q *Queries) DeleteSessionsOfUser(ctx context.Context, userID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteSessionsOfUser, userID)
 	return err
+}
+
+const getActiveSessionByTokenHash = `-- name: GetActiveSessionByTokenHash :one
+SELECT id, user_id, token_hash, created_at, expires_at, xmin FROM sessions
+WHERE token_hash = $1 AND expires_at > $2
+`
+
+type GetActiveSessionByTokenHashParams struct {
+	TokenHash []byte
+	Now       pgtype.Timestamptz
+}
+
+type GetActiveSessionByTokenHashRow struct {
+	ID        pgtype.UUID
+	UserID    pgtype.UUID
+	TokenHash []byte
+	CreatedAt pgtype.Timestamptz
+	ExpiresAt pgtype.Timestamptz
+	Xmin      pgtype.Uint32
+}
+
+func (q *Queries) GetActiveSessionByTokenHash(ctx context.Context, arg GetActiveSessionByTokenHashParams) (GetActiveSessionByTokenHashRow, error) {
+	row := q.db.QueryRow(ctx, getActiveSessionByTokenHash, arg.TokenHash, arg.Now)
+	var i GetActiveSessionByTokenHashRow
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.TokenHash,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+		&i.Xmin,
+	)
+	return i, err
+}
+
+const insertSession = `-- name: InsertSession :one
+INSERT INTO sessions (id, user_id, token_hash, created_at, expires_at)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING xmin
+`
+
+type InsertSessionParams struct {
+	ID        pgtype.UUID
+	UserID    pgtype.UUID
+	TokenHash []byte
+	CreatedAt pgtype.Timestamptz
+	ExpiresAt pgtype.Timestamptz
+}
+
+func (q *Queries) InsertSession(ctx context.Context, arg InsertSessionParams) (pgtype.Uint32, error) {
+	row := q.db.QueryRow(ctx, insertSession,
+		arg.ID,
+		arg.UserID,
+		arg.TokenHash,
+		arg.CreatedAt,
+		arg.ExpiresAt,
+	)
+	var xmin pgtype.Uint32
+	err := row.Scan(&xmin)
+	return xmin, err
 }

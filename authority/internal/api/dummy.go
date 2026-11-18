@@ -7,6 +7,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 )
@@ -40,7 +41,7 @@ func (s *DummyService) Read(
 	req *connect.Request[authorityv1.ReadRequest],
 ) (*connect.Response[authorityv1.ReadResponse], error) {
 	text, err := s.dummies.Read(ctx, req.Msg.GetId())
-	if errors.Is(err, service.ErrNotFound) {
+	if errors.Is(err, model.ErrDummyNotFound) {
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("no text with ID %d", req.Msg.GetId()))
 	}
 

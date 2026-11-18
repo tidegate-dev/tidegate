@@ -62,13 +62,13 @@ Other tools take the CA file as a flag, like `buf curl --cacert dev/tls/ca.pem`.
 
 `arch-go.yml` says which packages may import which. Shared code in `internal/` imports nothing from a component or from `gen/`. A component imports only its own packages, `internal/` and the generated code in `gen/`. Every package needs a rule in `arch-go.yml`, so when you add a top-level directory, like a new component, add a rule for it too.
 
-Inside a component, `service` does the work and may use the database, but doesn't import Connect. `api` turns Connect calls into calls to `service` and never reads the database itself. The authority's rules in `arch-go.yml` enforce this split.
+Inside a component, `api` turns Connect calls into calls to `service` and never reads the database itself. `service` does the work with the types from `model`, and imports neither Connect nor the database packages. `store` is the only package that queries the database tables, and it implements the storage interfaces that `model` declares. The authority's rules in `arch-go.yml` enforce this split.
 
 `just arch` checks the rules, and `just ci` and the pre-commit hook run it. Note that arch-go reads packages like `go build` does, so it doesn't check imports in test files or in files behind a build tag.
 
 ### Secrets
 
-Keep passwords, tokens and other secrets in a `secret.String` from `internal/secret`. It prints and logs as `****`, and only `Reveal()` returns the value. `just lint` fails if an exported field or parameter with a name like `password` or `token` is a plain `string`.
+Keep passwords, tokens and other secrets in a `secret.String` from `internal/secret`. If the secret is binary, like a hash, keep it in a `secret.Bytes`. Both print and log as `****`, and only `Reveal()` returns the value. `just lint` fails if an exported field or parameter with a name like `password` or `token` is a plain `string` or `[]byte`.
 
 ### Time and randomness
 
@@ -98,6 +98,8 @@ The reference shows that paragraph in its own column.
 
 The authority's SQL queries are in `authority/internal/db/queries/`, and sqlc generates Go code for them in `authority/internal/db/sqlc/`. After you change a query, run `just generate` and commit the result.
 
+`just generate` and `just check-generated` need Postgres, so start it first with `just dev-deps`. sqlc checks the queries against a real database, because some of them use `xmin`, a column that Postgres adds to every table and that sqlc doesn't know by itself. Note that sqlc keeps databases named `sqlc_managed_...` on that server. `just dev-reset` deletes them with the rest of the data.
+
 To change the database schema, add a migration to `authority/internal/db/migrations/`, numbered after the last one. A migration only goes forward and only adds to the schema. To remove a table or a column, wait a release after the code stops using it, so an old and a new authority can share the database during an update. `just dev` and `just kind` migrate when the authority starts.
 
 ## Tests
@@ -106,7 +108,7 @@ tidegate has unit tests, integration tests, API tests and end-to-end tests, and 
 
 ### Unit and integration tests
 
-Unit tests use the standard `testing` package with testify. Integration tests are [Ginkgo](https://onsi.github.io/ginkgo/) specs with [Gomega](https://onsi.github.io/gomega/) assertions. Their files start with `//go:build integration`, so `just test` and `go test ./...` leave them out. To create a database for a spec, call `dbtest.NewDatabase` from `authority/internal/dbtest`.
+Unit tests use the standard `testing` package with testify. Integration tests are [Ginkgo](https://onsi.github.io/ginkgo/) specs with [Gomega](https://onsi.github.io/gomega/) assertions. Their files start with `//go:build integration`, so `just test` and `go test ./...` leave them out. To create a database for a spec, call `dbtest.NewDatabase` from `authority/internal/dbtest`. If the spec needs the authority's store, call `storetest.New` from `authority/internal/storetest`, which also runs the migrations.
 
 The integration tests run against Postgres. Start the services first, then run the tests:
 

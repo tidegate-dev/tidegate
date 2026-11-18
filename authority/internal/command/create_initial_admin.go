@@ -10,7 +10,9 @@ import (
 	"github.com/urfave/cli/v3"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/db"
+	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
+	"github.com/tidegate-dev/tidegate/authority/internal/store"
 	"github.com/tidegate-dev/tidegate/internal/terminal"
 )
 
@@ -50,13 +52,16 @@ func createInitialAdmin(ctx context.Context, databaseURL, name string, in io.Rea
 	}
 	defer pool.Close()
 
-	exists, err := service.AnyExist(ctx, pool)
+	data := store.New(pool)
+	users := service.NewUsers(data.Users(), data, random.NewCryptoRandom())
+
+	exists, err := users.AnyExist(ctx)
 	if err != nil {
 		return err
 	}
 
 	if exists {
-		return service.ErrUserExists
+		return model.ErrUsersExist
 	}
 
 	plaintext, err := readPassword(ctx, terminal.New(in, out))
@@ -64,7 +69,7 @@ func createInitialAdmin(ctx context.Context, databaseURL, name string, in io.Rea
 		return err
 	}
 
-	err = service.CreateInitialAdmin(ctx, pool, random.NewCryptoRandom(), name, plaintext)
+	err = users.CreateInitialAdmin(ctx, name, plaintext)
 	if err != nil {
 		return err
 	}

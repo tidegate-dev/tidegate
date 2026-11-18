@@ -2,48 +2,49 @@ package service
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
-
-	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
+	"github.com/tidegate-dev/tidegate/authority/internal/model"
 )
 
-// ErrNotFound means the database holds nothing with the given ID.
-var ErrNotFound = errors.New("not found")
+// DummyFinder finds a dummy by its ID.
+type DummyFinder interface {
+	// ByID returns the dummy with the ID, or model.ErrDummyNotFound.
+	ByID(ctx context.Context, id int64) (*model.Dummy, error)
+}
 
 // Dummies checks the path from a client into the database and back.
 type Dummies struct {
-	queries *sqlc.Queries
+	dummies DummyFinder
+	units   model.UnitFactory
 }
 
-// NewDummies returns Dummies.
-func NewDummies(pool *pgxpool.Pool) *Dummies {
-	return &Dummies{queries: sqlc.New(pool)}
+// NewDummies returns Dummies that read from dummies and write in units of
+// work from units.
+func NewDummies(dummies DummyFinder, units model.UnitFactory) *Dummies {
+	return &Dummies{dummies: dummies, units: units}
 }
 
 // Write stores text and returns its ID.
 func (d *Dummies) Write(ctx context.Context, text string) (int64, error) {
-	id, err := d.queries.CreateDummy(ctx, text)
+	dummy := &model.Dummy{Text: text}
+
+	unit := d.units.NewUnit()
+	unit.Dummies().Add(dummy)
+
+	err := unit.Commit(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("storing the text: %w", err)
+		return 0, err
 	}
 
-	return id, nil
+	return dummy.ID, nil
 }
 
-// Read returns the text with the given ID, or ErrNotFound.
+// Read returns the text with the given ID, or model.ErrDummyNotFound.
 func (d *Dummies) Read(ctx context.Context, id int64) (string, error) {
-	text, err := d.queries.GetDummy(ctx, id)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return "", ErrNotFound
-	}
-
+	dummy, err := d.dummies.ByID(ctx, id)
 	if err != nil {
-		return "", fmt.Errorf("reading the text: %w", err)
+		return "", err
 	}
 
-	return text, nil
+	return dummy.Text, nil
 }

@@ -7,42 +7,38 @@ import (
 	"crypto/sha256"
 	"time"
 
+	"github.com/The127/go-clock"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/db"
-	"github.com/tidegate-dev/tidegate/authority/internal/dbtest"
+	"github.com/tidegate-dev/tidegate/authority/internal/model"
+	"github.com/tidegate-dev/tidegate/authority/internal/store"
+	"github.com/tidegate-dev/tidegate/authority/internal/storetest"
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 type storedToken struct {
 	TokenHash []byte
-	UserID    pgtype.UUID
+	UserID    [16]byte
 	Lifetime  time.Duration
 }
 
 var _ = Describe("Issue", func() {
 	var (
 		pool   *pgxpool.Pool
-		userID pgtype.UUID
+		data   *store.Store
+		userID model.UserID
 	)
 
 	BeforeEach(func(ctx SpecContext) {
-		var err error
-
-		pool, err = db.Open(ctx, dbtest.NewDatabase())
-		Expect(err).NotTo(HaveOccurred())
-		DeferCleanup(pool.Close)
-		Expect(db.Migrate(ctx, pool)).To(Succeed())
-
-		Expect(pool.QueryRow(ctx, "INSERT INTO users (name) VALUES ('alice') RETURNING id").Scan(&userID)).To(Succeed())
+		pool, data = storetest.New(ctx)
+		userID = storetest.AddUser(ctx, data, "alice")
 	})
 
 	It("returns a token and stores only its hash", func(ctx SpecContext) {
-		token, err := NewSessions(pool, rnd, 12*time.Hour).Issue(ctx, userID)
+		token, err := newSessions(data, 12*time.Hour).Issue(ctx, userID)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(token.Reveal()).To(MatchRegexp(`^[A-Za-z0-9_-]{43}$`))
@@ -50,18 +46,18 @@ var _ = Describe("Issue", func() {
 		hash := sha256.Sum256([]byte(token.Reveal()))
 		Expect(storedTokens(ctx, pool)).To(ConsistOf(SatisfyAll(
 			HaveField("TokenHash", Equal(hash[:])),
-			HaveField("UserID", userID),
+			HaveField("UserID", [16]byte(userID)),
 			HaveField("Lifetime", 12*time.Hour),
 		)))
 	})
 
 	It("returns a new token each time", func(ctx SpecContext) {
-		tokens := NewSessions(pool, rnd, 12*time.Hour)
+		sessions := newSessions(data, 12*time.Hour)
 
-		first, err := tokens.Issue(ctx, userID)
+		first, err := sessions.Issue(ctx, userID)
 		Expect(err).NotTo(HaveOccurred())
 
-		second, err := tokens.Issue(ctx, userID)
+		second, err := sessions.Issue(ctx, userID)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(second).NotTo(Equal(first))
@@ -69,63 +65,69 @@ var _ = Describe("Issue", func() {
 	})
 
 	It("stores the expiry one lifetime after issuing the token", func(ctx SpecContext) {
-		_, err := NewSessions(pool, rnd, time.Second).Issue(ctx, userID)
+		_, err := newSessions(data, time.Second).Issue(ctx, userID)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("Lifetime", time.Second)))
 	})
 
-	It("deletes the user's expired tokens", func(ctx SpecContext) {
-		_, err := pool.Exec(ctx, `INSERT INTO sessions (token_hash, user_id, expires_at)
-			VALUES (sha256('expired'), $1, now() - interval '1 second')`, userID)
+	It("deletes the user's expired sessions", func(ctx SpecContext) {
+		_, err := pool.Exec(ctx, `INSERT INTO sessions (token_hash, user_id, created_at, expires_at)
+			VALUES (sha256('expired'), $1, now(), now() - interval '1 second')`, userID.String())
 		Expect(err).NotTo(HaveOccurred())
 
-		token, err := NewSessions(pool, rnd, 12*time.Hour).Issue(ctx, userID)
+		token, err := newSessions(data, 12*time.Hour).Issue(ctx, userID)
 
 		Expect(err).NotTo(HaveOccurred())
 
 		hash := sha256.Sum256([]byte(token.Reveal()))
 		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hash[:]))))
 	})
+
+	It("fails for a user that is gone", func(ctx SpecContext) {
+		gone, err := model.NewUserID()
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = newSessions(data, 12*time.Hour).Issue(ctx, gone)
+
+		Expect(err).To(MatchError(model.ErrUserNotFound))
+		Expect(storedTokens(ctx, pool)).To(BeEmpty())
+	})
 })
 
 var _ = Describe("Logout", func() {
 	var (
-		pool   *pgxpool.Pool
-		tokens *Sessions
-		logins *Logins
-		alice  pgtype.UUID
-		bob    pgtype.UUID
+		pool     *pgxpool.Pool
+		sessions *Sessions
+		logins   *Logins
+		alice    model.UserID
+		bob      model.UserID
 	)
 
 	BeforeEach(func(ctx SpecContext) {
-		var err error
+		var data *store.Store
 
-		pool, err = db.Open(ctx, dbtest.NewDatabase())
-		Expect(err).NotTo(HaveOccurred())
-		DeferCleanup(pool.Close)
-		Expect(db.Migrate(ctx, pool)).To(Succeed())
+		pool, data = storetest.New(ctx)
+		alice = storetest.AddUser(ctx, data, "alice")
+		bob = storetest.AddUser(ctx, data, "bob")
 
-		Expect(pool.QueryRow(ctx, "INSERT INTO users (name) VALUES ('alice') RETURNING id").Scan(&alice)).To(Succeed())
-		Expect(pool.QueryRow(ctx, "INSERT INTO users (name) VALUES ('bob') RETURNING id").Scan(&bob)).To(Succeed())
-
-		tokens = NewSessions(pool, rnd, 12*time.Hour)
-		logins = NewLogins(nil, tokens)
+		sessions = newSessions(data, 12*time.Hour)
+		logins = NewLogins(nil, sessions)
 	})
 
-	issue := func(ctx context.Context, userID pgtype.UUID) secret.String {
+	issue := func(ctx context.Context, userID model.UserID) secret.String {
 		GinkgoHelper()
 
-		token, err := tokens.Issue(ctx, userID)
+		token, err := sessions.Issue(ctx, userID)
 		Expect(err).NotTo(HaveOccurred())
 
 		return token
 	}
 
-	sessionOf := func(ctx context.Context, token secret.String) Session {
+	sessionOf := func(ctx context.Context, token secret.String) model.Session {
 		GinkgoHelper()
 
-		session, err := tokens.Session(ctx, token)
+		session, err := sessions.Session(ctx, token)
 		Expect(err).NotTo(HaveOccurred())
 
 		return session
@@ -138,7 +140,7 @@ var _ = Describe("Logout", func() {
 		err := logins.Logout(ctx, session, false)
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hash(other)))))
+		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hash(other).Reveal()))))
 	})
 
 	It("revokes every token of the user for all sessions, and no other user's", func(ctx SpecContext) {
@@ -149,7 +151,7 @@ var _ = Describe("Logout", func() {
 		err := logins.Logout(ctx, session, true)
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hash(bobs)))))
+		Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hash(bobs).Reveal()))))
 	})
 
 	DescribeTable("succeeds for a session that is already revoked",
@@ -161,7 +163,7 @@ var _ = Describe("Logout", func() {
 			err := logins.Logout(ctx, session, allSessions)
 
 			Expect(err).NotTo(HaveOccurred())
-			Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hash(bobs)))))
+			Expect(storedTokens(ctx, pool)).To(ConsistOf(HaveField("TokenHash", Equal(hash(bobs).Reveal()))))
 		},
 		Entry("for one session", false),
 		Entry("for all sessions", true),
@@ -170,57 +172,60 @@ var _ = Describe("Logout", func() {
 
 var _ = Describe("Session", func() {
 	var (
-		pool   *pgxpool.Pool
-		tokens *Sessions
-		alice  pgtype.UUID
+		pool     *pgxpool.Pool
+		sessions *Sessions
+		alice    model.UserID
 	)
 
 	BeforeEach(func(ctx SpecContext) {
-		var err error
+		var data *store.Store
 
-		pool, err = db.Open(ctx, dbtest.NewDatabase())
-		Expect(err).NotTo(HaveOccurred())
-		DeferCleanup(pool.Close)
-		Expect(db.Migrate(ctx, pool)).To(Succeed())
+		pool, data = storetest.New(ctx)
+		alice = storetest.AddUser(ctx, data, "alice")
 
-		Expect(pool.QueryRow(ctx, "INSERT INTO users (name) VALUES ('alice') RETURNING id").Scan(&alice)).To(Succeed())
-
-		tokens = NewSessions(pool, rnd, 12*time.Hour)
+		sessions = newSessions(data, 12*time.Hour)
 	})
 
 	It("returns the session of the token", func(ctx SpecContext) {
-		token, err := tokens.Issue(ctx, alice)
+		token, err := sessions.Issue(ctx, alice)
 		Expect(err).NotTo(HaveOccurred())
 
-		var id pgtype.UUID
+		var id [16]byte
 		Expect(pool.QueryRow(ctx, "SELECT id FROM sessions").Scan(&id)).To(Succeed())
 
-		session, err := tokens.Session(ctx, token)
+		session, err := sessions.Session(ctx, token)
 
 		Expect(err).NotTo(HaveOccurred())
-		Expect(session).To(Equal(Session{ID: id, UserID: alice}))
+		Expect(session).To(SatisfyAll(
+			HaveField("ID", model.SessionID(id)),
+			HaveField("UserID", alice),
+		))
 	})
 
 	It("refuses an unknown token", func(ctx SpecContext) {
-		_, err := tokens.Issue(ctx, alice)
+		_, err := sessions.Issue(ctx, alice)
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = tokens.Session(ctx, secret.New("unknown"))
+		_, err = sessions.Session(ctx, secret.New("unknown"))
 
 		Expect(err).To(MatchError(ErrNotSignedIn))
 	})
 
 	It("refuses an expired token", func(ctx SpecContext) {
 		expired := secret.New("expired")
-		_, err := pool.Exec(ctx, `INSERT INTO sessions (token_hash, user_id, expires_at)
-			VALUES ($1, $2, now() - interval '1 second')`, hash(expired), alice)
+		_, err := pool.Exec(ctx, `INSERT INTO sessions (token_hash, user_id, created_at, expires_at)
+			VALUES ($1, $2, now(), now() - interval '1 second')`, hash(expired).Reveal(), alice.String())
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = tokens.Session(ctx, expired)
+		_, err = sessions.Session(ctx, expired)
 
 		Expect(err).To(MatchError(ErrNotSignedIn))
 	})
 })
+
+func newSessions(data *store.Store, lifetime time.Duration) *Sessions {
+	return NewSessions(data.Sessions(), data, rnd, clock.NewSystemClock(), lifetime)
+}
 
 func storedTokens(ctx context.Context, pool *pgxpool.Pool) []storedToken {
 	GinkgoHelper()

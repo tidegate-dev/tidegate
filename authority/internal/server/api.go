@@ -8,7 +8,6 @@ import (
 	"connectrpc.com/connect"
 	"connectrpc.com/validate"
 	"github.com/The127/go-clock"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/api"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
@@ -36,15 +35,16 @@ func interceptors(clk clock.Service, sessions api.SessionLookup) []connect.Inter
 func apiServer(
 	address string,
 	certificate *certreload.Certificate,
-	pool *pgxpool.Pool,
+	clk clock.Service,
+	dummies *service.Dummies,
 	logins *service.Logins,
 	sessions api.SessionLookup,
 ) *http.Server {
-	options := connect.WithInterceptors(interceptors(clock.NewSystemClock(), sessions)...)
+	options := connect.WithInterceptors(interceptors(clk, sessions)...)
 
 	mux := http.NewServeMux()
 	mux.Handle(authorityv1connect.NewPingServiceHandler(api.PingService{}, options))
-	mux.Handle(authorityv1connect.NewDummyServiceHandler(api.NewDummyService(service.NewDummies(pool)), options))
+	mux.Handle(authorityv1connect.NewDummyServiceHandler(api.NewDummyService(dummies), options))
 	mux.Handle(api.NewLoginServiceHandler(logins, options))
 
 	// gRPC clients need HTTP/2, and the CLI's Connect client uses HTTP/1.1

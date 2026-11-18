@@ -1,6 +1,7 @@
 // Package secretcheck reports exported struct fields, and parameters and
 // results of exported functions and interface methods, that are named like a
-// secret but hold a plain string or []byte instead of a secret.String.
+// secret but hold a plain string or []byte instead of a secret.String or
+// secret.Bytes.
 package secretcheck
 
 import (
@@ -12,10 +13,11 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-// Analyzer reports secrets in exported APIs that aren't a secret.String.
+// Analyzer reports secrets in exported APIs that aren't a secret.String or
+// secret.Bytes.
 var Analyzer = &analysis.Analyzer{
 	Name: "secretcheck",
-	Doc:  "report exported fields, parameters and results named like a secret that aren't a secret.String",
+	Doc:  "report exported fields, parameters and results named like a secret that aren't a secret.String or secret.Bytes",
 	Run:  run,
 }
 
@@ -114,25 +116,34 @@ func report(pass *analysis.Pass, typeExpr ast.Expr, name *ast.Ident, what string
 	}
 
 	typ := pass.TypesInfo.TypeOf(typeExpr)
-	if typ == nil || !plain(typ) {
+	if typ == nil {
 		return
 	}
 
-	pass.Reportf(name.Pos(), "%s holds a secret as %s, use secret.String",
-		what, types.TypeString(typ, types.RelativeTo(pass.Pkg)))
+	secretType := secretTypeFor(typ)
+	if secretType == "" {
+		return
+	}
+
+	pass.Reportf(name.Pos(), "%s holds a secret as %s, use %s",
+		what, types.TypeString(typ, types.RelativeTo(pass.Pkg)), secretType)
 }
 
-// plain reports whether typ is a string or a []byte, also behind a named
-// type.
-func plain(typ types.Type) bool {
+// secretTypeFor returns the secret type that replaces typ: secret.String for
+// a string and secret.Bytes for a []byte, also behind a named type. It
+// returns "" for every other type.
+func secretTypeFor(typ types.Type) string {
 	switch underlying := typ.Underlying().(type) {
 	case *types.Basic:
-		return underlying.Kind() == types.String
+		if underlying.Kind() == types.String {
+			return "secret.String"
+		}
 	case *types.Slice:
 		elem, ok := underlying.Elem().Underlying().(*types.Basic)
-
-		return ok && elem.Kind() == types.Byte
-	default:
-		return false
+		if ok && elem.Kind() == types.Byte {
+			return "secret.Bytes"
+		}
 	}
+
+	return ""
 }

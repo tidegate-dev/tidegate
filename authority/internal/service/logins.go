@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
@@ -14,12 +15,12 @@ var ErrNotSignedIn = errors.New("not signed in")
 // Logins signs users in with a local password and logs them out.
 type Logins struct {
 	authenticator *Authenticator
-	tokens        *Sessions
+	sessions      *Sessions
 }
 
 // NewLogins returns Logins.
-func NewLogins(authenticator *Authenticator, tokens *Sessions) *Logins {
-	return &Logins{authenticator: authenticator, tokens: tokens}
+func NewLogins(authenticator *Authenticator, sessions *Sessions) *Logins {
+	return &Logins{authenticator: authenticator, sessions: sessions}
 }
 
 // Login returns a new session token if plaintext is the user's password.
@@ -29,15 +30,15 @@ func (l *Logins) Login(ctx context.Context, name string, plaintext secret.String
 		return secret.String{}, err
 	}
 
-	return l.tokens.Issue(ctx, userID)
+	return l.sessions.Issue(ctx, userID)
 }
 
 // Logout revokes the session token of the session. With allSessions it revokes
 // every session token of the user.
-func (l *Logins) Logout(ctx context.Context, session Session, allSessions bool) error {
+func (l *Logins) Logout(ctx context.Context, session model.Session, allSessions bool) error {
 	if allSessions {
-		return l.tokens.RevokeAll(ctx, session.UserID)
+		return l.sessions.RevokeAll(ctx, session.UserID)
 	}
 
-	return l.tokens.Revoke(ctx, session.ID)
+	return l.sessions.Revoke(ctx, session)
 }

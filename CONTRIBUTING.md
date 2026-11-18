@@ -94,5 +94,6 @@ tidegate's binaries may only use dependencies under these licenses:
 - BSD-3-Clause
 - MIT
 - MPL-2.0
+- PostgreSQL
 
 If a dependency has more than one license, each of them must be on this list. `just ci` checks this. It fails when a dependency has a license that isn't on the list, or no license at all. If syft can't identify a license file, read it and add it to `.licenses-reviewed`.
