@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"net/netip"
 	"reflect"
 	"strconv"
 	"strings"
@@ -29,20 +30,31 @@ const (
 // rawConfig keeps every setting as a string, because environment variables
 // arrive as strings and validate needs the original value for its errors.
 type rawConfig struct {
-	Server   rawServer   `koanf:"server"`
-	Metrics  rawMetrics  `koanf:"metrics"`
-	Database rawDatabase `koanf:"database"`
-	Login    rawLogin    `koanf:"login"`
-	Log      rawLog      `koanf:"log"`
+	ExternalAPI rawExternalAPI `koanf:"external_api"`
+	InternalAPI rawInternalAPI `koanf:"internal_api"`
+	Metrics     rawMetrics     `koanf:"metrics"`
+	Database    rawDatabase    `koanf:"database"`
+	Login       rawLogin       `koanf:"login"`
+	Log         rawLog         `koanf:"log"`
 }
 
-type rawServer struct {
-	ListenAddress string `koanf:"listen_address"`
-	TLS           rawTLS `koanf:"tls"`
+type rawExternalAPI struct {
+	ListenAddress string         `koanf:"listen_address"`
+	TLS           rawExternalTLS `koanf:"tls"`
 }
 
-type rawTLS struct {
+type rawExternalTLS struct {
 	Disabled string `koanf:"disabled"`
+	CertFile string `koanf:"cert_file"`
+	KeyFile  string `koanf:"key_file"`
+}
+
+type rawInternalAPI struct {
+	ListenAddress string         `koanf:"listen_address"`
+	TLS           rawInternalTLS `koanf:"tls"`
+}
+
+type rawInternalTLS struct {
 	CertFile string `koanf:"cert_file"`
 	KeyFile  string `koanf:"key_file"`
 }
@@ -65,14 +77,21 @@ type rawLog struct {
 	Format string `koanf:"format"`
 }
 
+// tls.crt and tls.key are the file names in a Kubernetes TLS Secret.
 var defaults = rawConfig{
-	Server: rawServer{
+	ExternalAPI: rawExternalAPI{
 		ListenAddress: "127.0.0.1:8080",
-		// The file names of a Kubernetes TLS Secret, in a folder per component.
-		TLS: rawTLS{
+		TLS: rawExternalTLS{
 			Disabled: "false",
-			CertFile: "/etc/tidegate/authority/tls/tls.crt",
-			KeyFile:  "/etc/tidegate/authority/tls/tls.key",
+			CertFile: "/etc/tidegate/authority/external-api-tls/tls.crt",
+			KeyFile:  "/etc/tidegate/authority/external-api-tls/tls.key",
+		},
+	},
+	InternalAPI: rawInternalAPI{
+		ListenAddress: "127.0.0.1:8081",
+		TLS: rawInternalTLS{
+			CertFile: "/etc/tidegate/authority/internal-api-tls/tls.crt",
+			KeyFile:  "/etc/tidegate/authority/internal-api-tls/tls.key",
 		},
 	},
 	Metrics: rawMetrics{
@@ -92,23 +111,40 @@ var defaults = rawConfig{
 
 // Config holds the authority's settings.
 type Config struct {
-	Server   Server
-	Metrics  Metrics
-	Database Database
-	Login    Login
-	Log      Log
+	ExternalAPI ExternalAPI
+	InternalAPI InternalAPI
+	Metrics     Metrics
+	Database    Database
+	Login       Login
+	Log         Log
 }
 
-// Server holds the settings of the authority's API server.
-type Server struct {
+// ExternalAPI holds the settings of the server for the external API, which
+// the CLI and the browser call.
+type ExternalAPI struct {
 	ListenAddress string
-	TLS           TLS
+	TLS           ExternalTLS
 }
 
-// TLS holds where the API server finds its certificate, or that it serves
-// plain HTTP.
-type TLS struct {
+// ExternalTLS holds where the external API finds its certificate, or that
+// it serves plain HTTP.
+type ExternalTLS struct {
 	Disabled bool
+	CertFile string
+	KeyFile  string
+}
+
+// InternalAPI holds the settings of the server for the internal API, which
+// gateways and workers call.
+type InternalAPI struct {
+	ListenAddress string
+	TLS           InternalTLS
+}
+
+// InternalTLS holds where the internal API finds its certificate. It can't
+// be disabled, because a proxy that terminates TLS hides the client's
+// certificate.
+type InternalTLS struct {
 	CertFile string
 	KeyFile  string
 }
@@ -195,13 +231,18 @@ func Load(environ []string) (Config, error) {
 func validate(raw rawConfig, set map[string]bool) (Config, error) {
 	v := validator{keys: fieldKeys(&raw), set: set}
 
-	listenAddress, err := parseListenAddress(raw.Server.ListenAddress)
-	v.check(&raw.Server.ListenAddress, err)
+	externalListenAddress, err := parseListenAddress(raw.ExternalAPI.ListenAddress)
+	v.check(&raw.ExternalAPI.ListenAddress, err)
 
-	tls := v.tls(&raw.Server.TLS)
+	externalTLS := v.externalTLS(&raw.ExternalAPI.TLS)
+
+	internalListenAddress, err := parseListenAddress(raw.InternalAPI.ListenAddress)
+	v.check(&raw.InternalAPI.ListenAddress, err)
 
 	metricsListenAddress, err := parseListenAddress(raw.Metrics.ListenAddress)
 	v.check(&raw.Metrics.ListenAddress, err)
+
+	v.checkOverlaps(&raw.ExternalAPI.ListenAddress, &raw.InternalAPI.ListenAddress, &raw.Metrics.ListenAddress)
 
 	v.check(&raw.Database.URL, checkDatabaseURL(raw.Database.URL))
 
@@ -222,7 +263,11 @@ func validate(raw rawConfig, set map[string]bool) (Config, error) {
 	}
 
 	return Config{
-		Server:   Server{ListenAddress: listenAddress, TLS: tls},
+		ExternalAPI: ExternalAPI{ListenAddress: externalListenAddress, TLS: externalTLS},
+		InternalAPI: InternalAPI{
+			ListenAddress: internalListenAddress,
+			TLS:           InternalTLS{CertFile: raw.InternalAPI.TLS.CertFile, KeyFile: raw.InternalAPI.TLS.KeyFile},
+		},
 		Metrics:  Metrics{ListenAddress: metricsListenAddress},
 		Database: Database{URL: raw.Database.URL, MigrateOnStart: migrateOnStart},
 		Login:    Login{TokenLifetime: tokenLifetime},
@@ -261,7 +306,17 @@ func (v *validator) check(field *string, err error) {
 	}
 }
 
-func (v *validator) tls(raw *rawTLS) TLS {
+func (v *validator) checkOverlaps(listenAddresses ...*string) {
+	for i, address := range listenAddresses {
+		for _, earlier := range listenAddresses[:i] {
+			if overlap(*address, *earlier) {
+				v.check(address, fmt.Errorf("%q overlaps with %q in %s", *address, *earlier, variableFromKey(v.keys[earlier])))
+			}
+		}
+	}
+}
+
+func (v *validator) externalTLS(raw *rawExternalTLS) ExternalTLS {
 	disabled, err := parseBool(raw.Disabled)
 	v.check(&raw.Disabled, err)
 
@@ -270,7 +325,7 @@ func (v *validator) tls(raw *rawTLS) TLS {
 			variableFromKey(v.keys[&raw.CertFile]), variableFromKey(v.keys[&raw.KeyFile])))
 	}
 
-	return TLS{Disabled: disabled, CertFile: raw.CertFile, KeyFile: raw.KeyFile}
+	return ExternalTLS{Disabled: disabled, CertFile: raw.CertFile, KeyFile: raw.KeyFile}
 }
 
 func fieldKeys(raw *rawConfig) map[*string]string {
@@ -305,6 +360,14 @@ func keyFromVariable(name string) string {
 	return strings.ReplaceAll(strings.ToLower(rest), levelSeparator, ".")
 }
 
+// ExternalTLSDisabledVariable returns the name of the variable that turns
+// off TLS for the external API, for messages that tell an operator to set it.
+func ExternalTLSDisabledVariable() string {
+	var raw rawConfig
+
+	return variableFromKey(fieldKeys(&raw)[&raw.ExternalAPI.TLS.Disabled])
+}
+
 func variableFromKey(key string) string {
 	return envPrefix + strings.ToUpper(strings.ReplaceAll(key, ".", levelSeparator))
 }
@@ -337,6 +400,44 @@ func parseListenAddress(value string) (string, error) {
 	}
 
 	return value, nil
+}
+
+// overlap reports only what is certain, so it doesn't resolve names.
+func overlap(listenAddress, other string) bool {
+	host, port, err := net.SplitHostPort(listenAddress)
+	if err != nil {
+		return false
+	}
+
+	otherHost, otherPort, err := net.SplitHostPort(other)
+	if err != nil {
+		return false
+	}
+
+	number, err := strconv.ParseUint(port, 10, 16)
+	if err != nil || number == 0 {
+		return false
+	}
+
+	otherNumber, err := strconv.ParseUint(otherPort, 10, 16)
+	if err != nil || number != otherNumber {
+		return false
+	}
+
+	ip, err := netip.ParseAddr(host)
+	otherIP, otherErr := netip.ParseAddr(otherHost)
+
+	// Go binds an unspecified address to IPv4 and IPv6 where the system has
+	// dual-stack sockets, as Linux does.
+	if host == "" || otherHost == "" || ip.IsUnspecified() || otherIP.IsUnspecified() {
+		return true
+	}
+
+	if err == nil && otherErr == nil {
+		return ip.Unmap() == otherIP.Unmap()
+	}
+
+	return strings.EqualFold(host, otherHost)
 }
 
 func parseBool(value string) (bool, error) {

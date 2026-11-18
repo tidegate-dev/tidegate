@@ -58,10 +58,13 @@ export PATH="$work/bin:$PATH"
 
 # Other ports than just dev, so both can run at the same time.
 export GOCOVERDIR="$work/coverage"
-export TIDEGATE_AUTHORITY__SERVER__LISTEN_ADDRESS=127.0.0.1:18080
+export TIDEGATE_AUTHORITY__EXTERNAL_API__LISTEN_ADDRESS=127.0.0.1:18080
+export TIDEGATE_AUTHORITY__INTERNAL_API__LISTEN_ADDRESS=127.0.0.1:18081
 export TIDEGATE_AUTHORITY__METRICS__LISTEN_ADDRESS=127.0.0.1:19464
-export TIDEGATE_AUTHORITY__SERVER__TLS__CERT_FILE="$root/dev/tls/authority.pem"
-export TIDEGATE_AUTHORITY__SERVER__TLS__KEY_FILE="$root/dev/tls/authority-key.pem"
+export TIDEGATE_AUTHORITY__EXTERNAL_API__TLS__CERT_FILE="$root/dev/tls/authority-external-api.pem"
+export TIDEGATE_AUTHORITY__EXTERNAL_API__TLS__KEY_FILE="$root/dev/tls/authority-external-api-key.pem"
+export TIDEGATE_AUTHORITY__INTERNAL_API__TLS__CERT_FILE="$root/dev/tls/authority-internal-api.pem"
+export TIDEGATE_AUTHORITY__INTERNAL_API__TLS__KEY_FILE="$root/dev/tls/authority-internal-api-key.pem"
 export TIDEGATE_AUTHORITY__DATABASE__URL="$server/$database$query"
 export TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START=true
 authority >>"$work/log" 2>&1 &
@@ -74,9 +77,10 @@ export TIDEGATE_TEST_CA_FILE="$root/dev/tls/ca.pem"
 export TIDEGATE_TEST_DATABASE_SERVER=$server
 export TIDEGATE_TEST_DATABASE_QUERY=$query
 
-# The authority logs this line only after it migrated the database and opened its port.
+# The authority logs this line once for each of its three servers, after it
+# migrated the database and opened that server's port.
 listening() {
-    jq -e -s 'any(.[]; .msg == "authority listening" and .server == "api")' "$work/log" >/dev/null 2>&1
+    jq -e -s '[.[] | select(.msg == "authority listening")] | length == 3' "$work/log" >/dev/null 2>&1
 }
 for _ in $(seq 100); do
     listening && break

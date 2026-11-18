@@ -1,4 +1,4 @@
-// Package server runs the authority's API server and metrics server.
+// Package server runs the authority's API servers and metrics server.
 package server
 
 import (
@@ -22,21 +22,26 @@ import (
 
 const shutdownTimeout = 10 * time.Second
 
-// Run serves the authority's API and metrics until ctx ends or a server
+// Run serves the authority's APIs and metrics until ctx ends or a server
 // fails.
 func Run(ctx context.Context, cfg config.Config) error {
 	return run(ctx, cfg, shutdownTimeout)
 }
 
 func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
-	certificate, err := loadCertificate(cfg.Server.TLS)
+	externalCertificate, err := loadExternalCertificate(cfg.ExternalAPI.TLS)
 	if err != nil {
 		return err
 	}
 
-	if certificate == nil {
-		slog.Warn("the API serves plain HTTP, because TIDEGATE_AUTHORITY__SERVER__TLS__DISABLED is true. " +
+	if externalCertificate == nil {
+		slog.Warn("the external API serves plain HTTP, because " + config.ExternalTLSDisabledVariable() + " is true. " +
 			"Only use this behind a proxy that terminates TLS")
+	}
+
+	internalCertificate, err := loadInternalCertificate(cfg.InternalAPI.TLS)
+	if err != nil {
+		return err
 	}
 
 	pool, err := openDatabase(ctx, cfg.Database)
@@ -72,15 +77,25 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 		return err
 	}
 
-	stopWatching, err := watchCertificate(ctx, certificate)
+	watching, stopWatching := context.WithCancel(ctx)
+	defer stopWatching()
+
+	stopReportingExternal, err := watchCertificate(watching, externalCertificate)
 	if err != nil {
 		return errors.Join(err, shutdownMetrics(context.Background()))
 	}
-	defer stopWatching()
+	defer stopReportingExternal()
+
+	stopReportingInternal, err := watchCertificate(watching, internalCertificate)
+	if err != nil {
+		return errors.Join(err, shutdownMetrics(context.Background()))
+	}
+	defer stopReportingInternal()
 
 	err = serve(ctx, notifier, map[string]*http.Server{
-		"api":     apiServer(cfg.Server.ListenAddress, certificate, clk, dummies, logins, sessions),
-		"metrics": metricsServer(cfg.Metrics.ListenAddress, metricsHandler),
+		"external-api": externalAPIServer(cfg.ExternalAPI.ListenAddress, externalCertificate, clk, dummies, logins, sessions),
+		"internal-api": internalAPIServer(cfg.InternalAPI.ListenAddress, internalCertificate),
+		"metrics":      metricsServer(cfg.Metrics.ListenAddress, metricsHandler),
 	}, timeout)
 
 	return errors.Join(err, shutdownMetrics(context.Background()))

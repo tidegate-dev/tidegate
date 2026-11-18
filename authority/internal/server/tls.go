@@ -10,29 +10,38 @@ import (
 	"github.com/tidegate-dev/tidegate/internal/certreload"
 )
 
-// loadCertificate loads the API server's certificate. It returns nil when TLS
-// is disabled.
-func loadCertificate(cfg config.TLS) (*certreload.Certificate, error) {
+// loadExternalCertificate returns nil when TLS is disabled.
+func loadExternalCertificate(cfg config.ExternalTLS) (*certreload.Certificate, error) {
 	if cfg.Disabled {
 		return nil, nil
 	}
 
-	certificate, err := certreload.Load(cfg.CertFile, cfg.KeyFile)
+	certificate, err := loadCertificate("external", cfg.CertFile, cfg.KeyFile)
 
 	// Only a missing file can mean that a proxy terminates TLS. Any other
 	// error needs fixing, not turning TLS off.
 	if errors.Is(err, fs.ErrNotExist) {
-		return nil, fmt.Errorf("loading the TLS certificate: %w. "+
-			"To serve plain HTTP behind a proxy that terminates TLS, set TIDEGATE_AUTHORITY__SERVER__TLS__DISABLED=true", err)
+		return nil, fmt.Errorf("%w. To serve plain HTTP behind a proxy that terminates TLS, set %s=true",
+			err, config.ExternalTLSDisabledVariable())
 	}
 
+	return certificate, err
+}
+
+func loadInternalCertificate(cfg config.InternalTLS) (*certreload.Certificate, error) {
+	return loadCertificate("internal", cfg.CertFile, cfg.KeyFile)
+}
+
+func loadCertificate(apiName, certFile, keyFile string) (*certreload.Certificate, error) {
+	certificate, err := certreload.Load(certFile, keyFile)
+
 	if errors.Is(err, fs.ErrPermission) {
-		return nil, fmt.Errorf("loading the TLS certificate: %w. "+
-			"In Kubernetes, set the Pod's fsGroup to 65532, the user ID of the container image", err)
+		return nil, fmt.Errorf("loading the %s API's TLS certificate: %w. "+
+			"In Kubernetes, set the Pod's fsGroup to 65532, the user ID of the container image", apiName, err)
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("loading the TLS certificate: %w", err)
+		return nil, fmt.Errorf("loading the %s API's TLS certificate: %w", apiName, err)
 	}
 
 	return certificate, nil
