@@ -18,6 +18,16 @@ type Project struct {
 	Name string
 }
 
+type Role struct {
+	ID             pgtype.UUID
+	ProjectID      pgtype.UUID
+	Name           string
+	CreateRoles    bool
+	Escalate       bool
+	CreateBindings bool
+	Bind           bool
+}
+
 type Session struct {
 	ID        pgtype.UUID
 	TokenHash []byte

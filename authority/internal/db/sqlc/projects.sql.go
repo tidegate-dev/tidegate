@@ -11,6 +11,17 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const getProjectByName = `-- name: GetProjectByName :one
+SELECT id, name FROM projects WHERE lower(name) = lower($1)
+`
+
+func (q *Queries) GetProjectByName(ctx context.Context, name string) (Project, error) {
+	row := q.db.QueryRow(ctx, getProjectByName, name)
+	var i Project
+	err := row.Scan(&i.ID, &i.Name)
+	return i, err
+}
+
 const insertProject = `-- name: InsertProject :exec
 INSERT INTO projects (id, name) VALUES ($1, $2)
 `

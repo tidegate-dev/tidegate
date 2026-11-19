@@ -66,7 +66,7 @@ func (s *SessionReadWriter) Add(session *model.Session) {
 		switch {
 		case isUniqueViolation(err):
 			return errors.New("creating the session: token hash already in use")
-		case isForeignKeyViolation(err):
+		case isForeignKeyViolationOf(err, "sessions_user_id_fkey"):
 			return model.ErrUserNotFound
 		case err != nil:
 			return fmt.Errorf("creating the session: %w", err)

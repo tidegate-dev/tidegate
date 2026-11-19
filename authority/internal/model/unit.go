@@ -13,6 +13,8 @@ type Unit interface {
 	Dummies() DummyReadWriter
 	// Projects returns the projects for this unit.
 	Projects() ProjectReadWriter
+	// Roles returns the roles for this unit.
+	Roles() RoleReadWriter
 	// Commit runs the pending writes in the order they were added. If one
 	// fails, none is kept. It returns ErrChangedSinceRead if a row changed
 	// after it was read. If it fails, the models it wrote may hold versions

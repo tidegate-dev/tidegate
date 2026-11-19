@@ -39,6 +39,15 @@ bindings.
 | `CreateProject` | [tidegate.authority.v1.CreateProjectRequest](#tidegate.authority.v1.CreateProjectRequest) | [tidegate.authority.v1.CreateProjectResponse](#tidegate.authority.v1.CreateProjectResponse) | CreateProject creates a project and returns it. A name that another project has fails with already_exists. |
 | `ListProjects` | [tidegate.authority.v1.ListProjectsRequest](#tidegate.authority.v1.ListProjectsRequest) | [tidegate.authority.v1.ListProjectsResponse](#tidegate.authority.v1.ListProjectsResponse) | ListProjects returns every project. |
 
+## tidegate.authority.v1.RoleService { #tidegate.authority.v1.RoleService }
+
+RoleService creates roles. A role is a named list of permissions in one
+project.
+
+| Method | Request | Response | Description |
+| ------ | ------- | -------- | ----------- |
+| `CreateRole` | [tidegate.authority.v1.CreateRoleRequest](#tidegate.authority.v1.CreateRoleRequest) | [tidegate.authority.v1.CreateRoleResponse](#tidegate.authority.v1.CreateRoleResponse) | CreateRole creates a role in a project and returns it. A project that doesn't exist fails with not_found. A name that another role of the project has fails with already_exists. |
+
 ## Types
 
 ### tidegate.authority.v1.ReadRequest { #tidegate.authority.v1.ReadRequest }
@@ -150,4 +159,45 @@ Project is a project as the authority stores it.
 | ----- | ---- | ----------- | ----- |
 | `id` | `string` | ID identifies the project. It is a UUID. |  |
 | `name` | `string` | Name is the project's name. |  |
+
+### tidegate.authority.v1.CreateRoleRequest { #tidegate.authority.v1.CreateRoleRequest }
+
+CreateRoleRequest is the input of RoleService.CreateRole.
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `project` | `string` | Project is the name of the project that gets the role. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
+| `name` | `string` | Name is the name of the new role. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
+| `permissions` | `tidegate.authority.v1.ProjectPermissions` | Permissions are the permissions of the new role. A role without them gives its holders nothing. |  |
+
+### tidegate.authority.v1.CreateRoleResponse { #tidegate.authority.v1.CreateRoleResponse }
+
+CreateRoleResponse is the result of RoleService.CreateRole.
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `role` | `tidegate.authority.v1.Role` | Role is the new role. |  |
+
+### tidegate.authority.v1.ProjectPermissions { #tidegate.authority.v1.ProjectPermissions }
+
+ProjectPermissions says what the holders of a role may do with the roles
+and bindings of its project.
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `create_roles` | `bool` | CreateRoles means the holders may create roles in the project. |  |
+| `escalate` | `bool` | Escalate means the holders may create roles with permissions that they don't have themselves. |  |
+| `create_bindings` | `bool` | CreateBindings means the holders may create bindings in the project. |  |
+| `bind` | `bool` | Bind means the holders may bind roles with permissions that they don't have themselves. |  |
+
+### tidegate.authority.v1.Role { #tidegate.authority.v1.Role }
+
+Role is a role as the authority stores it.
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `id` | `string` | ID identifies the role. It is a UUID. |  |
+| `project_id` | `string` | ProjectID identifies the project that the role belongs to. It is a UUID. |  |
+| `name` | `string` | Name is the role's name. |  |
+| `permissions` | `tidegate.authority.v1.ProjectPermissions` | Permissions are the permissions that the role gives its holders. |  |
 

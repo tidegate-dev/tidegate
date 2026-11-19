@@ -47,6 +47,7 @@ func New(store connections.Store) *cli.Command {
 			logoutCommand(store),
 			connectionsCommand(store),
 			projectCommand(store),
+			roleCommand(store),
 			dummyCommand(store),
 		},
 	}

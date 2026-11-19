@@ -2,7 +2,10 @@ package store
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
+	"github.com/jackc/pgx/v5"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
 	"github.com/tidegate-dev/tidegate/authority/internal/model"
@@ -11,6 +14,21 @@ import (
 // ProjectReader queries the projects table on the connection pool.
 type ProjectReader struct {
 	queries *sqlc.Queries
+}
+
+// ByName returns the project with the name, ignoring letter case, or
+// model.ErrProjectNotFound.
+func (p *ProjectReader) ByName(ctx context.Context, name string) (*model.Project, error) {
+	row, err := p.queries.GetProjectByName(ctx, name)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, model.ErrProjectNotFound
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("reading the project: %w", err)
+	}
+
+	return &model.Project{ID: model.ProjectID(row.ID.Bytes), Name: row.Name}, nil
 }
 
 // All returns every project, ordered by name without regard to letter case.

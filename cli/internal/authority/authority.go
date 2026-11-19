@@ -22,6 +22,7 @@ type Clients struct {
 	login   authorityv1connect.LoginServiceClient
 	dummy   authorityv1connect.DummyServiceClient
 	project authorityv1connect.ProjectServiceClient
+	role    authorityv1connect.RoleServiceClient
 }
 
 const requestTimeout = 10 * time.Second
@@ -55,6 +56,7 @@ func Connect(server string, token secret.String) (*Clients, error) {
 		login:   authorityv1connect.NewLoginServiceClient(httpClient, server, withToken),
 		dummy:   authorityv1connect.NewDummyServiceClient(httpClient, server, withToken),
 		project: authorityv1connect.NewProjectServiceClient(httpClient, server, withToken),
+		role:    authorityv1connect.NewRoleServiceClient(httpClient, server, withToken),
 	}, nil
 }
 
@@ -66,6 +68,9 @@ func (c *Clients) Dummy() authorityv1connect.DummyServiceClient { return c.dummy
 
 // Project returns the client for the ProjectService.
 func (c *Clients) Project() authorityv1connect.ProjectServiceClient { return c.project }
+
+// Role returns the client for the RoleService.
+func (c *Clients) Role() authorityv1connect.RoleServiceClient { return c.role }
 
 // SignIn checks the user name and the password at the authority at server and
 // returns the token of a new session.

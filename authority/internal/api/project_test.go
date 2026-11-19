@@ -1,13 +1,11 @@
 package api
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"testing"
 
 	"connectrpc.com/connect"
-	"connectrpc.com/validate"
 	"github.com/stretchr/testify/assert"
 
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
@@ -28,7 +26,7 @@ func TestCreateProjectRequestAcceptsANameOfLowercaseLettersDigitsAndDashes(t *te
 			t.Parallel()
 
 			// act
-			err := checkCreateProjectRequest(t, input)
+			err := validationError(t, &authorityv1.CreateProjectRequest{Name: input})
 
 			// assert
 			assert.NoError(t, err)
@@ -63,26 +61,11 @@ func TestCreateProjectRequestRefusesEveryOtherName(t *testing.T) {
 			t.Parallel()
 
 			// act
-			err := checkCreateProjectRequest(t, input)
+			err := validationError(t, &authorityv1.CreateProjectRequest{Name: input})
 
 			// assert
 			assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
 			assert.ErrorContains(t, err, "must start with a lowercase letter")
 		})
 	}
-}
-
-// checkCreateProjectRequest returns what the interceptor that the server
-// uses answers to a CreateProjectRequest with the name.
-func checkCreateProjectRequest(t *testing.T, name string) error {
-	t.Helper()
-
-	handled := func(context.Context, connect.AnyRequest) (connect.AnyResponse, error) {
-		return connect.NewResponse(&authorityv1.CreateProjectResponse{}), nil
-	}
-	request := connect.NewRequest(&authorityv1.CreateProjectRequest{Name: name})
-
-	_, err := validate.NewInterceptor().WrapUnary(handled)(t.Context(), request)
-
-	return err
 }
