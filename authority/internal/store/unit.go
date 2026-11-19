@@ -100,6 +100,12 @@ func isForeignKeyViolation(err error) bool {
 	return hasCode(err, pgerrcode.ForeignKeyViolation)
 }
 
+func isForeignKeyViolationOf(err error, constraint string) bool {
+	var pgErr *pgconn.PgError
+
+	return isForeignKeyViolation(err) && errors.As(err, &pgErr) && pgErr.ConstraintName == constraint
+}
+
 func hasCode(err error, code string) bool {
 	var pgErr *pgconn.PgError
 

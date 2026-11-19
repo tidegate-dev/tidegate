@@ -31,7 +31,7 @@ func (r *RoleReadWriter) Add(role *model.Role) {
 		switch {
 		case isUniqueViolationOf(err, "roles_project_id_name_key"):
 			return model.ErrRoleNameTaken
-		case isForeignKeyViolation(err):
+		case isForeignKeyViolationOf(err, "roles_project_id_fkey"):
 			return model.ErrProjectNotFound
 		case err != nil:
 			return fmt.Errorf("creating the role: %w", err)
