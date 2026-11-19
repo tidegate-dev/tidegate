@@ -8,6 +8,15 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Asset struct {
+	ID        pgtype.UUID
+	ProjectID pgtype.UUID
+	Name      string
+	Kind      string
+	Labels    []byte
+	Details   []byte
+}
+
 type Dummy struct {
 	ID   int64
 	Text string

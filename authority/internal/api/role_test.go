@@ -100,8 +100,8 @@ func TestRoleMessageGivesEachPermissionItsOwnField(t *testing.T) {
 	}
 }
 
-// refusedNames holds one name for each way of breaking the rule that role and
-// project names share.
+// refusedNames holds one name for each way of breaking the rule that project,
+// role and asset names share.
 func refusedNames() map[string]string {
 	return map[string]string{
 		"empty":              "",

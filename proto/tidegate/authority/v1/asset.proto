@@ -1,0 +1,143 @@
+syntax = "proto3";
+
+package tidegate.authority.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;authorityv1";
+
+// AssetService creates and lists assets. An asset is a target in one project
+// that tidegate gives access to, like an SSH host.
+service AssetService {
+  // CreateAsset creates an asset in a project and returns it. A project that
+  // doesn't exist fails with not_found. A name that another asset of the
+  // project has fails with already_exists.
+  rpc CreateAsset(CreateAssetRequest) returns (CreateAssetResponse);
+  // ListAssets returns every asset of a project. A project that doesn't
+  // exist fails with not_found.
+  rpc ListAssets(ListAssetsRequest) returns (ListAssetsResponse);
+}
+
+// Asset is an asset as the authority stores it.
+message Asset {
+  // ID identifies the asset. It is a UUID.
+  string id = 1;
+  // ProjectID identifies the project that the asset belongs to. It is a UUID.
+  string project_id = 2;
+  // Name is the asset's name.
+  string name = 3;
+  // Labels are the keys and values that a role selects the asset by.
+  map<string, string> labels = 4;
+  // Target says what kind of target the asset is and how to reach it.
+  oneof target {
+    // SSH is set for a host that tidegate reaches over SSH.
+    SSHTarget ssh = 5;
+  }
+}
+
+// SSHTarget is the address of an SSH host and the key that the host proves
+// its identity with.
+message SSHTarget {
+  // Host is the host's DNS name or IP address.
+  //
+  // Rules: A DNS name of at most 253 characters, or an IPv4 or IPv6 address
+  // without brackets and without a zone.
+  string host = 1 [(buf.validate.field).string = {
+    max_len: 253
+    address: true
+    not_contains: "%"
+  }];
+  // Port is the TCP port that the host's SSH server listens on.
+  //
+  // Rules: 1 to 65535.
+  uint32 port = 2 [(buf.validate.field).uint32 = {
+    gte: 1
+    lte: 65535
+  }];
+  // HostKey is the host's public key as the key type and the key in base64,
+  // like "ssh-ed25519 AAAAC3...".
+  //
+  // Rules: The key type, one space and the key in base64 with its padding.
+  // The key type is ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384,
+  // ecdsa-sha2-nistp521 or ssh-rsa. At most 8192 characters.
+  string host_key = 3 [(buf.validate.field).cel = {
+    id: "ssh_target.host_key"
+    message: "must be the key type ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521 or ssh-rsa, one space and the key in base64, and have at most 8192 characters"
+    expression: "this.size() <= 8192 && this.matches('^(ssh-ed25519|ecdsa-sha2-nistp(256|384|521)|ssh-rsa) ([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$')"
+  }];
+}
+
+// CreateAssetRequest is the input of AssetService.CreateAsset.
+message CreateAssetRequest {
+  // Project is the name of the project that gets the asset.
+  //
+  // Rules: Starts with a lowercase letter, goes on with lowercase letters,
+  // digits and dashes, and ends with a letter or digit. At most 63 characters.
+  string project = 1 [(buf.validate.field).cel = {
+    id: "asset.project"
+    message: "must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters"
+    expression: "this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')"
+  }];
+  // Name is the name of the new asset.
+  //
+  // Rules: Starts with a lowercase letter, goes on with lowercase letters,
+  // digits and dashes, and ends with a letter or digit. At most 63 characters.
+  string name = 2 [(buf.validate.field).cel = {
+    id: "asset.name"
+    message: "must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters"
+    expression: "this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')"
+  }];
+  // Labels are the labels of the new asset.
+  //
+  // Rules: At most 64 labels. A key is an optional DNS name and a slash,
+  // followed by a name. The DNS name has at most 253 characters, in lowercase
+  // parts of at most 63. A name has at most 63 letters, digits, dashes,
+  // underscores and dots, and starts and ends with a letter or digit. A value
+  // is empty or follows the rule for a name.
+  map<string, string> labels = 3 [(buf.validate.field).map = {
+    max_pairs: 64
+    keys: {
+      string: {pattern: "^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*/)?[A-Za-z0-9]([A-Za-z0-9_.-]{0,61}[A-Za-z0-9])?$"}
+      cel: {
+        id: "asset.labels.key_dns_name"
+        message: "the DNS name before the slash must have at most 253 characters"
+        expression: "!this.matches('^[^/]{254,}/')"
+      }
+    }
+    values: {
+      string: {pattern: "^([A-Za-z0-9]([A-Za-z0-9_.-]{0,61}[A-Za-z0-9])?)?$"}
+    }
+  }];
+  // Target says what kind of target the new asset is and how to reach it.
+  oneof target {
+    option (buf.validate.oneof).required = true;
+
+    // SSH makes the asset a host that tidegate reaches over SSH.
+    SSHTarget ssh = 4;
+  }
+}
+
+// CreateAssetResponse is the result of AssetService.CreateAsset.
+message CreateAssetResponse {
+  // Asset is the new asset.
+  Asset asset = 1;
+}
+
+// ListAssetsRequest is the input of AssetService.ListAssets.
+message ListAssetsRequest {
+  // Project is the name of the project whose assets are listed.
+  //
+  // Rules: Starts with a lowercase letter, goes on with lowercase letters,
+  // digits and dashes, and ends with a letter or digit. At most 63 characters.
+  string project = 1 [(buf.validate.field).cel = {
+    id: "asset.project"
+    message: "must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters"
+    expression: "this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')"
+  }];
+}
+
+// ListAssetsResponse is the result of AssetService.ListAssets.
+message ListAssetsResponse {
+  // Assets are all assets of the project.
+  repeated Asset assets = 1;
+}

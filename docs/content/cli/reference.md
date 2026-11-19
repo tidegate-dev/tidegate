@@ -19,6 +19,8 @@ Global flags work before or after the command. A command that fails prints `Erro
 | `tidegate project create <name>` | Creates a project and prints its name and ID |
 | `tidegate project list` | Prints the name and the ID of every project |
 | `tidegate role create --project <project> <name>` | Creates a role in the project and prints its name and ID |
+| `tidegate asset create ssh --project <project> --address <address> --host-key <key> <name>` | Adds an SSH host to the project as an asset and prints the asset's name and ID |
+| `tidegate asset list --project <project>` | Prints the name, the address, the labels and the ID of every asset of the project |
 | `tidegate ping` | Checks that the authority can be reached and prints `pong` |
 | `tidegate dummy write <text>` | Stores a text in the authority's database and prints its ID |
 | `tidegate dummy read <id>` | Prints the text with the ID |
@@ -30,11 +32,14 @@ Global flags work before or after the command. A command that fails prints `Erro
 | `--connection <name>`, `-c <name>` | All | The name of a saved connection. With `tidegate login <url>`, the name to save the connection under. |
 | `--output <format>`, `-o <format>` | All | `text`, `json` or `yaml`. The default is `text`. |
 | `--print-token` | `login <url>` | Writes the session token to stdout and saves no connection. Can't be combined with `--connection`. |
-| `--project <project>` | `role create` | The name of the project that gets the role. Required. |
+| `--project <project>` | `role create`, `asset create ssh`, `asset list` | The name of the project that gets the role or the asset, or whose assets are listed. Required. |
 | `--create-roles` | `role create` | The holders of the role may create roles in the project. |
 | `--escalate` | `role create` | The holders of the role may create roles with permissions that they don't have themselves. |
 | `--create-bindings` | `role create` | The holders of the role may create bindings in the project. |
 | `--bind` | `role create` | The holders of the role may bind roles with permissions that they don't have themselves. |
+| `--address <address>` | `asset create ssh` | The host's DNS name or IP address, as `host` or `host:port`. Without a port, it's 22. An IPv6 address with a port needs brackets, like `[2001:db8::7]:2222`. Required. |
+| `--host-key <key>` | `asset create ssh` | The host's public key, like the content of `/etc/ssh/ssh_host_ed25519_key.pub`. A comment after the key is dropped. Required. |
+| `--label <key>=<value>` | `asset create ssh` | A label that roles select the asset by, like `env=prod`. Can be given several times. |
 
 ## Environment variables
 
@@ -69,7 +74,7 @@ If several saved connections have this URL and no name is given, the command fai
 
 | Format | Result |
 |---|---|
-| `text` | The bare value, like `pong`. `connections list` and `project list` print a table. |
+| `text` | The bare value, like `pong`. `connections list`, `project list` and `asset list` print a table. |
 | `json` | An object with the result's fields, like `{"message": "pong"}` |
 | `yaml` | A mapping with the result's fields, like `message: pong` |
 
