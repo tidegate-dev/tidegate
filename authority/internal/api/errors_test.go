@@ -36,6 +36,8 @@ func TestClientErrorGivesEachErrorItsCode(t *testing.T) {
 		"not signed in":      {fmt.Errorf("%w: expired token", service.ErrNotSignedIn), connect.CodeUnauthenticated},
 		"busy":               {service.ErrBusy, connect.CodeUnavailable},
 		"project name taken": {model.ErrProjectNameTaken, connect.CodeAlreadyExists},
+		"project not found":  {fmt.Errorf("reading: %w", model.ErrProjectNotFound), connect.CodeNotFound},
+		"role name taken":    {model.ErrRoleNameTaken, connect.CodeAlreadyExists},
 		"canceled":           {context.Canceled, connect.CodeUnknown},
 		"anything else":      {errors.New("database down"), connect.CodeUnknown},
 	} {

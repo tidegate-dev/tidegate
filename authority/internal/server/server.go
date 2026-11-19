@@ -63,6 +63,7 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	logins := service.NewLogins(authenticator, sessions)
 	dummies := service.NewDummies(data.Dummies(), data)
 	projects := service.NewProjects(data.Projects(), data)
+	roles := service.NewRoles(data.Projects(), data)
 
 	notifier, err := systemd.Open()
 	if err != nil {
@@ -94,7 +95,7 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	defer stopReportingInternal()
 
 	err = serve(ctx, notifier, map[string]*http.Server{
-		"external-api": externalAPIServer(cfg.ExternalAPI.ListenAddress, externalCertificate, clk, dummies, logins, projects, sessions),
+		"external-api": externalAPIServer(cfg.ExternalAPI.ListenAddress, externalCertificate, clk, dummies, logins, projects, roles, sessions),
 		"internal-api": internalAPIServer(cfg.InternalAPI.ListenAddress, internalCertificate),
 		"metrics":      metricsServer(cfg.Metrics.ListenAddress, metricsHandler),
 	}, timeout)
