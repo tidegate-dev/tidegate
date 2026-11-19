@@ -276,7 +276,14 @@ func parseLabels(pairs []string) (map[string]string, error) {
 
 // sshd writes a comment like "root@bastion" after the key in its .pub files.
 func hostKeyWithoutComment(text string) (string, error) {
-	fields := strings.Fields(text)
+	lines := strings.FieldsFunc(text, func(character rune) bool { return character == '\n' || character == '\r' })
+	lines = slices.DeleteFunc(lines, func(line string) bool { return strings.TrimSpace(line) == "" })
+
+	if len(lines) > 1 {
+		return "", errors.New("want one host key, not several lines")
+	}
+
+	fields := strings.Fields(strings.Join(lines, ""))
 	if len(fields) < 2 {
 		return "", errors.New(`want a host key like "ssh-ed25519 AAAA..."`)
 	}

@@ -103,9 +103,11 @@ func TestHostKeyWithoutCommentKeepsTheTypeAndTheKey(t *testing.T) {
 	t.Parallel()
 
 	for description, text := range map[string]string{
-		"type and key":       "ssh-ed25519 AAAAC3Nz",
-		"with a comment":     "ssh-ed25519 AAAAC3Nz root@bastion",
-		"with a line ending": "ssh-ed25519 AAAAC3Nz root@bastion\n",
+		"type and key":               "ssh-ed25519 AAAAC3Nz",
+		"with a comment":             "ssh-ed25519 AAAAC3Nz root@bastion",
+		"with a line ending":         "ssh-ed25519 AAAAC3Nz root@bastion\n",
+		"with a Windows line ending": "ssh-ed25519 AAAAC3Nz root@bastion\r\n",
+		"after an empty line":        "\n  \nssh-ed25519 AAAAC3Nz\n",
 	} {
 		t.Run(description, func(t *testing.T) {
 			t.Parallel()
@@ -135,6 +137,26 @@ func TestHostKeyWithoutCommentRefusesATextWithoutATypeAndAKey(t *testing.T) {
 
 			// assert
 			assert.ErrorContains(t, err, "want a host key like")
+		})
+	}
+}
+
+func TestHostKeyWithoutCommentRefusesSeveralKeyLines(t *testing.T) {
+	t.Parallel()
+
+	for description, text := range map[string]string{
+		"two lines":                        "ssh-ed25519 AAAAC3Nz\nssh-rsa AAAAB3Nz\n",
+		"two lines with a carriage return": "ssh-ed25519 AAAAC3Nz\rssh-rsa AAAAB3Nz",
+		"a key and a word":                 "ssh-ed25519 AAAAC3Nz\nmore",
+	} {
+		t.Run(description, func(t *testing.T) {
+			t.Parallel()
+
+			// act
+			_, err := hostKeyWithoutComment(text)
+
+			// assert
+			assert.ErrorContains(t, err, "want one host key, not several lines")
 		})
 	}
 }
