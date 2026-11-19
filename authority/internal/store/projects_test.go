@@ -48,6 +48,24 @@ var _ = Describe("ProjectReadWriter", func() {
 		Expect(err).NotTo(MatchError(model.ErrProjectNameTaken))
 	})
 
+	It("returns the project with the name, ignoring letter case", func(ctx SpecContext) {
+		addProject(ctx, data, model.ProjectID{1}, "payments")
+		addProject(ctx, data, model.ProjectID{2}, "search")
+
+		project, err := data.Projects().ByName(ctx, "Payments")
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(project).To(Equal(&model.Project{ID: model.ProjectID{1}, Name: "payments"}))
+	})
+
+	It("returns ErrProjectNotFound for a name that no project has", func(ctx SpecContext) {
+		addProject(ctx, data, model.ProjectID{1}, "payments")
+
+		_, err := data.Projects().ByName(ctx, "search")
+
+		Expect(err).To(MatchError(model.ErrProjectNotFound))
+	})
+
 	It("returns the projects ordered by name, ignoring letter case", func(ctx SpecContext) {
 		addProject(ctx, data, model.ProjectID{1}, "search")
 		addProject(ctx, data, model.ProjectID{2}, "Payments")

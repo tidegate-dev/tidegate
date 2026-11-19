@@ -7,9 +7,13 @@ import (
 	"github.com/google/uuid"
 )
 
-// ErrProjectNameTaken means another project already has the name. Nothing was
-// written.
-var ErrProjectNameTaken = errors.New("the project name is taken")
+var (
+	// ErrProjectNotFound means no project has the given ID or name.
+	ErrProjectNotFound = errors.New("project not found")
+	// ErrProjectNameTaken means another project already has the name. Nothing
+	// was written.
+	ErrProjectNameTaken = errors.New("the project name is taken")
+)
 
 // ProjectID identifies a project.
 type ProjectID uuid.UUID
