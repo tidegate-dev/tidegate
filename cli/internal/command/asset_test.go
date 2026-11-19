@@ -1,0 +1,213 @@
+package command
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
+)
+
+func TestParseAddressReturnsTheHostAndThePort(t *testing.T) {
+	t.Parallel()
+
+	for address, want := range map[string]struct {
+		host string
+		port uint32
+	}{
+		"bastion.example":      {"bastion.example", 22},
+		"bastion.example:2222": {"bastion.example", 2222},
+		"192.0.2.7":            {"192.0.2.7", 22},
+		"192.0.2.7:65535":      {"192.0.2.7", 65535},
+		"2001:db8::7":          {"2001:db8::7", 22},
+		"[2001:db8::7]":        {"2001:db8::7", 22},
+		"[2001:db8::7]:2222":   {"2001:db8::7", 2222},
+	} {
+		t.Run(address, func(t *testing.T) {
+			t.Parallel()
+
+			// act
+			host, port, err := parseAddress(address)
+
+			// assert
+			require.NoError(t, err)
+			assert.Equal(t, want.host, host)
+			assert.Equal(t, want.port, port)
+		})
+	}
+}
+
+func TestParseAddressRefusesWhatIsNoHostWithAnOptionalPort(t *testing.T) {
+	t.Parallel()
+
+	for description, address := range map[string]string{
+		"empty":            "",
+		"only a port":      ":22",
+		"empty port":       "bastion.example:",
+		"port 0":           "bastion.example:0",
+		"port 65536":       "bastion.example:65536",
+		"port name":        "bastion.example:ssh",
+		"negative port":    "bastion.example:-1",
+		"two ports":        "bastion.example:22:22",
+		"empty brackets":   "[]:22",
+		"unclosed bracket": "[2001:db8::7:22",
+	} {
+		t.Run(description, func(t *testing.T) {
+			t.Parallel()
+
+			// act
+			_, _, err := parseAddress(address)
+
+			// assert
+			assert.ErrorContains(t, err, "want an address like host or host:port")
+		})
+	}
+}
+
+func TestParseLabelsReturnsEachKeyWithItsValue(t *testing.T) {
+	t.Parallel()
+
+	// act
+	labels, err := parseLabels([]string{"env=prod", "canary=", "example.com/team=payments"})
+
+	// assert
+	require.NoError(t, err)
+	assert.Equal(t, map[string]string{"env": "prod", "canary": "", "example.com/team": "payments"}, labels)
+}
+
+func TestParseLabelsRefusesWhatIsNoKeyWithAValue(t *testing.T) {
+	t.Parallel()
+
+	for description, test := range map[string]struct {
+		pairs   []string
+		message string
+	}{
+		"no equals sign": {[]string{"env"}, `label "env" must look like key=value`},
+		"empty key":      {[]string{"=prod"}, `label "=prod" must look like key=value`},
+		"key twice":      {[]string{"env=prod", "env=dev"}, `label "env" is given twice`},
+	} {
+		t.Run(description, func(t *testing.T) {
+			t.Parallel()
+
+			// act
+			_, err := parseLabels(test.pairs)
+
+			// assert
+			assert.EqualError(t, err, test.message)
+		})
+	}
+}
+
+func TestHostKeyWithoutCommentKeepsTheTypeAndTheKey(t *testing.T) {
+	t.Parallel()
+
+	for description, text := range map[string]string{
+		"type and key":       "ssh-ed25519 AAAAC3Nz",
+		"with a comment":     "ssh-ed25519 AAAAC3Nz root@bastion",
+		"with a line ending": "ssh-ed25519 AAAAC3Nz root@bastion\n",
+	} {
+		t.Run(description, func(t *testing.T) {
+			t.Parallel()
+
+			// act
+			hostKey, err := hostKeyWithoutComment(text)
+
+			// assert
+			require.NoError(t, err)
+			assert.Equal(t, "ssh-ed25519 AAAAC3Nz", hostKey)
+		})
+	}
+}
+
+func TestHostKeyWithoutCommentRefusesATextWithoutATypeAndAKey(t *testing.T) {
+	t.Parallel()
+
+	for description, text := range map[string]string{
+		"empty":    "",
+		"one word": "AAAAC3Nz",
+	} {
+		t.Run(description, func(t *testing.T) {
+			t.Parallel()
+
+			// act
+			_, err := hostKeyWithoutComment(text)
+
+			// assert
+			assert.ErrorContains(t, err, "want a host key like")
+		})
+	}
+}
+
+func TestAssetsResultTextShowsTheAddressAndTheLabelsInTheOrderOfTheirKeys(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	result := newAssetsResult([]*authorityv1.Asset{{
+		Id:     "1",
+		Name:   "bastion",
+		Labels: map[string]string{"team": "payments", "env": "prod"},
+		Target: &authorityv1.Asset_Ssh{Ssh: &authorityv1.SSHTarget{Host: "2001:db8::7", Port: 2222}},
+	}})
+
+	// act
+	text := result.String()
+
+	// assert
+	assert.Equal(t, "NAME     ADDRESS             LABELS                  ID\n"+
+		"bastion  [2001:db8::7]:2222  env=prod,team=payments  1", text)
+}
+
+func TestAssetsResultTextNamesTheCreateCommandWhenThereAreNoAssets(t *testing.T) {
+	t.Parallel()
+
+	// act
+	text := newAssetsResult(nil).String()
+
+	// assert
+	assert.Contains(t, text, "tidegate asset create ssh")
+}
+
+func TestAssetsResultTextQuotesWhatATerminalWouldInterpret(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	result := newAssetsResult([]*authorityv1.Asset{{
+		Id:     "1",
+		Name:   "a\x1b[2Jb",
+		Labels: map[string]string{"env": "c\x1b[2Jd"},
+		Target: &authorityv1.Asset_Ssh{Ssh: &authorityv1.SSHTarget{Host: "e\x1b[2Jf", Port: 22}},
+	}})
+
+	// act
+	text := result.String()
+
+	// assert
+	assert.NotContains(t, text, "\x1b")
+	assert.Contains(t, text, `"a\x1b[2Jb"`)
+}
+
+func TestNewAssetResultHasAnEmptySetOfLabelsForAnAssetWithoutLabels(t *testing.T) {
+	t.Parallel()
+
+	// act
+	result := newAssetResult(&authorityv1.Asset{Name: "bastion"})
+
+	// assert
+	assert.NotNil(t, result.Labels)
+	assert.Empty(t, result.Labels)
+	assert.Nil(t, result.SSH)
+}
+
+func TestAssetResultLabelsTextOrdersTheLabelsByKey(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	result := assetResult{Labels: map[string]string{"env2": "b", "env": "a"}}
+
+	// act
+	text := result.labelsText()
+
+	// assert
+	assert.Equal(t, "env=a,env2=b", text)
+}
