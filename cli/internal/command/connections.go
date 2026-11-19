@@ -3,10 +3,8 @@ package command
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/urfave/cli/v3"
 
@@ -58,18 +56,12 @@ func (result connectionsResult) String() string {
 		return "No saved connections. Run `tidegate login <url>` to save one."
 	}
 
-	var tableText strings.Builder
-
-	table := tabwriter.NewWriter(&tableText, 0, 0, 2, ' ', 0)
-	_, _ = fmt.Fprintln(table, "NAME\tSERVER\tTOKEN")
-
+	rows := make([][]string, 0, len(result.Connections))
 	for _, connection := range result.Connections {
-		_, _ = fmt.Fprintln(table, strings.Join(connection.tableRow(), "\t"))
+		rows = append(rows, connection.tableRow())
 	}
 
-	_ = table.Flush()
-
-	return strings.TrimSuffix(tableText.String(), "\n")
+	return tableText([]string{"NAME", "SERVER", "TOKEN"}, rows)
 }
 
 // quoteIfUnprintable returns text in quotes if a terminal would interpret a

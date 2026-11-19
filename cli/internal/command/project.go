@@ -3,9 +3,7 @@ package command
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
-	"text/tabwriter"
 
 	"connectrpc.com/connect"
 	"github.com/urfave/cli/v3"
@@ -49,18 +47,12 @@ func (result projectsResult) String() string {
 		return "No projects. Run `tidegate project create <name>` to create one."
 	}
 
-	var tableText strings.Builder
-
-	table := tabwriter.NewWriter(&tableText, 0, 0, 2, ' ', 0)
-	_, _ = fmt.Fprintln(table, "NAME\tID")
-
+	rows := make([][]string, 0, len(result.Projects))
 	for _, project := range result.Projects {
-		_, _ = fmt.Fprintln(table, strings.Join(project.tableRow(), "\t"))
+		rows = append(rows, project.tableRow())
 	}
 
-	_ = table.Flush()
-
-	return strings.TrimSuffix(tableText.String(), "\n")
+	return tableText([]string{"NAME", "ID"}, rows)
 }
 
 func projectCommand(store connections.Store) *cli.Command {
