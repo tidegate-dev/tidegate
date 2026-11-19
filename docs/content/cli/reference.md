@@ -18,6 +18,7 @@ Global flags work before or after the command. A command that fails prints `Erro
 | `tidegate connections remove <name>` | Revokes the session token and deletes the connection |
 | `tidegate project create <name>` | Creates a project and prints its name and ID |
 | `tidegate project list` | Prints the name and the ID of every project |
+| `tidegate role create --project <project> <name>` | Creates a role in the project and prints its name and ID |
 | `tidegate ping` | Checks that the authority can be reached and prints `pong` |
 | `tidegate dummy write <text>` | Stores a text in the authority's database and prints its ID |
 | `tidegate dummy read <id>` | Prints the text with the ID |
@@ -29,6 +30,11 @@ Global flags work before or after the command. A command that fails prints `Erro
 | `--connection <name>`, `-c <name>` | All | The name of a saved connection. With `tidegate login <url>`, the name to save the connection under. |
 | `--output <format>`, `-o <format>` | All | `text`, `json` or `yaml`. The default is `text`. |
 | `--print-token` | `login <url>` | Writes the session token to stdout and saves no connection. Can't be combined with `--connection`. |
+| `--project <project>` | `role create` | The name of the project that gets the role. Required. |
+| `--create-roles` | `role create` | The holders of the role may create roles in the project. |
+| `--escalate` | `role create` | The holders of the role may create roles with permissions that they don't have themselves. |
+| `--create-bindings` | `role create` | The holders of the role may create bindings in the project. |
+| `--bind` | `role create` | The holders of the role may bind roles with permissions that they don't have themselves. |
 
 ## Environment variables
 
