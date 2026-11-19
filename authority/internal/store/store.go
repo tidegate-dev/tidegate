@@ -39,6 +39,11 @@ func (s *Store) Projects() *ProjectReader {
 	return &ProjectReader{queries: sqlc.New(s.pool)}
 }
 
+// Assets returns the queries for the assets table.
+func (s *Store) Assets() *AssetReader {
+	return &AssetReader{queries: sqlc.New(s.pool)}
+}
+
 // NewUnit returns an empty unit of work.
 func (s *Store) NewUnit() model.Unit {
 	return &Unit{pool: s.pool}

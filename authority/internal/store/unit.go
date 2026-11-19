@@ -56,6 +56,11 @@ func (u *Unit) Roles() model.RoleReadWriter {
 	return &RoleReadWriter{unit: u}
 }
 
+// Assets returns the assets table for this unit. Its writes run at Commit.
+func (u *Unit) Assets() model.AssetReadWriter {
+	return &AssetReadWriter{unit: u}
+}
+
 // Commit runs the pending writes in the order they were added, in one
 // transaction. If one fails, none is kept. It returns
 // model.ErrChangedSinceRead if a row changed after it was read. If it fails,
