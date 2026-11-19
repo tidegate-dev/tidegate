@@ -1,11 +1,9 @@
 package api
 
 import (
-	"context"
 	"testing"
 
 	"connectrpc.com/connect"
-	"connectrpc.com/validate"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/model"
@@ -16,7 +14,7 @@ func TestCreateRoleRequestAcceptsNamesOfLowercaseLettersDigitsAndDashes(t *testi
 	t.Parallel()
 
 	// act
-	err := checkCreateRoleRequest(t, "team-1", "operator-2")
+	err := validationError(t, &authorityv1.CreateRoleRequest{Project: "team-1", Name: "operator-2"})
 
 	// assert
 	assert.NoError(t, err)
@@ -30,7 +28,7 @@ func TestCreateRoleRequestRefusesARoleNameOfAnotherForm(t *testing.T) {
 			t.Parallel()
 
 			// act
-			err := checkCreateRoleRequest(t, "payments", name)
+			err := validationError(t, &authorityv1.CreateRoleRequest{Project: "payments", Name: name})
 
 			// assert
 			assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
@@ -47,7 +45,7 @@ func TestCreateRoleRequestRefusesAProjectNameOfAnotherForm(t *testing.T) {
 			t.Parallel()
 
 			// act
-			err := checkCreateRoleRequest(t, project, "operator")
+			err := validationError(t, &authorityv1.CreateRoleRequest{Project: project, Name: "operator"})
 
 			// assert
 			assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
@@ -114,19 +112,4 @@ func refusedNames() map[string]string {
 		"space inside":       "operator 1",
 		"64 characters":      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 	}
-}
-
-// checkCreateRoleRequest returns what the interceptor that the server uses
-// answers to a CreateRoleRequest with the names.
-func checkCreateRoleRequest(t *testing.T, project string, name string) error {
-	t.Helper()
-
-	handled := func(context.Context, connect.AnyRequest) (connect.AnyResponse, error) {
-		return connect.NewResponse(&authorityv1.CreateRoleResponse{}), nil
-	}
-	request := connect.NewRequest(&authorityv1.CreateRoleRequest{Project: project, Name: name})
-
-	_, err := validate.NewInterceptor().WrapUnary(handled)(t.Context(), request)
-
-	return err
 }
