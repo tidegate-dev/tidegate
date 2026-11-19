@@ -40,6 +40,7 @@ func externalAPIServer(
 	logins *service.Logins,
 	projects *service.Projects,
 	roles *service.Roles,
+	assets *service.Assets,
 	sessions api.SessionLookup,
 ) *http.Server {
 	options := connect.WithInterceptors(interceptors(clk, sessions)...)
@@ -50,6 +51,7 @@ func externalAPIServer(
 	mux.Handle(api.NewLoginServiceHandler(logins, options))
 	mux.Handle(authorityv1connect.NewProjectServiceHandler(api.NewProjectService(projects), options))
 	mux.Handle(authorityv1connect.NewRoleServiceHandler(api.NewRoleService(roles), options))
+	mux.Handle(authorityv1connect.NewAssetServiceHandler(api.NewAssetService(assets), options))
 
 	var tlsConfig *tls.Config
 	if certificate != nil {
