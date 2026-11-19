@@ -51,6 +51,11 @@ func (u *Unit) Projects() model.ProjectReadWriter {
 	return &ProjectReadWriter{unit: u}
 }
 
+// Roles returns the roles table for this unit. Its writes run at Commit.
+func (u *Unit) Roles() model.RoleReadWriter {
+	return &RoleReadWriter{unit: u}
+}
+
 // Commit runs the pending writes in the order they were added, in one
 // transaction. If one fails, none is kept. It returns
 // model.ErrChangedSinceRead if a row changed after it was read. If it fails,
