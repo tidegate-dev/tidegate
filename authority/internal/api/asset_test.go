@@ -104,6 +104,18 @@ func TestCreateAssetRequestRefusesWhatBreaksARule(t *testing.T) {
 			func(request *authorityv1.CreateAssetRequest) { request.GetSsh().Host = "[2001:db8::7]" },
 			"ssh.host",
 		},
+		"host key with one base64 character": {
+			func(request *authorityv1.CreateAssetRequest) { request.GetSsh().HostKey = "ssh-ed25519 A" },
+			"ssh.host_key: must be the key type",
+		},
+		"host key with padding it doesn't need": {
+			func(request *authorityv1.CreateAssetRequest) { request.GetSsh().HostKey = "ssh-ed25519 AAAA==" },
+			"ssh.host_key: must be the key type",
+		},
+		"host key with padding in the middle": {
+			func(request *authorityv1.CreateAssetRequest) { request.GetSsh().HostKey = "ssh-ed25519 AA==AAAA" },
+			"ssh.host_key: must be the key type",
+		},
 		"host key marked as a certificate authority": {
 			func(request *authorityv1.CreateAssetRequest) { request.GetSsh().HostKey = "@cert-authority AAAA" },
 			"ssh.host_key: must be the key type",
@@ -346,13 +358,14 @@ func TestCreateAssetRequestAcceptsAHostKeyOfEachPlainKeyType(t *testing.T) {
 	t.Parallel()
 
 	for description, hostKey := range map[string]string{
-		"Ed25519":          "ssh-ed25519 AAAA",
-		"ECDSA with P-256": "ecdsa-sha2-nistp256 AAAA",
-		"ECDSA with P-384": "ecdsa-sha2-nistp384 AAAA",
-		"ECDSA with P-521": "ecdsa-sha2-nistp521 AAAA",
-		"RSA":              "ssh-rsa AAAA",
-		"with padding":     "ssh-ed25519 AAAA==",
-		"8192 characters":  "ssh-rsa " + strings.Repeat("A", 8184),
+		"Ed25519":                "ssh-ed25519 AAAA",
+		"ECDSA with P-256":       "ecdsa-sha2-nistp256 AAAA",
+		"ECDSA with P-384":       "ecdsa-sha2-nistp384 AAAA",
+		"ECDSA with P-521":       "ecdsa-sha2-nistp521 AAAA",
+		"RSA":                    "ssh-rsa AAAA",
+		"one padding character":  "ssh-ed25519 AAA=",
+		"two padding characters": "ssh-ed25519 AA==",
+		"8192 characters":        "ssh-rsa " + strings.Repeat("A", 8184),
 	} {
 		t.Run(description, func(t *testing.T) {
 			t.Parallel()

@@ -57,13 +57,13 @@ message SSHTarget {
   // HostKey is the host's public key as the key type and the key in base64,
   // like "ssh-ed25519 AAAAC3...".
   //
-  // Rules: The key type, one space and the key in base64. The key type is
-  // ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521
-  // or ssh-rsa. At most 8192 characters.
+  // Rules: The key type, one space and the key in base64 with its padding.
+  // The key type is ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384,
+  // ecdsa-sha2-nistp521 or ssh-rsa. At most 8192 characters.
   string host_key = 3 [(buf.validate.field).cel = {
     id: "ssh_target.host_key"
     message: "must be the key type ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521 or ssh-rsa, one space and the key in base64, and have at most 8192 characters"
-    expression: "this.size() <= 8192 && this.matches('^(ssh-ed25519|ecdsa-sha2-nistp(256|384|521)|ssh-rsa) [A-Za-z0-9+/]+={0,2}$')"
+    expression: "this.size() <= 8192 && this.matches('^(ssh-ed25519|ecdsa-sha2-nistp(256|384|521)|ssh-rsa) ([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$')"
   }];
 }
 

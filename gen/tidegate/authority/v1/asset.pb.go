@@ -144,9 +144,9 @@ type SSHTarget struct {
 	// HostKey is the host's public key as the key type and the key in base64,
 	// like "ssh-ed25519 AAAAC3...".
 	//
-	// Rules: The key type, one space and the key in base64. The key type is
-	// ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521
-	// or ssh-rsa. At most 8192 characters.
+	// Rules: The key type, one space and the key in base64 with its padding.
+	// The key type is ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384,
+	// ecdsa-sha2-nistp521 or ssh-rsa. At most 8192 characters.
 	HostKey       string `protobuf:"bytes,3,opt,name=host_key,json=hostKey,proto3" json:"host_key,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -468,13 +468,13 @@ const file_tidegate_authority_v1_asset_proto_rawDesc = "" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\b\n" +
-	"\x06target\"\xb0\x03\n" +
+	"\x06target\"\xe7\x03\n" +
 	"\tSSHTarget\x12#\n" +
 	"\x04host\x18\x01 \x01(\tB\x0f\xbaH\fr\n" +
 	"\x18\xfd\x01\xba\x01\x01%\xa8\x01\x01R\x04host\x12\x1f\n" +
-	"\x04port\x18\x02 \x01(\rB\v\xbaH\b*\x06\x18\xff\xff\x03(\x01R\x04port\x12\xdc\x02\n" +
-	"\bhost_key\x18\x03 \x01(\tB\xc0\x02\xbaH\xbc\x02\xba\x01\xb8\x02\n" +
-	"\x13ssh_target.host_key\x12\xad\x01must be the key type ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521 or ssh-rsa, one space and the key in base64, and have at most 8192 characters\x1aqthis.size() <= 8192 && this.matches('^(ssh-ed25519|ecdsa-sha2-nistp(256|384|521)|ssh-rsa) [A-Za-z0-9+/]+={0,2}$')R\ahostKey\"\x96\b\n" +
+	"\x04port\x18\x02 \x01(\rB\v\xbaH\b*\x06\x18\xff\xff\x03(\x01R\x04port\x12\x93\x03\n" +
+	"\bhost_key\x18\x03 \x01(\tB\xf7\x02\xbaH\xf3\x02\xba\x01\xef\x02\n" +
+	"\x13ssh_target.host_key\x12\xad\x01must be the key type ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521 or ssh-rsa, one space and the key in base64, and have at most 8192 characters\x1a\xa7\x01this.size() <= 8192 && this.matches('^(ssh-ed25519|ecdsa-sha2-nistp(256|384|521)|ssh-rsa) ([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$')R\ahostKey\"\x96\b\n" +
 	"\x12CreateAssetRequest\x12\xf7\x01\n" +
 	"\aproject\x18\x01 \x01(\tB\xdc\x01\xbaH\xd8\x01\xba\x01\xd4\x01\n" +
 	"\rasset.project\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\aproject\x12\xee\x01\n" +
