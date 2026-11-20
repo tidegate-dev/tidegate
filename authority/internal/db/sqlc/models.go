@@ -17,6 +17,13 @@ type Asset struct {
 	Details   []byte
 }
 
+type Binding struct {
+	ID        pgtype.UUID
+	ProjectID pgtype.UUID
+	RoleID    pgtype.UUID
+	UserID    pgtype.UUID
+}
+
 type Dummy struct {
 	ID   int64
 	Text string

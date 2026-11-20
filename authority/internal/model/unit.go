@@ -17,6 +17,8 @@ type Unit interface {
 	Roles() RoleReadWriter
 	// Assets returns the assets for this unit.
 	Assets() AssetReadWriter
+	// Bindings returns the bindings for this unit.
+	Bindings() BindingReadWriter
 	// Commit runs the pending writes in the order they were added. If one
 	// fails, none is kept. It returns ErrChangedSinceRead if a row changed
 	// after it was read. If it fails, the models it wrote may hold versions

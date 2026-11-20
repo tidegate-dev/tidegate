@@ -44,6 +44,11 @@ func (s *Store) Assets() *AssetReader {
 	return &AssetReader{queries: sqlc.New(s.pool)}
 }
 
+// Bindings returns the queries for the bindings table.
+func (s *Store) Bindings() *BindingReader {
+	return &BindingReader{queries: sqlc.New(s.pool)}
+}
+
 // NewUnit returns an empty unit of work.
 func (s *Store) NewUnit() model.Unit {
 	return &Unit{pool: s.pool}
