@@ -93,6 +93,21 @@ var _ = Describe("SessionReadWriter", func() {
 			Expect(count(ctx, pool, "sessions")).To(Equal(1))
 		})
 
+		It("doesn't call the token hash in use when another session has the ID", func(ctx SpecContext) {
+			existing := addSession(ctx, data, alice.ID, "token")
+
+			session := newSession(alice.ID, "other")
+			session.ID = existing.ID
+
+			unit := data.NewUnit()
+			unit.Sessions().Add(session)
+
+			err := unit.Commit(ctx)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err).NotTo(MatchError(ContainSubstring("token hash already in use")))
+		})
+
 		It("returns ErrUserNotFound for a user that is gone", func(ctx SpecContext) {
 			unit := data.NewUnit()
 			unit.Sessions().Add(newSession(newUser("bob").ID, "token"))

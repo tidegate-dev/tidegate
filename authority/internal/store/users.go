@@ -106,7 +106,7 @@ func (u *UserReadWriter) Update(user *model.User) {
 		})
 
 		switch {
-		case isUniqueViolation(err):
+		case isUniqueViolationOf(err, "users_name_key"):
 			return model.ErrUserNameTaken
 		case err != nil:
 			return fmt.Errorf("updating the user: %w", err)
