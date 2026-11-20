@@ -59,7 +59,7 @@ func (q *Queries) InsertBinding(ctx context.Context, arg InsertBindingParams) er
 }
 
 const listBindingsOfProject = `-- name: ListBindingsOfProject :many
-SELECT bindings.id, roles.name AS role_name, users.name AS user_name
+SELECT bindings.id, bindings.project_id, roles.name AS role_name, users.name AS user_name
 FROM bindings
 JOIN roles ON roles.id = bindings.role_id
 JOIN users ON users.id = bindings.user_id
@@ -68,9 +68,10 @@ ORDER BY lower(roles.name), lower(users.name), bindings.id
 `
 
 type ListBindingsOfProjectRow struct {
-	ID       pgtype.UUID
-	RoleName string
-	UserName string
+	ID        pgtype.UUID
+	ProjectID pgtype.UUID
+	RoleName  string
+	UserName  string
 }
 
 func (q *Queries) ListBindingsOfProject(ctx context.Context, projectID pgtype.UUID) ([]ListBindingsOfProjectRow, error) {
@@ -82,7 +83,12 @@ func (q *Queries) ListBindingsOfProject(ctx context.Context, projectID pgtype.UU
 	var items []ListBindingsOfProjectRow
 	for rows.Next() {
 		var i ListBindingsOfProjectRow
-		if err := rows.Scan(&i.ID, &i.RoleName, &i.UserName); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.ProjectID,
+			&i.RoleName,
+			&i.UserName,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

@@ -48,9 +48,10 @@ func (b *BindingReader) InProject(ctx context.Context, projectID model.ProjectID
 
 	for i, row := range rows {
 		bindings[i] = &model.BindingWithNames{
-			ID:       model.BindingID(row.ID.Bytes),
-			RoleName: row.RoleName,
-			UserName: row.UserName,
+			ID:        model.BindingID(row.ID.Bytes),
+			ProjectID: model.ProjectID(row.ProjectID.Bytes),
+			RoleName:  row.RoleName,
+			UserName:  row.UserName,
 		}
 	}
 

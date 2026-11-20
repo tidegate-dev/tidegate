@@ -12,6 +12,16 @@ that tidegate gives access to, like an SSH host.
 | `CreateAsset` | [tidegate.authority.v1.CreateAssetRequest](#tidegate.authority.v1.CreateAssetRequest) | [tidegate.authority.v1.CreateAssetResponse](#tidegate.authority.v1.CreateAssetResponse) | CreateAsset creates an asset in a project and returns it. A project that doesn't exist fails with not_found. A name that another asset of the project has fails with already_exists. |
 | `ListAssets` | [tidegate.authority.v1.ListAssetsRequest](#tidegate.authority.v1.ListAssetsRequest) | [tidegate.authority.v1.ListAssetsResponse](#tidegate.authority.v1.ListAssetsResponse) | ListAssets returns every asset of a project. A project that doesn't exist fails with not_found. |
 
+## tidegate.authority.v1.BindingService { #tidegate.authority.v1.BindingService }
+
+BindingService creates and lists bindings. A binding gives a role of one
+project to a user.
+
+| Method | Request | Response | Description |
+| ------ | ------- | -------- | ----------- |
+| `CreateBinding` | [tidegate.authority.v1.CreateBindingRequest](#tidegate.authority.v1.CreateBindingRequest) | [tidegate.authority.v1.CreateBindingResponse](#tidegate.authority.v1.CreateBindingResponse) | CreateBinding gives a role of a project to a user and returns the binding. A project, a role or a user that doesn't exist fails with not_found. |
+| `ListBindings` | [tidegate.authority.v1.ListBindingsRequest](#tidegate.authority.v1.ListBindingsRequest) | [tidegate.authority.v1.ListBindingsResponse](#tidegate.authority.v1.ListBindingsResponse) | ListBindings returns every binding of a project. A project that doesn't exist fails with not_found. |
+
 ## tidegate.authority.v1.DummyService { #tidegate.authority.v1.DummyService }
 
 DummyService stores and reads texts, to check the path from a client through
@@ -135,6 +145,52 @@ its identity with.
 | `host` | `string` | Host is the host's DNS name or IP address. | A DNS name of at most 253 characters, or an IPv4 or IPv6 address without brackets and without a zone. |
 | `port` | `uint32` | Port is the TCP port that the host's SSH server listens on. | 1 to 65535. |
 | `host_key` | `string` | HostKey is the host's public key as the key type and the key in base64, like "ssh-ed25519 AAAAC3...". | The key type, one space and the key in base64 with its padding. The key type is ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521 or ssh-rsa. At most 8192 characters. |
+
+### tidegate.authority.v1.Binding { #tidegate.authority.v1.Binding }
+
+Binding is a binding as the authority stores it, with the names of its role
+and its user.
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `id` | `string` | ID identifies the binding. It is a UUID. |  |
+| `project_id` | `string` | ProjectID identifies the project that the binding belongs to. It is a UUID. |  |
+| `role` | `string` | Role is the name of the role that the binding gives. |  |
+| `user` | `string` | User is the name of the user who gets the role. |  |
+
+### tidegate.authority.v1.CreateBindingRequest { #tidegate.authority.v1.CreateBindingRequest }
+
+CreateBindingRequest is the input of BindingService.CreateBinding.
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `project` | `string` | Project is the name of the project that gets the binding. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
+| `role` | `string` | Role is the name of the role of the project that the user gets. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
+| `user` | `string` | User is the name of the user who gets the role, in any letter case. | Not empty. |
+
+### tidegate.authority.v1.CreateBindingResponse { #tidegate.authority.v1.CreateBindingResponse }
+
+CreateBindingResponse is the result of BindingService.CreateBinding.
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `binding` | `tidegate.authority.v1.Binding` | Binding is the new binding. |  |
+
+### tidegate.authority.v1.ListBindingsRequest { #tidegate.authority.v1.ListBindingsRequest }
+
+ListBindingsRequest is the input of BindingService.ListBindings.
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `project` | `string` | Project is the name of the project whose bindings are listed. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
+
+### tidegate.authority.v1.ListBindingsResponse { #tidegate.authority.v1.ListBindingsResponse }
+
+ListBindingsResponse is the result of BindingService.ListBindings.
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `bindings` | `repeated tidegate.authority.v1.Binding` | Bindings are all bindings of the project, ordered by the role name and then the user name. |  |
 
 ### tidegate.authority.v1.ReadRequest { #tidegate.authority.v1.ReadRequest }
 

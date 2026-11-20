@@ -29,6 +29,8 @@ func clientError(err error) error {
 		return connect.NewError(connect.CodeNotFound, model.ErrProjectNotFound)
 	case errors.Is(err, model.ErrRoleNameTaken):
 		return connect.NewError(connect.CodeAlreadyExists, model.ErrRoleNameTaken)
+	case errors.Is(err, model.ErrRoleNotFound):
+		return connect.NewError(connect.CodeNotFound, model.ErrRoleNotFound)
 	case errors.Is(err, model.ErrAssetNameTaken):
 		return connect.NewError(connect.CodeAlreadyExists, model.ErrAssetNameTaken)
 	default:

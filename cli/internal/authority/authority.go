@@ -24,6 +24,7 @@ type Clients struct {
 	project authorityv1connect.ProjectServiceClient
 	role    authorityv1connect.RoleServiceClient
 	asset   authorityv1connect.AssetServiceClient
+	binding authorityv1connect.BindingServiceClient
 }
 
 const requestTimeout = 10 * time.Second
@@ -59,6 +60,7 @@ func Connect(server string, token secret.String) (*Clients, error) {
 		project: authorityv1connect.NewProjectServiceClient(httpClient, server, withToken),
 		role:    authorityv1connect.NewRoleServiceClient(httpClient, server, withToken),
 		asset:   authorityv1connect.NewAssetServiceClient(httpClient, server, withToken),
+		binding: authorityv1connect.NewBindingServiceClient(httpClient, server, withToken),
 	}, nil
 }
 
@@ -76,6 +78,9 @@ func (c *Clients) Role() authorityv1connect.RoleServiceClient { return c.role }
 
 // Asset returns the client for the AssetService.
 func (c *Clients) Asset() authorityv1connect.AssetServiceClient { return c.asset }
+
+// Binding returns the client for the BindingService.
+func (c *Clients) Binding() authorityv1connect.BindingServiceClient { return c.binding }
 
 // SignIn checks the user name and the password at the authority at server and
 // returns the token of a new session.

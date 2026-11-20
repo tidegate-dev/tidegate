@@ -6,7 +6,7 @@ VALUES (@id, @project_id, @role_id, @user_id);
 SELECT id, project_id, role_id, user_id FROM bindings WHERE id = @id;
 
 -- name: ListBindingsOfProject :many
-SELECT bindings.id, roles.name AS role_name, users.name AS user_name
+SELECT bindings.id, bindings.project_id, roles.name AS role_name, users.name AS user_name
 FROM bindings
 JOIN roles ON roles.id = bindings.role_id
 JOIN users ON users.id = bindings.user_id

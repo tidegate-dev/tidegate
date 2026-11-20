@@ -174,7 +174,7 @@ var _ = Describe("BindingReader", func() {
 			addBinding(ctx, data, model.BindingID{3}, model.ProjectID{1}, model.RoleID{2}, alice.ID)
 
 			Expect(data.Bindings().InProject(ctx, model.ProjectID{1})).To(Equal([]*model.BindingWithNames{
-				{ID: model.BindingID{3}, RoleName: "operator", UserName: "alice"},
+				{ID: model.BindingID{3}, ProjectID: model.ProjectID{1}, RoleName: "operator", UserName: "alice"},
 			}))
 		})
 
@@ -197,9 +197,9 @@ var _ = Describe("BindingReader", func() {
 			addBinding(ctx, data, model.BindingID{6}, model.ProjectID{1}, model.RoleID{3}, bob.ID)
 
 			Expect(data.Bindings().InProject(ctx, model.ProjectID{1})).To(Equal([]*model.BindingWithNames{
-				{ID: model.BindingID{6}, RoleName: "Auditor", UserName: "Bob"},
-				{ID: model.BindingID{5}, RoleName: "operator", UserName: "alice"},
-				{ID: model.BindingID{4}, RoleName: "operator", UserName: "Bob"},
+				{ID: model.BindingID{6}, ProjectID: model.ProjectID{1}, RoleName: "Auditor", UserName: "Bob"},
+				{ID: model.BindingID{5}, ProjectID: model.ProjectID{1}, RoleName: "operator", UserName: "alice"},
+				{ID: model.BindingID{4}, ProjectID: model.ProjectID{1}, RoleName: "operator", UserName: "Bob"},
 			}))
 		})
 	})
