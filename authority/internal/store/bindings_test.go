@@ -96,7 +96,7 @@ var _ = Describe("BindingReadWriter", func() {
 			Expect(unit.Commit(ctx)).To(MatchError(model.ErrUserNotFound))
 		})
 
-		It("returns ErrProjectNotFound at Commit for a project that doesn't exist", func(ctx SpecContext) {
+		It("returns ErrRoleNotFound at Commit for a project that doesn't exist", func(ctx SpecContext) {
 			unit := data.NewUnit()
 			unit.Bindings().Add(&model.Binding{
 				ID:        model.BindingID{3},
@@ -105,7 +105,7 @@ var _ = Describe("BindingReadWriter", func() {
 				UserID:    alice.ID,
 			})
 
-			Expect(unit.Commit(ctx)).To(MatchError(model.ErrProjectNotFound))
+			Expect(unit.Commit(ctx)).To(MatchError(model.ErrRoleNotFound))
 		})
 	})
 
