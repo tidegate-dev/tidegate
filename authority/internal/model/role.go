@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	// ErrRoleNotFound means the project has no role with the given ID.
+	// ErrRoleNotFound means the project has no role with the given ID or
+	// name.
 	ErrRoleNotFound = errors.New("role not found")
 	// ErrRoleNameTaken means another role of the project already has the
 	// name. Nothing was written.

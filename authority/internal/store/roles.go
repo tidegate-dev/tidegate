@@ -2,11 +2,47 @@ package store
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
+	"github.com/jackc/pgx/v5"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
 	"github.com/tidegate-dev/tidegate/authority/internal/model"
 )
+
+// RoleReader queries the roles table on the connection pool.
+type RoleReader struct {
+	queries *sqlc.Queries
+}
+
+// ByName returns the role of the project with the name, ignoring letter case,
+// or model.ErrRoleNotFound.
+func (r *RoleReader) ByName(ctx context.Context, projectID model.ProjectID, name string) (*model.Role, error) {
+	row, err := r.queries.GetRoleByName(ctx, sqlc.GetRoleByNameParams{
+		ProjectID: databaseID(projectID),
+		Name:      name,
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, model.ErrRoleNotFound
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("reading the role: %w", err)
+	}
+
+	return &model.Role{
+		ID:        model.RoleID(row.ID.Bytes),
+		ProjectID: model.ProjectID(row.ProjectID.Bytes),
+		Name:      row.Name,
+		Permissions: model.ProjectPermissions{
+			CreateRoles:    row.CreateRoles,
+			Escalate:       row.Escalate,
+			CreateBindings: row.CreateBindings,
+			Bind:           row.Bind,
+		},
+	}, nil
+}
 
 // RoleReadWriter belongs to a unit of work. It records writes, which the unit
 // runs at Commit.
