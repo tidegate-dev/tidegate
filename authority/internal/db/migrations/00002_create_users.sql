@@ -1,8 +1,8 @@
 -- +goose Up
 CREATE TABLE users (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    id uuid CONSTRAINT users_pkey PRIMARY KEY DEFAULT gen_random_uuid(),
     -- Compare names as lower(name), so lookups ignore case and use users_name_key.
-    name text NOT NULL CHECK (btrim(name) <> ''),
+    name text NOT NULL CONSTRAINT users_name_check CHECK (btrim(name) <> ''),
     password_hash text
 );
 
