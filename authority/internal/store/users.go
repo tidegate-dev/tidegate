@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
@@ -25,7 +26,8 @@ type UserReader struct {
 // model.ErrUserNotFound.
 func (u *UserReader) ByName(ctx context.Context, name string) (*model.User, error) {
 	row, err := u.queries.GetUserByName(ctx, name)
-	if errors.Is(err, pgx.ErrNoRows) {
+	// Postgres refuses text with NUL or invalid UTF-8 with this code.
+	if errors.Is(err, pgx.ErrNoRows) || hasCode(err, pgerrcode.CharacterNotInRepertoire) {
 		return nil, model.ErrUserNotFound
 	}
 

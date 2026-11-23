@@ -53,6 +53,14 @@ var _ = Describe("UserReader", func() {
 
 			Expect(err).To(MatchError(model.ErrUserNotFound))
 		})
+
+		It("returns ErrUserNotFound for a name with NUL", func(ctx SpecContext) {
+			addUser(ctx, data, "alice")
+
+			_, err := data.Users().ByName(ctx, "ali\x00ce")
+
+			Expect(err).To(MatchError(model.ErrUserNotFound))
+		})
 	})
 
 	Describe("Any", func() {

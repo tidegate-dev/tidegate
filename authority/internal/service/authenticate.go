@@ -67,7 +67,7 @@ func (a *Authenticator) Authenticate(ctx context.Context, name string, plaintext
 		return model.UserID{}, err
 	}
 
-	user, err := findUser(ctx, a.users, name)
+	user, err := a.users.ByName(ctx, name)
 
 	var (
 		hash    string
@@ -97,16 +97,6 @@ func (a *Authenticator) Authenticate(ctx context.Context, name string, plaintext
 	}
 
 	return user.ID, nil
-}
-
-// findUser returns model.ErrUserNotFound for a name that no user can have,
-// because Postgres refuses some of those names in a query.
-func findUser(ctx context.Context, users UserFinder, name string) (*model.User, error) {
-	if ValidateName(name) != nil {
-		return nil, model.ErrUserNotFound
-	}
-
-	return users.ByName(ctx, name)
 }
 
 func (a *Authenticator) verify(ctx context.Context, plaintext secret.String, hash string) (bool, error) {

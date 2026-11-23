@@ -64,7 +64,7 @@ func (b *Bindings) Create(
 		return nil, err
 	}
 
-	user, err := findUser(ctx, b.users, userName)
+	user, err := b.users.ByName(ctx, userName)
 	if err != nil {
 		return nil, err
 	}

@@ -62,21 +62,17 @@ var _ = Describe("Bindings", func() {
 			Expect(err).To(MatchError(model.ErrRoleNotFound))
 		})
 
-		DescribeTable("returns ErrUserNotFound",
-			func(ctx SpecContext, userName string) {
-				_, err := projects.Create(ctx, "payments")
-				Expect(err).NotTo(HaveOccurred())
-				_, err = roles.Create(ctx, "payments", "operator", model.ProjectPermissions{})
-				Expect(err).NotTo(HaveOccurred())
-				storetest.AddUser(ctx, units, "alice")
+		It("returns ErrUserNotFound for a user that doesn't exist", func(ctx SpecContext) {
+			_, err := projects.Create(ctx, "payments")
+			Expect(err).NotTo(HaveOccurred())
+			_, err = roles.Create(ctx, "payments", "operator", model.ProjectPermissions{})
+			Expect(err).NotTo(HaveOccurred())
+			storetest.AddUser(ctx, units, "alice")
 
-				_, err = bindings.Create(ctx, "payments", "operator", userName)
+			_, err = bindings.Create(ctx, "payments", "operator", "bob")
 
-				Expect(err).To(MatchError(model.ErrUserNotFound))
-			},
-			Entry("for a user that doesn't exist", "bob"),
-			Entry("for a name with NUL, which Postgres refuses in a query", "ali\x00ce"),
-		)
+			Expect(err).To(MatchError(model.ErrUserNotFound))
+		})
 	})
 
 	Describe("List", func() {
