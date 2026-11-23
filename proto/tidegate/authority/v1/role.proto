@@ -15,18 +15,6 @@ service RoleService {
   rpc CreateRole(CreateRoleRequest) returns (CreateRoleResponse);
 }
 
-// Role is a role as the authority stores it.
-message Role {
-  // ID identifies the role. It is a UUID.
-  string id = 1;
-  // ProjectID identifies the project that the role belongs to. It is a UUID.
-  string project_id = 2;
-  // Name is the role's name.
-  string name = 3;
-  // Permissions are the permissions that the role gives its holders.
-  ProjectPermissions permissions = 4;
-}
-
 // ProjectPermissions says what the holders of a role may do with the roles
 // and bindings of its project.
 message ProjectPermissions {
@@ -69,6 +57,13 @@ message CreateRoleRequest {
 
 // CreateRoleResponse is the result of RoleService.CreateRole.
 message CreateRoleResponse {
-  // Role is the new role.
-  Role role = 1;
+  // ID identifies the new role. It is a UUID.
+  string id = 1;
+  // ProjectID identifies the project that the new role belongs to. It is a
+  // UUID.
+  string project_id = 2;
+  // Name is the new role's name.
+  string name = 3;
+  // Permissions are the permissions that the new role gives its holders.
+  ProjectPermissions permissions = 4;
 }

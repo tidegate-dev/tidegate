@@ -18,20 +18,6 @@ service BindingService {
   rpc ListBindings(ListBindingsRequest) returns (ListBindingsResponse);
 }
 
-// Binding is a binding as the authority stores it, with the names of its role
-// and its user.
-message Binding {
-  // ID identifies the binding. It is a UUID.
-  string id = 1;
-  // ProjectID identifies the project that the binding belongs to. It is a
-  // UUID.
-  string project_id = 2;
-  // Role is the name of the role that the binding gives.
-  string role = 3;
-  // User is the name of the user who gets the role.
-  string user = 4;
-}
-
 // CreateBindingRequest is the input of BindingService.CreateBinding.
 message CreateBindingRequest {
   // Project is the name of the project that gets the binding.
@@ -60,8 +46,16 @@ message CreateBindingRequest {
 
 // CreateBindingResponse is the result of BindingService.CreateBinding.
 message CreateBindingResponse {
-  // Binding is the new binding.
-  Binding binding = 1;
+  // ID identifies the new binding. It is a UUID.
+  string id = 1;
+  // ProjectID identifies the project that the new binding belongs to. It is
+  // a UUID.
+  string project_id = 2;
+  // Role is the name of the role that the new binding gives.
+  string role = 3;
+  // User is the name of the user who gets the role, as the authority stores
+  // it.
+  string user = 4;
 }
 
 // ListBindingsRequest is the input of BindingService.ListBindings.
@@ -79,6 +73,19 @@ message ListBindingsRequest {
 
 // ListBindingsResponse is the result of BindingService.ListBindings.
 message ListBindingsResponse {
+  // Binding is one binding in the list.
+  message Binding {
+    // ID identifies the binding. It is a UUID.
+    string id = 1;
+    // ProjectID identifies the project that the binding belongs to. It is a
+    // UUID.
+    string project_id = 2;
+    // Role is the name of the role that the binding gives.
+    string role = 3;
+    // User is the name of the user who has the role.
+    string user = 4;
+  }
+
   // Bindings are all bindings of the project, ordered by the role name and
   // then the user name.
   repeated Binding bindings = 1;

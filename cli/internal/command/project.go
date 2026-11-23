@@ -17,8 +17,8 @@ type projectResult struct {
 	Name string `json:"name" yaml:"name"`
 }
 
-func newProjectResult(project *authorityv1.Project) projectResult {
-	return projectResult{ID: project.GetId(), Name: project.GetName()}
+func newProjectResult(response *authorityv1.CreateProjectResponse) projectResult {
+	return projectResult{ID: response.GetId(), Name: response.GetName()}
 }
 
 func (result projectResult) String() string {
@@ -33,10 +33,10 @@ type projectsResult struct {
 	Projects []projectResult `json:"projects" yaml:"projects"`
 }
 
-func newProjectsResult(projects []*authorityv1.Project) projectsResult {
+func newProjectsResult(projects []*authorityv1.ListProjectsResponse_Project) projectsResult {
 	result := projectsResult{Projects: make([]projectResult, 0, len(projects))}
 	for _, project := range projects {
-		result.Projects = append(result.Projects, newProjectResult(project))
+		result.Projects = append(result.Projects, projectResult{ID: project.GetId(), Name: project.GetName()})
 	}
 
 	return result
@@ -96,7 +96,7 @@ func projectCreate(ctx context.Context, cmd *cli.Command, store connections.Stor
 		return callFailed("creating the project", connection, err)
 	}
 
-	return printResult(cmd, newProjectResult(response.Msg.GetProject()))
+	return printResult(cmd, newProjectResult(response.Msg))
 }
 
 func projectList(ctx context.Context, cmd *cli.Command, store connections.Store) error {

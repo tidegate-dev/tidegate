@@ -18,23 +18,6 @@ service AssetService {
   rpc ListAssets(ListAssetsRequest) returns (ListAssetsResponse);
 }
 
-// Asset is an asset as the authority stores it.
-message Asset {
-  // ID identifies the asset. It is a UUID.
-  string id = 1;
-  // ProjectID identifies the project that the asset belongs to. It is a UUID.
-  string project_id = 2;
-  // Name is the asset's name.
-  string name = 3;
-  // Labels are the keys and values that a role selects the asset by.
-  map<string, string> labels = 4;
-  // Target says what kind of target the asset is and how to reach it.
-  oneof target {
-    // SSH is set for a host that tidegate reaches over SSH.
-    SSHTarget ssh = 5;
-  }
-}
-
 // SSHTarget is the address of an SSH host and the key that the host proves
 // its identity with.
 message SSHTarget {
@@ -119,8 +102,20 @@ message CreateAssetRequest {
 
 // CreateAssetResponse is the result of AssetService.CreateAsset.
 message CreateAssetResponse {
-  // Asset is the new asset.
-  Asset asset = 1;
+  // ID identifies the new asset. It is a UUID.
+  string id = 1;
+  // ProjectID identifies the project that the new asset belongs to. It is a
+  // UUID.
+  string project_id = 2;
+  // Name is the new asset's name.
+  string name = 3;
+  // Labels are the keys and values that a role selects the new asset by.
+  map<string, string> labels = 4;
+  // Target says what kind of target the new asset is and how to reach it.
+  oneof target {
+    // SSH is set for a host that tidegate reaches over SSH.
+    SSHTarget ssh = 5;
+  }
 }
 
 // ListAssetsRequest is the input of AssetService.ListAssets.
@@ -138,6 +133,24 @@ message ListAssetsRequest {
 
 // ListAssetsResponse is the result of AssetService.ListAssets.
 message ListAssetsResponse {
+  // Asset is one asset in the list.
+  message Asset {
+    // ID identifies the asset. It is a UUID.
+    string id = 1;
+    // ProjectID identifies the project that the asset belongs to. It is a
+    // UUID.
+    string project_id = 2;
+    // Name is the asset's name.
+    string name = 3;
+    // Labels are the keys and values that a role selects the asset by.
+    map<string, string> labels = 4;
+    // Target says what kind of target the asset is and how to reach it.
+    oneof target {
+      // SSH is set for a host that tidegate reaches over SSH.
+      SSHTarget ssh = 5;
+    }
+  }
+
   // Assets are all assets of the project.
   repeated Asset assets = 1;
 }

@@ -35,9 +35,9 @@ Authorization: Bearer {{token}}
 {"name": "api-tests"}
 HTTP 200
 [Captures]
-project_id: jsonpath "$.project.id"
+project_id: jsonpath "$.id"
 [Asserts]
-jsonpath "$.project.name" == "api-tests"
+jsonpath "$.name" == "api-tests"
 
 POST {{authority}}/tidegate.authority.v1.ProjectService/CreateProject
 Content-Type: application/json

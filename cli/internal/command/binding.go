@@ -19,12 +19,12 @@ type bindingResult struct {
 	User      string `json:"user"      yaml:"user"`
 }
 
-func newBindingResult(binding *authorityv1.Binding) bindingResult {
+func newBindingResult(response *authorityv1.CreateBindingResponse) bindingResult {
 	return bindingResult{
-		ID:        binding.GetId(),
-		ProjectID: binding.GetProjectId(),
-		Role:      binding.GetRole(),
-		User:      binding.GetUser(),
+		ID:        response.GetId(),
+		ProjectID: response.GetProjectId(),
+		Role:      response.GetRole(),
+		User:      response.GetUser(),
 	}
 }
 
@@ -44,10 +44,15 @@ type bindingsResult struct {
 	Bindings []bindingResult `json:"bindings" yaml:"bindings"`
 }
 
-func newBindingsResult(bindings []*authorityv1.Binding) bindingsResult {
+func newBindingsResult(bindings []*authorityv1.ListBindingsResponse_Binding) bindingsResult {
 	result := bindingsResult{Bindings: make([]bindingResult, 0, len(bindings))}
 	for _, binding := range bindings {
-		result.Bindings = append(result.Bindings, newBindingResult(binding))
+		result.Bindings = append(result.Bindings, bindingResult{
+			ID:        binding.GetId(),
+			ProjectID: binding.GetProjectId(),
+			Role:      binding.GetRole(),
+			User:      binding.GetUser(),
+		})
 	}
 
 	return result
@@ -140,7 +145,7 @@ func bindingCreate(ctx context.Context, cmd *cli.Command, store connections.Stor
 		return callFailed("creating the binding", connection, err)
 	}
 
-	return printResult(cmd, newBindingResult(response.Msg.GetBinding()))
+	return printResult(cmd, newBindingResult(response.Msg))
 }
 
 func bindingList(ctx context.Context, cmd *cli.Command, store connections.Store) error {

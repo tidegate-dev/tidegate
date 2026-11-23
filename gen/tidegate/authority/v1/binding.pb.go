@@ -22,81 +22,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Binding is a binding as the authority stores it, with the names of its role
-// and its user.
-type Binding struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// ID identifies the binding. It is a UUID.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// ProjectID identifies the project that the binding belongs to. It is a
-	// UUID.
-	ProjectId string `protobuf:"bytes,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
-	// Role is the name of the role that the binding gives.
-	Role string `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"`
-	// User is the name of the user who gets the role.
-	User          string `protobuf:"bytes,4,opt,name=user,proto3" json:"user,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Binding) Reset() {
-	*x = Binding{}
-	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Binding) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Binding) ProtoMessage() {}
-
-func (x *Binding) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Binding.ProtoReflect.Descriptor instead.
-func (*Binding) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_binding_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *Binding) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *Binding) GetProjectId() string {
-	if x != nil {
-		return x.ProjectId
-	}
-	return ""
-}
-
-func (x *Binding) GetRole() string {
-	if x != nil {
-		return x.Role
-	}
-	return ""
-}
-
-func (x *Binding) GetUser() string {
-	if x != nil {
-		return x.User
-	}
-	return ""
-}
-
 // CreateBindingRequest is the input of BindingService.CreateBinding.
 type CreateBindingRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -120,7 +45,7 @@ type CreateBindingRequest struct {
 
 func (x *CreateBindingRequest) Reset() {
 	*x = CreateBindingRequest{}
-	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[1]
+	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -132,7 +57,7 @@ func (x *CreateBindingRequest) String() string {
 func (*CreateBindingRequest) ProtoMessage() {}
 
 func (x *CreateBindingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[1]
+	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -145,7 +70,7 @@ func (x *CreateBindingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateBindingRequest.ProtoReflect.Descriptor instead.
 func (*CreateBindingRequest) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_binding_proto_rawDescGZIP(), []int{1}
+	return file_tidegate_authority_v1_binding_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *CreateBindingRequest) GetProject() string {
@@ -172,15 +97,23 @@ func (x *CreateBindingRequest) GetUser() string {
 // CreateBindingResponse is the result of BindingService.CreateBinding.
 type CreateBindingResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Binding is the new binding.
-	Binding       *Binding `protobuf:"bytes,1,opt,name=binding,proto3" json:"binding,omitempty"`
+	// ID identifies the new binding. It is a UUID.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// ProjectID identifies the project that the new binding belongs to. It is
+	// a UUID.
+	ProjectId string `protobuf:"bytes,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	// Role is the name of the role that the new binding gives.
+	Role string `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"`
+	// User is the name of the user who gets the role, as the authority stores
+	// it.
+	User          string `protobuf:"bytes,4,opt,name=user,proto3" json:"user,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateBindingResponse) Reset() {
 	*x = CreateBindingResponse{}
-	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[2]
+	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -192,7 +125,7 @@ func (x *CreateBindingResponse) String() string {
 func (*CreateBindingResponse) ProtoMessage() {}
 
 func (x *CreateBindingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[2]
+	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -205,14 +138,35 @@ func (x *CreateBindingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateBindingResponse.ProtoReflect.Descriptor instead.
 func (*CreateBindingResponse) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_binding_proto_rawDescGZIP(), []int{2}
+	return file_tidegate_authority_v1_binding_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *CreateBindingResponse) GetBinding() *Binding {
+func (x *CreateBindingResponse) GetId() string {
 	if x != nil {
-		return x.Binding
+		return x.Id
 	}
-	return nil
+	return ""
+}
+
+func (x *CreateBindingResponse) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *CreateBindingResponse) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+func (x *CreateBindingResponse) GetUser() string {
+	if x != nil {
+		return x.User
+	}
+	return ""
 }
 
 // ListBindingsRequest is the input of BindingService.ListBindings.
@@ -229,7 +183,7 @@ type ListBindingsRequest struct {
 
 func (x *ListBindingsRequest) Reset() {
 	*x = ListBindingsRequest{}
-	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[3]
+	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -241,7 +195,7 @@ func (x *ListBindingsRequest) String() string {
 func (*ListBindingsRequest) ProtoMessage() {}
 
 func (x *ListBindingsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[3]
+	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -254,7 +208,7 @@ func (x *ListBindingsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBindingsRequest.ProtoReflect.Descriptor instead.
 func (*ListBindingsRequest) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_binding_proto_rawDescGZIP(), []int{3}
+	return file_tidegate_authority_v1_binding_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ListBindingsRequest) GetProject() string {
@@ -269,14 +223,14 @@ type ListBindingsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Bindings are all bindings of the project, ordered by the role name and
 	// then the user name.
-	Bindings      []*Binding `protobuf:"bytes,1,rep,name=bindings,proto3" json:"bindings,omitempty"`
+	Bindings      []*ListBindingsResponse_Binding `protobuf:"bytes,1,rep,name=bindings,proto3" json:"bindings,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListBindingsResponse) Reset() {
 	*x = ListBindingsResponse{}
-	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[4]
+	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -288,7 +242,7 @@ func (x *ListBindingsResponse) String() string {
 func (*ListBindingsResponse) ProtoMessage() {}
 
 func (x *ListBindingsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[4]
+	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -301,40 +255,118 @@ func (x *ListBindingsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBindingsResponse.ProtoReflect.Descriptor instead.
 func (*ListBindingsResponse) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_binding_proto_rawDescGZIP(), []int{4}
+	return file_tidegate_authority_v1_binding_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ListBindingsResponse) GetBindings() []*Binding {
+func (x *ListBindingsResponse) GetBindings() []*ListBindingsResponse_Binding {
 	if x != nil {
 		return x.Bindings
 	}
 	return nil
 }
 
+// Binding is one binding in the list.
+type ListBindingsResponse_Binding struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID identifies the binding. It is a UUID.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// ProjectID identifies the project that the binding belongs to. It is a
+	// UUID.
+	ProjectId string `protobuf:"bytes,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	// Role is the name of the role that the binding gives.
+	Role string `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"`
+	// User is the name of the user who has the role.
+	User          string `protobuf:"bytes,4,opt,name=user,proto3" json:"user,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListBindingsResponse_Binding) Reset() {
+	*x = ListBindingsResponse_Binding{}
+	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListBindingsResponse_Binding) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListBindingsResponse_Binding) ProtoMessage() {}
+
+func (x *ListBindingsResponse_Binding) ProtoReflect() protoreflect.Message {
+	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListBindingsResponse_Binding.ProtoReflect.Descriptor instead.
+func (*ListBindingsResponse_Binding) Descriptor() ([]byte, []int) {
+	return file_tidegate_authority_v1_binding_proto_rawDescGZIP(), []int{3, 0}
+}
+
+func (x *ListBindingsResponse_Binding) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ListBindingsResponse_Binding) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *ListBindingsResponse_Binding) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
+func (x *ListBindingsResponse_Binding) GetUser() string {
+	if x != nil {
+		return x.User
+	}
+	return ""
+}
+
 var File_tidegate_authority_v1_binding_proto protoreflect.FileDescriptor
 
 const file_tidegate_authority_v1_binding_proto_rawDesc = "" +
 	"\n" +
-	"#tidegate/authority/v1/binding.proto\x12\x15tidegate.authority.v1\x1a\x1bbuf/validate/validate.proto\"`\n" +
-	"\aBinding\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
-	"\n" +
-	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x12\n" +
-	"\x04role\x18\x03 \x01(\tR\x04role\x12\x12\n" +
-	"\x04user\x18\x04 \x01(\tR\x04user\"\xa2\x04\n" +
+	"#tidegate/authority/v1/binding.proto\x12\x15tidegate.authority.v1\x1a\x1bbuf/validate/validate.proto\"\xa2\x04\n" +
 	"\x14CreateBindingRequest\x12\xf9\x01\n" +
 	"\aproject\x18\x01 \x01(\tB\xde\x01\xbaH\xda\x01\xba\x01\xd6\x01\n" +
 	"\x0fbinding.project\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\aproject\x12\xf0\x01\n" +
 	"\x04role\x18\x02 \x01(\tB\xdb\x01\xbaH\xd7\x01\xba\x01\xd3\x01\n" +
 	"\fbinding.role\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\x04role\x12\x1b\n" +
-	"\x04user\x18\x03 \x01(\tB\a\xbaH\x04r\x02\x10\x01R\x04user\"Q\n" +
-	"\x15CreateBindingResponse\x128\n" +
-	"\abinding\x18\x01 \x01(\v2\x1e.tidegate.authority.v1.BindingR\abinding\"\x91\x02\n" +
+	"\x04user\x18\x03 \x01(\tB\a\xbaH\x04r\x02\x10\x01R\x04user\"n\n" +
+	"\x15CreateBindingResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x12\n" +
+	"\x04role\x18\x03 \x01(\tR\x04role\x12\x12\n" +
+	"\x04user\x18\x04 \x01(\tR\x04user\"\x91\x02\n" +
 	"\x13ListBindingsRequest\x12\xf9\x01\n" +
 	"\aproject\x18\x01 \x01(\tB\xde\x01\xbaH\xda\x01\xba\x01\xd6\x01\n" +
-	"\x0fbinding.project\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\aproject\"R\n" +
-	"\x14ListBindingsResponse\x12:\n" +
-	"\bbindings\x18\x01 \x03(\v2\x1e.tidegate.authority.v1.BindingR\bbindings2\xe5\x01\n" +
+	"\x0fbinding.project\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\aproject\"\xc9\x01\n" +
+	"\x14ListBindingsResponse\x12O\n" +
+	"\bbindings\x18\x01 \x03(\v23.tidegate.authority.v1.ListBindingsResponse.BindingR\bbindings\x1a`\n" +
+	"\aBinding\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x12\n" +
+	"\x04role\x18\x03 \x01(\tR\x04role\x12\x12\n" +
+	"\x04user\x18\x04 \x01(\tR\x04user2\xe5\x01\n" +
 	"\x0eBindingService\x12j\n" +
 	"\rCreateBinding\x12+.tidegate.authority.v1.CreateBindingRequest\x1a,.tidegate.authority.v1.CreateBindingResponse\x12g\n" +
 	"\fListBindings\x12*.tidegate.authority.v1.ListBindingsRequest\x1a+.tidegate.authority.v1.ListBindingsResponseBHZFgithub.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;authorityv1b\x06proto3"
@@ -353,24 +385,23 @@ func file_tidegate_authority_v1_binding_proto_rawDescGZIP() []byte {
 
 var file_tidegate_authority_v1_binding_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_tidegate_authority_v1_binding_proto_goTypes = []any{
-	(*Binding)(nil),               // 0: tidegate.authority.v1.Binding
-	(*CreateBindingRequest)(nil),  // 1: tidegate.authority.v1.CreateBindingRequest
-	(*CreateBindingResponse)(nil), // 2: tidegate.authority.v1.CreateBindingResponse
-	(*ListBindingsRequest)(nil),   // 3: tidegate.authority.v1.ListBindingsRequest
-	(*ListBindingsResponse)(nil),  // 4: tidegate.authority.v1.ListBindingsResponse
+	(*CreateBindingRequest)(nil),         // 0: tidegate.authority.v1.CreateBindingRequest
+	(*CreateBindingResponse)(nil),        // 1: tidegate.authority.v1.CreateBindingResponse
+	(*ListBindingsRequest)(nil),          // 2: tidegate.authority.v1.ListBindingsRequest
+	(*ListBindingsResponse)(nil),         // 3: tidegate.authority.v1.ListBindingsResponse
+	(*ListBindingsResponse_Binding)(nil), // 4: tidegate.authority.v1.ListBindingsResponse.Binding
 }
 var file_tidegate_authority_v1_binding_proto_depIdxs = []int32{
-	0, // 0: tidegate.authority.v1.CreateBindingResponse.binding:type_name -> tidegate.authority.v1.Binding
-	0, // 1: tidegate.authority.v1.ListBindingsResponse.bindings:type_name -> tidegate.authority.v1.Binding
-	1, // 2: tidegate.authority.v1.BindingService.CreateBinding:input_type -> tidegate.authority.v1.CreateBindingRequest
-	3, // 3: tidegate.authority.v1.BindingService.ListBindings:input_type -> tidegate.authority.v1.ListBindingsRequest
-	2, // 4: tidegate.authority.v1.BindingService.CreateBinding:output_type -> tidegate.authority.v1.CreateBindingResponse
-	4, // 5: tidegate.authority.v1.BindingService.ListBindings:output_type -> tidegate.authority.v1.ListBindingsResponse
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	4, // 0: tidegate.authority.v1.ListBindingsResponse.bindings:type_name -> tidegate.authority.v1.ListBindingsResponse.Binding
+	0, // 1: tidegate.authority.v1.BindingService.CreateBinding:input_type -> tidegate.authority.v1.CreateBindingRequest
+	2, // 2: tidegate.authority.v1.BindingService.ListBindings:input_type -> tidegate.authority.v1.ListBindingsRequest
+	1, // 3: tidegate.authority.v1.BindingService.CreateBinding:output_type -> tidegate.authority.v1.CreateBindingResponse
+	3, // 4: tidegate.authority.v1.BindingService.ListBindings:output_type -> tidegate.authority.v1.ListBindingsResponse
+	3, // [3:5] is the sub-list for method output_type
+	1, // [1:3] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_tidegate_authority_v1_binding_proto_init() }

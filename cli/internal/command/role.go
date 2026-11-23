@@ -25,16 +25,16 @@ type roleResult struct {
 	Permissions permissionsResult `json:"permissions" yaml:"permissions"`
 }
 
-func newRoleResult(role *authorityv1.Role) roleResult {
+func newRoleResult(response *authorityv1.CreateRoleResponse) roleResult {
 	return roleResult{
-		ID:        role.GetId(),
-		ProjectID: role.GetProjectId(),
-		Name:      role.GetName(),
+		ID:        response.GetId(),
+		ProjectID: response.GetProjectId(),
+		Name:      response.GetName(),
 		Permissions: permissionsResult{
-			CreateRoles:    role.GetPermissions().GetCreateRoles(),
-			Escalate:       role.GetPermissions().GetEscalate(),
-			CreateBindings: role.GetPermissions().GetCreateBindings(),
-			Bind:           role.GetPermissions().GetBind(),
+			CreateRoles:    response.GetPermissions().GetCreateRoles(),
+			Escalate:       response.GetPermissions().GetEscalate(),
+			CreateBindings: response.GetPermissions().GetCreateBindings(),
+			Bind:           response.GetPermissions().GetBind(),
 		},
 	}
 }
@@ -110,5 +110,5 @@ func roleCreate(ctx context.Context, cmd *cli.Command, store connections.Store) 
 		return callFailed("creating the role", connection, err)
 	}
 
-	return printResult(cmd, newRoleResult(response.Msg.GetRole()))
+	return printResult(cmd, newRoleResult(response.Msg))
 }

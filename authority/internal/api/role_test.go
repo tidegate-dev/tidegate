@@ -79,7 +79,7 @@ func TestPermissionsTakesEachPermissionFromItsOwnField(t *testing.T) {
 	}
 }
 
-func TestRoleMessageGivesEachPermissionItsOwnField(t *testing.T) {
+func TestCreateRoleResponseGivesEachPermissionItsOwnField(t *testing.T) {
 	t.Parallel()
 
 	for description, granted := range map[string]model.ProjectPermissions{
@@ -92,10 +92,10 @@ func TestRoleMessageGivesEachPermissionItsOwnField(t *testing.T) {
 			t.Parallel()
 
 			// act
-			message := roleMessage(&model.Role{Permissions: granted})
+			response := createRoleResponse(&model.Role{Permissions: granted})
 
 			// assert
-			assert.Equal(t, granted, permissions(message.GetPermissions()))
+			assert.Equal(t, granted, permissions(response.GetPermissions()))
 		})
 	}
 }

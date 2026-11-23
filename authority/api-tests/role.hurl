@@ -28,7 +28,7 @@ Authorization: Bearer {{token}}
 {"name": "api-tests-roles"}
 HTTP 200
 [Captures]
-project_id: jsonpath "$.project.id"
+project_id: jsonpath "$.id"
 
 POST {{authority}}/tidegate.authority.v1.RoleService/CreateRole
 Content-Type: application/json
@@ -45,13 +45,13 @@ Authorization: Bearer {{token}}
 {"project": "api-tests-roles", "name": "operator", "permissions": {"createRoles": true, "bind": true}}
 HTTP 200
 [Asserts]
-jsonpath "$.role.id" matches "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-jsonpath "$.role.projectId" == "{{project_id}}"
-jsonpath "$.role.name" == "operator"
-jsonpath "$.role.permissions.createRoles" == true
-jsonpath "$.role.permissions.bind" == true
-jsonpath "$.role.permissions.escalate" not exists
-jsonpath "$.role.permissions.createBindings" not exists
+jsonpath "$.id" matches "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+jsonpath "$.projectId" == "{{project_id}}"
+jsonpath "$.name" == "operator"
+jsonpath "$.permissions.createRoles" == true
+jsonpath "$.permissions.bind" == true
+jsonpath "$.permissions.escalate" not exists
+jsonpath "$.permissions.createBindings" not exists
 
 POST {{authority}}/tidegate.authority.v1.RoleService/CreateRole
 Content-Type: application/json

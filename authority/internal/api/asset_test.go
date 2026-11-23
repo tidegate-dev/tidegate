@@ -290,7 +290,7 @@ func TestListAssetsRequestRefusesAProjectNameOfAnotherForm(t *testing.T) {
 	assert.ErrorContains(t, err, "project: must start with a lowercase letter")
 }
 
-func TestAssetMessageHoldsTheAssetWithItsSSHTarget(t *testing.T) {
+func TestCreateAssetResponseHoldsTheAssetWithItsSSHTarget(t *testing.T) {
 	t.Parallel()
 
 	// arrange
@@ -304,7 +304,44 @@ func TestAssetMessageHoldsTheAssetWithItsSSHTarget(t *testing.T) {
 	}
 
 	// act
-	message, err := assetMessage(asset)
+	response, err := createAssetResponse(asset)
+
+	// assert
+	require.NoError(t, err)
+	assert.Equal(t, asset.ID.String(), response.GetId())
+	assert.Equal(t, asset.ProjectID.String(), response.GetProjectId())
+	assert.Equal(t, "bastion", response.GetName())
+	assert.Equal(t, map[string]string{"env": "prod"}, response.GetLabels())
+	assert.Equal(t, "bastion.example", response.GetSsh().GetHost())
+	assert.Equal(t, uint32(2222), response.GetSsh().GetPort())
+	assert.Equal(t, "ssh-ed25519 AAAA", response.GetSsh().GetHostKey())
+}
+
+func TestCreateAssetResponseFailsForAnAssetWithoutATarget(t *testing.T) {
+	t.Parallel()
+
+	// act
+	_, err := createAssetResponse(&model.Asset{Name: "bastion"})
+
+	// assert
+	assert.ErrorContains(t, err, "has no target")
+}
+
+func TestListedAssetHoldsTheAssetWithItsSSHTarget(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	asset := &model.Asset{
+		ID:        model.AssetID{1},
+		ProjectID: model.ProjectID{2},
+		Name:      "bastion",
+		Kind:      model.AssetKindSSH,
+		Labels:    map[string]string{"env": "prod"},
+		SSH:       &model.SSHTarget{Host: "bastion.example", Port: 2222, HostKey: "ssh-ed25519 AAAA"},
+	}
+
+	// act
+	message, err := listedAsset(asset)
 
 	// assert
 	require.NoError(t, err)
@@ -317,11 +354,11 @@ func TestAssetMessageHoldsTheAssetWithItsSSHTarget(t *testing.T) {
 	assert.Equal(t, "ssh-ed25519 AAAA", message.GetSsh().GetHostKey())
 }
 
-func TestAssetMessageFailsForAnAssetWithoutATarget(t *testing.T) {
+func TestListedAssetFailsForAnAssetWithoutATarget(t *testing.T) {
 	t.Parallel()
 
 	// act
-	_, err := assetMessage(&model.Asset{Name: "bastion"})
+	_, err := listedAsset(&model.Asset{Name: "bastion"})
 
 	// assert
 	assert.ErrorContains(t, err, "has no target")

@@ -5,7 +5,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 )
@@ -30,7 +29,7 @@ func (s *ProjectService) CreateProject(
 		return nil, clientError(err)
 	}
 
-	return connect.NewResponse(&authorityv1.CreateProjectResponse{Project: projectMessage(project)}), nil
+	return connect.NewResponse(&authorityv1.CreateProjectResponse{Id: project.ID.String(), Name: project.Name}), nil
 }
 
 // ListProjects returns every project.
@@ -43,14 +42,10 @@ func (s *ProjectService) ListProjects(
 		return nil, err
 	}
 
-	messages := make([]*authorityv1.Project, len(projects))
+	messages := make([]*authorityv1.ListProjectsResponse_Project, len(projects))
 	for i, project := range projects {
-		messages[i] = projectMessage(project)
+		messages[i] = &authorityv1.ListProjectsResponse_Project{Id: project.ID.String(), Name: project.Name}
 	}
 
 	return connect.NewResponse(&authorityv1.ListProjectsResponse{Projects: messages}), nil
-}
-
-func projectMessage(project *model.Project) *authorityv1.Project {
-	return &authorityv1.Project{Id: project.ID.String(), Name: project.Name}
 }

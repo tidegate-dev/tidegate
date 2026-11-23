@@ -45,7 +45,7 @@ Authorization: Bearer {{token}}
 {"name": "api-tests-bindings"}
 HTTP 200
 [Captures]
-project_id: jsonpath "$.project.id"
+project_id: jsonpath "$.id"
 
 POST {{authority}}/tidegate.authority.v1.BindingService/CreateBinding
 Content-Type: application/json
@@ -86,12 +86,12 @@ Authorization: Bearer {{token}}
 {"project": "api-tests-bindings", "role": "operator", "user": "{{user}}"}
 HTTP 200
 [Captures]
-binding_id: jsonpath "$.binding.id"
+binding_id: jsonpath "$.id"
 [Asserts]
-jsonpath "$.binding.id" matches "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-jsonpath "$.binding.projectId" == "{{project_id}}"
-jsonpath "$.binding.role" == "operator"
-jsonpath "$.binding.user" == "{{user}}"
+jsonpath "$.id" matches "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+jsonpath "$.projectId" == "{{project_id}}"
+jsonpath "$.role" == "operator"
+jsonpath "$.user" == "{{user}}"
 
 POST {{authority}}/tidegate.authority.v1.BindingService/CreateBinding
 Content-Type: application/json

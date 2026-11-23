@@ -37,19 +37,24 @@ type assetResult struct {
 	SSH       *sshTargetResult  `json:"ssh,omitempty" yaml:"ssh,omitempty"`
 }
 
-func newAssetResult(asset *authorityv1.Asset) assetResult {
+func newSSHTargetResult(target *authorityv1.SSHTarget) *sshTargetResult {
+	if target == nil {
+		return nil
+	}
+
+	return &sshTargetResult{Host: target.GetHost(), Port: target.GetPort(), HostKey: target.GetHostKey()}
+}
+
+func newAssetResult(response *authorityv1.CreateAssetResponse) assetResult {
 	result := assetResult{
-		ID:        asset.GetId(),
-		ProjectID: asset.GetProjectId(),
-		Name:      asset.GetName(),
+		ID:        response.GetId(),
+		ProjectID: response.GetProjectId(),
+		Name:      response.GetName(),
 		Labels:    map[string]string{},
+		SSH:       newSSHTargetResult(response.GetSsh()),
 	}
 
-	maps.Copy(result.Labels, asset.GetLabels())
-
-	if target := asset.GetSsh(); target != nil {
-		result.SSH = &sshTargetResult{Host: target.GetHost(), Port: target.GetPort(), HostKey: target.GetHostKey()}
-	}
+	maps.Copy(result.Labels, response.GetLabels())
 
 	return result
 }
@@ -88,10 +93,21 @@ type assetsResult struct {
 	Assets []assetResult `json:"assets" yaml:"assets"`
 }
 
-func newAssetsResult(assets []*authorityv1.Asset) assetsResult {
+func newAssetsResult(assets []*authorityv1.ListAssetsResponse_Asset) assetsResult {
 	result := assetsResult{Assets: make([]assetResult, 0, len(assets))}
+
 	for _, asset := range assets {
-		result.Assets = append(result.Assets, newAssetResult(asset))
+		listed := assetResult{
+			ID:        asset.GetId(),
+			ProjectID: asset.GetProjectId(),
+			Name:      asset.GetName(),
+			Labels:    map[string]string{},
+			SSH:       newSSHTargetResult(asset.GetSsh()),
+		}
+
+		maps.Copy(listed.Labels, asset.GetLabels())
+
+		result.Assets = append(result.Assets, listed)
 	}
 
 	return result
@@ -205,7 +221,7 @@ func assetCreateSSH(ctx context.Context, cmd *cli.Command, store connections.Sto
 		return callFailed("creating the asset", connection, err)
 	}
 
-	return printResult(cmd, newAssetResult(response.Msg.GetAsset()))
+	return printResult(cmd, newAssetResult(response.Msg))
 }
 
 func assetList(ctx context.Context, cmd *cli.Command, store connections.Store) error {

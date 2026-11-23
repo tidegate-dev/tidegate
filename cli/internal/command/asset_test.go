@@ -165,11 +165,11 @@ func TestAssetsResultTextShowsTheAddressAndTheLabelsInTheOrderOfTheirKeys(t *tes
 	t.Parallel()
 
 	// arrange
-	result := newAssetsResult([]*authorityv1.Asset{{
+	result := newAssetsResult([]*authorityv1.ListAssetsResponse_Asset{{
 		Id:     "1",
 		Name:   "bastion",
 		Labels: map[string]string{"team": "payments", "env": "prod"},
-		Target: &authorityv1.Asset_Ssh{Ssh: &authorityv1.SSHTarget{Host: "2001:db8::7", Port: 2222}},
+		Target: &authorityv1.ListAssetsResponse_Asset_Ssh{Ssh: &authorityv1.SSHTarget{Host: "2001:db8::7", Port: 2222}},
 	}})
 
 	// act
@@ -194,11 +194,11 @@ func TestAssetsResultTextQuotesWhatATerminalWouldInterpret(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	result := newAssetsResult([]*authorityv1.Asset{{
+	result := newAssetsResult([]*authorityv1.ListAssetsResponse_Asset{{
 		Id:     "1",
 		Name:   "a\x1b[2Jb",
 		Labels: map[string]string{"env": "c\x1b[2Jd"},
-		Target: &authorityv1.Asset_Ssh{Ssh: &authorityv1.SSHTarget{Host: "e\x1b[2Jf", Port: 22}},
+		Target: &authorityv1.ListAssetsResponse_Asset_Ssh{Ssh: &authorityv1.SSHTarget{Host: "e\x1b[2Jf", Port: 22}},
 	}})
 
 	// act
@@ -213,7 +213,7 @@ func TestNewAssetResultHasAnEmptySetOfLabelsForAnAssetWithoutLabels(t *testing.T
 	t.Parallel()
 
 	// act
-	result := newAssetResult(&authorityv1.Asset{Name: "bastion"})
+	result := newAssetResult(&authorityv1.CreateAssetResponse{Name: "bastion"})
 
 	// assert
 	assert.NotNil(t, result.Labels)

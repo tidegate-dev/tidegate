@@ -22,112 +22,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Asset is an asset as the authority stores it.
-type Asset struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// ID identifies the asset. It is a UUID.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// ProjectID identifies the project that the asset belongs to. It is a UUID.
-	ProjectId string `protobuf:"bytes,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
-	// Name is the asset's name.
-	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	// Labels are the keys and values that a role selects the asset by.
-	Labels map[string]string `protobuf:"bytes,4,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// Target says what kind of target the asset is and how to reach it.
-	//
-	// Types that are valid to be assigned to Target:
-	//
-	//	*Asset_Ssh
-	Target        isAsset_Target `protobuf_oneof:"target"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Asset) Reset() {
-	*x = Asset{}
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Asset) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Asset) ProtoMessage() {}
-
-func (x *Asset) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Asset.ProtoReflect.Descriptor instead.
-func (*Asset) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *Asset) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *Asset) GetProjectId() string {
-	if x != nil {
-		return x.ProjectId
-	}
-	return ""
-}
-
-func (x *Asset) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *Asset) GetLabels() map[string]string {
-	if x != nil {
-		return x.Labels
-	}
-	return nil
-}
-
-func (x *Asset) GetTarget() isAsset_Target {
-	if x != nil {
-		return x.Target
-	}
-	return nil
-}
-
-func (x *Asset) GetSsh() *SSHTarget {
-	if x != nil {
-		if x, ok := x.Target.(*Asset_Ssh); ok {
-			return x.Ssh
-		}
-	}
-	return nil
-}
-
-type isAsset_Target interface {
-	isAsset_Target()
-}
-
-type Asset_Ssh struct {
-	// SSH is set for a host that tidegate reaches over SSH.
-	Ssh *SSHTarget `protobuf:"bytes,5,opt,name=ssh,proto3,oneof"`
-}
-
-func (*Asset_Ssh) isAsset_Target() {}
-
 // SSHTarget is the address of an SSH host and the key that the host proves
 // its identity with.
 type SSHTarget struct {
@@ -154,7 +48,7 @@ type SSHTarget struct {
 
 func (x *SSHTarget) Reset() {
 	*x = SSHTarget{}
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[1]
+	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -166,7 +60,7 @@ func (x *SSHTarget) String() string {
 func (*SSHTarget) ProtoMessage() {}
 
 func (x *SSHTarget) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[1]
+	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -179,7 +73,7 @@ func (x *SSHTarget) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SSHTarget.ProtoReflect.Descriptor instead.
 func (*SSHTarget) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{1}
+	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *SSHTarget) GetHost() string {
@@ -236,7 +130,7 @@ type CreateAssetRequest struct {
 
 func (x *CreateAssetRequest) Reset() {
 	*x = CreateAssetRequest{}
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[2]
+	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -248,7 +142,7 @@ func (x *CreateAssetRequest) String() string {
 func (*CreateAssetRequest) ProtoMessage() {}
 
 func (x *CreateAssetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[2]
+	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -261,7 +155,7 @@ func (x *CreateAssetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateAssetRequest.ProtoReflect.Descriptor instead.
 func (*CreateAssetRequest) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{2}
+	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *CreateAssetRequest) GetProject() string {
@@ -315,15 +209,28 @@ func (*CreateAssetRequest_Ssh) isCreateAssetRequest_Target() {}
 // CreateAssetResponse is the result of AssetService.CreateAsset.
 type CreateAssetResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Asset is the new asset.
-	Asset         *Asset `protobuf:"bytes,1,opt,name=asset,proto3" json:"asset,omitempty"`
+	// ID identifies the new asset. It is a UUID.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// ProjectID identifies the project that the new asset belongs to. It is a
+	// UUID.
+	ProjectId string `protobuf:"bytes,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	// Name is the new asset's name.
+	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	// Labels are the keys and values that a role selects the new asset by.
+	Labels map[string]string `protobuf:"bytes,4,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Target says what kind of target the new asset is and how to reach it.
+	//
+	// Types that are valid to be assigned to Target:
+	//
+	//	*CreateAssetResponse_Ssh
+	Target        isCreateAssetResponse_Target `protobuf_oneof:"target"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateAssetResponse) Reset() {
 	*x = CreateAssetResponse{}
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[3]
+	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -335,7 +242,7 @@ func (x *CreateAssetResponse) String() string {
 func (*CreateAssetResponse) ProtoMessage() {}
 
 func (x *CreateAssetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[3]
+	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -348,15 +255,63 @@ func (x *CreateAssetResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateAssetResponse.ProtoReflect.Descriptor instead.
 func (*CreateAssetResponse) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{3}
+	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *CreateAssetResponse) GetAsset() *Asset {
+func (x *CreateAssetResponse) GetId() string {
 	if x != nil {
-		return x.Asset
+		return x.Id
+	}
+	return ""
+}
+
+func (x *CreateAssetResponse) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *CreateAssetResponse) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateAssetResponse) GetLabels() map[string]string {
+	if x != nil {
+		return x.Labels
 	}
 	return nil
 }
+
+func (x *CreateAssetResponse) GetTarget() isCreateAssetResponse_Target {
+	if x != nil {
+		return x.Target
+	}
+	return nil
+}
+
+func (x *CreateAssetResponse) GetSsh() *SSHTarget {
+	if x != nil {
+		if x, ok := x.Target.(*CreateAssetResponse_Ssh); ok {
+			return x.Ssh
+		}
+	}
+	return nil
+}
+
+type isCreateAssetResponse_Target interface {
+	isCreateAssetResponse_Target()
+}
+
+type CreateAssetResponse_Ssh struct {
+	// SSH is set for a host that tidegate reaches over SSH.
+	Ssh *SSHTarget `protobuf:"bytes,5,opt,name=ssh,proto3,oneof"`
+}
+
+func (*CreateAssetResponse_Ssh) isCreateAssetResponse_Target() {}
 
 // ListAssetsRequest is the input of AssetService.ListAssets.
 type ListAssetsRequest struct {
@@ -372,7 +327,7 @@ type ListAssetsRequest struct {
 
 func (x *ListAssetsRequest) Reset() {
 	*x = ListAssetsRequest{}
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[4]
+	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -384,7 +339,7 @@ func (x *ListAssetsRequest) String() string {
 func (*ListAssetsRequest) ProtoMessage() {}
 
 func (x *ListAssetsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[4]
+	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -397,7 +352,7 @@ func (x *ListAssetsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAssetsRequest.ProtoReflect.Descriptor instead.
 func (*ListAssetsRequest) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{4}
+	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ListAssetsRequest) GetProject() string {
@@ -411,14 +366,14 @@ func (x *ListAssetsRequest) GetProject() string {
 type ListAssetsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Assets are all assets of the project.
-	Assets        []*Asset `protobuf:"bytes,1,rep,name=assets,proto3" json:"assets,omitempty"`
+	Assets        []*ListAssetsResponse_Asset `protobuf:"bytes,1,rep,name=assets,proto3" json:"assets,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListAssetsResponse) Reset() {
 	*x = ListAssetsResponse{}
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[5]
+	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -430,7 +385,7 @@ func (x *ListAssetsResponse) String() string {
 func (*ListAssetsResponse) ProtoMessage() {}
 
 func (x *ListAssetsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[5]
+	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -443,32 +398,128 @@ func (x *ListAssetsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAssetsResponse.ProtoReflect.Descriptor instead.
 func (*ListAssetsResponse) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{5}
+	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *ListAssetsResponse) GetAssets() []*Asset {
+func (x *ListAssetsResponse) GetAssets() []*ListAssetsResponse_Asset {
 	if x != nil {
 		return x.Assets
 	}
 	return nil
 }
 
+// Asset is one asset in the list.
+type ListAssetsResponse_Asset struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID identifies the asset. It is a UUID.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// ProjectID identifies the project that the asset belongs to. It is a
+	// UUID.
+	ProjectId string `protobuf:"bytes,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	// Name is the asset's name.
+	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	// Labels are the keys and values that a role selects the asset by.
+	Labels map[string]string `protobuf:"bytes,4,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Target says what kind of target the asset is and how to reach it.
+	//
+	// Types that are valid to be assigned to Target:
+	//
+	//	*ListAssetsResponse_Asset_Ssh
+	Target        isListAssetsResponse_Asset_Target `protobuf_oneof:"target"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListAssetsResponse_Asset) Reset() {
+	*x = ListAssetsResponse_Asset{}
+	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListAssetsResponse_Asset) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListAssetsResponse_Asset) ProtoMessage() {}
+
+func (x *ListAssetsResponse_Asset) ProtoReflect() protoreflect.Message {
+	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListAssetsResponse_Asset.ProtoReflect.Descriptor instead.
+func (*ListAssetsResponse_Asset) Descriptor() ([]byte, []int) {
+	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{4, 0}
+}
+
+func (x *ListAssetsResponse_Asset) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ListAssetsResponse_Asset) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *ListAssetsResponse_Asset) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ListAssetsResponse_Asset) GetLabels() map[string]string {
+	if x != nil {
+		return x.Labels
+	}
+	return nil
+}
+
+func (x *ListAssetsResponse_Asset) GetTarget() isListAssetsResponse_Asset_Target {
+	if x != nil {
+		return x.Target
+	}
+	return nil
+}
+
+func (x *ListAssetsResponse_Asset) GetSsh() *SSHTarget {
+	if x != nil {
+		if x, ok := x.Target.(*ListAssetsResponse_Asset_Ssh); ok {
+			return x.Ssh
+		}
+	}
+	return nil
+}
+
+type isListAssetsResponse_Asset_Target interface {
+	isListAssetsResponse_Asset_Target()
+}
+
+type ListAssetsResponse_Asset_Ssh struct {
+	// SSH is set for a host that tidegate reaches over SSH.
+	Ssh *SSHTarget `protobuf:"bytes,5,opt,name=ssh,proto3,oneof"`
+}
+
+func (*ListAssetsResponse_Asset_Ssh) isListAssetsResponse_Asset_Target() {}
+
 var File_tidegate_authority_v1_asset_proto protoreflect.FileDescriptor
 
 const file_tidegate_authority_v1_asset_proto_rawDesc = "" +
 	"\n" +
-	"!tidegate/authority/v1/asset.proto\x12\x15tidegate.authority.v1\x1a\x1bbuf/validate/validate.proto\"\x87\x02\n" +
-	"\x05Asset\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
-	"\n" +
-	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name\x12@\n" +
-	"\x06labels\x18\x04 \x03(\v2(.tidegate.authority.v1.Asset.LabelsEntryR\x06labels\x124\n" +
-	"\x03ssh\x18\x05 \x01(\v2 .tidegate.authority.v1.SSHTargetH\x00R\x03ssh\x1a9\n" +
-	"\vLabelsEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\b\n" +
-	"\x06target\"\xe7\x03\n" +
+	"!tidegate/authority/v1/asset.proto\x12\x15tidegate.authority.v1\x1a\x1bbuf/validate/validate.proto\"\xe7\x03\n" +
 	"\tSSHTarget\x12#\n" +
 	"\x04host\x18\x01 \x01(\tB\x0f\xbaH\fr\n" +
 	"\x18\xfd\x01\xba\x01\x01%\xa8\x01\x01R\x04host\x12\x1f\n" +
@@ -487,14 +538,34 @@ const file_tidegate_authority_v1_asset_proto_rawDesc = "" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x0f\n" +
-	"\x06target\x12\x05\xbaH\x02\b\x01\"I\n" +
-	"\x13CreateAssetResponse\x122\n" +
-	"\x05asset\x18\x01 \x01(\v2\x1c.tidegate.authority.v1.AssetR\x05asset\"\x8d\x02\n" +
+	"\x06target\x12\x05\xbaH\x02\b\x01\"\xa3\x02\n" +
+	"\x13CreateAssetResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12N\n" +
+	"\x06labels\x18\x04 \x03(\v26.tidegate.authority.v1.CreateAssetResponse.LabelsEntryR\x06labels\x124\n" +
+	"\x03ssh\x18\x05 \x01(\v2 .tidegate.authority.v1.SSHTargetH\x00R\x03ssh\x1a9\n" +
+	"\vLabelsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\b\n" +
+	"\x06target\"\x8d\x02\n" +
 	"\x11ListAssetsRequest\x12\xf7\x01\n" +
 	"\aproject\x18\x01 \x01(\tB\xdc\x01\xbaH\xd8\x01\xba\x01\xd4\x01\n" +
-	"\rasset.project\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\aproject\"J\n" +
-	"\x12ListAssetsResponse\x124\n" +
-	"\x06assets\x18\x01 \x03(\v2\x1c.tidegate.authority.v1.AssetR\x06assets2\xd7\x01\n" +
+	"\rasset.project\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\aproject\"\xfa\x02\n" +
+	"\x12ListAssetsResponse\x12G\n" +
+	"\x06assets\x18\x01 \x03(\v2/.tidegate.authority.v1.ListAssetsResponse.AssetR\x06assets\x1a\x9a\x02\n" +
+	"\x05Asset\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12S\n" +
+	"\x06labels\x18\x04 \x03(\v2;.tidegate.authority.v1.ListAssetsResponse.Asset.LabelsEntryR\x06labels\x124\n" +
+	"\x03ssh\x18\x05 \x01(\v2 .tidegate.authority.v1.SSHTargetH\x00R\x03ssh\x1a9\n" +
+	"\vLabelsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\b\n" +
+	"\x06target2\xd7\x01\n" +
 	"\fAssetService\x12d\n" +
 	"\vCreateAsset\x12).tidegate.authority.v1.CreateAssetRequest\x1a*.tidegate.authority.v1.CreateAssetResponse\x12a\n" +
 	"\n" +
@@ -512,33 +583,35 @@ func file_tidegate_authority_v1_asset_proto_rawDescGZIP() []byte {
 	return file_tidegate_authority_v1_asset_proto_rawDescData
 }
 
-var file_tidegate_authority_v1_asset_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_tidegate_authority_v1_asset_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_tidegate_authority_v1_asset_proto_goTypes = []any{
-	(*Asset)(nil),               // 0: tidegate.authority.v1.Asset
-	(*SSHTarget)(nil),           // 1: tidegate.authority.v1.SSHTarget
-	(*CreateAssetRequest)(nil),  // 2: tidegate.authority.v1.CreateAssetRequest
-	(*CreateAssetResponse)(nil), // 3: tidegate.authority.v1.CreateAssetResponse
-	(*ListAssetsRequest)(nil),   // 4: tidegate.authority.v1.ListAssetsRequest
-	(*ListAssetsResponse)(nil),  // 5: tidegate.authority.v1.ListAssetsResponse
-	nil,                         // 6: tidegate.authority.v1.Asset.LabelsEntry
-	nil,                         // 7: tidegate.authority.v1.CreateAssetRequest.LabelsEntry
+	(*SSHTarget)(nil),                // 0: tidegate.authority.v1.SSHTarget
+	(*CreateAssetRequest)(nil),       // 1: tidegate.authority.v1.CreateAssetRequest
+	(*CreateAssetResponse)(nil),      // 2: tidegate.authority.v1.CreateAssetResponse
+	(*ListAssetsRequest)(nil),        // 3: tidegate.authority.v1.ListAssetsRequest
+	(*ListAssetsResponse)(nil),       // 4: tidegate.authority.v1.ListAssetsResponse
+	nil,                              // 5: tidegate.authority.v1.CreateAssetRequest.LabelsEntry
+	nil,                              // 6: tidegate.authority.v1.CreateAssetResponse.LabelsEntry
+	(*ListAssetsResponse_Asset)(nil), // 7: tidegate.authority.v1.ListAssetsResponse.Asset
+	nil,                              // 8: tidegate.authority.v1.ListAssetsResponse.Asset.LabelsEntry
 }
 var file_tidegate_authority_v1_asset_proto_depIdxs = []int32{
-	6, // 0: tidegate.authority.v1.Asset.labels:type_name -> tidegate.authority.v1.Asset.LabelsEntry
-	1, // 1: tidegate.authority.v1.Asset.ssh:type_name -> tidegate.authority.v1.SSHTarget
-	7, // 2: tidegate.authority.v1.CreateAssetRequest.labels:type_name -> tidegate.authority.v1.CreateAssetRequest.LabelsEntry
-	1, // 3: tidegate.authority.v1.CreateAssetRequest.ssh:type_name -> tidegate.authority.v1.SSHTarget
-	0, // 4: tidegate.authority.v1.CreateAssetResponse.asset:type_name -> tidegate.authority.v1.Asset
-	0, // 5: tidegate.authority.v1.ListAssetsResponse.assets:type_name -> tidegate.authority.v1.Asset
-	2, // 6: tidegate.authority.v1.AssetService.CreateAsset:input_type -> tidegate.authority.v1.CreateAssetRequest
-	4, // 7: tidegate.authority.v1.AssetService.ListAssets:input_type -> tidegate.authority.v1.ListAssetsRequest
-	3, // 8: tidegate.authority.v1.AssetService.CreateAsset:output_type -> tidegate.authority.v1.CreateAssetResponse
-	5, // 9: tidegate.authority.v1.AssetService.ListAssets:output_type -> tidegate.authority.v1.ListAssetsResponse
-	8, // [8:10] is the sub-list for method output_type
-	6, // [6:8] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	5, // 0: tidegate.authority.v1.CreateAssetRequest.labels:type_name -> tidegate.authority.v1.CreateAssetRequest.LabelsEntry
+	0, // 1: tidegate.authority.v1.CreateAssetRequest.ssh:type_name -> tidegate.authority.v1.SSHTarget
+	6, // 2: tidegate.authority.v1.CreateAssetResponse.labels:type_name -> tidegate.authority.v1.CreateAssetResponse.LabelsEntry
+	0, // 3: tidegate.authority.v1.CreateAssetResponse.ssh:type_name -> tidegate.authority.v1.SSHTarget
+	7, // 4: tidegate.authority.v1.ListAssetsResponse.assets:type_name -> tidegate.authority.v1.ListAssetsResponse.Asset
+	8, // 5: tidegate.authority.v1.ListAssetsResponse.Asset.labels:type_name -> tidegate.authority.v1.ListAssetsResponse.Asset.LabelsEntry
+	0, // 6: tidegate.authority.v1.ListAssetsResponse.Asset.ssh:type_name -> tidegate.authority.v1.SSHTarget
+	1, // 7: tidegate.authority.v1.AssetService.CreateAsset:input_type -> tidegate.authority.v1.CreateAssetRequest
+	3, // 8: tidegate.authority.v1.AssetService.ListAssets:input_type -> tidegate.authority.v1.ListAssetsRequest
+	2, // 9: tidegate.authority.v1.AssetService.CreateAsset:output_type -> tidegate.authority.v1.CreateAssetResponse
+	4, // 10: tidegate.authority.v1.AssetService.ListAssets:output_type -> tidegate.authority.v1.ListAssetsResponse
+	9, // [9:11] is the sub-list for method output_type
+	7, // [7:9] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_tidegate_authority_v1_asset_proto_init() }
@@ -546,11 +619,14 @@ func file_tidegate_authority_v1_asset_proto_init() {
 	if File_tidegate_authority_v1_asset_proto != nil {
 		return
 	}
-	file_tidegate_authority_v1_asset_proto_msgTypes[0].OneofWrappers = []any{
-		(*Asset_Ssh)(nil),
+	file_tidegate_authority_v1_asset_proto_msgTypes[1].OneofWrappers = []any{
+		(*CreateAssetRequest_Ssh)(nil),
 	}
 	file_tidegate_authority_v1_asset_proto_msgTypes[2].OneofWrappers = []any{
-		(*CreateAssetRequest_Ssh)(nil),
+		(*CreateAssetResponse_Ssh)(nil),
+	}
+	file_tidegate_authority_v1_asset_proto_msgTypes[7].OneofWrappers = []any{
+		(*ListAssetsResponse_Asset_Ssh)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -558,7 +634,7 @@ func file_tidegate_authority_v1_asset_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_tidegate_authority_v1_asset_proto_rawDesc), len(file_tidegate_authority_v1_asset_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

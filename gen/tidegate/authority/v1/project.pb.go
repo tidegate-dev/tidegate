@@ -22,61 +22,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Project is a project as the authority stores it.
-type Project struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// ID identifies the project. It is a UUID.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Name is the project's name.
-	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Project) Reset() {
-	*x = Project{}
-	mi := &file_tidegate_authority_v1_project_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Project) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Project) ProtoMessage() {}
-
-func (x *Project) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_project_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Project.ProtoReflect.Descriptor instead.
-func (*Project) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_project_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *Project) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *Project) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
 // CreateProjectRequest is the input of ProjectService.CreateProject.
 type CreateProjectRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -91,7 +36,7 @@ type CreateProjectRequest struct {
 
 func (x *CreateProjectRequest) Reset() {
 	*x = CreateProjectRequest{}
-	mi := &file_tidegate_authority_v1_project_proto_msgTypes[1]
+	mi := &file_tidegate_authority_v1_project_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -103,7 +48,7 @@ func (x *CreateProjectRequest) String() string {
 func (*CreateProjectRequest) ProtoMessage() {}
 
 func (x *CreateProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_project_proto_msgTypes[1]
+	mi := &file_tidegate_authority_v1_project_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -116,7 +61,7 @@ func (x *CreateProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateProjectRequest.ProtoReflect.Descriptor instead.
 func (*CreateProjectRequest) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_project_proto_rawDescGZIP(), []int{1}
+	return file_tidegate_authority_v1_project_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *CreateProjectRequest) GetName() string {
@@ -129,15 +74,17 @@ func (x *CreateProjectRequest) GetName() string {
 // CreateProjectResponse is the result of ProjectService.CreateProject.
 type CreateProjectResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Project is the new project.
-	Project       *Project `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	// ID identifies the new project. It is a UUID.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Name is the new project's name.
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateProjectResponse) Reset() {
 	*x = CreateProjectResponse{}
-	mi := &file_tidegate_authority_v1_project_proto_msgTypes[2]
+	mi := &file_tidegate_authority_v1_project_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -149,7 +96,7 @@ func (x *CreateProjectResponse) String() string {
 func (*CreateProjectResponse) ProtoMessage() {}
 
 func (x *CreateProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_project_proto_msgTypes[2]
+	mi := &file_tidegate_authority_v1_project_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -162,14 +109,21 @@ func (x *CreateProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateProjectResponse.ProtoReflect.Descriptor instead.
 func (*CreateProjectResponse) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_project_proto_rawDescGZIP(), []int{2}
+	return file_tidegate_authority_v1_project_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *CreateProjectResponse) GetProject() *Project {
+func (x *CreateProjectResponse) GetId() string {
 	if x != nil {
-		return x.Project
+		return x.Id
 	}
-	return nil
+	return ""
+}
+
+func (x *CreateProjectResponse) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
 }
 
 // ListProjectsRequest is the input of ProjectService.ListProjects.
@@ -181,7 +135,7 @@ type ListProjectsRequest struct {
 
 func (x *ListProjectsRequest) Reset() {
 	*x = ListProjectsRequest{}
-	mi := &file_tidegate_authority_v1_project_proto_msgTypes[3]
+	mi := &file_tidegate_authority_v1_project_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -193,7 +147,7 @@ func (x *ListProjectsRequest) String() string {
 func (*ListProjectsRequest) ProtoMessage() {}
 
 func (x *ListProjectsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_project_proto_msgTypes[3]
+	mi := &file_tidegate_authority_v1_project_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -206,21 +160,21 @@ func (x *ListProjectsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProjectsRequest.ProtoReflect.Descriptor instead.
 func (*ListProjectsRequest) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_project_proto_rawDescGZIP(), []int{3}
+	return file_tidegate_authority_v1_project_proto_rawDescGZIP(), []int{2}
 }
 
 // ListProjectsResponse is the result of ProjectService.ListProjects.
 type ListProjectsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Projects are all projects.
-	Projects      []*Project `protobuf:"bytes,1,rep,name=projects,proto3" json:"projects,omitempty"`
+	Projects      []*ListProjectsResponse_Project `protobuf:"bytes,1,rep,name=projects,proto3" json:"projects,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListProjectsResponse) Reset() {
 	*x = ListProjectsResponse{}
-	mi := &file_tidegate_authority_v1_project_proto_msgTypes[4]
+	mi := &file_tidegate_authority_v1_project_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -232,7 +186,7 @@ func (x *ListProjectsResponse) String() string {
 func (*ListProjectsResponse) ProtoMessage() {}
 
 func (x *ListProjectsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_project_proto_msgTypes[4]
+	mi := &file_tidegate_authority_v1_project_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -245,32 +199,88 @@ func (x *ListProjectsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProjectsResponse.ProtoReflect.Descriptor instead.
 func (*ListProjectsResponse) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_project_proto_rawDescGZIP(), []int{4}
+	return file_tidegate_authority_v1_project_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ListProjectsResponse) GetProjects() []*Project {
+func (x *ListProjectsResponse) GetProjects() []*ListProjectsResponse_Project {
 	if x != nil {
 		return x.Projects
 	}
 	return nil
 }
 
+// Project is one project in the list.
+type ListProjectsResponse_Project struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID identifies the project. It is a UUID.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Name is the project's name.
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListProjectsResponse_Project) Reset() {
+	*x = ListProjectsResponse_Project{}
+	mi := &file_tidegate_authority_v1_project_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListProjectsResponse_Project) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListProjectsResponse_Project) ProtoMessage() {}
+
+func (x *ListProjectsResponse_Project) ProtoReflect() protoreflect.Message {
+	mi := &file_tidegate_authority_v1_project_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListProjectsResponse_Project.ProtoReflect.Descriptor instead.
+func (*ListProjectsResponse_Project) Descriptor() ([]byte, []int) {
+	return file_tidegate_authority_v1_project_proto_rawDescGZIP(), []int{3, 0}
+}
+
+func (x *ListProjectsResponse_Project) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ListProjectsResponse_Project) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
 var File_tidegate_authority_v1_project_proto protoreflect.FileDescriptor
 
 const file_tidegate_authority_v1_project_proto_rawDesc = "" +
 	"\n" +
-	"#tidegate/authority/v1/project.proto\x12\x15tidegate.authority.v1\x1a\x1bbuf/validate/validate.proto\"-\n" +
-	"\aProject\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\x89\x02\n" +
+	"#tidegate/authority/v1/project.proto\x12\x15tidegate.authority.v1\x1a\x1bbuf/validate/validate.proto\"\x89\x02\n" +
 	"\x14CreateProjectRequest\x12\xf0\x01\n" +
 	"\x04name\x18\x01 \x01(\tB\xdb\x01\xbaH\xd7\x01\xba\x01\xd3\x01\n" +
-	"\fproject.name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\x04name\"Q\n" +
-	"\x15CreateProjectResponse\x128\n" +
-	"\aproject\x18\x01 \x01(\v2\x1e.tidegate.authority.v1.ProjectR\aproject\"\x15\n" +
-	"\x13ListProjectsRequest\"R\n" +
-	"\x14ListProjectsResponse\x12:\n" +
-	"\bprojects\x18\x01 \x03(\v2\x1e.tidegate.authority.v1.ProjectR\bprojects2\xe5\x01\n" +
+	"\fproject.name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\x04name\";\n" +
+	"\x15CreateProjectResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\x15\n" +
+	"\x13ListProjectsRequest\"\x96\x01\n" +
+	"\x14ListProjectsResponse\x12O\n" +
+	"\bprojects\x18\x01 \x03(\v23.tidegate.authority.v1.ListProjectsResponse.ProjectR\bprojects\x1a-\n" +
+	"\aProject\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name2\xe5\x01\n" +
 	"\x0eProjectService\x12j\n" +
 	"\rCreateProject\x12+.tidegate.authority.v1.CreateProjectRequest\x1a,.tidegate.authority.v1.CreateProjectResponse\x12g\n" +
 	"\fListProjects\x12*.tidegate.authority.v1.ListProjectsRequest\x1a+.tidegate.authority.v1.ListProjectsResponseBHZFgithub.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;authorityv1b\x06proto3"
@@ -289,24 +299,23 @@ func file_tidegate_authority_v1_project_proto_rawDescGZIP() []byte {
 
 var file_tidegate_authority_v1_project_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_tidegate_authority_v1_project_proto_goTypes = []any{
-	(*Project)(nil),               // 0: tidegate.authority.v1.Project
-	(*CreateProjectRequest)(nil),  // 1: tidegate.authority.v1.CreateProjectRequest
-	(*CreateProjectResponse)(nil), // 2: tidegate.authority.v1.CreateProjectResponse
-	(*ListProjectsRequest)(nil),   // 3: tidegate.authority.v1.ListProjectsRequest
-	(*ListProjectsResponse)(nil),  // 4: tidegate.authority.v1.ListProjectsResponse
+	(*CreateProjectRequest)(nil),         // 0: tidegate.authority.v1.CreateProjectRequest
+	(*CreateProjectResponse)(nil),        // 1: tidegate.authority.v1.CreateProjectResponse
+	(*ListProjectsRequest)(nil),          // 2: tidegate.authority.v1.ListProjectsRequest
+	(*ListProjectsResponse)(nil),         // 3: tidegate.authority.v1.ListProjectsResponse
+	(*ListProjectsResponse_Project)(nil), // 4: tidegate.authority.v1.ListProjectsResponse.Project
 }
 var file_tidegate_authority_v1_project_proto_depIdxs = []int32{
-	0, // 0: tidegate.authority.v1.CreateProjectResponse.project:type_name -> tidegate.authority.v1.Project
-	0, // 1: tidegate.authority.v1.ListProjectsResponse.projects:type_name -> tidegate.authority.v1.Project
-	1, // 2: tidegate.authority.v1.ProjectService.CreateProject:input_type -> tidegate.authority.v1.CreateProjectRequest
-	3, // 3: tidegate.authority.v1.ProjectService.ListProjects:input_type -> tidegate.authority.v1.ListProjectsRequest
-	2, // 4: tidegate.authority.v1.ProjectService.CreateProject:output_type -> tidegate.authority.v1.CreateProjectResponse
-	4, // 5: tidegate.authority.v1.ProjectService.ListProjects:output_type -> tidegate.authority.v1.ListProjectsResponse
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	4, // 0: tidegate.authority.v1.ListProjectsResponse.projects:type_name -> tidegate.authority.v1.ListProjectsResponse.Project
+	0, // 1: tidegate.authority.v1.ProjectService.CreateProject:input_type -> tidegate.authority.v1.CreateProjectRequest
+	2, // 2: tidegate.authority.v1.ProjectService.ListProjects:input_type -> tidegate.authority.v1.ListProjectsRequest
+	1, // 3: tidegate.authority.v1.ProjectService.CreateProject:output_type -> tidegate.authority.v1.CreateProjectResponse
+	3, // 4: tidegate.authority.v1.ProjectService.ListProjects:output_type -> tidegate.authority.v1.ListProjectsResponse
+	3, // [3:5] is the sub-list for method output_type
+	1, // [1:3] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_tidegate_authority_v1_project_proto_init() }

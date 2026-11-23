@@ -70,27 +70,6 @@ project.
 
 ## Types
 
-### tidegate.authority.v1.Asset { #tidegate.authority.v1.Asset }
-
-Asset is an asset as the authority stores it.
-
-| Field | Type | Description | Rules |
-| ----- | ---- | ----------- | ----- |
-| `id` | `string` | ID identifies the asset. It is a UUID. |  |
-| `project_id` | `string` | ProjectID identifies the project that the asset belongs to. It is a UUID. |  |
-| `name` | `string` | Name is the asset's name. |  |
-| `labels` | `repeated tidegate.authority.v1.Asset.LabelsEntry` | Labels are the keys and values that a role selects the asset by. |  |
-| `ssh` | `tidegate.authority.v1.SSHTarget` | SSH is set for a host that tidegate reaches over SSH. |  |
-
-### tidegate.authority.v1.Asset.LabelsEntry { #tidegate.authority.v1.Asset.LabelsEntry }
-
-
-
-| Field | Type | Description | Rules |
-| ----- | ---- | ----------- | ----- |
-| `key` | `string` |  |  |
-| `value` | `string` |  |  |
-
 ### tidegate.authority.v1.CreateAssetRequest { #tidegate.authority.v1.CreateAssetRequest }
 
 CreateAssetRequest is the input of AssetService.CreateAsset.
@@ -117,7 +96,20 @@ CreateAssetResponse is the result of AssetService.CreateAsset.
 
 | Field | Type | Description | Rules |
 | ----- | ---- | ----------- | ----- |
-| `asset` | `tidegate.authority.v1.Asset` | Asset is the new asset. |  |
+| `id` | `string` | ID identifies the new asset. It is a UUID. |  |
+| `project_id` | `string` | ProjectID identifies the project that the new asset belongs to. It is a UUID. |  |
+| `name` | `string` | Name is the new asset's name. |  |
+| `labels` | `repeated tidegate.authority.v1.CreateAssetResponse.LabelsEntry` | Labels are the keys and values that a role selects the new asset by. |  |
+| `ssh` | `tidegate.authority.v1.SSHTarget` | SSH is set for a host that tidegate reaches over SSH. |  |
+
+### tidegate.authority.v1.CreateAssetResponse.LabelsEntry { #tidegate.authority.v1.CreateAssetResponse.LabelsEntry }
+
+
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `key` | `string` |  |  |
+| `value` | `string` |  |  |
 
 ### tidegate.authority.v1.ListAssetsRequest { #tidegate.authority.v1.ListAssetsRequest }
 
@@ -133,7 +125,28 @@ ListAssetsResponse is the result of AssetService.ListAssets.
 
 | Field | Type | Description | Rules |
 | ----- | ---- | ----------- | ----- |
-| `assets` | `repeated tidegate.authority.v1.Asset` | Assets are all assets of the project. |  |
+| `assets` | `repeated tidegate.authority.v1.ListAssetsResponse.Asset` | Assets are all assets of the project. |  |
+
+### tidegate.authority.v1.ListAssetsResponse.Asset { #tidegate.authority.v1.ListAssetsResponse.Asset }
+
+Asset is one asset in the list.
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `id` | `string` | ID identifies the asset. It is a UUID. |  |
+| `project_id` | `string` | ProjectID identifies the project that the asset belongs to. It is a UUID. |  |
+| `name` | `string` | Name is the asset's name. |  |
+| `labels` | `repeated tidegate.authority.v1.ListAssetsResponse.Asset.LabelsEntry` | Labels are the keys and values that a role selects the asset by. |  |
+| `ssh` | `tidegate.authority.v1.SSHTarget` | SSH is set for a host that tidegate reaches over SSH. |  |
+
+### tidegate.authority.v1.ListAssetsResponse.Asset.LabelsEntry { #tidegate.authority.v1.ListAssetsResponse.Asset.LabelsEntry }
+
+
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `key` | `string` |  |  |
+| `value` | `string` |  |  |
 
 ### tidegate.authority.v1.SSHTarget { #tidegate.authority.v1.SSHTarget }
 
@@ -145,18 +158,6 @@ its identity with.
 | `host` | `string` | Host is the host's DNS name or IP address. | A DNS name of at most 253 characters, or an IPv4 or IPv6 address without brackets and without a zone. |
 | `port` | `uint32` | Port is the TCP port that the host's SSH server listens on. | 1 to 65535. |
 | `host_key` | `string` | HostKey is the host's public key as the key type and the key in base64, like "ssh-ed25519 AAAAC3...". | The key type, one space and the key in base64 with its padding. The key type is ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521 or ssh-rsa. At most 8192 characters. |
-
-### tidegate.authority.v1.Binding { #tidegate.authority.v1.Binding }
-
-Binding is a binding as the authority stores it, with the names of its role
-and its user.
-
-| Field | Type | Description | Rules |
-| ----- | ---- | ----------- | ----- |
-| `id` | `string` | ID identifies the binding. It is a UUID. |  |
-| `project_id` | `string` | ProjectID identifies the project that the binding belongs to. It is a UUID. |  |
-| `role` | `string` | Role is the name of the role that the binding gives. |  |
-| `user` | `string` | User is the name of the user who gets the role. |  |
 
 ### tidegate.authority.v1.CreateBindingRequest { #tidegate.authority.v1.CreateBindingRequest }
 
@@ -174,7 +175,10 @@ CreateBindingResponse is the result of BindingService.CreateBinding.
 
 | Field | Type | Description | Rules |
 | ----- | ---- | ----------- | ----- |
-| `binding` | `tidegate.authority.v1.Binding` | Binding is the new binding. |  |
+| `id` | `string` | ID identifies the new binding. It is a UUID. |  |
+| `project_id` | `string` | ProjectID identifies the project that the new binding belongs to. It is a UUID. |  |
+| `role` | `string` | Role is the name of the role that the new binding gives. |  |
+| `user` | `string` | User is the name of the user who gets the role, as the authority stores it. |  |
 
 ### tidegate.authority.v1.ListBindingsRequest { #tidegate.authority.v1.ListBindingsRequest }
 
@@ -190,7 +194,18 @@ ListBindingsResponse is the result of BindingService.ListBindings.
 
 | Field | Type | Description | Rules |
 | ----- | ---- | ----------- | ----- |
-| `bindings` | `repeated tidegate.authority.v1.Binding` | Bindings are all bindings of the project, ordered by the role name and then the user name. |  |
+| `bindings` | `repeated tidegate.authority.v1.ListBindingsResponse.Binding` | Bindings are all bindings of the project, ordered by the role name and then the user name. |  |
+
+### tidegate.authority.v1.ListBindingsResponse.Binding { #tidegate.authority.v1.ListBindingsResponse.Binding }
+
+Binding is one binding in the list.
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `id` | `string` | ID identifies the binding. It is a UUID. |  |
+| `project_id` | `string` | ProjectID identifies the project that the binding belongs to. It is a UUID. |  |
+| `role` | `string` | Role is the name of the role that the binding gives. |  |
+| `user` | `string` | User is the name of the user who has the role. |  |
 
 ### tidegate.authority.v1.ReadRequest { #tidegate.authority.v1.ReadRequest }
 
@@ -279,7 +294,8 @@ CreateProjectResponse is the result of ProjectService.CreateProject.
 
 | Field | Type | Description | Rules |
 | ----- | ---- | ----------- | ----- |
-| `project` | `tidegate.authority.v1.Project` | Project is the new project. |  |
+| `id` | `string` | ID identifies the new project. It is a UUID. |  |
+| `name` | `string` | Name is the new project's name. |  |
 
 ### tidegate.authority.v1.ListProjectsRequest { #tidegate.authority.v1.ListProjectsRequest }
 
@@ -291,11 +307,11 @@ ListProjectsResponse is the result of ProjectService.ListProjects.
 
 | Field | Type | Description | Rules |
 | ----- | ---- | ----------- | ----- |
-| `projects` | `repeated tidegate.authority.v1.Project` | Projects are all projects. |  |
+| `projects` | `repeated tidegate.authority.v1.ListProjectsResponse.Project` | Projects are all projects. |  |
 
-### tidegate.authority.v1.Project { #tidegate.authority.v1.Project }
+### tidegate.authority.v1.ListProjectsResponse.Project { #tidegate.authority.v1.ListProjectsResponse.Project }
 
-Project is a project as the authority stores it.
+Project is one project in the list.
 
 | Field | Type | Description | Rules |
 | ----- | ---- | ----------- | ----- |
@@ -318,7 +334,10 @@ CreateRoleResponse is the result of RoleService.CreateRole.
 
 | Field | Type | Description | Rules |
 | ----- | ---- | ----------- | ----- |
-| `role` | `tidegate.authority.v1.Role` | Role is the new role. |  |
+| `id` | `string` | ID identifies the new role. It is a UUID. |  |
+| `project_id` | `string` | ProjectID identifies the project that the new role belongs to. It is a UUID. |  |
+| `name` | `string` | Name is the new role's name. |  |
+| `permissions` | `tidegate.authority.v1.ProjectPermissions` | Permissions are the permissions that the new role gives its holders. |  |
 
 ### tidegate.authority.v1.ProjectPermissions { #tidegate.authority.v1.ProjectPermissions }
 
@@ -331,15 +350,4 @@ and bindings of its project.
 | `escalate` | `bool` | Escalate means the holders may create roles with permissions that they don't have themselves. |  |
 | `create_bindings` | `bool` | CreateBindings means the holders may create bindings in the project. |  |
 | `bind` | `bool` | Bind means the holders may bind roles with permissions that they don't have themselves. |  |
-
-### tidegate.authority.v1.Role { #tidegate.authority.v1.Role }
-
-Role is a role as the authority stores it.
-
-| Field | Type | Description | Rules |
-| ----- | ---- | ----------- | ----- |
-| `id` | `string` | ID identifies the role. It is a UUID. |  |
-| `project_id` | `string` | ProjectID identifies the project that the role belongs to. It is a UUID. |  |
-| `name` | `string` | Name is the role's name. |  |
-| `permissions` | `tidegate.authority.v1.ProjectPermissions` | Permissions are the permissions that the role gives its holders. |  |
 

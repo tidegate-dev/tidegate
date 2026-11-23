@@ -45,7 +45,7 @@ Authorization: Bearer {{token}}
 {"name": "api-tests-assets"}
 HTTP 200
 [Captures]
-project_id: jsonpath "$.project.id"
+project_id: jsonpath "$.id"
 
 POST {{authority}}/tidegate.authority.v1.AssetService/CreateAsset
 Content-Type: application/json
@@ -70,15 +70,15 @@ Authorization: Bearer {{token}}
 {"project": "api-tests-assets", "name": "bastion", "labels": {"env": "prod"}, "ssh": {"host": "bastion.example", "port": 2222, "hostKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGVtcHR5"}}
 HTTP 200
 [Captures]
-asset_id: jsonpath "$.asset.id"
+asset_id: jsonpath "$.id"
 [Asserts]
-jsonpath "$.asset.id" matches "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-jsonpath "$.asset.projectId" == "{{project_id}}"
-jsonpath "$.asset.name" == "bastion"
-jsonpath "$.asset.labels.env" == "prod"
-jsonpath "$.asset.ssh.host" == "bastion.example"
-jsonpath "$.asset.ssh.port" == 2222
-jsonpath "$.asset.ssh.hostKey" == "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGVtcHR5"
+jsonpath "$.id" matches "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+jsonpath "$.projectId" == "{{project_id}}"
+jsonpath "$.name" == "bastion"
+jsonpath "$.labels.env" == "prod"
+jsonpath "$.ssh.host" == "bastion.example"
+jsonpath "$.ssh.port" == 2222
+jsonpath "$.ssh.hostKey" == "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGVtcHR5"
 
 POST {{authority}}/tidegate.authority.v1.AssetService/CreateAsset
 Content-Type: application/json
