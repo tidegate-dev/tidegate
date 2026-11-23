@@ -41,7 +41,7 @@ func (s *BindingService) ListBindings(
 ) (*connect.Response[authorityv1.ListBindingsResponse], error) {
 	bindings, err := s.bindings.List(ctx, req.Msg.GetProject())
 	if err != nil {
-		return nil, bindingError(err)
+		return nil, clientError(err)
 	}
 
 	messages := make([]*authorityv1.Binding, len(bindings))

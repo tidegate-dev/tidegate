@@ -36,8 +36,8 @@ type Binding struct {
 	UserID    UserID
 }
 
-// BindingWithNames is a binding in a list, with the names of its role and its
-// user. It can't be written.
+// BindingWithNames is a binding with the names of its role and its user. It
+// can't be written.
 type BindingWithNames struct {
 	ID        BindingID
 	ProjectID ProjectID

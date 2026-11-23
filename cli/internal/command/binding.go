@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"connectrpc.com/connect"
 	"github.com/urfave/cli/v3"
@@ -28,7 +29,7 @@ func newBindingResult(binding *authorityv1.Binding) bindingResult {
 }
 
 func (result bindingResult) String() string {
-	return quoteIfUnprintable(result.Role) + "\t" + quoteIfUnprintable(result.User) + "\t" + quoteIfUnprintable(result.ID)
+	return strings.Join(result.tableRow(), "\t")
 }
 
 func (result bindingResult) tableRow() []string {
