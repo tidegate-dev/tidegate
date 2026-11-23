@@ -27,7 +27,7 @@ var _ = Describe("Bindings", func() {
 	})
 
 	Describe("Create", func() {
-		It("returns the new binding with the stored names of its role and user, which List then returns too", func(ctx SpecContext) {
+		It("returns the new binding with the stored names of its role and user", func(ctx SpecContext) {
 			project, err := projects.Create(ctx, "payments")
 			Expect(err).NotTo(HaveOccurred())
 			_, err = roles.Create(ctx, "payments", "operator", model.ProjectPermissions{})
@@ -41,7 +41,6 @@ var _ = Describe("Bindings", func() {
 			Expect(binding.ProjectID).To(Equal(project.ID))
 			Expect(binding.RoleName).To(Equal("operator"))
 			Expect(binding.UserName).To(Equal("alice"))
-			Expect(bindings.List(ctx, "payments")).To(ConsistOf(binding))
 		})
 
 		It("returns ErrProjectNotFound for a project that doesn't exist", func(ctx SpecContext) {
@@ -76,6 +75,18 @@ var _ = Describe("Bindings", func() {
 	})
 
 	Describe("List", func() {
+		It("returns the bindings of the project", func(ctx SpecContext) {
+			_, err := projects.Create(ctx, "payments")
+			Expect(err).NotTo(HaveOccurred())
+			_, err = roles.Create(ctx, "payments", "operator", model.ProjectPermissions{})
+			Expect(err).NotTo(HaveOccurred())
+			storetest.AddUser(ctx, units, "alice")
+			binding, err := bindings.Create(ctx, "payments", "operator", "alice")
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(bindings.List(ctx, "payments")).To(ConsistOf(binding))
+		})
+
 		It("returns ErrProjectNotFound for a project that doesn't exist", func(ctx SpecContext) {
 			_, err := bindings.List(ctx, "payments")
 

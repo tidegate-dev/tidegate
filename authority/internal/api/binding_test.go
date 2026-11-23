@@ -109,7 +109,7 @@ func TestBindingErrorAnswersNotFoundForAUserThatDoesNotExist(t *testing.T) {
 	assert.EqualError(t, err, "not_found: user not found")
 }
 
-func TestBindingErrorGivesEveryOtherErrorTheCodeOfClientError(t *testing.T) {
+func TestBindingErrorGivesARoleThatDoesNotExistTheCodeOfClientError(t *testing.T) {
 	t.Parallel()
 
 	// act
