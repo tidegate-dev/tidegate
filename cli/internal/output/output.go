@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strconv"
+	"strings"
+	"unicode/utf16"
 
 	"go.yaml.in/yaml/v3"
 )
@@ -35,31 +38,130 @@ func ParseFormat(value string) (Format, error) {
 	}
 }
 
-// Print writes result to w in format.
+// Print writes result to w in format. It escapes every character that a
+// terminal would interpret, apart from line breaks and tabs. JSON and YAML
+// still read back as the same text.
 func Print(w io.Writer, format Format, result Result) error {
+	var (
+		text string
+		err  error
+	)
+
 	switch format {
 	case Text:
-		_, err := fmt.Fprintln(w, result.String())
-
-		return err
+		text = escape(result.String()+"\n", goEscape)
 	case JSON:
-		encoder := json.NewEncoder(w)
-		encoder.SetIndent("", "  ")
-
-		return encoder.Encode(result)
+		text, err = jsonText(result)
 	case YAML:
-		encoder := yaml.NewEncoder(w)
-		encoder.SetIndent(2)
-
-		err := encoder.Encode(result)
-		if err != nil {
-			return err
-		}
-
-		return encoder.Close()
+		text, err = yamlText(result)
 	default:
-		_, err := ParseFormat(string(format))
+		_, err = ParseFormat(string(format))
+	}
 
+	if err != nil {
 		return err
 	}
+
+	_, err = io.WriteString(w, text)
+
+	return err
+}
+
+func jsonText(result Result) (string, error) {
+	var encoded strings.Builder
+
+	encoder := json.NewEncoder(&encoded)
+	encoder.SetIndent("", "  ")
+
+	err := encoder.Encode(result)
+	if err != nil {
+		return "", err
+	}
+
+	// encoding/json writes an unprintable character only inside a string, where JSON allows \u escapes.
+	return escape(encoded.String(), jsonEscape), nil
+}
+
+func yamlText(result Result) (string, error) {
+	var wrapped yaml.Node
+
+	// yaml.v3 can't read back some block scalars it writes, like "\t\n". In flow style it writes none.
+	err := wrapped.Encode(struct {
+		Result Result `yaml:",flow"`
+	}{result})
+	if err != nil {
+		return "", err
+	}
+
+	document := wrapped.Content[1]
+	blockStyle(document)
+
+	var encoded strings.Builder
+
+	encoder := yaml.NewEncoder(&encoded)
+	encoder.SetIndent(2)
+
+	err = encoder.Encode(document)
+	if err != nil {
+		return "", err
+	}
+
+	err = encoder.Close()
+	if err != nil {
+		return "", err
+	}
+
+	return escape(encoded.String(), goEscape), nil
+}
+
+// blockStyle takes node and everything under it out of flow style. It keeps
+// the double quotes that the encoder chose, and adds them to every text with
+// an unprintable character, because YAML allows escapes only there.
+func blockStyle(node *yaml.Node) {
+	node.Style &= yaml.DoubleQuotedStyle
+
+	if node.Kind == yaml.ScalarNode && strings.ContainsFunc(node.Value, isUnprintable) {
+		node.Style = yaml.DoubleQuotedStyle
+	}
+
+	for _, child := range node.Content {
+		blockStyle(child)
+	}
+}
+
+func isUnprintable(char rune) bool {
+	return !strconv.IsPrint(char)
+}
+
+// escape replaces every character in text that a terminal would interpret,
+// apart from line breaks and tabs, by what notation returns for it.
+func escape(text string, notation func(rune) string) string {
+	var escaped strings.Builder
+
+	for _, char := range text {
+		if char == '\n' || char == '\t' || !isUnprintable(char) {
+			escaped.WriteRune(char)
+		} else {
+			escaped.WriteString(notation(char))
+		}
+	}
+
+	return escaped.String()
+}
+
+// goEscape returns char as Go writes it in a string, like \x1b or \u202e.
+// YAML reads these escapes the same way.
+func goEscape(char rune) string {
+	return strings.Trim(strconv.QuoteRune(char), "'")
+}
+
+// jsonEscape returns char as a \u escape. JSON wants a character above U+FFFF
+// as the two halves of its UTF-16 form.
+func jsonEscape(char rune) string {
+	high, low := utf16.EncodeRune(char)
+	if utf16.IsSurrogate(high) {
+		return fmt.Sprintf(`\u%04x\u%04x`, high, low)
+	}
+
+	return fmt.Sprintf(`\u%04x`, char)
 }
