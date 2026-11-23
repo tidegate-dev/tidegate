@@ -13,13 +13,21 @@ import (
 )
 
 // labeled is a result with a text that the server chose, as a value and as a
-// key. Its text format doesn't quote the text, as a result's String should.
+// key. Its String returns the text without quotes, which a command's result
+// must not do.
 type labeled struct {
 	Name   string            `json:"name"   yaml:"name"`
 	Labels map[string]string `json:"labels" yaml:"labels"`
 }
 
 func (result labeled) String() string { return result.Name }
+
+type listed struct {
+	Names  []string          `json:"names"  yaml:"names"`
+	Labels map[string]string `json:"labels" yaml:"labels"`
+}
+
+func (result listed) String() string { return "" }
 
 func newLabeled(text string) labeled {
 	return labeled{Name: text, Labels: map[string]string{text: text}}
@@ -65,7 +73,7 @@ func FuzzPrintWritesNoCharacterThatATerminalInterprets(f *testing.F) {
 			assert.Truef(t, utf8.Valid(written.Bytes()), "%s wrote invalid UTF-8 for %q", format, text)
 
 			for _, char := range written.String() {
-				assert.Truef(t, char == '\n' || char == '\t' || strconv.IsPrint(char), "%s wrote %U for %q", format, char, text)
+				assert.Truef(t, char == '\n' || char == '\t' || strconv.IsGraphic(char), "%s wrote %U for %q", format, char, text)
 			}
 		}
 	})
@@ -95,7 +103,7 @@ func FuzzPrintWritesJSONAndYAMLThatReadBackAsTheSameText(f *testing.F) {
 	})
 }
 
-func TestPrintKeepsPrintableTextOutsideASCIIAsItIs(t *testing.T) {
+func TestPrintKeepsLettersAndSpacesOutsideASCIIAsTheyAre(t *testing.T) {
 	t.Parallel()
 
 	for _, format := range []Format{Text, JSON, YAML} {
@@ -106,11 +114,41 @@ func TestPrintKeepsPrintableTextOutsideASCIIAsItIs(t *testing.T) {
 			var written bytes.Buffer
 
 			// act
-			err := Print(&written, format, newLabeled("Zoë 日本"))
+			err := Print(&written, format, newLabeled("Zoë \u3000日本"))
 
 			// assert
 			require.NoError(t, err)
-			assert.Contains(t, written.String(), "Zoë 日本")
+			assert.Contains(t, written.String(), "Zoë \u3000日本")
 		})
 	}
+}
+
+func TestPrintWritesYAMLInBlockStyle(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	var written bytes.Buffer
+
+	result := listed{Names: []string{"web-1", "web-2"}, Labels: map[string]string{"env": "prod"}}
+
+	// act
+	err := Print(&written, YAML, result)
+
+	// assert
+	require.NoError(t, err)
+	assert.Equal(t, "names:\n  - web-1\n  - web-2\nlabels:\n  env: prod\n", written.String())
+}
+
+func TestPrintQuotesAYAMLTextThatAYAML11ParserReadsAsABoolean(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	var written bytes.Buffer
+
+	// act
+	err := Print(&written, YAML, newLabeled("yes"))
+
+	// assert
+	require.NoError(t, err)
+	assert.Equal(t, "name: \"yes\"\nlabels:\n  \"yes\": \"yes\"\n", written.String())
 }

@@ -78,14 +78,14 @@ func jsonText(result Result) (string, error) {
 		return "", err
 	}
 
-	// encoding/json writes an unprintable character only inside a string, where JSON allows \u escapes.
+	// encoding/json writes a character that isn't graphic only inside a string, where JSON allows \u escapes.
 	return escape(encoded.String(), jsonEscape), nil
 }
 
 func yamlText(result Result) (string, error) {
 	var wrapped yaml.Node
 
-	// yaml.v3 can't read back some block scalars it writes, like "\t\n". In flow style it writes none.
+	// Node.Encode parses what yaml.v3 writes, and that fails for some block scalars, like "\t\n". Flow style has none.
 	err := wrapped.Encode(struct {
 		Result Result `yaml:",flow"`
 	}{result})
@@ -114,13 +114,14 @@ func yamlText(result Result) (string, error) {
 	return escape(encoded.String(), goEscape), nil
 }
 
-// blockStyle takes node and everything under it out of flow style. It keeps
-// the double quotes that the encoder chose, and adds them to every text with
-// an unprintable character, because YAML allows escapes only there.
+// blockStyle takes node and everything under it out of flow style. The double
+// quotes of the encoder stay, because a YAML 1.1 parser reads a plain yes or
+// on as a boolean. A text with a character that isn't graphic gets double
+// quotes, because YAML allows escapes only there.
 func blockStyle(node *yaml.Node) {
 	node.Style &= yaml.DoubleQuotedStyle
 
-	if node.Kind == yaml.ScalarNode && strings.ContainsFunc(node.Value, isUnprintable) {
+	if node.Kind == yaml.ScalarNode && strings.ContainsFunc(node.Value, isNotGraphic) {
 		node.Style = yaml.DoubleQuotedStyle
 	}
 
@@ -129,8 +130,9 @@ func blockStyle(node *yaml.Node) {
 	}
 }
 
-func isUnprintable(char rune) bool {
-	return !strconv.IsPrint(char)
+// A terminal draws graphic characters, which are letters, marks, numbers, punctuation, symbols and spaces.
+func isNotGraphic(char rune) bool {
+	return !strconv.IsGraphic(char)
 }
 
 // escape replaces every character in text that a terminal would interpret,
@@ -139,7 +141,7 @@ func escape(text string, notation func(rune) string) string {
 	var escaped strings.Builder
 
 	for _, char := range text {
-		if char == '\n' || char == '\t' || !isUnprintable(char) {
+		if char == '\n' || char == '\t' || !isNotGraphic(char) {
 			escaped.WriteRune(char)
 		} else {
 			escaped.WriteString(notation(char))
