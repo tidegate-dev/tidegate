@@ -41,7 +41,7 @@ var _ = Describe("BindingReadWriter", func() {
 			Expect(data.Bindings().ByID(ctx, binding.ID)).To(Equal(binding))
 		})
 
-		It("stores a second binding of the same role to the same user", func(ctx SpecContext) {
+		It("returns ErrBindingExists at Commit for a role that the user already has in the project", func(ctx SpecContext) {
 			addBinding(ctx, data, model.BindingID{3}, model.ProjectID{1}, model.RoleID{2}, alice.ID)
 
 			unit := data.NewUnit()
@@ -52,8 +52,8 @@ var _ = Describe("BindingReadWriter", func() {
 				UserID:    alice.ID,
 			})
 
-			Expect(unit.Commit(ctx)).To(Succeed())
-			Expect(count(ctx, pool, "bindings")).To(Equal(2))
+			Expect(unit.Commit(ctx)).To(MatchError(model.ErrBindingExists))
+			Expect(count(ctx, pool, "bindings")).To(Equal(1))
 		})
 
 		It("returns ErrRoleNotFound at Commit for a role of another project", func(ctx SpecContext) {
@@ -110,8 +110,9 @@ var _ = Describe("BindingReadWriter", func() {
 		})
 
 		It("leaves the other bindings", func(ctx SpecContext) {
+			bob := addUser(ctx, data, "bob")
 			binding := addBinding(ctx, data, model.BindingID{3}, model.ProjectID{1}, model.RoleID{2}, alice.ID)
-			other := addBinding(ctx, data, model.BindingID{4}, model.ProjectID{1}, model.RoleID{2}, alice.ID)
+			other := addBinding(ctx, data, model.BindingID{4}, model.ProjectID{1}, model.RoleID{2}, bob.ID)
 
 			unit := data.NewUnit()
 			unit.Bindings().Remove(binding)

@@ -93,6 +93,15 @@ jsonpath "$.binding.projectId" == "{{project_id}}"
 jsonpath "$.binding.role" == "operator"
 jsonpath "$.binding.user" == "{{user}}"
 
+POST {{authority}}/tidegate.authority.v1.BindingService/CreateBinding
+Content-Type: application/json
+Authorization: Bearer {{token}}
+{"project": "api-tests-bindings", "role": "operator", "user": "{{user}}"}
+HTTP 409
+[Asserts]
+jsonpath "$.code" == "already_exists"
+jsonpath "$.message" == "the user already has the role"
+
 POST {{authority}}/tidegate.authority.v1.BindingService/ListBindings
 Content-Type: application/json
 Authorization: Bearer {{token}}

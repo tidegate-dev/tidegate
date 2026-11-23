@@ -45,7 +45,7 @@ const (
 type BindingServiceClient interface {
 	// CreateBinding gives a role of a project to a user and returns the
 	// binding. A project, a role or a user that doesn't exist fails with
-	// not_found.
+	// not_found. A role that the user already has fails with already_exists.
 	CreateBinding(context.Context, *connect.Request[v1.CreateBindingRequest]) (*connect.Response[v1.CreateBindingResponse], error)
 	// ListBindings returns every binding of a project. A project that doesn't
 	// exist fails with not_found.
@@ -98,7 +98,7 @@ func (c *bindingServiceClient) ListBindings(ctx context.Context, req *connect.Re
 type BindingServiceHandler interface {
 	// CreateBinding gives a role of a project to a user and returns the
 	// binding. A project, a role or a user that doesn't exist fails with
-	// not_found.
+	// not_found. A role that the user already has fails with already_exists.
 	CreateBinding(context.Context, *connect.Request[v1.CreateBindingRequest]) (*connect.Response[v1.CreateBindingResponse], error)
 	// ListBindings returns every binding of a project. A project that doesn't
 	// exist fails with not_found.

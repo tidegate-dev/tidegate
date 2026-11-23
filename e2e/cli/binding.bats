@@ -65,6 +65,18 @@ setup() {
     [ "$(jq -r '.bindings | length' <<<"$output")" = 0 ]
 }
 
+@test "binding create fails for a role that the user already has" {
+    sign_in login "$TIDEGATE_TEST_AUTHORITY"
+    tidegate project create "$project"
+    tidegate role create --project "$project" operator
+    tidegate binding create --project "$project" --role operator --user "$TIDEGATE_TEST_USER"
+
+    run --separate-stderr tidegate binding create --project "$project" --role operator --user "$TIDEGATE_TEST_USER"
+    [ "$status" -eq 1 ]
+    [ -z "$output" ]
+    [[ $stderr == *"the user already has the role"* ]]
+}
+
 @test "binding create fails for a project, a role or a user that doesn't exist" {
     sign_in login "$TIDEGATE_TEST_AUTHORITY"
 

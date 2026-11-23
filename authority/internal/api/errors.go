@@ -33,6 +33,8 @@ func clientError(err error) error {
 		return connect.NewError(connect.CodeNotFound, model.ErrRoleNotFound)
 	case errors.Is(err, model.ErrAssetNameTaken):
 		return connect.NewError(connect.CodeAlreadyExists, model.ErrAssetNameTaken)
+	case errors.Is(err, model.ErrBindingExists):
+		return connect.NewError(connect.CodeAlreadyExists, model.ErrBindingExists)
 	default:
 		return err
 	}

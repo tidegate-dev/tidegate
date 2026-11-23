@@ -45,8 +45,9 @@ func NewBindings(
 // Create binds the role named roleName of the project named projectName to
 // the user named userName and returns the binding. It returns
 // model.ErrProjectNotFound, model.ErrRoleNotFound or model.ErrUserNotFound if
-// the project, the role or the user doesn't exist. The API checks the form of
-// the project name and the role name before it calls Create.
+// the project, the role or the user doesn't exist, and model.ErrBindingExists
+// if the user already has the role. The API checks the form of the project
+// name and the role name before it calls Create.
 func (b *Bindings) Create(
 	ctx context.Context,
 	projectName string,

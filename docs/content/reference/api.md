@@ -19,7 +19,7 @@ project to a user.
 
 | Method | Request | Response | Description |
 | ------ | ------- | -------- | ----------- |
-| `CreateBinding` | [tidegate.authority.v1.CreateBindingRequest](#tidegate.authority.v1.CreateBindingRequest) | [tidegate.authority.v1.CreateBindingResponse](#tidegate.authority.v1.CreateBindingResponse) | CreateBinding gives a role of a project to a user and returns the binding. A project, a role or a user that doesn't exist fails with not_found. |
+| `CreateBinding` | [tidegate.authority.v1.CreateBindingRequest](#tidegate.authority.v1.CreateBindingRequest) | [tidegate.authority.v1.CreateBindingResponse](#tidegate.authority.v1.CreateBindingResponse) | CreateBinding gives a role of a project to a user and returns the binding. A project, a role or a user that doesn't exist fails with not_found. A role that the user already has fails with already_exists. |
 | `ListBindings` | [tidegate.authority.v1.ListBindingsRequest](#tidegate.authority.v1.ListBindingsRequest) | [tidegate.authority.v1.ListBindingsResponse](#tidegate.authority.v1.ListBindingsResponse) | ListBindings returns every binding of a project. A project that doesn't exist fails with not_found. |
 
 ## tidegate.authority.v1.DummyService { #tidegate.authority.v1.DummyService }

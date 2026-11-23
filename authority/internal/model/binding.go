@@ -7,8 +7,13 @@ import (
 	"github.com/google/uuid"
 )
 
-// ErrBindingNotFound means no binding has the given ID.
-var ErrBindingNotFound = errors.New("binding not found")
+var (
+	// ErrBindingNotFound means no binding has the given ID.
+	ErrBindingNotFound = errors.New("binding not found")
+	// ErrBindingExists means the user already has the role in the project.
+	// Nothing was written.
+	ErrBindingExists = errors.New("the user already has the role")
+)
 
 // BindingID identifies a binding.
 type BindingID uuid.UUID
@@ -49,8 +54,8 @@ type BindingWithNames struct {
 // at Commit.
 type BindingReadWriter interface {
 	// Add records the insert of binding. Commit returns ErrRoleNotFound if
-	// the project has no role with the ID, and ErrUserNotFound if the user
-	// doesn't exist.
+	// the project has no role with the ID, ErrUserNotFound if the user
+	// doesn't exist, and ErrBindingExists if the user already has the role.
 	Add(binding *Binding)
 	// Remove records the delete of binding. A binding that is already gone
 	// counts as removed.

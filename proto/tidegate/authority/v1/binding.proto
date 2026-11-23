@@ -11,7 +11,7 @@ option go_package = "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;
 service BindingService {
   // CreateBinding gives a role of a project to a user and returns the
   // binding. A project, a role or a user that doesn't exist fails with
-  // not_found.
+  // not_found. A role that the user already has fails with already_exists.
   rpc CreateBinding(CreateBindingRequest) returns (CreateBindingResponse);
   // ListBindings returns every binding of a project. A project that doesn't
   // exist fails with not_found.

@@ -65,8 +65,8 @@ type BindingReadWriter struct {
 }
 
 // Add records the insert of binding. Commit returns model.ErrRoleNotFound if
-// the project has no role with the ID, and model.ErrUserNotFound if the user
-// doesn't exist.
+// the project has no role with the ID, model.ErrUserNotFound if the user
+// doesn't exist, and model.ErrBindingExists if the user already has the role.
 func (b *BindingReadWriter) Add(binding *model.Binding) {
 	b.unit.add(func(ctx context.Context, queries *sqlc.Queries) error {
 		err := queries.InsertBinding(ctx, sqlc.InsertBindingParams{
@@ -77,6 +77,8 @@ func (b *BindingReadWriter) Add(binding *model.Binding) {
 		})
 
 		switch {
+		case isUniqueViolationOf(err, "bindings_project_id_role_id_user_id_key"):
+			return model.ErrBindingExists
 		case isForeignKeyViolationOf(err, "bindings_project_id_role_id_fkey"):
 			return model.ErrRoleNotFound
 		case isForeignKeyViolationOf(err, "bindings_user_id_fkey"):

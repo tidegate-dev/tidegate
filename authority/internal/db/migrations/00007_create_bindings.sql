@@ -7,7 +7,8 @@ CREATE TABLE bindings (
     project_id uuid NOT NULL,
     role_id uuid NOT NULL,
     user_id uuid NOT NULL CONSTRAINT bindings_user_id_fkey REFERENCES users (id) ON DELETE CASCADE,
-    CONSTRAINT bindings_project_id_role_id_fkey FOREIGN KEY (project_id, role_id) REFERENCES roles (project_id, id)
+    CONSTRAINT bindings_project_id_role_id_fkey FOREIGN KEY (project_id, role_id) REFERENCES roles (project_id, id),
+    CONSTRAINT bindings_project_id_role_id_user_id_key UNIQUE (project_id, role_id, user_id)
 );
 
 CREATE INDEX bindings_user_id ON bindings (user_id);
