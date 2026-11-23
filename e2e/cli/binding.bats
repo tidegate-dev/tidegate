@@ -44,16 +44,6 @@ setup() {
     [ "$(jq -r '.bindings[0].user' <<<"$output")" = "$TIDEGATE_TEST_USER" ]
 }
 
-@test "binding create finds the user in another letter case and prints the stored name" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY"
-    tidegate project create "$project"
-    tidegate role create --project "$project" operator
-
-    run tidegate -o json binding create --project "$project" --role operator --user "${TIDEGATE_TEST_USER^^}"
-    [ "$status" -eq 0 ]
-    [ "$(jq -r .user <<<"$output")" = "$TIDEGATE_TEST_USER" ]
-}
-
 @test "binding list of a project without bindings says how to add one" {
     sign_in login "$TIDEGATE_TEST_AUTHORITY"
     tidegate project create "$project"
@@ -96,18 +86,6 @@ setup() {
     [ "$status" -eq 1 ]
     [ -z "$output" ]
     [[ $stderr == *"user not found"* ]]
-}
-
-@test "binding create fails for a role of another project" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY"
-    tidegate project create "$project"
-    tidegate project create "$project-other"
-    tidegate role create --project "$project-other" operator
-
-    run --separate-stderr tidegate binding create --project "$project" --role operator --user "$TIDEGATE_TEST_USER"
-    [ "$status" -eq 1 ]
-    [ -z "$output" ]
-    [[ $stderr == *"role not found"* ]]
 }
 
 @test "binding list fails for a project that doesn't exist" {

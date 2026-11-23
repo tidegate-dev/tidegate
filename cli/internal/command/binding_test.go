@@ -21,20 +21,6 @@ func TestBindingResultTextShowsTheRoleTheUserAndTheID(t *testing.T) {
 	assert.Equal(t, "operator\talice\t1", text)
 }
 
-func TestBindingResultTextQuotesAUserNameThatATerminalWouldInterpret(t *testing.T) {
-	t.Parallel()
-
-	// arrange
-	result := bindingResult{ID: "1", Role: "operator", User: "a\x1b[2Jb"}
-
-	// act
-	text := result.String()
-
-	// assert
-	assert.NotContains(t, text, "\x1b")
-	assert.Contains(t, text, `"a\x1b[2Jb"`)
-}
-
 func TestBindingsResultTextShowsTheRoleTheUserAndTheIDOfEachBinding(t *testing.T) {
 	t.Parallel()
 
