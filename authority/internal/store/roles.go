@@ -65,9 +65,9 @@ func (r *RoleReadWriter) Add(role *model.Role) {
 			Bind:           role.Permissions.Bind,
 		})
 		switch {
-		case isUniqueViolationOf(err, "roles_project_id_name_key"):
+		case isUniqueViolationOf(err, "roles_name_unique_in_project"):
 			return model.ErrRoleNameTaken
-		case isForeignKeyViolationOf(err, "roles_project_id_fkey"):
+		case isForeignKeyViolationOf(err, "roles_project_fk"):
 			return model.ErrProjectNotFound
 		case err != nil:
 			return fmt.Errorf("creating the role: %w", err)

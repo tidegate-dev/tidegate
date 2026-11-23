@@ -116,9 +116,9 @@ func (a *AssetReadWriter) Add(asset *model.Asset) {
 		})
 
 		switch {
-		case isUniqueViolationOf(err, "assets_project_id_name_key"):
+		case isUniqueViolationOf(err, "assets_name_unique_in_project"):
 			return model.ErrAssetNameTaken
-		case isForeignKeyViolationOf(err, "assets_project_id_fkey"):
+		case isForeignKeyViolationOf(err, "assets_project_fk"):
 			return model.ErrProjectNotFound
 		case err != nil:
 			return fmt.Errorf("creating the asset: %w", err)

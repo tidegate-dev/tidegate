@@ -108,7 +108,7 @@ func (u *UserReadWriter) Update(user *model.User) {
 		})
 
 		switch {
-		case isUniqueViolationOf(err, "users_name_key"):
+		case isUniqueViolationOf(err, "users_name_unique"):
 			return model.ErrUserNameTaken
 		case err != nil:
 			return fmt.Errorf("updating the user: %w", err)
@@ -150,7 +150,7 @@ func insertUser(ctx context.Context, queries *sqlc.Queries, user *model.User) er
 		Name:         user.Name,
 		PasswordHash: databaseHash(user.PasswordHash),
 	})
-	if isUniqueViolationOf(err, "users_name_key") {
+	if isUniqueViolationOf(err, "users_name_unique") {
 		return model.ErrUserNameTaken
 	}
 

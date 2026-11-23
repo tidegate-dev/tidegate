@@ -77,11 +77,11 @@ func (b *BindingReadWriter) Add(binding *model.Binding) {
 		})
 
 		switch {
-		case isUniqueViolationOf(err, "bindings_project_id_role_id_user_id_key"):
+		case isUniqueViolationOf(err, "bindings_role_and_user_unique"):
 			return model.ErrBindingExists
-		case isForeignKeyViolationOf(err, "bindings_project_id_role_id_fkey"):
+		case isForeignKeyViolationOf(err, "bindings_role_in_project_fk"):
 			return model.ErrRoleNotFound
-		case isForeignKeyViolationOf(err, "bindings_user_id_fkey"):
+		case isForeignKeyViolationOf(err, "bindings_user_fk"):
 			return model.ErrUserNotFound
 		case err != nil:
 			return fmt.Errorf("creating the binding: %w", err)
