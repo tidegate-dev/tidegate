@@ -12,7 +12,7 @@ func TestBindingResultTextShowsTheRoleTheUserAndTheID(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	result := newBindingResult(&authorityv1.CreateBindingResponse{Id: "1", ProjectId: "2", Role: "operator", User: "alice"})
+	result := newBindingResult(&authorityv1.CreateBindingResponse{Id: "1", ProjectId: "2", RoleName: "operator", UserName: "alice"})
 
 	// act
 	text := result.String()
@@ -26,8 +26,8 @@ func TestBindingsResultTextShowsTheRoleTheUserAndTheIDOfEachBinding(t *testing.T
 
 	// arrange
 	result := newBindingsResult([]*authorityv1.ListBindingsResponse_Binding{
-		{Id: "1", Role: "auditor", User: "bob"},
-		{Id: "2", Role: "operator", User: "alice"},
+		{Id: "1", RoleName: "auditor", UserName: "bob"},
+		{Id: "2", RoleName: "operator", UserName: "alice"},
 	})
 
 	// act
@@ -53,7 +53,7 @@ func TestBindingsResultTextQuotesWhatATerminalWouldInterpret(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	result := newBindingsResult([]*authorityv1.ListBindingsResponse_Binding{{Id: "1", Role: "operator", User: "a\x1b[2Jb"}})
+	result := newBindingsResult([]*authorityv1.ListBindingsResponse_Binding{{Id: "1", RoleName: "operator", UserName: "a\x1b[2Jb"}})
 
 	// act
 	text := result.String()

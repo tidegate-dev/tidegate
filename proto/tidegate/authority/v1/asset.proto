@@ -52,12 +52,12 @@ message SSHTarget {
 
 // CreateAssetRequest is the input of AssetService.CreateAsset.
 message CreateAssetRequest {
-  // Project is the name of the project that gets the asset.
+  // ProjectName is the name of the project that gets the asset.
   //
   // Rules: Starts with a lowercase letter, goes on with lowercase letters,
   // digits and dashes, and ends with a letter or digit. At most 63 characters.
-  string project = 1 [(buf.validate.field).cel = {
-    id: "asset.project"
+  string project_name = 1 [(buf.validate.field).cel = {
+    id: "asset.project_name"
     message: "must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters"
     expression: "this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')"
   }];
@@ -120,12 +120,12 @@ message CreateAssetResponse {
 
 // ListAssetsRequest is the input of AssetService.ListAssets.
 message ListAssetsRequest {
-  // Project is the name of the project whose assets are listed.
+  // ProjectName is the name of the project whose assets are listed.
   //
   // Rules: Starts with a lowercase letter, goes on with lowercase letters,
   // digits and dashes, and ends with a letter or digit. At most 63 characters.
-  string project = 1 [(buf.validate.field).cel = {
-    id: "asset.project"
+  string project_name = 1 [(buf.validate.field).cel = {
+    id: "asset.project_name"
     message: "must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters"
     expression: "this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')"
   }];

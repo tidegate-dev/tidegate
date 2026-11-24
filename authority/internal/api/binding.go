@@ -26,7 +26,7 @@ func (s *BindingService) CreateBinding(
 	ctx context.Context,
 	req *connect.Request[authorityv1.CreateBindingRequest],
 ) (*connect.Response[authorityv1.CreateBindingResponse], error) {
-	binding, err := s.bindings.Create(ctx, req.Msg.GetProject(), req.Msg.GetRole(), req.Msg.GetUser())
+	binding, err := s.bindings.Create(ctx, req.Msg.GetProjectName(), req.Msg.GetRoleName(), req.Msg.GetUserName())
 	if err != nil {
 		return nil, bindingError(err)
 	}
@@ -39,7 +39,7 @@ func (s *BindingService) ListBindings(
 	ctx context.Context,
 	req *connect.Request[authorityv1.ListBindingsRequest],
 ) (*connect.Response[authorityv1.ListBindingsResponse], error) {
-	bindings, err := s.bindings.List(ctx, req.Msg.GetProject())
+	bindings, err := s.bindings.List(ctx, req.Msg.GetProjectName())
 	if err != nil {
 		return nil, clientError(err)
 	}
@@ -66,8 +66,8 @@ func createBindingResponse(binding *model.BindingWithNames) *authorityv1.CreateB
 	return &authorityv1.CreateBindingResponse{
 		Id:        binding.ID.String(),
 		ProjectId: binding.ProjectID.String(),
-		Role:      binding.RoleName,
-		User:      binding.UserName,
+		RoleName:  binding.RoleName,
+		UserName:  binding.UserName,
 	}
 }
 
@@ -75,7 +75,7 @@ func listedBinding(binding *model.BindingWithNames) *authorityv1.ListBindingsRes
 	return &authorityv1.ListBindingsResponse_Binding{
 		Id:        binding.ID.String(),
 		ProjectId: binding.ProjectID.String(),
-		Role:      binding.RoleName,
-		User:      binding.UserName,
+		RoleName:  binding.RoleName,
+		UserName:  binding.UserName,
 	}
 }

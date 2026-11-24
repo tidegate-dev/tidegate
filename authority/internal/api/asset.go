@@ -34,7 +34,7 @@ func (s *AssetService) CreateAsset(
 
 	switch target := req.Msg.GetTarget().(type) {
 	case *authorityv1.CreateAssetRequest_Ssh:
-		asset, err = s.assets.CreateSSH(ctx, req.Msg.GetProject(), req.Msg.GetName(), req.Msg.GetLabels(), model.SSHTarget{
+		asset, err = s.assets.CreateSSH(ctx, req.Msg.GetProjectName(), req.Msg.GetName(), req.Msg.GetLabels(), model.SSHTarget{
 			Host:    target.Ssh.GetHost(),
 			Port:    uint16(target.Ssh.GetPort()), //nolint:gosec // The API definition allows 1 to 65535.
 			HostKey: target.Ssh.GetHostKey(),
@@ -60,7 +60,7 @@ func (s *AssetService) ListAssets(
 	ctx context.Context,
 	req *connect.Request[authorityv1.ListAssetsRequest],
 ) (*connect.Response[authorityv1.ListAssetsResponse], error) {
-	assets, err := s.assets.List(ctx, req.Msg.GetProject())
+	assets, err := s.assets.List(ctx, req.Msg.GetProjectName())
 	if err != nil {
 		return nil, clientError(err)
 	}

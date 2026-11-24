@@ -212,10 +212,10 @@ func assetCreateSSH(ctx context.Context, cmd *cli.Command, store connections.Sto
 	}
 
 	response, err := clients.Asset().CreateAsset(ctx, connect.NewRequest(&authorityv1.CreateAssetRequest{
-		Project: cmd.String("project"),
-		Name:    cmd.Args().First(),
-		Labels:  labels,
-		Target:  &authorityv1.CreateAssetRequest_Ssh{Ssh: &authorityv1.SSHTarget{Host: host, Port: port, HostKey: hostKey}},
+		ProjectName: cmd.String("project"),
+		Name:        cmd.Args().First(),
+		Labels:      labels,
+		Target:      &authorityv1.CreateAssetRequest_Ssh{Ssh: &authorityv1.SSHTarget{Host: host, Port: port, HostKey: hostKey}},
 	}))
 	if err != nil {
 		return callFailed("creating the asset", connection, err)
@@ -239,7 +239,7 @@ func assetList(ctx context.Context, cmd *cli.Command, store connections.Store) e
 	}
 
 	response, err := clients.Asset().ListAssets(ctx, connect.NewRequest(&authorityv1.ListAssetsRequest{
-		Project: cmd.String("project"),
+		ProjectName: cmd.String("project"),
 	}))
 	if err != nil {
 		return callFailed("listing the assets", connection, err)

@@ -25,7 +25,7 @@ func (s *RoleService) CreateRole(
 	ctx context.Context,
 	req *connect.Request[authorityv1.CreateRoleRequest],
 ) (*connect.Response[authorityv1.CreateRoleResponse], error) {
-	role, err := s.roles.Create(ctx, req.Msg.GetProject(), req.Msg.GetName(), permissions(req.Msg.GetPermissions()))
+	role, err := s.roles.Create(ctx, req.Msg.GetProjectName(), req.Msg.GetName(), permissions(req.Msg.GetPermissions()))
 	if err != nil {
 		return nil, clientError(err)
 	}

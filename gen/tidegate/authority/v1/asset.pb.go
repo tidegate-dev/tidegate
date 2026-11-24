@@ -100,11 +100,11 @@ func (x *SSHTarget) GetHostKey() string {
 // CreateAssetRequest is the input of AssetService.CreateAsset.
 type CreateAssetRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Project is the name of the project that gets the asset.
+	// ProjectName is the name of the project that gets the asset.
 	//
 	// Rules: Starts with a lowercase letter, goes on with lowercase letters,
 	// digits and dashes, and ends with a letter or digit. At most 63 characters.
-	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	ProjectName string `protobuf:"bytes,1,opt,name=project_name,json=projectName,proto3" json:"project_name,omitempty"`
 	// Name is the name of the new asset.
 	//
 	// Rules: Starts with a lowercase letter, goes on with lowercase letters,
@@ -158,9 +158,9 @@ func (*CreateAssetRequest) Descriptor() ([]byte, []int) {
 	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *CreateAssetRequest) GetProject() string {
+func (x *CreateAssetRequest) GetProjectName() string {
 	if x != nil {
-		return x.Project
+		return x.ProjectName
 	}
 	return ""
 }
@@ -316,11 +316,11 @@ func (*CreateAssetResponse_Ssh) isCreateAssetResponse_Target() {}
 // ListAssetsRequest is the input of AssetService.ListAssets.
 type ListAssetsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Project is the name of the project whose assets are listed.
+	// ProjectName is the name of the project whose assets are listed.
 	//
 	// Rules: Starts with a lowercase letter, goes on with lowercase letters,
 	// digits and dashes, and ends with a letter or digit. At most 63 characters.
-	Project       string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	ProjectName   string `protobuf:"bytes,1,opt,name=project_name,json=projectName,proto3" json:"project_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -355,9 +355,9 @@ func (*ListAssetsRequest) Descriptor() ([]byte, []int) {
 	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ListAssetsRequest) GetProject() string {
+func (x *ListAssetsRequest) GetProjectName() string {
 	if x != nil {
-		return x.Project
+		return x.ProjectName
 	}
 	return ""
 }
@@ -525,10 +525,10 @@ const file_tidegate_authority_v1_asset_proto_rawDesc = "" +
 	"\x18\xfd\x01\xba\x01\x01%\xa8\x01\x01R\x04host\x12\x1f\n" +
 	"\x04port\x18\x02 \x01(\rB\v\xbaH\b*\x06\x18\xff\xff\x03(\x01R\x04port\x12\x93\x03\n" +
 	"\bhost_key\x18\x03 \x01(\tB\xf7\x02\xbaH\xf3\x02\xba\x01\xef\x02\n" +
-	"\x13ssh_target.host_key\x12\xad\x01must be the key type ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521 or ssh-rsa, one space and the key in base64, and have at most 8192 characters\x1a\xa7\x01this.size() <= 8192 && this.matches('^(ssh-ed25519|ecdsa-sha2-nistp(256|384|521)|ssh-rsa) ([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$')R\ahostKey\"\x96\b\n" +
-	"\x12CreateAssetRequest\x12\xf7\x01\n" +
-	"\aproject\x18\x01 \x01(\tB\xdc\x01\xbaH\xd8\x01\xba\x01\xd4\x01\n" +
-	"\rasset.project\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\aproject\x12\xee\x01\n" +
+	"\x13ssh_target.host_key\x12\xad\x01must be the key type ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521 or ssh-rsa, one space and the key in base64, and have at most 8192 characters\x1a\xa7\x01this.size() <= 8192 && this.matches('^(ssh-ed25519|ecdsa-sha2-nistp(256|384|521)|ssh-rsa) ([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$')R\ahostKey\"\xa4\b\n" +
+	"\x12CreateAssetRequest\x12\x85\x02\n" +
+	"\fproject_name\x18\x01 \x01(\tB\xe1\x01\xbaH\xdd\x01\xba\x01\xd9\x01\n" +
+	"\x12asset.project_name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\vprojectName\x12\xee\x01\n" +
 	"\x04name\x18\x02 \x01(\tB\xd9\x01\xbaH\xd5\x01\xba\x01\xd1\x01\n" +
 	"\n" +
 	"asset.name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\x04name\x12\x92\x03\n" +
@@ -549,10 +549,10 @@ const file_tidegate_authority_v1_asset_proto_rawDesc = "" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\b\n" +
-	"\x06target\"\x8d\x02\n" +
-	"\x11ListAssetsRequest\x12\xf7\x01\n" +
-	"\aproject\x18\x01 \x01(\tB\xdc\x01\xbaH\xd8\x01\xba\x01\xd4\x01\n" +
-	"\rasset.project\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\aproject\"\xfa\x02\n" +
+	"\x06target\"\x9b\x02\n" +
+	"\x11ListAssetsRequest\x12\x85\x02\n" +
+	"\fproject_name\x18\x01 \x01(\tB\xe1\x01\xbaH\xdd\x01\xba\x01\xd9\x01\n" +
+	"\x12asset.project_name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\vprojectName\"\xfa\x02\n" +
 	"\x12ListAssetsResponse\x12G\n" +
 	"\x06assets\x18\x01 \x03(\v2/.tidegate.authority.v1.ListAssetsResponse.AssetR\x06assets\x1a\x9a\x02\n" +
 	"\x05Asset\x12\x0e\n" +

@@ -23,8 +23,8 @@ func newBindingResult(response *authorityv1.CreateBindingResponse) bindingResult
 	return bindingResult{
 		ID:        response.GetId(),
 		ProjectID: response.GetProjectId(),
-		Role:      response.GetRole(),
-		User:      response.GetUser(),
+		Role:      response.GetRoleName(),
+		User:      response.GetUserName(),
 	}
 }
 
@@ -50,8 +50,8 @@ func newBindingsResult(bindings []*authorityv1.ListBindingsResponse_Binding) bin
 		result.Bindings = append(result.Bindings, bindingResult{
 			ID:        binding.GetId(),
 			ProjectID: binding.GetProjectId(),
-			Role:      binding.GetRole(),
-			User:      binding.GetUser(),
+			Role:      binding.GetRoleName(),
+			User:      binding.GetUserName(),
 		})
 	}
 
@@ -137,9 +137,9 @@ func bindingCreate(ctx context.Context, cmd *cli.Command, store connections.Stor
 	}
 
 	response, err := clients.Binding().CreateBinding(ctx, connect.NewRequest(&authorityv1.CreateBindingRequest{
-		Project: cmd.String("project"),
-		Role:    cmd.String("role"),
-		User:    cmd.String("user"),
+		ProjectName: cmd.String("project"),
+		RoleName:    cmd.String("role"),
+		UserName:    cmd.String("user"),
 	}))
 	if err != nil {
 		return callFailed("creating the binding", connection, err)
@@ -163,7 +163,7 @@ func bindingList(ctx context.Context, cmd *cli.Command, store connections.Store)
 	}
 
 	response, err := clients.Binding().ListBindings(ctx, connect.NewRequest(&authorityv1.ListBindingsRequest{
-		Project: cmd.String("project"),
+		ProjectName: cmd.String("project"),
 	}))
 	if err != nil {
 		return callFailed("listing the bindings", connection, err)

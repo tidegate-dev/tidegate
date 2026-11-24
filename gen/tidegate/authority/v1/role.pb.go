@@ -101,11 +101,11 @@ func (x *ProjectPermissions) GetBind() bool {
 // CreateRoleRequest is the input of RoleService.CreateRole.
 type CreateRoleRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Project is the name of the project that gets the role.
+	// ProjectName is the name of the project that gets the role.
 	//
 	// Rules: Starts with a lowercase letter, goes on with lowercase letters,
 	// digits and dashes, and ends with a letter or digit. At most 63 characters.
-	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	ProjectName string `protobuf:"bytes,1,opt,name=project_name,json=projectName,proto3" json:"project_name,omitempty"`
 	// Name is the name of the new role.
 	//
 	// Rules: Starts with a lowercase letter, goes on with lowercase letters,
@@ -148,9 +148,9 @@ func (*CreateRoleRequest) Descriptor() ([]byte, []int) {
 	return file_tidegate_authority_v1_role_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *CreateRoleRequest) GetProject() string {
+func (x *CreateRoleRequest) GetProjectName() string {
 	if x != nil {
-		return x.Project
+		return x.ProjectName
 	}
 	return ""
 }
@@ -252,10 +252,10 @@ const file_tidegate_authority_v1_role_proto_rawDesc = "" +
 	"\fcreate_roles\x18\x01 \x01(\bR\vcreateRoles\x12\x1a\n" +
 	"\bescalate\x18\x02 \x01(\bR\bescalate\x12'\n" +
 	"\x0fcreate_bindings\x18\x03 \x01(\bR\x0ecreateBindings\x12\x12\n" +
-	"\x04bind\x18\x04 \x01(\bR\x04bind\"\xc9\x04\n" +
-	"\x11CreateRoleRequest\x12\xf6\x01\n" +
-	"\aproject\x18\x01 \x01(\tB\xdb\x01\xbaH\xd7\x01\xba\x01\xd3\x01\n" +
-	"\frole.project\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\aproject\x12\xed\x01\n" +
+	"\x04bind\x18\x04 \x01(\bR\x04bind\"\xd7\x04\n" +
+	"\x11CreateRoleRequest\x12\x84\x02\n" +
+	"\fproject_name\x18\x01 \x01(\tB\xe0\x01\xbaH\xdc\x01\xba\x01\xd8\x01\n" +
+	"\x11role.project_name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\vprojectName\x12\xed\x01\n" +
 	"\x04name\x18\x02 \x01(\tB\xd8\x01\xbaH\xd4\x01\xba\x01\xd0\x01\n" +
 	"\trole.name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\x04name\x12K\n" +
 	"\vpermissions\x18\x03 \x01(\v2).tidegate.authority.v1.ProjectPermissionsR\vpermissions\"\xa4\x01\n" +

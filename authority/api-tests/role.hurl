@@ -1,6 +1,6 @@
 POST {{authority}}/tidegate.authority.v1.RoleService/CreateRole
 Content-Type: application/json
-{"project": "api-tests-roles", "name": "operator"}
+{"projectName": "api-tests-roles", "name": "operator"}
 HTTP 401
 [Asserts]
 jsonpath "$.code" == "unauthenticated"
@@ -16,7 +16,7 @@ token: jsonpath "$.token"
 POST {{authority}}/tidegate.authority.v1.RoleService/CreateRole
 Content-Type: application/json
 Authorization: Bearer {{token}}
-{"project": "api-tests-roles", "name": "operator"}
+{"projectName": "api-tests-roles", "name": "operator"}
 HTTP 404
 [Asserts]
 jsonpath "$.code" == "not_found"
@@ -33,7 +33,7 @@ project_id: jsonpath "$.id"
 POST {{authority}}/tidegate.authority.v1.RoleService/CreateRole
 Content-Type: application/json
 Authorization: Bearer {{token}}
-{"project": "api-tests-roles", "name": "Operator"}
+{"projectName": "api-tests-roles", "name": "Operator"}
 HTTP 400
 [Asserts]
 jsonpath "$.code" == "invalid_argument"
@@ -42,7 +42,7 @@ jsonpath "$.message" contains "must start with a lowercase letter"
 POST {{authority}}/tidegate.authority.v1.RoleService/CreateRole
 Content-Type: application/json
 Authorization: Bearer {{token}}
-{"project": "api-tests-roles", "name": "operator", "permissions": {"createRoles": true, "bind": true}}
+{"projectName": "api-tests-roles", "name": "operator", "permissions": {"createRoles": true, "bind": true}}
 HTTP 200
 [Asserts]
 jsonpath "$.id" matches "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
@@ -56,7 +56,7 @@ jsonpath "$.permissions.createBindings" not exists
 POST {{authority}}/tidegate.authority.v1.RoleService/CreateRole
 Content-Type: application/json
 Authorization: Bearer {{token}}
-{"project": "api-tests-roles", "name": "operator"}
+{"projectName": "api-tests-roles", "name": "operator"}
 HTTP 409
 [Asserts]
 jsonpath "$.code" == "already_exists"

@@ -76,7 +76,7 @@ CreateAssetRequest is the input of AssetService.CreateAsset.
 
 | Field | Type | Description | Rules |
 | ----- | ---- | ----------- | ----- |
-| `project` | `string` | Project is the name of the project that gets the asset. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
+| `project_name` | `string` | ProjectName is the name of the project that gets the asset. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
 | `name` | `string` | Name is the name of the new asset. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
 | `labels` | `repeated tidegate.authority.v1.CreateAssetRequest.LabelsEntry` | Labels are the labels of the new asset. | At most 64 labels. A key is an optional DNS name and a slash, followed by a name. The DNS name has at most 253 characters, in lowercase parts of at most 63. A name has at most 63 letters, digits, dashes, underscores and dots, and starts and ends with a letter or digit. A value is empty or follows the rule for a name. |
 | `ssh` | `tidegate.authority.v1.SSHTarget` | SSH makes the asset a host that tidegate reaches over SSH. |  |
@@ -117,7 +117,7 @@ ListAssetsRequest is the input of AssetService.ListAssets.
 
 | Field | Type | Description | Rules |
 | ----- | ---- | ----------- | ----- |
-| `project` | `string` | Project is the name of the project whose assets are listed. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
+| `project_name` | `string` | ProjectName is the name of the project whose assets are listed. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
 
 ### tidegate.authority.v1.ListAssetsResponse { #tidegate.authority.v1.ListAssetsResponse }
 
@@ -165,9 +165,9 @@ CreateBindingRequest is the input of BindingService.CreateBinding.
 
 | Field | Type | Description | Rules |
 | ----- | ---- | ----------- | ----- |
-| `project` | `string` | Project is the name of the project that gets the binding. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
-| `role` | `string` | Role is the name of the role of the project that the user gets. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
-| `user` | `string` | User is the name of the user who gets the role, in any letter case. | Not empty. |
+| `project_name` | `string` | ProjectName is the name of the project that gets the binding. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
+| `role_name` | `string` | RoleName is the name of the role of the project that the user gets. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
+| `user_name` | `string` | UserName is the name of the user who gets the role, in any letter case. | Not empty. |
 
 ### tidegate.authority.v1.CreateBindingResponse { #tidegate.authority.v1.CreateBindingResponse }
 
@@ -177,8 +177,8 @@ CreateBindingResponse is the result of BindingService.CreateBinding.
 | ----- | ---- | ----------- | ----- |
 | `id` | `string` | ID identifies the new binding. It is a UUID. |  |
 | `project_id` | `string` | ProjectID identifies the project that the new binding belongs to. It is a UUID. |  |
-| `role` | `string` | Role is the name of the role that the new binding gives. |  |
-| `user` | `string` | User is the name of the user who gets the role, as the authority stores it. |  |
+| `role_name` | `string` | RoleName is the name of the role that the new binding gives. |  |
+| `user_name` | `string` | UserName is the name of the user who gets the role, as the authority stores it. |  |
 
 ### tidegate.authority.v1.ListBindingsRequest { #tidegate.authority.v1.ListBindingsRequest }
 
@@ -186,7 +186,7 @@ ListBindingsRequest is the input of BindingService.ListBindings.
 
 | Field | Type | Description | Rules |
 | ----- | ---- | ----------- | ----- |
-| `project` | `string` | Project is the name of the project whose bindings are listed. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
+| `project_name` | `string` | ProjectName is the name of the project whose bindings are listed. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
 
 ### tidegate.authority.v1.ListBindingsResponse { #tidegate.authority.v1.ListBindingsResponse }
 
@@ -204,8 +204,8 @@ Binding is one binding in the list.
 | ----- | ---- | ----------- | ----- |
 | `id` | `string` | ID identifies the binding. It is a UUID. |  |
 | `project_id` | `string` | ProjectID identifies the project that the binding belongs to. It is a UUID. |  |
-| `role` | `string` | Role is the name of the role that the binding gives. |  |
-| `user` | `string` | User is the name of the user who has the role. |  |
+| `role_name` | `string` | RoleName is the name of the role that the binding gives. |  |
+| `user_name` | `string` | UserName is the name of the user who has the role. |  |
 
 ### tidegate.authority.v1.ReadRequest { #tidegate.authority.v1.ReadRequest }
 
@@ -324,7 +324,7 @@ CreateRoleRequest is the input of RoleService.CreateRole.
 
 | Field | Type | Description | Rules |
 | ----- | ---- | ----------- | ----- |
-| `project` | `string` | Project is the name of the project that gets the role. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
+| `project_name` | `string` | ProjectName is the name of the project that gets the role. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
 | `name` | `string` | Name is the name of the new role. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
 | `permissions` | `tidegate.authority.v1.ProjectPermissions` | Permissions are the permissions of the new role. A role without them gives its holders nothing. |  |
 

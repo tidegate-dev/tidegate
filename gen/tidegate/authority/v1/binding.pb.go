@@ -25,20 +25,20 @@ const (
 // CreateBindingRequest is the input of BindingService.CreateBinding.
 type CreateBindingRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Project is the name of the project that gets the binding.
+	// ProjectName is the name of the project that gets the binding.
 	//
 	// Rules: Starts with a lowercase letter, goes on with lowercase letters,
 	// digits and dashes, and ends with a letter or digit. At most 63 characters.
-	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
-	// Role is the name of the role of the project that the user gets.
+	ProjectName string `protobuf:"bytes,1,opt,name=project_name,json=projectName,proto3" json:"project_name,omitempty"`
+	// RoleName is the name of the role of the project that the user gets.
 	//
 	// Rules: Starts with a lowercase letter, goes on with lowercase letters,
 	// digits and dashes, and ends with a letter or digit. At most 63 characters.
-	Role string `protobuf:"bytes,2,opt,name=role,proto3" json:"role,omitempty"`
-	// User is the name of the user who gets the role, in any letter case.
+	RoleName string `protobuf:"bytes,2,opt,name=role_name,json=roleName,proto3" json:"role_name,omitempty"`
+	// UserName is the name of the user who gets the role, in any letter case.
 	//
 	// Rules: Not empty.
-	User          string `protobuf:"bytes,3,opt,name=user,proto3" json:"user,omitempty"`
+	UserName      string `protobuf:"bytes,3,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -73,23 +73,23 @@ func (*CreateBindingRequest) Descriptor() ([]byte, []int) {
 	return file_tidegate_authority_v1_binding_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *CreateBindingRequest) GetProject() string {
+func (x *CreateBindingRequest) GetProjectName() string {
 	if x != nil {
-		return x.Project
+		return x.ProjectName
 	}
 	return ""
 }
 
-func (x *CreateBindingRequest) GetRole() string {
+func (x *CreateBindingRequest) GetRoleName() string {
 	if x != nil {
-		return x.Role
+		return x.RoleName
 	}
 	return ""
 }
 
-func (x *CreateBindingRequest) GetUser() string {
+func (x *CreateBindingRequest) GetUserName() string {
 	if x != nil {
-		return x.User
+		return x.UserName
 	}
 	return ""
 }
@@ -102,11 +102,11 @@ type CreateBindingResponse struct {
 	// ProjectID identifies the project that the new binding belongs to. It is
 	// a UUID.
 	ProjectId string `protobuf:"bytes,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
-	// Role is the name of the role that the new binding gives.
-	Role string `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"`
-	// User is the name of the user who gets the role, as the authority stores
-	// it.
-	User          string `protobuf:"bytes,4,opt,name=user,proto3" json:"user,omitempty"`
+	// RoleName is the name of the role that the new binding gives.
+	RoleName string `protobuf:"bytes,3,opt,name=role_name,json=roleName,proto3" json:"role_name,omitempty"`
+	// UserName is the name of the user who gets the role, as the authority
+	// stores it.
+	UserName      string `protobuf:"bytes,4,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -155,16 +155,16 @@ func (x *CreateBindingResponse) GetProjectId() string {
 	return ""
 }
 
-func (x *CreateBindingResponse) GetRole() string {
+func (x *CreateBindingResponse) GetRoleName() string {
 	if x != nil {
-		return x.Role
+		return x.RoleName
 	}
 	return ""
 }
 
-func (x *CreateBindingResponse) GetUser() string {
+func (x *CreateBindingResponse) GetUserName() string {
 	if x != nil {
-		return x.User
+		return x.UserName
 	}
 	return ""
 }
@@ -172,11 +172,11 @@ func (x *CreateBindingResponse) GetUser() string {
 // ListBindingsRequest is the input of BindingService.ListBindings.
 type ListBindingsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Project is the name of the project whose bindings are listed.
+	// ProjectName is the name of the project whose bindings are listed.
 	//
 	// Rules: Starts with a lowercase letter, goes on with lowercase letters,
 	// digits and dashes, and ends with a letter or digit. At most 63 characters.
-	Project       string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	ProjectName   string `protobuf:"bytes,1,opt,name=project_name,json=projectName,proto3" json:"project_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -211,9 +211,9 @@ func (*ListBindingsRequest) Descriptor() ([]byte, []int) {
 	return file_tidegate_authority_v1_binding_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *ListBindingsRequest) GetProject() string {
+func (x *ListBindingsRequest) GetProjectName() string {
 	if x != nil {
-		return x.Project
+		return x.ProjectName
 	}
 	return ""
 }
@@ -273,10 +273,10 @@ type ListBindingsResponse_Binding struct {
 	// ProjectID identifies the project that the binding belongs to. It is a
 	// UUID.
 	ProjectId string `protobuf:"bytes,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
-	// Role is the name of the role that the binding gives.
-	Role string `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"`
-	// User is the name of the user who has the role.
-	User          string `protobuf:"bytes,4,opt,name=user,proto3" json:"user,omitempty"`
+	// RoleName is the name of the role that the binding gives.
+	RoleName string `protobuf:"bytes,3,opt,name=role_name,json=roleName,proto3" json:"role_name,omitempty"`
+	// UserName is the name of the user who has the role.
+	UserName      string `protobuf:"bytes,4,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -325,16 +325,16 @@ func (x *ListBindingsResponse_Binding) GetProjectId() string {
 	return ""
 }
 
-func (x *ListBindingsResponse_Binding) GetRole() string {
+func (x *ListBindingsResponse_Binding) GetRoleName() string {
 	if x != nil {
-		return x.Role
+		return x.RoleName
 	}
 	return ""
 }
 
-func (x *ListBindingsResponse_Binding) GetUser() string {
+func (x *ListBindingsResponse_Binding) GetUserName() string {
 	if x != nil {
-		return x.User
+		return x.UserName
 	}
 	return ""
 }
@@ -343,30 +343,30 @@ var File_tidegate_authority_v1_binding_proto protoreflect.FileDescriptor
 
 const file_tidegate_authority_v1_binding_proto_rawDesc = "" +
 	"\n" +
-	"#tidegate/authority/v1/binding.proto\x12\x15tidegate.authority.v1\x1a\x1bbuf/validate/validate.proto\"\xa2\x04\n" +
-	"\x14CreateBindingRequest\x12\xf9\x01\n" +
-	"\aproject\x18\x01 \x01(\tB\xde\x01\xbaH\xda\x01\xba\x01\xd6\x01\n" +
-	"\x0fbinding.project\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\aproject\x12\xf0\x01\n" +
-	"\x04role\x18\x02 \x01(\tB\xdb\x01\xbaH\xd7\x01\xba\x01\xd3\x01\n" +
-	"\fbinding.role\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\x04role\x12\x1b\n" +
-	"\x04user\x18\x03 \x01(\tB\a\xbaH\x04r\x02\x10\x01R\x04user\"n\n" +
+	"#tidegate/authority/v1/binding.proto\x12\x15tidegate.authority.v1\x1a\x1bbuf/validate/validate.proto\"\xc7\x04\n" +
+	"\x14CreateBindingRequest\x12\x87\x02\n" +
+	"\fproject_name\x18\x01 \x01(\tB\xe3\x01\xbaH\xdf\x01\xba\x01\xdb\x01\n" +
+	"\x14binding.project_name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\vprojectName\x12\xfe\x01\n" +
+	"\trole_name\x18\x02 \x01(\tB\xe0\x01\xbaH\xdc\x01\xba\x01\xd8\x01\n" +
+	"\x11binding.role_name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\broleName\x12$\n" +
+	"\tuser_name\x18\x03 \x01(\tB\a\xbaH\x04r\x02\x10\x01R\buserName\"\x80\x01\n" +
 	"\x15CreateBindingResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
-	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x12\n" +
-	"\x04role\x18\x03 \x01(\tR\x04role\x12\x12\n" +
-	"\x04user\x18\x04 \x01(\tR\x04user\"\x91\x02\n" +
-	"\x13ListBindingsRequest\x12\xf9\x01\n" +
-	"\aproject\x18\x01 \x01(\tB\xde\x01\xbaH\xda\x01\xba\x01\xd6\x01\n" +
-	"\x0fbinding.project\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\aproject\"\xc9\x01\n" +
+	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x1b\n" +
+	"\trole_name\x18\x03 \x01(\tR\broleName\x12\x1b\n" +
+	"\tuser_name\x18\x04 \x01(\tR\buserName\"\x9f\x02\n" +
+	"\x13ListBindingsRequest\x12\x87\x02\n" +
+	"\fproject_name\x18\x01 \x01(\tB\xe3\x01\xbaH\xdf\x01\xba\x01\xdb\x01\n" +
+	"\x14binding.project_name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\vprojectName\"\xdb\x01\n" +
 	"\x14ListBindingsResponse\x12O\n" +
-	"\bbindings\x18\x01 \x03(\v23.tidegate.authority.v1.ListBindingsResponse.BindingR\bbindings\x1a`\n" +
+	"\bbindings\x18\x01 \x03(\v23.tidegate.authority.v1.ListBindingsResponse.BindingR\bbindings\x1ar\n" +
 	"\aBinding\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
-	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x12\n" +
-	"\x04role\x18\x03 \x01(\tR\x04role\x12\x12\n" +
-	"\x04user\x18\x04 \x01(\tR\x04user2\xe5\x01\n" +
+	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x1b\n" +
+	"\trole_name\x18\x03 \x01(\tR\broleName\x12\x1b\n" +
+	"\tuser_name\x18\x04 \x01(\tR\buserName2\xe5\x01\n" +
 	"\x0eBindingService\x12j\n" +
 	"\rCreateBinding\x12+.tidegate.authority.v1.CreateBindingRequest\x1a,.tidegate.authority.v1.CreateBindingResponse\x12g\n" +
 	"\fListBindings\x12*.tidegate.authority.v1.ListBindingsRequest\x1a+.tidegate.authority.v1.ListBindingsResponseBHZFgithub.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;authorityv1b\x06proto3"

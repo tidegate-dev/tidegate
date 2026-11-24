@@ -97,8 +97,8 @@ func roleCreate(ctx context.Context, cmd *cli.Command, store connections.Store) 
 	}
 
 	response, err := clients.Role().CreateRole(ctx, connect.NewRequest(&authorityv1.CreateRoleRequest{
-		Project: cmd.String("project"),
-		Name:    cmd.Args().First(),
+		ProjectName: cmd.String("project"),
+		Name:        cmd.Args().First(),
 		Permissions: &authorityv1.ProjectPermissions{
 			CreateRoles:    cmd.Bool("create-roles"),
 			Escalate:       cmd.Bool("escalate"),

@@ -267,14 +267,14 @@ func TestCreateAssetRequestRefusesAProjectNameOfAnotherForm(t *testing.T) {
 
 			// arrange
 			request := validCreateAssetRequest()
-			request.Project = project
+			request.ProjectName = project
 
 			// act
 			err := validationError(t, request)
 
 			// assert
 			assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
-			assert.ErrorContains(t, err, "project: must start with a lowercase letter")
+			assert.ErrorContains(t, err, "project_name: must start with a lowercase letter")
 		})
 	}
 }
@@ -283,11 +283,11 @@ func TestListAssetsRequestRefusesAProjectNameOfAnotherForm(t *testing.T) {
 	t.Parallel()
 
 	// act
-	err := validationError(t, &authorityv1.ListAssetsRequest{Project: "Payments"})
+	err := validationError(t, &authorityv1.ListAssetsRequest{ProjectName: "Payments"})
 
 	// assert
 	assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
-	assert.ErrorContains(t, err, "project: must start with a lowercase letter")
+	assert.ErrorContains(t, err, "project_name: must start with a lowercase letter")
 }
 
 func TestCreateAssetResponseHoldsTheAssetWithItsSSHTarget(t *testing.T) {
@@ -429,8 +429,8 @@ func dnsName(length int) string {
 
 func validCreateAssetRequest() *authorityv1.CreateAssetRequest {
 	return &authorityv1.CreateAssetRequest{
-		Project: "payments",
-		Name:    "bastion",
+		ProjectName: "payments",
+		Name:        "bastion",
 		Target: &authorityv1.CreateAssetRequest_Ssh{Ssh: &authorityv1.SSHTarget{
 			Host:    "bastion.example",
 			Port:    22,
@@ -444,7 +444,7 @@ func TestCreateAssetRefusesARequestWhoseTargetTheHandlerDoesNotKnow(t *testing.T
 
 	// arrange
 	service := NewAssetService(nil)
-	request := connect.NewRequest(&authorityv1.CreateAssetRequest{Project: "payments", Name: "bastion"})
+	request := connect.NewRequest(&authorityv1.CreateAssetRequest{ProjectName: "payments", Name: "bastion"})
 
 	// act
 	_, err := service.CreateAsset(t.Context(), request)

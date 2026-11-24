@@ -15,7 +15,7 @@ func TestCreateBindingRequestAcceptsTheNamesOfAProjectARoleAndAUser(t *testing.T
 	t.Parallel()
 
 	// act
-	err := validationError(t, &authorityv1.CreateBindingRequest{Project: "team-1", Role: "operator-2", User: "Alice Example"})
+	err := validationError(t, &authorityv1.CreateBindingRequest{ProjectName: "team-1", RoleName: "operator-2", UserName: "Alice Example"})
 
 	// assert
 	assert.NoError(t, err)
@@ -29,11 +29,11 @@ func TestCreateBindingRequestRefusesAProjectNameOfAnotherForm(t *testing.T) {
 			t.Parallel()
 
 			// act
-			err := validationError(t, &authorityv1.CreateBindingRequest{Project: project, Role: "operator", User: "alice"})
+			err := validationError(t, &authorityv1.CreateBindingRequest{ProjectName: project, RoleName: "operator", UserName: "alice"})
 
 			// assert
 			assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
-			assert.ErrorContains(t, err, "project: must start with a lowercase letter")
+			assert.ErrorContains(t, err, "project_name: must start with a lowercase letter")
 		})
 	}
 }
@@ -46,11 +46,11 @@ func TestCreateBindingRequestRefusesARoleNameOfAnotherForm(t *testing.T) {
 			t.Parallel()
 
 			// act
-			err := validationError(t, &authorityv1.CreateBindingRequest{Project: "payments", Role: role, User: "alice"})
+			err := validationError(t, &authorityv1.CreateBindingRequest{ProjectName: "payments", RoleName: role, UserName: "alice"})
 
 			// assert
 			assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
-			assert.ErrorContains(t, err, "role: must start with a lowercase letter")
+			assert.ErrorContains(t, err, "role_name: must start with a lowercase letter")
 		})
 	}
 }
@@ -59,7 +59,7 @@ func TestCreateBindingRequestRefusesAnEmptyUserName(t *testing.T) {
 	t.Parallel()
 
 	// act
-	err := validationError(t, &authorityv1.CreateBindingRequest{Project: "payments", Role: "operator"})
+	err := validationError(t, &authorityv1.CreateBindingRequest{ProjectName: "payments", RoleName: "operator"})
 
 	// assert
 	assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
@@ -70,11 +70,11 @@ func TestListBindingsRequestRefusesAProjectNameOfAnotherForm(t *testing.T) {
 	t.Parallel()
 
 	// act
-	err := validationError(t, &authorityv1.ListBindingsRequest{Project: "Payments"})
+	err := validationError(t, &authorityv1.ListBindingsRequest{ProjectName: "Payments"})
 
 	// assert
 	assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
-	assert.ErrorContains(t, err, "project: must start with a lowercase letter")
+	assert.ErrorContains(t, err, "project_name: must start with a lowercase letter")
 }
 
 func TestCreateBindingResponseHoldsTheBindingWithTheNamesOfItsRoleAndUser(t *testing.T) {
@@ -94,8 +94,8 @@ func TestCreateBindingResponseHoldsTheBindingWithTheNamesOfItsRoleAndUser(t *tes
 	// assert
 	assert.Equal(t, binding.ID.String(), response.GetId())
 	assert.Equal(t, binding.ProjectID.String(), response.GetProjectId())
-	assert.Equal(t, "operator", response.GetRole())
-	assert.Equal(t, "alice", response.GetUser())
+	assert.Equal(t, "operator", response.GetRoleName())
+	assert.Equal(t, "alice", response.GetUserName())
 }
 
 func TestListedBindingHoldsTheBindingWithTheNamesOfItsRoleAndUser(t *testing.T) {
@@ -115,8 +115,8 @@ func TestListedBindingHoldsTheBindingWithTheNamesOfItsRoleAndUser(t *testing.T) 
 	// assert
 	assert.Equal(t, binding.ID.String(), message.GetId())
 	assert.Equal(t, binding.ProjectID.String(), message.GetProjectId())
-	assert.Equal(t, "operator", message.GetRole())
-	assert.Equal(t, "alice", message.GetUser())
+	assert.Equal(t, "operator", message.GetRoleName())
+	assert.Equal(t, "alice", message.GetUserName())
 }
 
 func TestBindingErrorAnswersNotFoundForAUserThatDoesNotExist(t *testing.T) {
