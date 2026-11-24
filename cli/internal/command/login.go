@@ -151,14 +151,25 @@ func readCredentials(ctx context.Context, in io.Reader, prompts io.Writer) (stri
 		return "", "", fmt.Errorf("reading the user name: %w", err)
 	}
 
-	password, err := tty.ReadSecret(ctx, "Password: ")
-	if errors.Is(err, io.EOF) {
-		return "", "", errors.New("no password on stdin")
-	}
-
+	password, err := readPassword(ctx, tty, "Password: ")
 	if err != nil {
-		return "", "", fmt.Errorf("reading the password: %w", err)
+		return "", "", err
 	}
 
 	return userName, password, nil
+}
+
+// readPassword asks for a password with prompt on a terminal. Otherwise it
+// reads the password from the next line of the input.
+func readPassword(ctx context.Context, tty *terminal.Terminal, prompt string) (string, error) {
+	password, err := tty.ReadSecret(ctx, prompt)
+	if errors.Is(err, io.EOF) {
+		return "", errors.New("no password on stdin")
+	}
+
+	if err != nil {
+		return "", fmt.Errorf("reading the password: %w", err)
+	}
+
+	return password, nil
 }

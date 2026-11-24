@@ -252,13 +252,12 @@ func TestSetSSHSecretRefusesFlagsThatDoNotFitTogether(t *testing.T) {
 	t.Parallel()
 
 	for description, test := range map[string]struct {
-		userName       string
 		askForPassword bool
 		privateKeyFile string
 		message        string
 	}{
-		"password and private key file": {"deploy", true, "key", "--password and --private-key-file can't be combined"},
-		"neither of the two":            {"deploy", false, "", "want --password or --private-key-file"},
+		"password and private key file": {true, "key", "--password and --private-key-file can't be combined"},
+		"neither of the two":            {false, "", "want --password or --private-key-file"},
 	} {
 		t.Run(description, func(t *testing.T) {
 			t.Parallel()
@@ -267,7 +266,7 @@ func TestSetSSHSecretRefusesFlagsThatDoNotFitTogether(t *testing.T) {
 			request := &authorityv1.CreateAssetRequest{}
 
 			// act
-			err := setSSHSecret(t.Context(), request, test.userName, test.askForPassword, test.privateKeyFile,
+			err := setSSHSecret(t.Context(), request, test.askForPassword, test.privateKeyFile,
 				strings.NewReader("a password\n"), io.Discard)
 
 			// assert
@@ -287,7 +286,7 @@ func TestSetSSHSecretPutsTheContentOfThePrivateKeyFileIntoTheRequest(t *testing.
 	request := &authorityv1.CreateAssetRequest{}
 
 	// act
-	err := setSSHSecret(t.Context(), request, "deploy", false, privateKeyFile, strings.NewReader("a password\n"), io.Discard)
+	err := setSSHSecret(t.Context(), request, false, privateKeyFile, strings.NewReader("a password\n"), io.Discard)
 
 	// assert
 	require.NoError(t, err)
@@ -301,7 +300,7 @@ func TestSetSSHSecretFailsForAPrivateKeyFileThatDoesNotExist(t *testing.T) {
 	privateKeyFile := filepath.Join(t.TempDir(), "missing")
 
 	// act
-	err := setSSHSecret(t.Context(), &authorityv1.CreateAssetRequest{}, "deploy", false, privateKeyFile, strings.NewReader(""), io.Discard)
+	err := setSSHSecret(t.Context(), &authorityv1.CreateAssetRequest{}, false, privateKeyFile, strings.NewReader(""), io.Discard)
 
 	// assert
 	assert.ErrorContains(t, err, "--private-key-file")
@@ -315,7 +314,7 @@ func TestSetSSHSecretReadsThePasswordFromTheInput(t *testing.T) {
 	request := &authorityv1.CreateAssetRequest{}
 
 	// act
-	err := setSSHSecret(t.Context(), request, "deploy", true, "", strings.NewReader("a password\n"), io.Discard)
+	err := setSSHSecret(t.Context(), request, true, "", strings.NewReader("a password\n"), io.Discard)
 
 	// assert
 	require.NoError(t, err)
@@ -326,7 +325,7 @@ func TestSetSSHSecretFailsWithoutAPasswordOnTheInput(t *testing.T) {
 	t.Parallel()
 
 	// act
-	err := setSSHSecret(t.Context(), &authorityv1.CreateAssetRequest{}, "deploy", true, "", strings.NewReader(""), io.Discard)
+	err := setSSHSecret(t.Context(), &authorityv1.CreateAssetRequest{}, true, "", strings.NewReader(""), io.Discard)
 
 	// assert
 	assert.ErrorContains(t, err, "no password on stdin")
