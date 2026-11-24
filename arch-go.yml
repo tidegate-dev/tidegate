@@ -92,6 +92,7 @@ dependenciesRules:
       internal:
         - '^github.com/tidegate-dev/tidegate/authority/internal/model$'
         - '^github.com/tidegate-dev/tidegate/authority/internal/password$'
+        - '^github.com/tidegate-dev/tidegate/internal/logging$'
         - '^github.com/tidegate-dev/tidegate/internal/secret$'
         - '^github.com/tidegate-dev/tidegate/internal/secretengine$'
     shouldNotDependsOn:

@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"time"
 
 	"golang.org/x/crypto/ssh"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/model"
+	"github.com/tidegate-dev/tidegate/internal/logging"
 	"github.com/tidegate-dev/tidegate/internal/secret"
 	"github.com/tidegate-dev/tidegate/internal/secretengine"
 )
@@ -67,10 +67,13 @@ func NewAssets(
 
 // CreateSSH creates an asset for an SSH host in the project named
 // projectName and returns it. It stores the password or private key from
-// secretInput in the secret engine and records on the asset where it is. It
-// returns model.ErrProjectNotFound if no project has that name, and
+// secretInput in the secret engine and records on the asset where it is.
+//
+// It returns ErrSSHPasswordEmpty, ErrSSHPrivateKeyInvalid or
+// ErrSSHPrivateKeyEncrypted for a password or private key that tidegate
+// can't use, model.ErrProjectNotFound if no project has that name, and
 // model.ErrAssetNameTaken if another asset of the project has the name. The
-// API checks the form of every value before it calls CreateSSH.
+// API checks the form of every other value before it calls CreateSSH.
 func (a *Assets) CreateSSH(
 	ctx context.Context,
 	projectName string,
@@ -94,9 +97,20 @@ func (a *Assets) CreateSSH(
 		return nil, err
 	}
 
-	target.Secret, err = a.storeValue(ctx, secretInput)
+	engine, err := a.engines.ByName(a.engineName)
 	if err != nil {
 		return nil, err
+	}
+
+	reference, err := engine.Store(ctx, secretInput.Value)
+	if err != nil {
+		return nil, err
+	}
+
+	target.Secret = model.StoredSSHSecret{
+		EngineName: a.engineName,
+		Reference:  string(reference),
+		Kind:       secretInput.Kind,
 	}
 
 	asset := &model.Asset{
@@ -113,7 +127,7 @@ func (a *Assets) CreateSSH(
 
 	err = unit.Commit(ctx)
 	if err != nil {
-		a.deleteStoredValue(ctx, target.Secret)
+		deleteStoredValue(ctx, engine, a.engineName, reference)
 
 		return nil, err
 	}
@@ -147,37 +161,15 @@ func checkSSHSecretInput(secretInput SSHSecretInput) error {
 	}
 }
 
-func (a *Assets) storeValue(ctx context.Context, secretInput SSHSecretInput) (model.StoredSSHSecret, error) {
-	engine, err := a.engines.ByName(a.engineName)
-	if err != nil {
-		return model.StoredSSHSecret{}, err
-	}
-
-	reference, err := engine.Store(ctx, secretInput.Value)
-	if err != nil {
-		return model.StoredSSHSecret{}, err
-	}
-
-	return model.StoredSSHSecret{
-		EngineName: a.engineName,
-		Reference:  string(reference),
-		Kind:       secretInput.Kind,
-	}, nil
-}
-
-func (a *Assets) deleteStoredValue(ctx context.Context, stored model.StoredSSHSecret) {
+func deleteStoredValue(ctx context.Context, engine secretengine.Engine, engineName string, reference secretengine.Reference) {
 	// The commit also fails when the request's context ends.
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), deleteStoredValueTimeout)
 	defer cancel()
 
-	engine, err := a.engines.ByName(stored.EngineName)
-	if err == nil {
-		err = engine.Delete(ctx, secretengine.Reference(stored.Reference))
-	}
-
+	err := engine.Delete(ctx, reference)
 	if err != nil {
-		slog.ErrorContext(ctx, "a secret engine keeps a value that no asset uses, because deleting it failed",
-			"engine", stored.EngineName, "reference", stored.Reference, "error", err)
+		logging.FromContext(ctx).ErrorContext(ctx, "a secret engine keeps a value that no asset uses, because deleting it failed",
+			"engine", engineName, "reference", reference, "error", err)
 	}
 }
 
