@@ -19,8 +19,8 @@ type Dummy struct {
 // DummyReadWriter belongs to a Unit. It reads dummies right away and records
 // writes, which the unit runs at Commit.
 type DummyReadWriter interface {
-	// ByID returns the dummy with the ID, or ErrDummyNotFound.
-	ByID(ctx context.Context, id int64) (*Dummy, error)
+	// FindByID returns the dummy with the ID, or ErrDummyNotFound.
+	FindByID(ctx context.Context, id int64) (*Dummy, error)
 	// Add records the insert of dummy. Commit gives dummy its ID.
 	Add(dummy *Dummy)
 }

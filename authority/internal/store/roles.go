@@ -16,9 +16,9 @@ type RoleReader struct {
 	queries *sqlc.Queries
 }
 
-// ByName returns the role of the project with the name, ignoring letter case,
-// or model.ErrRoleNotFound.
-func (r *RoleReader) ByName(ctx context.Context, projectID model.ProjectID, name string) (*model.Role, error) {
+// FindByProjectIDAndName returns the role of the project with the name,
+// ignoring letter case, or model.ErrRoleNotFound.
+func (r *RoleReader) FindByProjectIDAndName(ctx context.Context, projectID model.ProjectID, name string) (*model.Role, error) {
 	row, err := r.queries.GetRoleByName(ctx, sqlc.GetRoleByNameParams{
 		ProjectID: databaseID(projectID),
 		Name:      name,

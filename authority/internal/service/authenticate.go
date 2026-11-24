@@ -29,9 +29,9 @@ var (
 
 // UserFinder finds a user by name.
 type UserFinder interface {
-	// ByName returns the user with the name, ignoring letter case, or
+	// FindByName returns the user with the name, ignoring letter case, or
 	// model.ErrUserNotFound.
-	ByName(ctx context.Context, name string) (*model.User, error)
+	FindByName(ctx context.Context, name string) (*model.User, error)
 }
 
 // Authenticator checks users' local passwords.
@@ -67,7 +67,7 @@ func (a *Authenticator) Authenticate(ctx context.Context, name string, plaintext
 		return model.UserID{}, err
 	}
 
-	user, err := a.users.ByName(ctx, name)
+	user, err := a.users.FindByName(ctx, name)
 
 	var (
 		hash    string

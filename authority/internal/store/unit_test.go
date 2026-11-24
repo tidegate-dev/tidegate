@@ -45,7 +45,7 @@ var _ = Describe("Unit", func() {
 		unit.Users().Add(alice)
 		Expect(unit.Commit(ctx)).To(Succeed())
 
-		found, err := data.Users().ByName(ctx, "alice")
+		found, err := data.Users().FindByName(ctx, "alice")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(alice.Version).To(SatisfyAll(Not(BeZero()), Equal(found.Version)))
 	})

@@ -28,8 +28,8 @@ func ValidateName(name string) error {
 
 // UserChecker checks whether a user exists.
 type UserChecker interface {
-	// Any reports whether a user exists.
-	Any(ctx context.Context) (bool, error)
+	// AnyExist reports whether a user exists.
+	AnyExist(ctx context.Context) (bool, error)
 }
 
 // Users creates users and reports whether any exist.
@@ -47,7 +47,7 @@ func NewUsers(users UserChecker, units model.UnitFactory, rnd random.Service) *U
 
 // AnyExist reports whether a user exists.
 func (u *Users) AnyExist(ctx context.Context) (bool, error) {
-	return u.users.Any(ctx)
+	return u.users.AnyExist(ctx)
 }
 
 // CreateInitialAdmin creates the first user, with a local password. It

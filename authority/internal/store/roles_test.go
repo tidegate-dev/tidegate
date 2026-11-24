@@ -97,7 +97,7 @@ var _ = Describe("RoleReader", func() {
 		addProject(ctx, data, model.ProjectID{1}, "payments")
 	})
 
-	Describe("ByName", func() {
+	Describe("FindByProjectIDAndName", func() {
 		It("returns the role of the project with the name, ignoring letter case", func(ctx SpecContext) {
 			role := &model.Role{
 				ID:          model.RoleID{2},
@@ -110,13 +110,13 @@ var _ = Describe("RoleReader", func() {
 			unit.Roles().Add(role)
 			Expect(unit.Commit(ctx)).To(Succeed())
 
-			Expect(data.Roles().ByName(ctx, model.ProjectID{1}, "Operator")).To(Equal(role))
+			Expect(data.Roles().FindByProjectIDAndName(ctx, model.ProjectID{1}, "Operator")).To(Equal(role))
 		})
 
 		It("returns ErrRoleNotFound for a name that no role of the project has", func(ctx SpecContext) {
 			addRole(ctx, data, model.RoleID{2}, model.ProjectID{1}, "operator")
 
-			_, err := data.Roles().ByName(ctx, model.ProjectID{1}, "auditor")
+			_, err := data.Roles().FindByProjectIDAndName(ctx, model.ProjectID{1}, "auditor")
 
 			Expect(err).To(MatchError(model.ErrRoleNotFound))
 		})
@@ -125,7 +125,7 @@ var _ = Describe("RoleReader", func() {
 			addProject(ctx, data, model.ProjectID{2}, "search")
 			addRole(ctx, data, model.RoleID{3}, model.ProjectID{2}, "operator")
 
-			_, err := data.Roles().ByName(ctx, model.ProjectID{1}, "operator")
+			_, err := data.Roles().FindByProjectIDAndName(ctx, model.ProjectID{1}, "operator")
 
 			Expect(err).To(MatchError(model.ErrRoleNotFound))
 		})

@@ -202,7 +202,7 @@ type fakeSessions struct {
 	called  atomic.Bool
 }
 
-func (f *fakeSessions) Session(_ context.Context, token secret.String) (model.Session, error) {
+func (f *fakeSessions) FindByToken(_ context.Context, token secret.String) (model.Session, error) {
 	f.called.Store(true)
 
 	if f.err != nil {

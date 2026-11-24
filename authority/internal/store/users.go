@@ -22,9 +22,9 @@ type UserReader struct {
 	queries *sqlc.Queries
 }
 
-// ByName returns the user with the name, ignoring letter case, or
+// FindByName returns the user with the name, ignoring letter case, or
 // model.ErrUserNotFound.
-func (u *UserReader) ByName(ctx context.Context, name string) (*model.User, error) {
+func (u *UserReader) FindByName(ctx context.Context, name string) (*model.User, error) {
 	row, err := u.queries.GetUserByName(ctx, name)
 	// Postgres refuses text with NUL or invalid UTF-8 with this code.
 	if errors.Is(err, pgx.ErrNoRows) || hasCode(err, pgerrcode.CharacterNotInRepertoire) {
@@ -45,8 +45,8 @@ func (u *UserReader) ByName(ctx context.Context, name string) (*model.User, erro
 	return user, nil
 }
 
-// Any reports whether the table holds a user.
-func (u *UserReader) Any(ctx context.Context) (bool, error) {
+// AnyExist reports whether the table holds a user.
+func (u *UserReader) AnyExist(ctx context.Context) (bool, error) {
 	exists, err := u.queries.AnyUserExists(ctx)
 	if err != nil {
 		return false, fmt.Errorf("checking for users: %w", err)

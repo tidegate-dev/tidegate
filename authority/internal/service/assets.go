@@ -8,8 +8,8 @@ import (
 
 // AssetLister lists the assets of a project.
 type AssetLister interface {
-	// InProject returns the assets of the project, ordered by name.
-	InProject(ctx context.Context, projectID model.ProjectID) ([]*model.Asset, error)
+	// ListForProjectID returns the assets of the project, ordered by name.
+	ListForProjectID(ctx context.Context, projectID model.ProjectID) ([]*model.Asset, error)
 }
 
 // Assets creates and lists assets.
@@ -37,7 +37,7 @@ func (a *Assets) CreateSSH(
 	labels map[string]string,
 	target model.SSHTarget,
 ) (*model.Asset, error) {
-	project, err := a.projects.ByName(ctx, projectName)
+	project, err := a.projects.FindByName(ctx, projectName)
 	if err != nil {
 		return nil, err
 	}
@@ -70,10 +70,10 @@ func (a *Assets) CreateSSH(
 // List returns the assets of the project named projectName, ordered by name.
 // It returns model.ErrProjectNotFound if no project has that name.
 func (a *Assets) List(ctx context.Context, projectName string) ([]*model.Asset, error) {
-	project, err := a.projects.ByName(ctx, projectName)
+	project, err := a.projects.FindByName(ctx, projectName)
 	if err != nil {
 		return nil, err
 	}
 
-	return a.assets.InProject(ctx, project.ID)
+	return a.assets.ListForProjectID(ctx, project.ID)
 }

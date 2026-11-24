@@ -22,9 +22,9 @@ type AssetReader struct {
 	queries *sqlc.Queries
 }
 
-// InProject returns the assets of the project, ordered by name without regard
-// to letter case.
-func (a *AssetReader) InProject(ctx context.Context, projectID model.ProjectID) ([]*model.Asset, error) {
+// ListForProjectID returns the assets of the project, ordered by name without
+// regard to letter case.
+func (a *AssetReader) ListForProjectID(ctx context.Context, projectID model.ProjectID) ([]*model.Asset, error) {
 	rows, err := a.queries.ListAssetsOfProject(ctx, databaseID(projectID))
 	if err != nil {
 		return nil, fmt.Errorf("reading the assets: %w", err)

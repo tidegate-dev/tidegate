@@ -16,8 +16,8 @@ type BindingReader struct {
 	queries *sqlc.Queries
 }
 
-// ByID returns the binding with the ID, or model.ErrBindingNotFound.
-func (b *BindingReader) ByID(ctx context.Context, id model.BindingID) (*model.Binding, error) {
+// FindByID returns the binding with the ID, or model.ErrBindingNotFound.
+func (b *BindingReader) FindByID(ctx context.Context, id model.BindingID) (*model.Binding, error) {
 	row, err := b.queries.GetBinding(ctx, databaseID(id))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, model.ErrBindingNotFound
@@ -35,10 +35,10 @@ func (b *BindingReader) ByID(ctx context.Context, id model.BindingID) (*model.Bi
 	}, nil
 }
 
-// InProject returns the bindings of the project with the names of their role
-// and user. It orders them by the role name and then the user name, without
-// regard to letter case.
-func (b *BindingReader) InProject(ctx context.Context, projectID model.ProjectID) ([]*model.BindingWithNames, error) {
+// ListForProjectID returns the bindings of the project with the names of their
+// role and user. It orders them by the role name and then the user name,
+// without regard to letter case.
+func (b *BindingReader) ListForProjectID(ctx context.Context, projectID model.ProjectID) ([]*model.BindingWithNames, error) {
 	rows, err := b.queries.ListBindingsOfProject(ctx, databaseID(projectID))
 	if err != nil {
 		return nil, fmt.Errorf("reading the bindings: %w", err)

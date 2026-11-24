@@ -18,9 +18,9 @@ type SessionReader struct {
 	queries *sqlc.Queries
 }
 
-// ActiveByTokenHash returns the session with the token hash that expires
+// FindActiveByTokenHash returns the session with the token hash that expires
 // after now, or model.ErrSessionNotFound.
-func (s *SessionReader) ActiveByTokenHash(ctx context.Context, tokenHash secret.Bytes, now time.Time) (*model.Session, error) {
+func (s *SessionReader) FindActiveByTokenHash(ctx context.Context, tokenHash secret.Bytes, now time.Time) (*model.Session, error) {
 	row, err := s.queries.GetActiveSessionByTokenHash(ctx, sqlc.GetActiveSessionByTokenHashParams{
 		TokenHash: tokenHash.Reveal(),
 		Now:       databaseTime(now),
@@ -91,9 +91,9 @@ func (s *SessionReadWriter) Remove(session *model.Session) {
 	})
 }
 
-// RemoveOfUser records the delete of every session of the user, whatever
+// RemoveAllForUserID records the delete of every session of the user, whatever
 // their versions are at Commit.
-func (s *SessionReadWriter) RemoveOfUser(userID model.UserID) {
+func (s *SessionReadWriter) RemoveAllForUserID(userID model.UserID) {
 	s.unit.add(func(ctx context.Context, queries *sqlc.Queries) error {
 		err := queries.DeleteSessionsOfUser(ctx, databaseID(userID))
 		if err != nil {
@@ -104,9 +104,9 @@ func (s *SessionReadWriter) RemoveOfUser(userID model.UserID) {
 	})
 }
 
-// RemoveExpiredOfUser records the delete of every session of the user that
+// RemoveExpiredForUserID records the delete of every session of the user that
 // expires at now or earlier, whatever their versions are at Commit.
-func (s *SessionReadWriter) RemoveExpiredOfUser(userID model.UserID, now time.Time) {
+func (s *SessionReadWriter) RemoveExpiredForUserID(userID model.UserID, now time.Time) {
 	s.unit.add(func(ctx context.Context, queries *sqlc.Queries) error {
 		err := queries.DeleteExpiredSessionsOfUser(ctx, sqlc.DeleteExpiredSessionsOfUserParams{
 			UserID: databaseID(userID),

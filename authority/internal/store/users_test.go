@@ -21,11 +21,11 @@ var _ = Describe("UserReader", func() {
 		_, data = newStore(ctx)
 	})
 
-	Describe("ByName", func() {
+	Describe("FindByName", func() {
 		It("returns the user, ignoring the letter case of the name", func(ctx SpecContext) {
 			alice := addUser(ctx, data, "alice")
 
-			found, err := data.Users().ByName(ctx, "ALICE")
+			found, err := data.Users().FindByName(ctx, "ALICE")
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(found).To(Equal(alice))
@@ -40,7 +40,7 @@ var _ = Describe("UserReader", func() {
 			unit.Users().Add(alice)
 			Expect(unit.Commit(ctx)).To(Succeed())
 
-			found, err := data.Users().ByName(ctx, "alice")
+			found, err := data.Users().FindByName(ctx, "alice")
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(found.PasswordHash.Reveal()).To(Equal("a hash"))
@@ -49,7 +49,7 @@ var _ = Describe("UserReader", func() {
 		It("returns ErrUserNotFound for a name that no user has", func(ctx SpecContext) {
 			addUser(ctx, data, "alice")
 
-			_, err := data.Users().ByName(ctx, "bob")
+			_, err := data.Users().FindByName(ctx, "bob")
 
 			Expect(err).To(MatchError(model.ErrUserNotFound))
 		})
@@ -57,21 +57,21 @@ var _ = Describe("UserReader", func() {
 		It("returns ErrUserNotFound for a name with NUL", func(ctx SpecContext) {
 			addUser(ctx, data, "alice")
 
-			_, err := data.Users().ByName(ctx, "ali\x00ce")
+			_, err := data.Users().FindByName(ctx, "ali\x00ce")
 
 			Expect(err).To(MatchError(model.ErrUserNotFound))
 		})
 	})
 
-	Describe("Any", func() {
+	Describe("AnyExist", func() {
 		It("reports false for an empty table", func(ctx SpecContext) {
-			Expect(data.Users().Any(ctx)).To(BeFalse())
+			Expect(data.Users().AnyExist(ctx)).To(BeFalse())
 		})
 
 		It("reports true once a user exists", func(ctx SpecContext) {
 			addUser(ctx, data, "alice")
 
-			Expect(data.Users().Any(ctx)).To(BeTrue())
+			Expect(data.Users().AnyExist(ctx)).To(BeTrue())
 		})
 	})
 })
@@ -159,7 +159,7 @@ var _ = Describe("UserReadWriter", func() {
 			unit.Users().Update(alice)
 			Expect(unit.Commit(ctx)).To(Succeed())
 
-			found, err := data.Users().ByName(ctx, "alicia")
+			found, err := data.Users().FindByName(ctx, "alicia")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(found.PasswordHash.Reveal()).To(Equal("a hash"))
 			Expect(found.Version).To(Equal(alice.Version))
@@ -168,10 +168,10 @@ var _ = Describe("UserReadWriter", func() {
 		It("refuses a user that changed since it was read", func(ctx SpecContext) {
 			addUser(ctx, data, "alice")
 
-			stale, err := data.Users().ByName(ctx, "alice")
+			stale, err := data.Users().FindByName(ctx, "alice")
 			Expect(err).NotTo(HaveOccurred())
 
-			fresh, err := data.Users().ByName(ctx, "alice")
+			fresh, err := data.Users().FindByName(ctx, "alice")
 			Expect(err).NotTo(HaveOccurred())
 
 			fresh.Name = "alicia"
@@ -184,7 +184,7 @@ var _ = Describe("UserReadWriter", func() {
 			second.Users().Update(stale)
 
 			Expect(second.Commit(ctx)).To(MatchError(model.ErrChangedSinceRead))
-			Expect(data.Users().ByName(ctx, "alicia")).NotTo(BeNil())
+			Expect(data.Users().FindByName(ctx, "alicia")).NotTo(BeNil())
 		})
 
 		It("refuses a name that another user has", func(ctx SpecContext) {

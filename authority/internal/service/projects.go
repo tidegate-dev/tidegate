@@ -8,8 +8,8 @@ import (
 
 // ProjectLister lists projects.
 type ProjectLister interface {
-	// All returns every project, ordered by name.
-	All(ctx context.Context) ([]*model.Project, error)
+	// ListAll returns every project, ordered by name.
+	ListAll(ctx context.Context) ([]*model.Project, error)
 }
 
 // Projects creates and lists projects.
@@ -48,5 +48,5 @@ func (p *Projects) Create(ctx context.Context, name string) (*model.Project, err
 
 // List returns every project, ordered by name.
 func (p *Projects) List(ctx context.Context) ([]*model.Project, error) {
-	return p.projects.All(ctx)
+	return p.projects.ListAll(ctx)
 }

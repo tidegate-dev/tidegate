@@ -27,11 +27,11 @@ var _ = Describe("SessionReader", func() {
 		alice = addUser(ctx, data, "alice")
 	})
 
-	Describe("ActiveByTokenHash", func() {
+	Describe("FindActiveByTokenHash", func() {
 		It("returns the session of the token hash", func(ctx SpecContext) {
 			session := addSession(ctx, data, alice.ID, "token")
 
-			found, err := data.Sessions().ActiveByTokenHash(ctx, tokenHash("token"), issuedAt)
+			found, err := data.Sessions().FindActiveByTokenHash(ctx, tokenHash("token"), issuedAt)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(found).To(SatisfyAll(
@@ -47,7 +47,7 @@ var _ = Describe("SessionReader", func() {
 		It("returns ErrSessionNotFound for a token hash that no session has", func(ctx SpecContext) {
 			addSession(ctx, data, alice.ID, "token")
 
-			_, err := data.Sessions().ActiveByTokenHash(ctx, tokenHash("other"), issuedAt)
+			_, err := data.Sessions().FindActiveByTokenHash(ctx, tokenHash("other"), issuedAt)
 
 			Expect(err).To(MatchError(model.ErrSessionNotFound))
 		})
@@ -55,7 +55,7 @@ var _ = Describe("SessionReader", func() {
 		It("returns the session until just before it expires", func(ctx SpecContext) {
 			addSession(ctx, data, alice.ID, "token")
 
-			_, err := data.Sessions().ActiveByTokenHash(ctx, tokenHash("token"), issuedAt.Add(sessionLifetime-time.Microsecond))
+			_, err := data.Sessions().FindActiveByTokenHash(ctx, tokenHash("token"), issuedAt.Add(sessionLifetime-time.Microsecond))
 
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -63,7 +63,7 @@ var _ = Describe("SessionReader", func() {
 		It("returns ErrSessionNotFound from the time the session expires", func(ctx SpecContext) {
 			addSession(ctx, data, alice.ID, "token")
 
-			_, err := data.Sessions().ActiveByTokenHash(ctx, tokenHash("token"), issuedAt.Add(sessionLifetime))
+			_, err := data.Sessions().FindActiveByTokenHash(ctx, tokenHash("token"), issuedAt.Add(sessionLifetime))
 
 			Expect(err).To(MatchError(model.ErrSessionNotFound))
 		})
@@ -127,7 +127,7 @@ var _ = Describe("SessionReadWriter", func() {
 			Expect(unit.Commit(ctx)).To(Succeed())
 			Expect(count(ctx, pool, "sessions")).To(Equal(1))
 
-			_, err := data.Sessions().ActiveByTokenHash(ctx, tokenHash("other"), issuedAt)
+			_, err := data.Sessions().FindActiveByTokenHash(ctx, tokenHash("other"), issuedAt)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -151,7 +151,7 @@ var _ = Describe("SessionReadWriter", func() {
 		})
 	})
 
-	Describe("RemoveOfUser", func() {
+	Describe("RemoveAllForUserID", func() {
 		It("deletes every session of the user, and no other user's", func(ctx SpecContext) {
 			bob := addUser(ctx, data, "bob")
 			addSession(ctx, data, alice.ID, "first")
@@ -159,17 +159,17 @@ var _ = Describe("SessionReadWriter", func() {
 			addSession(ctx, data, bob.ID, "bobs")
 
 			unit := data.NewUnit()
-			unit.Sessions().RemoveOfUser(alice.ID)
+			unit.Sessions().RemoveAllForUserID(alice.ID)
 
 			Expect(unit.Commit(ctx)).To(Succeed())
 			Expect(count(ctx, pool, "sessions")).To(Equal(1))
 
-			_, err := data.Sessions().ActiveByTokenHash(ctx, tokenHash("bobs"), issuedAt)
+			_, err := data.Sessions().FindActiveByTokenHash(ctx, tokenHash("bobs"), issuedAt)
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 
-	Describe("RemoveExpiredOfUser", func() {
+	Describe("RemoveExpiredForUserID", func() {
 		It("deletes the user's sessions that expire at the given time or earlier", func(ctx SpecContext) {
 			bob := addUser(ctx, data, "bob")
 			addSession(ctx, data, alice.ID, "expired")
@@ -180,15 +180,15 @@ var _ = Describe("SessionReadWriter", func() {
 
 			unit := data.NewUnit()
 			unit.Sessions().Add(later)
-			unit.Sessions().RemoveExpiredOfUser(alice.ID, issuedAt.Add(sessionLifetime))
+			unit.Sessions().RemoveExpiredForUserID(alice.ID, issuedAt.Add(sessionLifetime))
 
 			Expect(unit.Commit(ctx)).To(Succeed())
 			Expect(count(ctx, pool, "sessions")).To(Equal(2))
 
-			_, err := data.Sessions().ActiveByTokenHash(ctx, tokenHash("active"), issuedAt)
+			_, err := data.Sessions().FindActiveByTokenHash(ctx, tokenHash("active"), issuedAt)
 			Expect(err).NotTo(HaveOccurred())
 
-			_, err = data.Sessions().ActiveByTokenHash(ctx, tokenHash("bobs"), issuedAt)
+			_, err = data.Sessions().FindActiveByTokenHash(ctx, tokenHash("bobs"), issuedAt)
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})

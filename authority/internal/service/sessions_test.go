@@ -127,7 +127,7 @@ var _ = Describe("Logout", func() {
 	sessionOf := func(ctx context.Context, token secret.String) model.Session {
 		GinkgoHelper()
 
-		session, err := sessions.Session(ctx, token)
+		session, err := sessions.FindByToken(ctx, token)
 		Expect(err).NotTo(HaveOccurred())
 
 		return session
@@ -170,7 +170,7 @@ var _ = Describe("Logout", func() {
 	)
 })
 
-var _ = Describe("Session", func() {
+var _ = Describe("FindByToken", func() {
 	var (
 		pool     *pgxpool.Pool
 		sessions *Sessions
@@ -193,7 +193,7 @@ var _ = Describe("Session", func() {
 		var id [16]byte
 		Expect(pool.QueryRow(ctx, "SELECT id FROM sessions").Scan(&id)).To(Succeed())
 
-		session, err := sessions.Session(ctx, token)
+		session, err := sessions.FindByToken(ctx, token)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(session).To(SatisfyAll(
@@ -206,7 +206,7 @@ var _ = Describe("Session", func() {
 		_, err := sessions.Issue(ctx, alice)
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = sessions.Session(ctx, secret.New("unknown"))
+		_, err = sessions.FindByToken(ctx, secret.New("unknown"))
 
 		Expect(err).To(MatchError(ErrNotSignedIn))
 	})
@@ -217,7 +217,7 @@ var _ = Describe("Session", func() {
 			VALUES ($1, $2, now(), now() - interval '1 second')`, hash(expired).Reveal(), alice.String())
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = sessions.Session(ctx, expired)
+		_, err = sessions.FindByToken(ctx, expired)
 
 		Expect(err).To(MatchError(ErrNotSignedIn))
 	})

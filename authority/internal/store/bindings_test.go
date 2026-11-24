@@ -25,7 +25,7 @@ var _ = Describe("BindingReadWriter", func() {
 	})
 
 	Describe("Add", func() {
-		It("stores a binding at Commit, which ByID then returns", func(ctx SpecContext) {
+		It("stores a binding at Commit, which FindByID then returns", func(ctx SpecContext) {
 			binding := &model.Binding{
 				ID:        model.BindingID{3},
 				ProjectID: model.ProjectID{1},
@@ -38,7 +38,7 @@ var _ = Describe("BindingReadWriter", func() {
 			Expect(count(ctx, pool, "bindings")).To(Equal(0))
 
 			Expect(unit.Commit(ctx)).To(Succeed())
-			Expect(data.Bindings().ByID(ctx, binding.ID)).To(Equal(binding))
+			Expect(data.Bindings().FindByID(ctx, binding.ID)).To(Equal(binding))
 		})
 
 		It("returns ErrBindingExists at Commit for a role that the user already has in the project", func(ctx SpecContext) {
@@ -118,7 +118,7 @@ var _ = Describe("BindingReadWriter", func() {
 			unit.Bindings().Remove(binding)
 
 			Expect(unit.Commit(ctx)).To(Succeed())
-			Expect(data.Bindings().ByID(ctx, other.ID)).To(Equal(other))
+			Expect(data.Bindings().FindByID(ctx, other.ID)).To(Equal(other))
 		})
 
 		It("succeeds for a binding that is already gone", func(ctx SpecContext) {
@@ -148,21 +148,21 @@ var _ = Describe("BindingReader", func() {
 		addProject(ctx, data, model.ProjectID{1}, "payments")
 	})
 
-	Describe("ByID", func() {
+	Describe("FindByID", func() {
 		It("returns ErrBindingNotFound for an ID that no binding has", func(ctx SpecContext) {
-			_, err := data.Bindings().ByID(ctx, model.BindingID{3})
+			_, err := data.Bindings().FindByID(ctx, model.BindingID{3})
 
 			Expect(err).To(MatchError(model.ErrBindingNotFound))
 		})
 	})
 
-	Describe("InProject", func() {
+	Describe("ListForProjectID", func() {
 		It("returns the bindings of the project with the names of their role and user", func(ctx SpecContext) {
 			addRole(ctx, data, model.RoleID{2}, model.ProjectID{1}, "operator")
 			alice := addUser(ctx, data, "alice")
 			addBinding(ctx, data, model.BindingID{3}, model.ProjectID{1}, model.RoleID{2}, alice.ID)
 
-			Expect(data.Bindings().InProject(ctx, model.ProjectID{1})).To(Equal([]*model.BindingWithNames{
+			Expect(data.Bindings().ListForProjectID(ctx, model.ProjectID{1})).To(Equal([]*model.BindingWithNames{
 				{ID: model.BindingID{3}, ProjectID: model.ProjectID{1}, RoleName: "operator", UserName: "alice"},
 			}))
 		})
@@ -173,7 +173,7 @@ var _ = Describe("BindingReader", func() {
 			alice := addUser(ctx, data, "alice")
 			addBinding(ctx, data, model.BindingID{6}, model.ProjectID{4}, model.RoleID{5}, alice.ID)
 
-			Expect(data.Bindings().InProject(ctx, model.ProjectID{1})).To(BeEmpty())
+			Expect(data.Bindings().ListForProjectID(ctx, model.ProjectID{1})).To(BeEmpty())
 		})
 
 		It("orders by the role name and then the user name, ignoring letter case", func(ctx SpecContext) {
@@ -185,7 +185,7 @@ var _ = Describe("BindingReader", func() {
 			addBinding(ctx, data, model.BindingID{5}, model.ProjectID{1}, model.RoleID{2}, alice.ID)
 			addBinding(ctx, data, model.BindingID{6}, model.ProjectID{1}, model.RoleID{3}, bob.ID)
 
-			Expect(data.Bindings().InProject(ctx, model.ProjectID{1})).To(Equal([]*model.BindingWithNames{
+			Expect(data.Bindings().ListForProjectID(ctx, model.ProjectID{1})).To(Equal([]*model.BindingWithNames{
 				{ID: model.BindingID{6}, ProjectID: model.ProjectID{1}, RoleName: "Auditor", UserName: "Bob"},
 				{ID: model.BindingID{5}, ProjectID: model.ProjectID{1}, RoleName: "operator", UserName: "alice"},
 				{ID: model.BindingID{4}, ProjectID: model.ProjectID{1}, RoleName: "operator", UserName: "Bob"},

@@ -8,16 +8,16 @@ import (
 
 // RoleFinder finds a role of a project by its name.
 type RoleFinder interface {
-	// ByName returns the role of the project with the name, ignoring letter
-	// case, or model.ErrRoleNotFound.
-	ByName(ctx context.Context, projectID model.ProjectID, name string) (*model.Role, error)
+	// FindByProjectIDAndName returns the role of the project with the name,
+	// ignoring letter case, or model.ErrRoleNotFound.
+	FindByProjectIDAndName(ctx context.Context, projectID model.ProjectID, name string) (*model.Role, error)
 }
 
 // BindingLister lists the bindings of a project.
 type BindingLister interface {
-	// InProject returns the bindings of the project with the names of their
-	// role and user, ordered by the role name and then the user name.
-	InProject(ctx context.Context, projectID model.ProjectID) ([]*model.BindingWithNames, error)
+	// ListForProjectID returns the bindings of the project with the names of
+	// their role and user, ordered by the role name and then the user name.
+	ListForProjectID(ctx context.Context, projectID model.ProjectID) ([]*model.BindingWithNames, error)
 }
 
 // Bindings creates and lists bindings.
@@ -54,17 +54,17 @@ func (b *Bindings) Create(
 	roleName string,
 	userName string,
 ) (*model.BindingWithNames, error) {
-	project, err := b.projects.ByName(ctx, projectName)
+	project, err := b.projects.FindByName(ctx, projectName)
 	if err != nil {
 		return nil, err
 	}
 
-	role, err := b.roles.ByName(ctx, project.ID, roleName)
+	role, err := b.roles.FindByProjectIDAndName(ctx, project.ID, roleName)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := b.users.ByName(ctx, userName)
+	user, err := b.users.FindByName(ctx, userName)
 	if err != nil {
 		return nil, err
 	}
@@ -89,10 +89,10 @@ func (b *Bindings) Create(
 // role name and then the user name. It returns model.ErrProjectNotFound if no
 // project has that name.
 func (b *Bindings) List(ctx context.Context, projectName string) ([]*model.BindingWithNames, error) {
-	project, err := b.projects.ByName(ctx, projectName)
+	project, err := b.projects.FindByName(ctx, projectName)
 	if err != nil {
 		return nil, err
 	}
 
-	return b.bindings.InProject(ctx, project.ID)
+	return b.bindings.ListForProjectID(ctx, project.ID)
 }

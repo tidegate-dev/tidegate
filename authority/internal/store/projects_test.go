@@ -21,10 +21,10 @@ var _ = Describe("ProjectReadWriter", func() {
 
 		unit := data.NewUnit()
 		unit.Projects().Add(project)
-		Expect(data.Projects().All(ctx)).To(BeEmpty())
+		Expect(data.Projects().ListAll(ctx)).To(BeEmpty())
 
 		Expect(unit.Commit(ctx)).To(Succeed())
-		Expect(data.Projects().All(ctx)).To(ConsistOf(project))
+		Expect(data.Projects().ListAll(ctx)).To(ConsistOf(project))
 	})
 
 	It("returns ErrProjectNameTaken at Commit for a name that differs only in letter case", func(ctx SpecContext) {
@@ -52,7 +52,7 @@ var _ = Describe("ProjectReadWriter", func() {
 		addProject(ctx, data, model.ProjectID{1}, "payments")
 		addProject(ctx, data, model.ProjectID{2}, "search")
 
-		project, err := data.Projects().ByName(ctx, "Payments")
+		project, err := data.Projects().FindByName(ctx, "Payments")
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(project).To(Equal(&model.Project{ID: model.ProjectID{1}, Name: "payments"}))
@@ -61,7 +61,7 @@ var _ = Describe("ProjectReadWriter", func() {
 	It("returns ErrProjectNotFound for a name that no project has", func(ctx SpecContext) {
 		addProject(ctx, data, model.ProjectID{1}, "payments")
 
-		_, err := data.Projects().ByName(ctx, "search")
+		_, err := data.Projects().FindByName(ctx, "search")
 
 		Expect(err).To(MatchError(model.ErrProjectNotFound))
 	})
@@ -71,7 +71,7 @@ var _ = Describe("ProjectReadWriter", func() {
 		addProject(ctx, data, model.ProjectID{2}, "Payments")
 		addProject(ctx, data, model.ProjectID{3}, "audit")
 
-		projects, err := data.Projects().All(ctx)
+		projects, err := data.Projects().ListAll(ctx)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(projects).To(HaveExactElements(

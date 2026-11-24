@@ -29,7 +29,7 @@ var _ = Describe("Authenticate", func() {
 		Expect(NewUsers(data.Users(), data, rnd).CreateInitialAdmin(ctx, "alice", secret.New(validPassword))).To(Succeed())
 		storetest.AddUser(ctx, data, "bob")
 
-		alice, err := data.Users().ByName(ctx, "alice")
+		alice, err := data.Users().FindByName(ctx, "alice")
 		Expect(err).NotTo(HaveOccurred())
 
 		aliceID = alice.ID

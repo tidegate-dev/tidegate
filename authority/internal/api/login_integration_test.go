@@ -128,7 +128,7 @@ var _ = Describe("Logout", func() {
 		token, err = sessions.Issue(ctx, storetest.AddUser(ctx, data, "alice"))
 		Expect(err).NotTo(HaveOccurred())
 
-		session, err = sessions.Session(ctx, token)
+		session, err = sessions.FindByToken(ctx, token)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -139,7 +139,7 @@ var _ = Describe("Logout", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = sessions.Session(ctx, token)
+		_, err = sessions.FindByToken(ctx, token)
 		Expect(err).To(MatchError(service.ErrNotSignedIn))
 	})
 
@@ -148,7 +148,7 @@ var _ = Describe("Logout", func() {
 
 		Expect(err).To(MatchError(errNoSession))
 
-		_, err = sessions.Session(ctx, token)
+		_, err = sessions.FindByToken(ctx, token)
 		Expect(err).NotTo(HaveOccurred())
 	})
 })
