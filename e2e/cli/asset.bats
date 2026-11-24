@@ -130,6 +130,59 @@ setup() {
     [[ $stderr == *labels* ]]
 }
 
+@test "asset create ssh with --password takes a user name and reads the user's password from stdin" {
+    sign_in login "$TIDEGATE_TEST_AUTHORITY"
+    tidegate project create "$project"
+
+    run tidegate -o json asset create ssh --project-name "$project" --address 127.0.0.1:2222 --host-key "$host_key" --user-name tidegate --password ssh-host <<<tidegate
+    [ "$status" -eq 0 ]
+    [ "$(jq -r .ssh.userName <<<"$output")" = tidegate ]
+    [[ $output != *assword* ]]
+
+    run tidegate -o json asset list --project-name "$project"
+    [ "$status" -eq 0 ]
+    [ "$(jq -r '.assets[0].ssh.userName' <<<"$output")" = tidegate ]
+}
+
+@test "asset create ssh takes a user name and the user's private key from a file" {
+    sign_in login "$TIDEGATE_TEST_AUTHORITY"
+    tidegate project create "$project"
+
+    run tidegate -o json asset create ssh --project-name "$project" --address bastion.example --host-key "$host_key" --user-name deploy --private-key-file "${host_key_file%.pub}" bastion
+    [ "$status" -eq 0 ]
+    [ "$(jq -r .ssh.userName <<<"$output")" = deploy ]
+}
+
+@test "asset create ssh fails for a private key file that holds no private key" {
+    sign_in login "$TIDEGATE_TEST_AUTHORITY"
+    tidegate project create "$project"
+
+    run --separate-stderr tidegate asset create ssh --project-name "$project" --address bastion.example --host-key "$host_key" --user-name deploy --private-key-file "$host_key_file" bastion
+    [ "$status" -eq 1 ]
+    [ -z "$output" ]
+    [[ $stderr == *"isn't a private key that tidegate can read"* ]]
+}
+
+@test "asset create ssh wants a user name together with --password or --private-key-file" {
+    run --separate-stderr tidegate asset create ssh --project-name "$project" --address bastion.example --host-key "$host_key" --private-key-file "${host_key_file%.pub}" bastion
+    [ "$status" -eq 1 ]
+    [[ $stderr == *"--password and --private-key-file need --user-name"* ]]
+
+    run --separate-stderr tidegate asset create ssh --project-name "$project" --address bastion.example --host-key "$host_key" --user-name deploy bastion
+    [ "$status" -eq 1 ]
+    [[ $stderr == *"--user-name needs --password or --private-key-file"* ]]
+
+    run --separate-stderr tidegate asset create ssh --project-name "$project" --address bastion.example --host-key "$host_key" --user-name deploy --password --private-key-file "${host_key_file%.pub}" bastion
+    [ "$status" -eq 1 ]
+    [[ $stderr == *"--password and --private-key-file can't be combined"* ]]
+}
+
+@test "asset create ssh with --password fails without a password on stdin" {
+    run --separate-stderr tidegate asset create ssh --project-name "$project" --address bastion.example --host-key "$host_key" --user-name deploy --password bastion </dev/null
+    [ "$status" -eq 1 ]
+    [[ $stderr == *"no password on stdin"* ]]
+}
+
 @test "asset list wants a project and no arguments" {
     run --separate-stderr tidegate asset list
     [ "$status" -eq 1 ]

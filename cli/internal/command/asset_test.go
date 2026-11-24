@@ -1,6 +1,10 @@
 package command
 
 import (
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -232,4 +236,114 @@ func TestAssetResultLabelsTextOrdersTheLabelsByKey(t *testing.T) {
 
 	// assert
 	assert.Equal(t, "env=a,env2=b", text)
+}
+
+func TestNewSSHTargetResultHoldsTheUserName(t *testing.T) {
+	t.Parallel()
+
+	// act
+	result := newSSHTargetResult(&authorityv1.SSHTarget{Host: "bastion.example", Port: 22, UserName: "deploy"})
+
+	// assert
+	assert.Equal(t, "deploy", result.UserName)
+}
+
+func TestSetSSHSecretLeavesTheRequestAloneWithoutAUserNameAPasswordAndAPrivateKeyFile(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	request := &authorityv1.CreateAssetRequest{}
+
+	// act
+	err := setSSHSecret(t.Context(), request, "", false, "", strings.NewReader("a password\n"), io.Discard)
+
+	// assert
+	require.NoError(t, err)
+	assert.Nil(t, request.GetSshSecret())
+}
+
+func TestSetSSHSecretRefusesFlagsThatDoNotFitTogether(t *testing.T) {
+	t.Parallel()
+
+	for description, test := range map[string]struct {
+		userName       string
+		askForPassword bool
+		privateKeyFile string
+		message        string
+	}{
+		"password without a user name":         {"", true, "", "--password and --private-key-file need --user-name"},
+		"private key file without a user name": {"", false, "key", "--password and --private-key-file need --user-name"},
+		"password and private key file":        {"deploy", true, "key", "--password and --private-key-file can't be combined"},
+		"user name alone":                      {"deploy", false, "", "--user-name needs --password or --private-key-file"},
+	} {
+		t.Run(description, func(t *testing.T) {
+			t.Parallel()
+
+			// arrange
+			request := &authorityv1.CreateAssetRequest{}
+
+			// act
+			err := setSSHSecret(t.Context(), request, test.userName, test.askForPassword, test.privateKeyFile,
+				strings.NewReader("a password\n"), io.Discard)
+
+			// assert
+			require.ErrorContains(t, err, test.message)
+			assert.Nil(t, request.GetSshSecret())
+		})
+	}
+}
+
+func TestSetSSHSecretPutsTheContentOfThePrivateKeyFileIntoTheRequest(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	privateKeyFile := filepath.Join(t.TempDir(), "key")
+	require.NoError(t, os.WriteFile(privateKeyFile, []byte("a private key\n"), 0o600))
+
+	request := &authorityv1.CreateAssetRequest{}
+
+	// act
+	err := setSSHSecret(t.Context(), request, "deploy", false, privateKeyFile, strings.NewReader("a password\n"), io.Discard)
+
+	// assert
+	require.NoError(t, err)
+	assert.Equal(t, "a private key\n", request.GetSshPrivateKey())
+}
+
+func TestSetSSHSecretFailsForAPrivateKeyFileThatDoesNotExist(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	privateKeyFile := filepath.Join(t.TempDir(), "missing")
+
+	// act
+	err := setSSHSecret(t.Context(), &authorityv1.CreateAssetRequest{}, "deploy", false, privateKeyFile, strings.NewReader(""), io.Discard)
+
+	// assert
+	assert.ErrorContains(t, err, "--private-key-file")
+	assert.ErrorIs(t, err, os.ErrNotExist)
+}
+
+func TestSetSSHSecretReadsThePasswordFromTheInput(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	request := &authorityv1.CreateAssetRequest{}
+
+	// act
+	err := setSSHSecret(t.Context(), request, "deploy", true, "", strings.NewReader("a password\n"), io.Discard)
+
+	// assert
+	require.NoError(t, err)
+	assert.Equal(t, "a password", request.GetSshPassword())
+}
+
+func TestSetSSHSecretFailsWithoutAPasswordOnTheInput(t *testing.T) {
+	t.Parallel()
+
+	// act
+	err := setSSHSecret(t.Context(), &authorityv1.CreateAssetRequest{}, "deploy", true, "", strings.NewReader(""), io.Discard)
+
+	// assert
+	assert.ErrorContains(t, err, "no password on stdin")
 }

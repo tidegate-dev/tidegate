@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"maps"
 	"net"
 	"net/netip"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -16,6 +18,7 @@ import (
 
 	"github.com/tidegate-dev/tidegate/cli/internal/connections"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
+	"github.com/tidegate-dev/tidegate/internal/terminal"
 )
 
 // IANA assigns port 22 to SSH.
@@ -24,9 +27,10 @@ const defaultSSHPort = 22
 var errAddress = errors.New("want an address like host or host:port")
 
 type sshTargetResult struct {
-	Host    string `json:"host"    yaml:"host"`
-	Port    uint32 `json:"port"    yaml:"port"`
-	HostKey string `json:"hostKey" yaml:"hostKey"`
+	Host     string `json:"host"               yaml:"host"`
+	Port     uint32 `json:"port"               yaml:"port"`
+	HostKey  string `json:"hostKey"            yaml:"hostKey"`
+	UserName string `json:"userName,omitempty" yaml:"userName,omitempty"`
 }
 
 type assetResult struct {
@@ -42,7 +46,12 @@ func newSSHTargetResult(target *authorityv1.SSHTarget) *sshTargetResult {
 		return nil
 	}
 
-	return &sshTargetResult{Host: target.GetHost(), Port: target.GetPort(), HostKey: target.GetHostKey()}
+	return &sshTargetResult{
+		Host:     target.GetHost(),
+		Port:     target.GetPort(),
+		HostKey:  target.GetHostKey(),
+		UserName: target.GetUserName(),
+	}
 }
 
 func newAssetResult(response *authorityv1.CreateAssetResponse) assetResult {
@@ -161,6 +170,19 @@ func assetCommand(store connections.Store) *cli.Command {
 								Name:  "label",
 								Usage: "a label as key=value that roles select the asset by, can be given several times",
 							},
+							&cli.StringFlag{
+								Name:  "user-name",
+								Usage: "the user that tidegate logs in as on the host. Needs --password or --private-key-file",
+							},
+							&cli.BoolFlag{
+								Name: "password",
+								Usage: "the user logs in with a password. The command asks for it on a terminal, " +
+									"or reads it from the first line of stdin. Needs --user-name",
+							},
+							&cli.StringFlag{
+								Name:  "private-key-file",
+								Usage: "the user logs in with the private key in this file, which has no passphrase. Needs --user-name",
+							},
 						},
 						Action: func(ctx context.Context, cmd *cli.Command) error {
 							return assetCreateSSH(ctx, cmd, store)
@@ -206,22 +228,87 @@ func assetCreateSSH(ctx context.Context, cmd *cli.Command, store connections.Sto
 		return fmt.Errorf("--label: %w", err)
 	}
 
+	userName := cmd.String("user-name")
+
+	request := &authorityv1.CreateAssetRequest{
+		ProjectName: cmd.String("project-name"),
+		Name:        cmd.Args().First(),
+		Labels:      labels,
+		Target: &authorityv1.CreateAssetRequest_Ssh{Ssh: &authorityv1.SSHTarget{
+			Host:     host,
+			Port:     port,
+			HostKey:  hostKey,
+			UserName: userName,
+		}},
+	}
+
+	err = setSSHSecret(ctx, request, userName, cmd.Bool("password"), cmd.String("private-key-file"),
+		cmd.Root().Reader, cmd.Root().ErrWriter)
+	if err != nil {
+		return err
+	}
+
 	clients, connection, err := connectToCurrent(cmd, store)
 	if err != nil {
 		return err
 	}
 
-	response, err := clients.Asset().CreateAsset(ctx, connect.NewRequest(&authorityv1.CreateAssetRequest{
-		ProjectName: cmd.String("project-name"),
-		Name:        cmd.Args().First(),
-		Labels:      labels,
-		Target:      &authorityv1.CreateAssetRequest_Ssh{Ssh: &authorityv1.SSHTarget{Host: host, Port: port, HostKey: hostKey}},
-	}))
+	response, err := clients.Asset().CreateAsset(ctx, connect.NewRequest(request))
 	if err != nil {
 		return callFailed("creating the asset", connection, err)
 	}
 
 	return printResult(cmd, newAssetResult(response.Msg))
+}
+
+// setSSHSecret puts what the user logs in with into the request. With
+// askForPassword that is the password, which it asks for on a terminal and
+// otherwise reads from the first line of in. With privateKeyFile it is the
+// file's content. Without a user name, a password and a file it puts nothing
+// into the request.
+func setSSHSecret(
+	ctx context.Context,
+	request *authorityv1.CreateAssetRequest,
+	userName string,
+	askForPassword bool,
+	privateKeyFile string,
+	in io.Reader,
+	prompts io.Writer,
+) error {
+	switch {
+	case userName == "" && !askForPassword && privateKeyFile == "":
+		return nil
+	case userName == "":
+		return errors.New("--password and --private-key-file need --user-name")
+	case askForPassword && privateKeyFile != "":
+		return errors.New("--password and --private-key-file can't be combined")
+	case privateKeyFile != "":
+		privateKey, err := os.ReadFile(privateKeyFile) //nolint:gosec // The path is the file that the user names.
+		if err != nil {
+			return fmt.Errorf("--private-key-file: %w", err)
+		}
+
+		request.SshSecret = &authorityv1.CreateAssetRequest_SshPrivateKey{SshPrivateKey: string(privateKey)}
+
+		return nil
+	case !askForPassword:
+		return errors.New("--user-name needs --password or --private-key-file")
+	default:
+		prompt := "Password of " + quoteIfUnprintable(userName) + " on the host: "
+
+		password, err := terminal.New(in, prompts).ReadSecret(ctx, prompt)
+		if errors.Is(err, io.EOF) {
+			return errors.New("no password on stdin")
+		}
+
+		if err != nil {
+			return fmt.Errorf("reading the password: %w", err)
+		}
+
+		request.SshSecret = &authorityv1.CreateAssetRequest_SshPassword{SshPassword: password}
+
+		return nil
+	}
 }
 
 func assetList(ctx context.Context, cmd *cli.Command, store connections.Store) error {
