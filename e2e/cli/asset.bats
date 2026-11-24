@@ -173,9 +173,17 @@ setup() {
 }
 
 @test "asset create ssh with --password fails without a password on stdin" {
+    sign_in login "$TIDEGATE_TEST_AUTHORITY"
+
     run --separate-stderr tidegate asset create ssh --project-name "$project" --address bastion.example --host-key "$host_key" --user-name deploy --password bastion </dev/null
     [ "$status" -eq 1 ]
     [[ $stderr == *"no password on stdin"* ]]
+}
+
+@test "asset create ssh with --password reads no password when there is no saved connection" {
+    run --separate-stderr tidegate asset create ssh --project-name "$project" --address bastion.example --host-key "$host_key" --user-name deploy --password bastion </dev/null
+    [ "$status" -eq 1 ]
+    [[ $stderr == *"no saved connections"* ]]
 }
 
 @test "asset list wants a project and no arguments" {
