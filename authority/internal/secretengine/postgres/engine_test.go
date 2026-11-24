@@ -55,11 +55,40 @@ var _ = Describe("Engine", func() {
 			Expect(second).NotTo(Equal(first))
 		})
 	})
+
+	Describe("Delete", func() {
+		It("removes the value that was stored under the reference", func(ctx SpecContext) {
+			engine := newEngine(ctx)
+			reference, err := engine.Store(ctx, secret.NewBytes([]byte("a stored value")))
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(engine.Delete(ctx, reference)).To(Succeed())
+
+			_, err = engine.Fetch(ctx, reference)
+			Expect(err).To(MatchError(secretengine.ErrNotFound))
+		})
+
+		It("returns ErrNotFound for a reference that has no value", func(ctx SpecContext) {
+			engine := newEngine(ctx)
+
+			err := engine.Delete(ctx, "5b0e7c1a-3f52-4d0c-9a41-6f2d8c7e9b13")
+
+			Expect(err).To(MatchError(secretengine.ErrNotFound))
+		})
+
+		It("returns ErrNotFound for a reference that isn't a UUID", func(ctx SpecContext) {
+			engine := newEngine(ctx)
+
+			err := engine.Delete(ctx, "not a UUID")
+
+			Expect(err).To(MatchError(secretengine.ErrNotFound))
+		})
+	})
 })
 
 // newEngine returns an engine on an empty database that has the engine's
 // schema.
-func newEngine(ctx context.Context) *postgres.Engine {
+func newEngine(ctx context.Context) secretengine.Engine {
 	GinkgoHelper()
 
 	pool := newPool(ctx)

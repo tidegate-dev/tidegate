@@ -17,6 +17,8 @@ const insertValue = `INSERT INTO secret_engine.secrets (value) VALUES ($1) RETUR
 
 const selectValue = `SELECT value FROM secret_engine.secrets WHERE id = $1`
 
+const deleteValue = `DELETE FROM secret_engine.secrets WHERE id = $1`
+
 // Engine stores secret values in the table that CreateSchema creates. A
 // reference is the ID of a value's row.
 type Engine struct {
@@ -44,11 +46,9 @@ func (e *Engine) Store(ctx context.Context, value secret.Bytes) (secretengine.Re
 // Fetch returns the value in the row that the reference names. If there is no
 // such row, it returns secretengine.ErrNotFound.
 func (e *Engine) Fetch(ctx context.Context, reference secretengine.Reference) (secret.Bytes, error) {
-	var id pgtype.UUID
-
-	err := id.Scan(string(reference))
+	id, err := rowID(reference)
 	if err != nil {
-		return secret.Bytes{}, secretengine.ErrNotFound
+		return secret.Bytes{}, err
 	}
 
 	var value []byte
@@ -63,4 +63,35 @@ func (e *Engine) Fetch(ctx context.Context, reference secretengine.Reference) (s
 	}
 
 	return secret.NewBytes(value), nil
+}
+
+// Delete removes the row that the reference names. If there is no such row,
+// it returns secretengine.ErrNotFound.
+func (e *Engine) Delete(ctx context.Context, reference secretengine.Reference) error {
+	id, err := rowID(reference)
+	if err != nil {
+		return err
+	}
+
+	deleted, err := e.pool.Exec(ctx, deleteValue, id)
+	if err != nil {
+		return fmt.Errorf("deleting a value from the Postgres secret engine: %w", err)
+	}
+
+	if deleted.RowsAffected() == 0 {
+		return secretengine.ErrNotFound
+	}
+
+	return nil
+}
+
+func rowID(reference secretengine.Reference) (pgtype.UUID, error) {
+	var id pgtype.UUID
+
+	err := id.Scan(string(reference))
+	if err != nil {
+		return pgtype.UUID{}, secretengine.ErrNotFound
+	}
+
+	return id, nil
 }
