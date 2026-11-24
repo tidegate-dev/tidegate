@@ -60,6 +60,18 @@ dependenciesRules:
         - '^github.com/tidegate-dev/tidegate/internal/secretengine$'
         - '^github.com/tidegate-dev/tidegate/internal/secret$'
 
+  # Only server imports the Postgres secret engine. The layers below can't,
+  # because their lists don't name it.
+  - package: '^github.com/tidegate-dev/tidegate/authority/cmd/authority$'
+    shouldNotDependsOn:
+      internal:
+        - '^github.com/tidegate-dev/tidegate/authority/internal/secretengine/postgres$'
+
+  - package: '^github.com/tidegate-dev/tidegate/authority/internal/command$'
+    shouldNotDependsOn:
+      internal:
+        - '^github.com/tidegate-dev/tidegate/authority/internal/secretengine/postgres$'
+
   - package: '^github.com/tidegate-dev/tidegate/authority/internal/model$'
     shouldOnlyDependsOn:
       internal:

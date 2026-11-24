@@ -14,6 +14,7 @@ import (
 
 	"github.com/tidegate-dev/tidegate/authority/internal/config"
 	"github.com/tidegate-dev/tidegate/authority/internal/db"
+	"github.com/tidegate-dev/tidegate/authority/internal/secretengine/postgres"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	"github.com/tidegate-dev/tidegate/authority/internal/store"
 	"github.com/tidegate-dev/tidegate/internal/metrics"
@@ -106,11 +107,29 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 
 func openDatabase(ctx context.Context, cfg config.Database) (*pgxpool.Pool, error) {
 	if cfg.MigrateOnStart {
-		err := db.MigrateAt(ctx, cfg.URL)
+		err := MigrateDatabase(ctx, cfg.URL)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	return db.OpenMigrated(ctx, cfg.URL)
+}
+
+// MigrateDatabase connects to the database at url and applies every migration
+// of the authority that it doesn't have yet. Then it creates the schema of
+// the Postgres secret engine if the database doesn't have it yet.
+func MigrateDatabase(ctx context.Context, url string) error {
+	pool, err := db.Open(ctx, url)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
+	err = db.Migrate(ctx, pool)
+	if err != nil {
+		return err
+	}
+
+	return postgres.CreateSchema(ctx, pool)
 }
