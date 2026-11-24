@@ -74,23 +74,23 @@ func (result bindingsResult) String() string {
 func bindingCommand(store connections.Store) *cli.Command {
 	return &cli.Command{
 		Name:  "binding",
-		Usage: "give roles of a project to users and list who has which role",
+		Usage: "manage role bindings in a project",
 		Commands: []*cli.Command{
 			{
 				Name:  "create",
-				Usage: "give a role of a project to a user and print the binding's ID, the role and the user",
+				Usage: "assign a role to a user inside the project and print the binding ID, the role and the user",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:  "project-name",
-						Usage: "name of the project that gets the binding",
+						Usage: "name of the project the binding is added to",
 					},
 					&cli.StringFlag{
 						Name:  "role-name",
-						Usage: "name of the role that the user gets",
+						Usage: "name of the role the binding is referencing",
 					},
 					&cli.StringFlag{
 						Name:  "user-name",
-						Usage: "name of the user who gets the role",
+						Usage: "name of the user subject to the binding",
 					},
 				},
 				Action: func(ctx context.Context, cmd *cli.Command) error {
@@ -99,7 +99,7 @@ func bindingCommand(store connections.Store) *cli.Command {
 			},
 			{
 				Name:  "list",
-				Usage: "print the ID, the role and the user of every binding of a project",
+				Usage: "print the ID, the role and the user name of every binding inside the project",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:  "project-name",
