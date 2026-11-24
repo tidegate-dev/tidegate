@@ -17,7 +17,7 @@ const createSchema = `CREATE SCHEMA IF NOT EXISTS secret_engine`
 
 const createSecretsTable = `
 CREATE TABLE IF NOT EXISTS secret_engine.secrets (
-    id uuid CONSTRAINT secrets_pk PRIMARY KEY DEFAULT gen_random_uuid(),
+    id uuid CONSTRAINT secrets_pk PRIMARY KEY,
     value bytea NOT NULL
 )`
 

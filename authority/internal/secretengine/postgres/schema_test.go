@@ -21,6 +21,20 @@ var _ = Describe("CreateSchema", func() {
 		Expect(secretsTableExists(ctx, pool)).To(BeTrue())
 	})
 
+	It("gives the ID column of the secrets table no default", func(ctx SpecContext) {
+		pool := newPool(ctx)
+
+		Expect(postgres.CreateSchema(ctx, pool)).To(Succeed())
+
+		var columnDefault *string
+
+		Expect(pool.QueryRow(ctx,
+			`SELECT column_default FROM information_schema.columns
+			 WHERE table_schema = 'secret_engine' AND table_name = 'secrets' AND column_name = 'id'`,
+		).Scan(&columnDefault)).To(Succeed())
+		Expect(columnDefault).To(BeNil())
+	})
+
 	It("succeeds in a database that has the secrets table", func(ctx SpecContext) {
 		pool := newPool(ctx)
 		Expect(postgres.CreateSchema(ctx, pool)).To(Succeed())

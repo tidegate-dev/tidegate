@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -13,7 +14,7 @@ import (
 	"github.com/tidegate-dev/tidegate/internal/secretengine"
 )
 
-const insertValue = `INSERT INTO secret_engine.secrets (value) VALUES ($1) RETURNING id::text`
+const insertValue = `INSERT INTO secret_engine.secrets (id, value) VALUES ($1, $2)`
 
 const selectValue = `SELECT value FROM secret_engine.secrets WHERE id = $1`
 
@@ -33,14 +34,17 @@ func New(pool *pgxpool.Pool) *Engine {
 // Store saves the value in a new row and returns the row's ID as the
 // reference.
 func (e *Engine) Store(ctx context.Context, value secret.Bytes) (secretengine.Reference, error) {
-	var id string
+	id, err := uuid.NewRandom()
+	if err != nil {
+		return "", fmt.Errorf("creating a reference in the Postgres secret engine: %w", err)
+	}
 
-	err := e.pool.QueryRow(ctx, insertValue, value.Reveal()).Scan(&id)
+	_, err = e.pool.Exec(ctx, insertValue, pgtype.UUID{Bytes: id, Valid: true}, value.Reveal())
 	if err != nil {
 		return "", fmt.Errorf("storing a value in the Postgres secret engine: %w", err)
 	}
 
-	return secretengine.Reference(id), nil
+	return secretengine.Reference(id.String()), nil
 }
 
 // Fetch returns the value in the row that the reference names. If there is no
