@@ -8,8 +8,8 @@ import (
 
 // DummyFinder finds a dummy by its ID.
 type DummyFinder interface {
-	// ByID returns the dummy with the ID, or model.ErrDummyNotFound.
-	ByID(ctx context.Context, id int64) (*model.Dummy, error)
+	// FindByID returns the dummy with the ID, or model.ErrDummyNotFound.
+	FindByID(ctx context.Context, id int64) (*model.Dummy, error)
 }
 
 // Dummies checks the path from a client into the database and back.
@@ -41,7 +41,7 @@ func (d *Dummies) Write(ctx context.Context, text string) (int64, error) {
 
 // Read returns the text with the given ID, or model.ErrDummyNotFound.
 func (d *Dummies) Read(ctx context.Context, id int64) (string, error) {
-	dummy, err := d.dummies.ByID(ctx, id)
+	dummy, err := d.dummies.FindByID(ctx, id)
 	if err != nil {
 		return "", err
 	}

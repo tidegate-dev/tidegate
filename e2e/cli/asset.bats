@@ -13,29 +13,29 @@ setup() {
     sign_in login "$TIDEGATE_TEST_AUTHORITY"
     tidegate project create "$project"
 
-    run tidegate asset create ssh --project "$project" --address 127.0.0.1:2222 --host-key "$(cat "$host_key_file")" --label env=dev ssh-host
+    run tidegate asset create ssh --project-name "$project" --address 127.0.0.1:2222 --host-key "$(cat "$host_key_file")" --label env=dev ssh-host
     [ "$status" -eq 0 ]
-    [[ $output == ssh-host$'\t'?* ]]
-    id=${output#*$'\t'}
+    [[ $output == ?*$'\t'ssh-host ]]
+    id=${output%%$'\t'*}
 
-    run tidegate asset list --project "$project"
+    run tidegate asset list --project-name "$project"
     [ "$status" -eq 0 ]
-    [[ ${lines[0]} == NAME*ADDRESS*LABELS*ID ]]
-    grep -qE "^ssh-host +127\.0\.0\.1:2222 +env=dev +$id\$" <<<"$output"
+    [[ ${lines[0]} == ID*NAME*ADDRESS*LABELS ]]
+    grep -qE "^$id +ssh-host +127\.0\.0\.1:2222 +env=dev\$" <<<"$output"
 }
 
 @test "asset create ssh and asset list print json" {
     sign_in login "$TIDEGATE_TEST_AUTHORITY"
     tidegate project create "$project"
 
-    run tidegate -o json asset create ssh --project "$project" --address bastion.example --host-key "$host_key" --label env=prod --label team=payments bastion
+    run tidegate -o json asset create ssh --project-name "$project" --address bastion.example --host-key "$host_key" --label env=prod --label team=payments bastion
     [ "$status" -eq 0 ]
     [ "$(jq -r .name <<<"$output")" = bastion ]
     [ "$(jq -c .labels <<<"$output")" = '{"env":"prod","team":"payments"}' ]
     [ "$(jq -c .ssh <<<"$output")" = "{\"host\":\"bastion.example\",\"port\":22,\"hostKey\":\"$host_key\"}" ]
     id=$(jq -r .id <<<"$output")
 
-    run tidegate -o json asset list --project "$project"
+    run tidegate -o json asset list --project-name "$project"
     [ "$status" -eq 0 ]
     [ "$(jq -r '.assets | length' <<<"$output")" = 1 ]
     [ "$(jq -r '.assets[0].id' <<<"$output")" = "$id" ]
@@ -46,7 +46,7 @@ setup() {
     sign_in login "$TIDEGATE_TEST_AUTHORITY"
     tidegate project create "$project"
 
-    run tidegate asset list --project "$project"
+    run tidegate asset list --project-name "$project"
     [ "$status" -eq 0 ]
     [[ $output == *"No assets in the project"* ]]
 }
@@ -55,9 +55,9 @@ setup() {
     sign_in login "$TIDEGATE_TEST_AUTHORITY"
     tidegate project create "$project"
     tidegate project create "$project-other"
-    tidegate asset create ssh --project "$project-other" --address other.example --host-key "$host_key" other
+    tidegate asset create ssh --project-name "$project-other" --address other.example --host-key "$host_key" other
 
-    run tidegate -o json asset list --project "$project"
+    run tidegate -o json asset list --project-name "$project"
     [ "$status" -eq 0 ]
     [ "$(jq -r '.assets | length' <<<"$output")" = 0 ]
 }
@@ -65,9 +65,9 @@ setup() {
 @test "asset create ssh fails for a name that another asset of the project has" {
     sign_in login "$TIDEGATE_TEST_AUTHORITY"
     tidegate project create "$project"
-    tidegate asset create ssh --project "$project" --address bastion.example --host-key "$host_key" bastion
+    tidegate asset create ssh --project-name "$project" --address bastion.example --host-key "$host_key" bastion
 
-    run --separate-stderr tidegate asset create ssh --project "$project" --address other.example --host-key "$host_key" bastion
+    run --separate-stderr tidegate asset create ssh --project-name "$project" --address other.example --host-key "$host_key" bastion
     [ "$status" -eq 1 ]
     [ -z "$output" ]
     [[ $stderr == *"the asset name is taken"* ]]
@@ -76,12 +76,12 @@ setup() {
 @test "asset create ssh and asset list fail for a project that doesn't exist" {
     sign_in login "$TIDEGATE_TEST_AUTHORITY"
 
-    run --separate-stderr tidegate asset create ssh --project "$project" --address bastion.example --host-key "$host_key" bastion
+    run --separate-stderr tidegate asset create ssh --project-name "$project" --address bastion.example --host-key "$host_key" bastion
     [ "$status" -eq 1 ]
     [ -z "$output" ]
     [[ $stderr == *"project not found"* ]]
 
-    run --separate-stderr tidegate asset list --project "$project"
+    run --separate-stderr tidegate asset list --project-name "$project"
     [ "$status" -eq 1 ]
     [ -z "$output" ]
     [[ $stderr == *"project not found"* ]]
@@ -90,32 +90,32 @@ setup() {
 @test "asset create ssh fails for a host key that isn't a public key" {
     sign_in login "$TIDEGATE_TEST_AUTHORITY"
 
-    run --separate-stderr tidegate asset create ssh --project "$project" --address bastion.example --host-key "not-a-type not/a*key" bastion
+    run --separate-stderr tidegate asset create ssh --project-name "$project" --address bastion.example --host-key "not-a-type not/a*key" bastion
     [ "$status" -eq 1 ]
     [ -z "$output" ]
     [[ $stderr == *"must be the key type"* ]]
 }
 
 @test "asset create ssh wants exactly one name, a project, an address and a host key" {
-    run --separate-stderr tidegate asset create ssh --project "$project" --address bastion.example --host-key "$host_key"
+    run --separate-stderr tidegate asset create ssh --project-name "$project" --address bastion.example --host-key "$host_key"
     [ "$status" -eq 1 ]
     [[ $stderr == *"want exactly one name"* ]]
 
     run --separate-stderr tidegate asset create ssh --address bastion.example --host-key "$host_key" bastion
     [ "$status" -eq 1 ]
-    [[ $stderr == *"want a project, name it with --project"* ]]
+    [[ $stderr == *'Required flag "project-name" not set'* ]]
 
-    run --separate-stderr tidegate asset create ssh --project "$project" --host-key "$host_key" bastion
+    run --separate-stderr tidegate asset create ssh --project-name "$project" --host-key "$host_key" bastion
     [ "$status" -eq 1 ]
-    [[ $stderr == *"--address: want an address like host or host:port"* ]]
+    [[ $stderr == *'Required flag "address" not set'* ]]
 
-    run --separate-stderr tidegate asset create ssh --project "$project" --address bastion.example bastion
+    run --separate-stderr tidegate asset create ssh --project-name "$project" --address bastion.example bastion
     [ "$status" -eq 1 ]
-    [[ $stderr == *"--host-key: want a host key like"* ]]
+    [[ $stderr == *'Required flag "host-key" not set'* ]]
 }
 
 @test "asset create ssh refuses a label that isn't key=value" {
-    run --separate-stderr tidegate asset create ssh --project "$project" --address bastion.example --host-key "$host_key" --label env bastion
+    run --separate-stderr tidegate asset create ssh --project-name "$project" --address bastion.example --host-key "$host_key" --label env bastion
     [ "$status" -eq 1 ]
     [ -z "$output" ]
     [[ $stderr == *'--label: label "env" must look like key=value'* ]]
@@ -124,7 +124,7 @@ setup() {
 @test "asset create ssh takes a comma as a part of the label's value, which the authority refuses" {
     sign_in login "$TIDEGATE_TEST_AUTHORITY"
 
-    run --separate-stderr tidegate asset create ssh --project "$project" --address bastion.example --host-key "$host_key" --label env=prod,team=ops bastion
+    run --separate-stderr tidegate asset create ssh --project-name "$project" --address bastion.example --host-key "$host_key" --label env=prod,team=ops bastion
     [ "$status" -eq 1 ]
     [ -z "$output" ]
     [[ $stderr == *labels* ]]
@@ -133,9 +133,9 @@ setup() {
 @test "asset list wants a project and no arguments" {
     run --separate-stderr tidegate asset list
     [ "$status" -eq 1 ]
-    [[ $stderr == *"want a project, name it with --project"* ]]
+    [[ $stderr == *'Required flag "project-name" not set'* ]]
 
-    run --separate-stderr tidegate asset list --project "$project" bastion
+    run --separate-stderr tidegate asset list --project-name "$project" bastion
     [ "$status" -eq 1 ]
     [[ $stderr == *"want no arguments"* ]]
 }

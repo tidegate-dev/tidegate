@@ -89,6 +89,49 @@ var _ = Describe("RoleReadWriter", func() {
 	})
 })
 
+var _ = Describe("RoleReader", func() {
+	var data *Store
+
+	BeforeEach(func(ctx SpecContext) {
+		_, data = newStore(ctx)
+		addProject(ctx, data, model.ProjectID{1}, "payments")
+	})
+
+	Describe("FindByProjectIDAndName", func() {
+		It("returns the role of the project with the name, ignoring letter case", func(ctx SpecContext) {
+			role := &model.Role{
+				ID:          model.RoleID{2},
+				ProjectID:   model.ProjectID{1},
+				Name:        "operator",
+				Permissions: model.ProjectPermissions{CreateRoles: true, Escalate: true, CreateBindings: true, Bind: true},
+			}
+
+			unit := data.NewUnit()
+			unit.Roles().Add(role)
+			Expect(unit.Commit(ctx)).To(Succeed())
+
+			Expect(data.Roles().FindByProjectIDAndName(ctx, model.ProjectID{1}, "Operator")).To(Equal(role))
+		})
+
+		It("returns ErrRoleNotFound for a name that no role of the project has", func(ctx SpecContext) {
+			addRole(ctx, data, model.RoleID{2}, model.ProjectID{1}, "operator")
+
+			_, err := data.Roles().FindByProjectIDAndName(ctx, model.ProjectID{1}, "auditor")
+
+			Expect(err).To(MatchError(model.ErrRoleNotFound))
+		})
+
+		It("returns ErrRoleNotFound for a name that only a role of another project has", func(ctx SpecContext) {
+			addProject(ctx, data, model.ProjectID{2}, "search")
+			addRole(ctx, data, model.RoleID{3}, model.ProjectID{2}, "operator")
+
+			_, err := data.Roles().FindByProjectIDAndName(ctx, model.ProjectID{1}, "operator")
+
+			Expect(err).To(MatchError(model.ErrRoleNotFound))
+		})
+	})
+})
+
 func addRole(ctx SpecContext, data *Store, id model.RoleID, projectID model.ProjectID, name string) {
 	GinkgoHelper()
 
@@ -97,7 +140,7 @@ func addRole(ctx SpecContext, data *Store, id model.RoleID, projectID model.Proj
 	Expect(unit.Commit(ctx)).To(Succeed())
 }
 
-// storedRole reads the row with SQL, because the store has no reader for roles.
+// storedRole reads the row with SQL, because the store reads roles only by name.
 func storedRole(ctx context.Context, pool *pgxpool.Pool, id model.RoleID) *model.Role {
 	GinkgoHelper()
 

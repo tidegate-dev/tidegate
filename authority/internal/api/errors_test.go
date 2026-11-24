@@ -38,7 +38,10 @@ func TestClientErrorGivesEachErrorItsCode(t *testing.T) {
 		"project name taken": {model.ErrProjectNameTaken, connect.CodeAlreadyExists},
 		"project not found":  {fmt.Errorf("reading: %w", model.ErrProjectNotFound), connect.CodeNotFound},
 		"role name taken":    {model.ErrRoleNameTaken, connect.CodeAlreadyExists},
+		"role not found":     {fmt.Errorf("reading: %w", model.ErrRoleNotFound), connect.CodeNotFound},
 		"asset name taken":   {model.ErrAssetNameTaken, connect.CodeAlreadyExists},
+		"binding exists":     {model.ErrBindingExists, connect.CodeAlreadyExists},
+		"user not found":     {fmt.Errorf("reading: %w", model.ErrUserNotFound), connect.CodeNotFound},
 		"canceled":           {context.Canceled, connect.CodeUnknown},
 		"anything else":      {errors.New("database down"), connect.CodeUnknown},
 	} {

@@ -37,33 +37,38 @@ type assetResult struct {
 	SSH       *sshTargetResult  `json:"ssh,omitempty" yaml:"ssh,omitempty"`
 }
 
-func newAssetResult(asset *authorityv1.Asset) assetResult {
+func newSSHTargetResult(target *authorityv1.SSHTarget) *sshTargetResult {
+	if target == nil {
+		return nil
+	}
+
+	return &sshTargetResult{Host: target.GetHost(), Port: target.GetPort(), HostKey: target.GetHostKey()}
+}
+
+func newAssetResult(response *authorityv1.CreateAssetResponse) assetResult {
 	result := assetResult{
-		ID:        asset.GetId(),
-		ProjectID: asset.GetProjectId(),
-		Name:      asset.GetName(),
+		ID:        response.GetId(),
+		ProjectID: response.GetProjectId(),
+		Name:      response.GetName(),
 		Labels:    map[string]string{},
+		SSH:       newSSHTargetResult(response.GetSsh()),
 	}
 
-	maps.Copy(result.Labels, asset.GetLabels())
-
-	if target := asset.GetSsh(); target != nil {
-		result.SSH = &sshTargetResult{Host: target.GetHost(), Port: target.GetPort(), HostKey: target.GetHostKey()}
-	}
+	maps.Copy(result.Labels, response.GetLabels())
 
 	return result
 }
 
 func (result assetResult) String() string {
-	return quoteIfUnprintable(result.Name) + "\t" + quoteIfUnprintable(result.ID)
+	return quoteIfUnprintable(result.ID) + "\t" + quoteIfUnprintable(result.Name)
 }
 
 func (result assetResult) tableRow() []string {
 	return []string{
+		quoteIfUnprintable(result.ID),
 		quoteIfUnprintable(result.Name),
 		quoteIfUnprintable(result.address()),
 		quoteIfUnprintable(result.labelsText()),
-		quoteIfUnprintable(result.ID),
 	}
 }
 
@@ -88,10 +93,21 @@ type assetsResult struct {
 	Assets []assetResult `json:"assets" yaml:"assets"`
 }
 
-func newAssetsResult(assets []*authorityv1.Asset) assetsResult {
+func newAssetsResult(assets []*authorityv1.ListAssetsResponse_Asset) assetsResult {
 	result := assetsResult{Assets: make([]assetResult, 0, len(assets))}
+
 	for _, asset := range assets {
-		result.Assets = append(result.Assets, newAssetResult(asset))
+		listed := assetResult{
+			ID:        asset.GetId(),
+			ProjectID: asset.GetProjectId(),
+			Name:      asset.GetName(),
+			Labels:    map[string]string{},
+			SSH:       newSSHTargetResult(asset.GetSsh()),
+		}
+
+		maps.Copy(listed.Labels, asset.GetLabels())
+
+		result.Assets = append(result.Assets, listed)
 	}
 
 	return result
@@ -107,7 +123,7 @@ func (result assetsResult) String() string {
 		rows = append(rows, asset.tableRow())
 	}
 
-	return tableText([]string{"NAME", "ADDRESS", "LABELS", "ID"}, rows)
+	return tableText([]string{"ID", "NAME", "ADDRESS", "LABELS"}, rows)
 }
 
 func assetCommand(store connections.Store) *cli.Command {
@@ -121,22 +137,25 @@ func assetCommand(store connections.Store) *cli.Command {
 				Commands: []*cli.Command{
 					{
 						Name:      "ssh",
-						Usage:     "add an SSH host to a project and print the asset's name and ID",
+						Usage:     "add an SSH host to a project and print the asset's ID and name",
 						ArgsUsage: "<name>",
 						// urfave/cli splits the value of a repeated flag at commas by default.
 						DisableSliceFlagSeparator: true,
 						Flags: []cli.Flag{
 							&cli.StringFlag{
-								Name:  "project",
-								Usage: "name of the project that gets the asset",
+								Name:     "project-name",
+								Usage:    "name of the project that gets the asset",
+								Required: true,
 							},
 							&cli.StringFlag{
-								Name:  "address",
-								Usage: "the host's DNS name or IP address, as host or host:port, with port 22 by default",
+								Name:     "address",
+								Usage:    "the host's DNS name or IP address, as host or host:port, with port 22 by default",
+								Required: true,
 							},
 							&cli.StringFlag{
-								Name:  "host-key",
-								Usage: "the host's public key, like the content of /etc/ssh/ssh_host_ed25519_key.pub",
+								Name:     "host-key",
+								Usage:    "the host's public key, like the content of /etc/ssh/ssh_host_ed25519_key.pub",
+								Required: true,
 							},
 							&cli.StringSliceFlag{
 								Name:  "label",
@@ -151,11 +170,12 @@ func assetCommand(store connections.Store) *cli.Command {
 			},
 			{
 				Name:  "list",
-				Usage: "print the name, the address, the labels and the ID of every asset of a project",
+				Usage: "print the ID, the name, the address and the labels of every asset of a project",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						Name:  "project",
-						Usage: "name of the project whose assets are listed",
+						Name:     "project-name",
+						Usage:    "name of the project whose assets are listed",
+						Required: true,
 					},
 				},
 				Action: func(ctx context.Context, cmd *cli.Command) error {
@@ -169,10 +189,6 @@ func assetCommand(store connections.Store) *cli.Command {
 func assetCreateSSH(ctx context.Context, cmd *cli.Command, store connections.Store) error {
 	if cmd.Args().Len() != 1 {
 		return errors.New("want exactly one name")
-	}
-
-	if cmd.String("project") == "" {
-		return errors.New("want a project, name it with --project")
 	}
 
 	host, port, err := parseAddress(cmd.String("address"))
@@ -196,25 +212,21 @@ func assetCreateSSH(ctx context.Context, cmd *cli.Command, store connections.Sto
 	}
 
 	response, err := clients.Asset().CreateAsset(ctx, connect.NewRequest(&authorityv1.CreateAssetRequest{
-		Project: cmd.String("project"),
-		Name:    cmd.Args().First(),
-		Labels:  labels,
-		Target:  &authorityv1.CreateAssetRequest_Ssh{Ssh: &authorityv1.SSHTarget{Host: host, Port: port, HostKey: hostKey}},
+		ProjectName: cmd.String("project-name"),
+		Name:        cmd.Args().First(),
+		Labels:      labels,
+		Target:      &authorityv1.CreateAssetRequest_Ssh{Ssh: &authorityv1.SSHTarget{Host: host, Port: port, HostKey: hostKey}},
 	}))
 	if err != nil {
 		return callFailed("creating the asset", connection, err)
 	}
 
-	return printResult(cmd, newAssetResult(response.Msg.GetAsset()))
+	return printResult(cmd, newAssetResult(response.Msg))
 }
 
 func assetList(ctx context.Context, cmd *cli.Command, store connections.Store) error {
 	if cmd.Args().Len() != 0 {
 		return errors.New("want no arguments")
-	}
-
-	if cmd.String("project") == "" {
-		return errors.New("want a project, name it with --project")
 	}
 
 	clients, connection, err := connectToCurrent(cmd, store)
@@ -223,7 +235,7 @@ func assetList(ctx context.Context, cmd *cli.Command, store connections.Store) e
 	}
 
 	response, err := clients.Asset().ListAssets(ctx, connect.NewRequest(&authorityv1.ListAssetsRequest{
-		Project: cmd.String("project"),
+		ProjectName: cmd.String("project-name"),
 	}))
 	if err != nil {
 		return callFailed("listing the assets", connection, err)

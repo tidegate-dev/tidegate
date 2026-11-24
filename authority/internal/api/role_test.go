@@ -14,7 +14,7 @@ func TestCreateRoleRequestAcceptsNamesOfLowercaseLettersDigitsAndDashes(t *testi
 	t.Parallel()
 
 	// act
-	err := validationError(t, &authorityv1.CreateRoleRequest{Project: "team-1", Name: "operator-2"})
+	err := validationError(t, &authorityv1.CreateRoleRequest{ProjectName: "team-1", Name: "operator-2"})
 
 	// assert
 	assert.NoError(t, err)
@@ -28,7 +28,7 @@ func TestCreateRoleRequestRefusesARoleNameOfAnotherForm(t *testing.T) {
 			t.Parallel()
 
 			// act
-			err := validationError(t, &authorityv1.CreateRoleRequest{Project: "payments", Name: name})
+			err := validationError(t, &authorityv1.CreateRoleRequest{ProjectName: "payments", Name: name})
 
 			// assert
 			assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
@@ -40,16 +40,16 @@ func TestCreateRoleRequestRefusesARoleNameOfAnotherForm(t *testing.T) {
 func TestCreateRoleRequestRefusesAProjectNameOfAnotherForm(t *testing.T) {
 	t.Parallel()
 
-	for description, project := range refusedNames() {
+	for description, projectName := range refusedNames() {
 		t.Run(description, func(t *testing.T) {
 			t.Parallel()
 
 			// act
-			err := validationError(t, &authorityv1.CreateRoleRequest{Project: project, Name: "operator"})
+			err := validationError(t, &authorityv1.CreateRoleRequest{ProjectName: projectName, Name: "operator"})
 
 			// assert
 			assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
-			assert.ErrorContains(t, err, "project: must start with a lowercase letter")
+			assert.ErrorContains(t, err, "project_name: must start with a lowercase letter")
 		})
 	}
 }
@@ -79,7 +79,7 @@ func TestPermissionsTakesEachPermissionFromItsOwnField(t *testing.T) {
 	}
 }
 
-func TestRoleMessageGivesEachPermissionItsOwnField(t *testing.T) {
+func TestNewCreateRoleResponseGivesEachPermissionItsOwnField(t *testing.T) {
 	t.Parallel()
 
 	for description, granted := range map[string]model.ProjectPermissions{
@@ -92,10 +92,10 @@ func TestRoleMessageGivesEachPermissionItsOwnField(t *testing.T) {
 			t.Parallel()
 
 			// act
-			message := roleMessage(&model.Role{Permissions: granted})
+			response := newCreateRoleResponse(&model.Role{Permissions: granted})
 
 			// assert
-			assert.Equal(t, granted, permissions(message.GetPermissions()))
+			assert.Equal(t, granted, permissions(response.GetPermissions()))
 		})
 	}
 }

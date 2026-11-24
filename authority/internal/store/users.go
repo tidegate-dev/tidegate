@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
@@ -21,11 +22,12 @@ type UserReader struct {
 	queries *sqlc.Queries
 }
 
-// ByName returns the user with the name, ignoring letter case, or
+// FindByName returns the user with the name, ignoring letter case, or
 // model.ErrUserNotFound.
-func (u *UserReader) ByName(ctx context.Context, name string) (*model.User, error) {
+func (u *UserReader) FindByName(ctx context.Context, name string) (*model.User, error) {
 	row, err := u.queries.GetUserByName(ctx, name)
-	if errors.Is(err, pgx.ErrNoRows) {
+	// Postgres refuses text with NUL or invalid UTF-8 with this code.
+	if errors.Is(err, pgx.ErrNoRows) || hasCode(err, pgerrcode.CharacterNotInRepertoire) {
 		return nil, model.ErrUserNotFound
 	}
 
@@ -43,8 +45,8 @@ func (u *UserReader) ByName(ctx context.Context, name string) (*model.User, erro
 	return user, nil
 }
 
-// Any reports whether the table holds a user.
-func (u *UserReader) Any(ctx context.Context) (bool, error) {
+// AnyExist reports whether the table holds a user.
+func (u *UserReader) AnyExist(ctx context.Context) (bool, error) {
 	exists, err := u.queries.AnyUserExists(ctx)
 	if err != nil {
 		return false, fmt.Errorf("checking for users: %w", err)
@@ -106,7 +108,7 @@ func (u *UserReadWriter) Update(user *model.User) {
 		})
 
 		switch {
-		case isUniqueViolation(err):
+		case isUniqueViolationOf(err, "users_name_unique"):
 			return model.ErrUserNameTaken
 		case err != nil:
 			return fmt.Errorf("updating the user: %w", err)
@@ -148,7 +150,7 @@ func insertUser(ctx context.Context, queries *sqlc.Queries, user *model.User) er
 		Name:         user.Name,
 		PasswordHash: databaseHash(user.PasswordHash),
 	})
-	if isUniqueViolationOf(err, "users_name_key") {
+	if isUniqueViolationOf(err, "users_name_unique") {
 		return model.ErrUserNameTaken
 	}
 

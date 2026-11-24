@@ -52,11 +52,11 @@ type User struct {
 // UserReadWriter belongs to a Unit. It reads users right away and records
 // writes, which the unit runs at Commit.
 type UserReadWriter interface {
-	// ByName returns the user with the name, ignoring letter case, or
+	// FindByName returns the user with the name, ignoring letter case, or
 	// ErrUserNotFound.
-	ByName(ctx context.Context, name string) (*User, error)
-	// Any reports whether a user exists.
-	Any(ctx context.Context) (bool, error)
+	FindByName(ctx context.Context, name string) (*User, error)
+	// AnyExist reports whether a user exists.
+	AnyExist(ctx context.Context) (bool, error)
 	// Add records the insert of user. Commit returns ErrUserNameTaken if
 	// another user has the name.
 	Add(user *User)

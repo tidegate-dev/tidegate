@@ -39,9 +39,19 @@ func (s *Store) Projects() *ProjectReader {
 	return &ProjectReader{queries: sqlc.New(s.pool)}
 }
 
+// Roles returns the queries for the roles table.
+func (s *Store) Roles() *RoleReader {
+	return &RoleReader{queries: sqlc.New(s.pool)}
+}
+
 // Assets returns the queries for the assets table.
 func (s *Store) Assets() *AssetReader {
 	return &AssetReader{queries: sqlc.New(s.pool)}
+}
+
+// Bindings returns the queries for the bindings table.
+func (s *Store) Bindings() *BindingReader {
+	return &BindingReader{queries: sqlc.New(s.pool)}
 }
 
 // NewUnit returns an empty unit of work.

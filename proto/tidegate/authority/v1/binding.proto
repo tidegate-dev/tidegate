@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package tidegate.authority.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;authorityv1";
+
+// BindingService creates and lists bindings. A binding gives a role of one
+// project to a user.
+service BindingService {
+  // CreateBinding gives a role of a project to a user. It fails with not_found
+  // if the project, the role or the user doesn't exist, and with
+  // already_exists if the user already has the role.
+  rpc CreateBinding(CreateBindingRequest) returns (CreateBindingResponse);
+  // ListBindings returns every binding of a project. It fails with not_found
+  // if the project doesn't exist.
+  rpc ListBindings(ListBindingsRequest) returns (ListBindingsResponse);
+}
+
+// CreateBindingRequest is the input of BindingService.CreateBinding.
+message CreateBindingRequest {
+  // ProjectName is the name of the project that gets the binding.
+  //
+  // Rules: Starts with a lowercase letter, goes on with lowercase letters,
+  // digits and dashes, and ends with a letter or digit. At most 63 characters.
+  string project_name = 1 [(buf.validate.field).cel = {
+    id: "binding.project_name"
+    message: "must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters"
+    expression: "this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')"
+  }];
+  // RoleName is the name of the role that the user gets. The role must belong
+  // to the project.
+  //
+  // Rules: Starts with a lowercase letter, goes on with lowercase letters,
+  // digits and dashes, and ends with a letter or digit. At most 63 characters.
+  string role_name = 2 [(buf.validate.field).cel = {
+    id: "binding.role_name"
+    message: "must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters"
+    expression: "this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')"
+  }];
+  // UserName is the name of the user who gets the role. Uppercase and
+  // lowercase letters count as the same.
+  //
+  // Rules: Not empty.
+  string user_name = 3 [(buf.validate.field).string.min_len = 1];
+}
+
+// CreateBindingResponse is the result of BindingService.CreateBinding.
+message CreateBindingResponse {
+  // ID identifies the new binding. It is a UUID.
+  string id = 1;
+  // ProjectID identifies the project that the new binding belongs to. It is
+  // a UUID.
+  string project_id = 2;
+  // RoleName is the name of the role that the new binding gives.
+  string role_name = 3;
+  // UserName is the name of the user who gets the role, as the authority
+  // stores it.
+  string user_name = 4;
+}
+
+// ListBindingsRequest is the input of BindingService.ListBindings.
+message ListBindingsRequest {
+  // ProjectName is the name of the project whose bindings are listed.
+  //
+  // Rules: Starts with a lowercase letter, goes on with lowercase letters,
+  // digits and dashes, and ends with a letter or digit. At most 63 characters.
+  string project_name = 1 [(buf.validate.field).cel = {
+    id: "binding.project_name"
+    message: "must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters"
+    expression: "this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')"
+  }];
+}
+
+// ListBindingsResponse is the result of BindingService.ListBindings.
+message ListBindingsResponse {
+  // Binding is one binding in the list.
+  message Binding {
+    // ID identifies the binding. It is a UUID.
+    string id = 1;
+    // ProjectID identifies the project that the binding belongs to. It is a
+    // UUID.
+    string project_id = 2;
+    // RoleName is the name of the role that the binding gives.
+    string role_name = 3;
+    // UserName is the name of the user who has the role.
+    string user_name = 4;
+  }
+
+  // Bindings are all bindings of the project, ordered by the role name and
+  // then the user name.
+  repeated Binding bindings = 1;
+}

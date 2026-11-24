@@ -17,8 +17,8 @@ type projectResult struct {
 	Name string `json:"name" yaml:"name"`
 }
 
-func newProjectResult(project *authorityv1.Project) projectResult {
-	return projectResult{ID: project.GetId(), Name: project.GetName()}
+func newProjectResult(response *authorityv1.CreateProjectResponse) projectResult {
+	return projectResult{ID: response.GetId(), Name: response.GetName()}
 }
 
 func (result projectResult) String() string {
@@ -26,17 +26,17 @@ func (result projectResult) String() string {
 }
 
 func (result projectResult) tableRow() []string {
-	return []string{quoteIfUnprintable(result.Name), quoteIfUnprintable(result.ID)}
+	return []string{quoteIfUnprintable(result.ID), quoteIfUnprintable(result.Name)}
 }
 
 type projectsResult struct {
 	Projects []projectResult `json:"projects" yaml:"projects"`
 }
 
-func newProjectsResult(projects []*authorityv1.Project) projectsResult {
+func newProjectsResult(projects []*authorityv1.ListProjectsResponse_Project) projectsResult {
 	result := projectsResult{Projects: make([]projectResult, 0, len(projects))}
 	for _, project := range projects {
-		result.Projects = append(result.Projects, newProjectResult(project))
+		result.Projects = append(result.Projects, projectResult{ID: project.GetId(), Name: project.GetName()})
 	}
 
 	return result
@@ -52,7 +52,7 @@ func (result projectsResult) String() string {
 		rows = append(rows, project.tableRow())
 	}
 
-	return tableText([]string{"NAME", "ID"}, rows)
+	return tableText([]string{"ID", "NAME"}, rows)
 }
 
 func projectCommand(store connections.Store) *cli.Command {
@@ -62,7 +62,7 @@ func projectCommand(store connections.Store) *cli.Command {
 		Commands: []*cli.Command{
 			{
 				Name:      "create",
-				Usage:     "create a project and print its name and ID",
+				Usage:     "create a project and print its ID and name",
 				ArgsUsage: "<name>",
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					return projectCreate(ctx, cmd, store)
@@ -70,7 +70,7 @@ func projectCommand(store connections.Store) *cli.Command {
 			},
 			{
 				Name:  "list",
-				Usage: "print the name and the ID of every project",
+				Usage: "print the ID and the name of every project",
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					return projectList(ctx, cmd, store)
 				},
@@ -96,7 +96,7 @@ func projectCreate(ctx context.Context, cmd *cli.Command, store connections.Stor
 		return callFailed("creating the project", connection, err)
 	}
 
-	return printResult(cmd, newProjectResult(response.Msg.GetProject()))
+	return printResult(cmd, newProjectResult(response.Msg))
 }
 
 func projectList(ctx context.Context, cmd *cli.Command, store connections.Store) error {

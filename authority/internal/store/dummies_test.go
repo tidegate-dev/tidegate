@@ -24,11 +24,11 @@ var _ = Describe("DummyReadWriter", func() {
 		Expect(dummy.ID).To(BeZero())
 
 		Expect(unit.Commit(ctx)).To(Succeed())
-		Expect(data.Dummies().ByID(ctx, dummy.ID)).To(Equal(dummy))
+		Expect(data.Dummies().FindByID(ctx, dummy.ID)).To(Equal(dummy))
 	})
 
 	It("returns ErrDummyNotFound for an ID that no dummy has", func(ctx SpecContext) {
-		_, err := data.Dummies().ByID(ctx, 1)
+		_, err := data.Dummies().FindByID(ctx, 1)
 
 		Expect(err).To(MatchError(model.ErrDummyNotFound))
 	})

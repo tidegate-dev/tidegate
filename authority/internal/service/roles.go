@@ -8,8 +8,8 @@ import (
 
 // ProjectFinder finds a project by its name.
 type ProjectFinder interface {
-	// ByName returns the project with the name or model.ErrProjectNotFound.
-	ByName(ctx context.Context, name string) (*model.Project, error)
+	// FindByName returns the project with the name or model.ErrProjectNotFound.
+	FindByName(ctx context.Context, name string) (*model.Project, error)
 }
 
 // Roles creates roles.
@@ -35,7 +35,7 @@ func (r *Roles) Create(
 	name string,
 	permissions model.ProjectPermissions,
 ) (*model.Role, error) {
-	project, err := r.projects.ByName(ctx, projectName)
+	project, err := r.projects.FindByName(ctx, projectName)
 	if err != nil {
 		return nil, err
 	}

@@ -15,18 +15,6 @@ service RoleService {
   rpc CreateRole(CreateRoleRequest) returns (CreateRoleResponse);
 }
 
-// Role is a role as the authority stores it.
-message Role {
-  // ID identifies the role. It is a UUID.
-  string id = 1;
-  // ProjectID identifies the project that the role belongs to. It is a UUID.
-  string project_id = 2;
-  // Name is the role's name.
-  string name = 3;
-  // Permissions are the permissions that the role gives its holders.
-  ProjectPermissions permissions = 4;
-}
-
 // ProjectPermissions says what the holders of a role may do with the roles
 // and bindings of its project.
 message ProjectPermissions {
@@ -44,12 +32,12 @@ message ProjectPermissions {
 
 // CreateRoleRequest is the input of RoleService.CreateRole.
 message CreateRoleRequest {
-  // Project is the name of the project that gets the role.
+  // ProjectName is the name of the project that gets the role.
   //
   // Rules: Starts with a lowercase letter, goes on with lowercase letters,
   // digits and dashes, and ends with a letter or digit. At most 63 characters.
-  string project = 1 [(buf.validate.field).cel = {
-    id: "role.project"
+  string project_name = 1 [(buf.validate.field).cel = {
+    id: "role.project_name"
     message: "must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters"
     expression: "this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')"
   }];
@@ -69,6 +57,13 @@ message CreateRoleRequest {
 
 // CreateRoleResponse is the result of RoleService.CreateRole.
 message CreateRoleResponse {
-  // Role is the new role.
-  Role role = 1;
+  // ID identifies the new role. It is a UUID.
+  string id = 1;
+  // ProjectID identifies the project that the new role belongs to. It is a
+  // UUID.
+  string project_id = 2;
+  // Name is the new role's name.
+  string name = 3;
+  // Permissions say what the users who have the new role may do.
+  ProjectPermissions permissions = 4;
 }

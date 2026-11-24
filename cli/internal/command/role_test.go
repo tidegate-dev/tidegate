@@ -39,7 +39,7 @@ func TestNewRoleResultTakesEachPermissionFromItsOwnField(t *testing.T) {
 			t.Parallel()
 
 			// act
-			result := newRoleResult(&authorityv1.Role{Permissions: test.permissions})
+			result := newRoleResult(&authorityv1.CreateRoleResponse{Permissions: test.permissions})
 
 			// assert
 			assert.Equal(t, test.want, result.Permissions)

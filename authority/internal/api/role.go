@@ -25,12 +25,12 @@ func (s *RoleService) CreateRole(
 	ctx context.Context,
 	req *connect.Request[authorityv1.CreateRoleRequest],
 ) (*connect.Response[authorityv1.CreateRoleResponse], error) {
-	role, err := s.roles.Create(ctx, req.Msg.GetProject(), req.Msg.GetName(), permissions(req.Msg.GetPermissions()))
+	role, err := s.roles.Create(ctx, req.Msg.GetProjectName(), req.Msg.GetName(), permissions(req.Msg.GetPermissions()))
 	if err != nil {
 		return nil, clientError(err)
 	}
 
-	return connect.NewResponse(&authorityv1.CreateRoleResponse{Role: roleMessage(role)}), nil
+	return connect.NewResponse(newCreateRoleResponse(role)), nil
 }
 
 func permissions(message *authorityv1.ProjectPermissions) model.ProjectPermissions {
@@ -42,8 +42,8 @@ func permissions(message *authorityv1.ProjectPermissions) model.ProjectPermissio
 	}
 }
 
-func roleMessage(role *model.Role) *authorityv1.Role {
-	return &authorityv1.Role{
+func newCreateRoleResponse(role *model.Role) *authorityv1.CreateRoleResponse {
+	return &authorityv1.CreateRoleResponse{
 		Id:        role.ID.String(),
 		ProjectId: role.ProjectID.String(),
 		Name:      role.Name,

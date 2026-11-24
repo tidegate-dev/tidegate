@@ -12,13 +12,13 @@ setup() {
 
     run tidegate project create "$name"
     [ "$status" -eq 0 ]
-    [[ $output == "$name"$'\t'?* ]]
-    id=${output#*$'\t'}
+    [[ $output == ?*$'\t'"$name" ]]
+    id=${output%%$'\t'*}
 
     run tidegate project list
     [ "$status" -eq 0 ]
-    [[ ${lines[0]} == NAME*ID ]]
-    grep -qE "^$name +$id\$" <<<"$output"
+    [[ ${lines[0]} == ID*NAME ]]
+    grep -qE "^$id +$name\$" <<<"$output"
 }
 
 @test "project create and project list print json" {

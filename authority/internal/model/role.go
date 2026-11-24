@@ -7,9 +7,14 @@ import (
 	"github.com/google/uuid"
 )
 
-// ErrRoleNameTaken means another role of the project already has the name.
-// Nothing was written.
-var ErrRoleNameTaken = errors.New("the role name is taken")
+var (
+	// ErrRoleNotFound means the project has no role with the given ID or
+	// name.
+	ErrRoleNotFound = errors.New("role not found")
+	// ErrRoleNameTaken means another role of the project already has the
+	// name. Nothing was written.
+	ErrRoleNameTaken = errors.New("the role name is taken")
+)
 
 // RoleID identifies a role.
 type RoleID uuid.UUID

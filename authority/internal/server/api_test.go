@@ -106,6 +106,6 @@ func clientOfSucceedingHandler(t *testing.T, procedure string) *connect.Client[e
 
 type anySession struct{}
 
-func (anySession) Session(context.Context, secret.String) (model.Session, error) {
+func (anySession) FindByToken(context.Context, secret.String) (model.Session, error) {
 	return model.Session{}, nil
 }

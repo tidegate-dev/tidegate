@@ -261,20 +261,20 @@ func TestCreateAssetRequestRefusesAnAssetNameOfAnotherForm(t *testing.T) {
 func TestCreateAssetRequestRefusesAProjectNameOfAnotherForm(t *testing.T) {
 	t.Parallel()
 
-	for description, project := range refusedNames() {
+	for description, projectName := range refusedNames() {
 		t.Run(description, func(t *testing.T) {
 			t.Parallel()
 
 			// arrange
 			request := validCreateAssetRequest()
-			request.Project = project
+			request.ProjectName = projectName
 
 			// act
 			err := validationError(t, request)
 
 			// assert
 			assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
-			assert.ErrorContains(t, err, "project: must start with a lowercase letter")
+			assert.ErrorContains(t, err, "project_name: must start with a lowercase letter")
 		})
 	}
 }
@@ -283,14 +283,14 @@ func TestListAssetsRequestRefusesAProjectNameOfAnotherForm(t *testing.T) {
 	t.Parallel()
 
 	// act
-	err := validationError(t, &authorityv1.ListAssetsRequest{Project: "Payments"})
+	err := validationError(t, &authorityv1.ListAssetsRequest{ProjectName: "Payments"})
 
 	// assert
 	assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
-	assert.ErrorContains(t, err, "project: must start with a lowercase letter")
+	assert.ErrorContains(t, err, "project_name: must start with a lowercase letter")
 }
 
-func TestAssetMessageHoldsTheAssetWithItsSSHTarget(t *testing.T) {
+func TestNewCreateAssetResponseHoldsTheAssetWithItsSSHTarget(t *testing.T) {
 	t.Parallel()
 
 	// arrange
@@ -304,7 +304,44 @@ func TestAssetMessageHoldsTheAssetWithItsSSHTarget(t *testing.T) {
 	}
 
 	// act
-	message, err := assetMessage(asset)
+	response, err := newCreateAssetResponse(asset)
+
+	// assert
+	require.NoError(t, err)
+	assert.Equal(t, asset.ID.String(), response.GetId())
+	assert.Equal(t, asset.ProjectID.String(), response.GetProjectId())
+	assert.Equal(t, "bastion", response.GetName())
+	assert.Equal(t, map[string]string{"env": "prod"}, response.GetLabels())
+	assert.Equal(t, "bastion.example", response.GetSsh().GetHost())
+	assert.Equal(t, uint32(2222), response.GetSsh().GetPort())
+	assert.Equal(t, "ssh-ed25519 AAAA", response.GetSsh().GetHostKey())
+}
+
+func TestNewCreateAssetResponseFailsForAnAssetWithoutATarget(t *testing.T) {
+	t.Parallel()
+
+	// act
+	_, err := newCreateAssetResponse(&model.Asset{Name: "bastion"})
+
+	// assert
+	assert.ErrorContains(t, err, "has no target")
+}
+
+func TestNewListedAssetHoldsTheAssetWithItsSSHTarget(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	asset := &model.Asset{
+		ID:        model.AssetID{1},
+		ProjectID: model.ProjectID{2},
+		Name:      "bastion",
+		Kind:      model.AssetKindSSH,
+		Labels:    map[string]string{"env": "prod"},
+		SSH:       &model.SSHTarget{Host: "bastion.example", Port: 2222, HostKey: "ssh-ed25519 AAAA"},
+	}
+
+	// act
+	message, err := newListedAsset(asset)
 
 	// assert
 	require.NoError(t, err)
@@ -317,11 +354,11 @@ func TestAssetMessageHoldsTheAssetWithItsSSHTarget(t *testing.T) {
 	assert.Equal(t, "ssh-ed25519 AAAA", message.GetSsh().GetHostKey())
 }
 
-func TestAssetMessageFailsForAnAssetWithoutATarget(t *testing.T) {
+func TestNewListedAssetFailsForAnAssetWithoutATarget(t *testing.T) {
 	t.Parallel()
 
 	// act
-	_, err := assetMessage(&model.Asset{Name: "bastion"})
+	_, err := newListedAsset(&model.Asset{Name: "bastion"})
 
 	// assert
 	assert.ErrorContains(t, err, "has no target")
@@ -392,8 +429,8 @@ func dnsName(length int) string {
 
 func validCreateAssetRequest() *authorityv1.CreateAssetRequest {
 	return &authorityv1.CreateAssetRequest{
-		Project: "payments",
-		Name:    "bastion",
+		ProjectName: "payments",
+		Name:        "bastion",
 		Target: &authorityv1.CreateAssetRequest_Ssh{Ssh: &authorityv1.SSHTarget{
 			Host:    "bastion.example",
 			Port:    22,
@@ -407,7 +444,7 @@ func TestCreateAssetRefusesARequestWhoseTargetTheHandlerDoesNotKnow(t *testing.T
 
 	// arrange
 	service := NewAssetService(nil)
-	request := connect.NewRequest(&authorityv1.CreateAssetRequest{Project: "payments", Name: "bastion"})
+	request := connect.NewRequest(&authorityv1.CreateAssetRequest{ProjectName: "payments", Name: "bastion"})
 
 	// act
 	_, err := service.CreateAsset(t.Context(), request)

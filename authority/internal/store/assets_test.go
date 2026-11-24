@@ -21,16 +21,16 @@ var _ = Describe("AssetReadWriter", func() {
 		addProject(ctx, data, model.ProjectID{1}, "payments")
 	})
 
-	It("stores an SSH asset at Commit, which InProject then returns", func(ctx SpecContext) {
+	It("stores an SSH asset at Commit, which ListForProjectID then returns", func(ctx SpecContext) {
 		asset := newSSHAsset(model.AssetID{2}, model.ProjectID{1}, "bastion")
 		asset.Labels = map[string]string{"env": "prod", "team": "payments"}
 
 		unit := data.NewUnit()
 		unit.Assets().Add(asset)
-		Expect(data.Assets().InProject(ctx, model.ProjectID{1})).To(BeEmpty())
+		Expect(data.Assets().ListForProjectID(ctx, model.ProjectID{1})).To(BeEmpty())
 
 		Expect(unit.Commit(ctx)).To(Succeed())
-		Expect(data.Assets().InProject(ctx, model.ProjectID{1})).To(ConsistOf(asset))
+		Expect(data.Assets().ListForProjectID(ctx, model.ProjectID{1})).To(ConsistOf(asset))
 	})
 
 	It("writes the kind and the SSH target as JSON into the details column", func(ctx SpecContext) {
@@ -51,7 +51,7 @@ var _ = Describe("AssetReadWriter", func() {
 		asset.Labels = nil
 		addAsset(ctx, data, asset)
 
-		assets, err := data.Assets().InProject(ctx, model.ProjectID{1})
+		assets, err := data.Assets().ListForProjectID(ctx, model.ProjectID{1})
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(assets).To(ConsistOf(HaveField("Labels", BeEmpty())))
@@ -130,7 +130,7 @@ var _ = Describe("AssetReadWriter", func() {
 		addAsset(ctx, data, newSSHAsset(model.AssetID{5}, model.ProjectID{1}, "database"))
 		addAsset(ctx, data, newSSHAsset(model.AssetID{6}, model.ProjectID{2}, "index"))
 
-		assets, err := data.Assets().InProject(ctx, model.ProjectID{1})
+		assets, err := data.Assets().ListForProjectID(ctx, model.ProjectID{1})
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(assets).To(HaveExactElements(
@@ -148,7 +148,7 @@ var _ = Describe("AssetReadWriter", func() {
 		)
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = data.Assets().InProject(ctx, model.ProjectID{1})
+		_, err = data.Assets().ListForProjectID(ctx, model.ProjectID{1})
 
 		Expect(err).To(MatchError(ContainSubstring("an SSH asset needs a host, a port and a host key")))
 	})

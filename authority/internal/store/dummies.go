@@ -16,8 +16,8 @@ type DummyReader struct {
 	queries *sqlc.Queries
 }
 
-// ByID returns the dummy with the ID, or model.ErrDummyNotFound.
-func (d *DummyReader) ByID(ctx context.Context, id int64) (*model.Dummy, error) {
+// FindByID returns the dummy with the ID, or model.ErrDummyNotFound.
+func (d *DummyReader) FindByID(ctx context.Context, id int64) (*model.Dummy, error) {
 	text, err := d.queries.GetDummy(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, model.ErrDummyNotFound

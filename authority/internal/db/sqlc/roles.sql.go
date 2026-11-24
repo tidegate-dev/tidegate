@@ -11,6 +11,32 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const getRoleByName = `-- name: GetRoleByName :one
+SELECT id, project_id, name, create_roles, escalate, create_bindings, bind
+FROM roles
+WHERE project_id = $1 AND lower(name) = lower($2)
+`
+
+type GetRoleByNameParams struct {
+	ProjectID pgtype.UUID
+	Name      string
+}
+
+func (q *Queries) GetRoleByName(ctx context.Context, arg GetRoleByNameParams) (Role, error) {
+	row := q.db.QueryRow(ctx, getRoleByName, arg.ProjectID, arg.Name)
+	var i Role
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectID,
+		&i.Name,
+		&i.CreateRoles,
+		&i.Escalate,
+		&i.CreateBindings,
+		&i.Bind,
+	)
+	return i, err
+}
+
 const insertRole = `-- name: InsertRole :exec
 INSERT INTO roles (id, project_id, name, create_roles, escalate, create_bindings, bind)
 VALUES ($1, $2, $3, $4, $5, $6, $7)

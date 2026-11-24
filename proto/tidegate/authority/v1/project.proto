@@ -16,14 +16,6 @@ service ProjectService {
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
 }
 
-// Project is a project as the authority stores it.
-message Project {
-  // ID identifies the project. It is a UUID.
-  string id = 1;
-  // Name is the project's name.
-  string name = 2;
-}
-
 // CreateProjectRequest is the input of ProjectService.CreateProject.
 message CreateProjectRequest {
   // Name is the name of the new project.
@@ -39,8 +31,10 @@ message CreateProjectRequest {
 
 // CreateProjectResponse is the result of ProjectService.CreateProject.
 message CreateProjectResponse {
-  // Project is the new project.
-  Project project = 1;
+  // ID identifies the new project. It is a UUID.
+  string id = 1;
+  // Name is the new project's name.
+  string name = 2;
 }
 
 // ListProjectsRequest is the input of ProjectService.ListProjects.
@@ -48,6 +42,14 @@ message ListProjectsRequest {}
 
 // ListProjectsResponse is the result of ProjectService.ListProjects.
 message ListProjectsResponse {
+  // Project is one project in the list.
+  message Project {
+    // ID identifies the project. It is a UUID.
+    string id = 1;
+    // Name is the project's name.
+    string name = 2;
+  }
+
   // Projects are all projects.
   repeated Project projects = 1;
 }

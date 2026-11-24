@@ -11,8 +11,8 @@ import (
 )
 
 // clientError gives a service error the code and the fixed message that a
-// client sees. The reason stays out, so clients can't tell which user names
-// exist or why a token was refused.
+// client sees. The reason stays out, so a failed login doesn't reveal which
+// user names exist or why a token was refused.
 func clientError(err error) error {
 	switch {
 	case errors.Is(err, service.ErrWrongCredentials):
@@ -29,8 +29,14 @@ func clientError(err error) error {
 		return connect.NewError(connect.CodeNotFound, model.ErrProjectNotFound)
 	case errors.Is(err, model.ErrRoleNameTaken):
 		return connect.NewError(connect.CodeAlreadyExists, model.ErrRoleNameTaken)
+	case errors.Is(err, model.ErrRoleNotFound):
+		return connect.NewError(connect.CodeNotFound, model.ErrRoleNotFound)
+	case errors.Is(err, model.ErrUserNotFound):
+		return connect.NewError(connect.CodeNotFound, model.ErrUserNotFound)
 	case errors.Is(err, model.ErrAssetNameTaken):
 		return connect.NewError(connect.CodeAlreadyExists, model.ErrAssetNameTaken)
+	case errors.Is(err, model.ErrBindingExists):
+		return connect.NewError(connect.CodeAlreadyExists, model.ErrBindingExists)
 	default:
 		return err
 	}

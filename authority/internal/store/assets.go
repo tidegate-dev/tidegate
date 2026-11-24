@@ -22,9 +22,9 @@ type AssetReader struct {
 	queries *sqlc.Queries
 }
 
-// InProject returns the assets of the project, ordered by name without regard
-// to letter case.
-func (a *AssetReader) InProject(ctx context.Context, projectID model.ProjectID) ([]*model.Asset, error) {
+// ListForProjectID returns the assets of the project, ordered by name without
+// regard to letter case.
+func (a *AssetReader) ListForProjectID(ctx context.Context, projectID model.ProjectID) ([]*model.Asset, error) {
 	rows, err := a.queries.ListAssetsOfProject(ctx, databaseID(projectID))
 	if err != nil {
 		return nil, fmt.Errorf("reading the assets: %w", err)
@@ -116,9 +116,9 @@ func (a *AssetReadWriter) Add(asset *model.Asset) {
 		})
 
 		switch {
-		case isUniqueViolationOf(err, "assets_project_id_name_key"):
+		case isUniqueViolationOf(err, "assets_name_unique_in_project"):
 			return model.ErrAssetNameTaken
-		case isForeignKeyViolationOf(err, "assets_project_id_fkey"):
+		case isForeignKeyViolationOf(err, "assets_project_fk"):
 			return model.ErrProjectNotFound
 		case err != nil:
 			return fmt.Errorf("creating the asset: %w", err)

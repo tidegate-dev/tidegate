@@ -29,9 +29,9 @@ var (
 
 // UserFinder finds a user by name.
 type UserFinder interface {
-	// ByName returns the user with the name, ignoring letter case, or
+	// FindByName returns the user with the name, ignoring letter case, or
 	// model.ErrUserNotFound.
-	ByName(ctx context.Context, name string) (*model.User, error)
+	FindByName(ctx context.Context, name string) (*model.User, error)
 }
 
 // Authenticator checks users' local passwords.
@@ -67,7 +67,7 @@ func (a *Authenticator) Authenticate(ctx context.Context, name string, plaintext
 		return model.UserID{}, err
 	}
 
-	user, err := a.findUser(ctx, name)
+	user, err := a.users.FindByName(ctx, name)
 
 	var (
 		hash    string
@@ -97,16 +97,6 @@ func (a *Authenticator) Authenticate(ctx context.Context, name string, plaintext
 	}
 
 	return user.ID, nil
-}
-
-// findUser returns model.ErrUserNotFound for a name that no user can have,
-// because Postgres refuses some of those names in a query.
-func (a *Authenticator) findUser(ctx context.Context, name string) (*model.User, error) {
-	if ValidateName(name) != nil {
-		return nil, model.ErrUserNotFound
-	}
-
-	return a.users.ByName(ctx, name)
 }
 
 func (a *Authenticator) verify(ctx context.Context, plaintext secret.String, hash string) (bool, error) {

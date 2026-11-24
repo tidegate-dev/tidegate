@@ -17,7 +17,7 @@ import (
 
 // SessionLookup finds the session that a session token belongs to.
 type SessionLookup interface {
-	Session(ctx context.Context, token secret.String) (model.Session, error)
+	FindByToken(ctx context.Context, token secret.String) (model.Session, error)
 }
 
 // NewSessionInterceptor returns an interceptor that requires a session token.
@@ -68,7 +68,7 @@ func (i sessionInterceptor) withSession(ctx context.Context, spec connect.Spec, 
 		return ctx, clientError(service.ErrNotSignedIn)
 	}
 
-	session, err := i.sessions.Session(ctx, token)
+	session, err := i.sessions.FindByToken(ctx, token)
 	if err != nil {
 		return ctx, clientError(err)
 	}

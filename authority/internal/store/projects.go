@@ -16,9 +16,9 @@ type ProjectReader struct {
 	queries *sqlc.Queries
 }
 
-// ByName returns the project with the name, ignoring letter case, or
+// FindByName returns the project with the name, ignoring letter case, or
 // model.ErrProjectNotFound.
-func (p *ProjectReader) ByName(ctx context.Context, name string) (*model.Project, error) {
+func (p *ProjectReader) FindByName(ctx context.Context, name string) (*model.Project, error) {
 	row, err := p.queries.GetProjectByName(ctx, name)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, model.ErrProjectNotFound
@@ -31,8 +31,8 @@ func (p *ProjectReader) ByName(ctx context.Context, name string) (*model.Project
 	return &model.Project{ID: model.ProjectID(row.ID.Bytes), Name: row.Name}, nil
 }
 
-// All returns every project, ordered by name without regard to letter case.
-func (p *ProjectReader) All(ctx context.Context) ([]*model.Project, error) {
+// ListAll returns every project, ordered by name without regard to letter case.
+func (p *ProjectReader) ListAll(ctx context.Context) ([]*model.Project, error) {
 	rows, err := p.queries.ListProjects(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("reading the projects: %w", err)
@@ -61,7 +61,7 @@ func (p *ProjectReadWriter) Add(project *model.Project) {
 			ID:   databaseID(project.ID),
 			Name: project.Name,
 		})
-		if isUniqueViolationOf(err, "projects_name_key") {
+		if isUniqueViolationOf(err, "projects_name_unique") {
 			return model.ErrProjectNameTaken
 		}
 

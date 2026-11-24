@@ -25,22 +25,22 @@ type roleResult struct {
 	Permissions permissionsResult `json:"permissions" yaml:"permissions"`
 }
 
-func newRoleResult(role *authorityv1.Role) roleResult {
+func newRoleResult(response *authorityv1.CreateRoleResponse) roleResult {
 	return roleResult{
-		ID:        role.GetId(),
-		ProjectID: role.GetProjectId(),
-		Name:      role.GetName(),
+		ID:        response.GetId(),
+		ProjectID: response.GetProjectId(),
+		Name:      response.GetName(),
 		Permissions: permissionsResult{
-			CreateRoles:    role.GetPermissions().GetCreateRoles(),
-			Escalate:       role.GetPermissions().GetEscalate(),
-			CreateBindings: role.GetPermissions().GetCreateBindings(),
-			Bind:           role.GetPermissions().GetBind(),
+			CreateRoles:    response.GetPermissions().GetCreateRoles(),
+			Escalate:       response.GetPermissions().GetEscalate(),
+			CreateBindings: response.GetPermissions().GetCreateBindings(),
+			Bind:           response.GetPermissions().GetBind(),
 		},
 	}
 }
 
 func (result roleResult) String() string {
-	return quoteIfUnprintable(result.Name) + "\t" + quoteIfUnprintable(result.ID)
+	return quoteIfUnprintable(result.ID) + "\t" + quoteIfUnprintable(result.Name)
 }
 
 func roleCommand(store connections.Store) *cli.Command {
@@ -50,12 +50,13 @@ func roleCommand(store connections.Store) *cli.Command {
 		Commands: []*cli.Command{
 			{
 				Name:      "create",
-				Usage:     "create a role in a project and print its name and ID",
+				Usage:     "create a role in a project and print its ID and name",
 				ArgsUsage: "<name>",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						Name:  "project",
-						Usage: "name of the project that gets the role",
+						Name:     "project-name",
+						Usage:    "name of the project that gets the role",
+						Required: true,
 					},
 					&cli.BoolFlag{
 						Name:  "create-roles",
@@ -87,18 +88,14 @@ func roleCreate(ctx context.Context, cmd *cli.Command, store connections.Store) 
 		return errors.New("want exactly one name")
 	}
 
-	if cmd.String("project") == "" {
-		return errors.New("want a project, name it with --project")
-	}
-
 	clients, connection, err := connectToCurrent(cmd, store)
 	if err != nil {
 		return err
 	}
 
 	response, err := clients.Role().CreateRole(ctx, connect.NewRequest(&authorityv1.CreateRoleRequest{
-		Project: cmd.String("project"),
-		Name:    cmd.Args().First(),
+		ProjectName: cmd.String("project-name"),
+		Name:        cmd.Args().First(),
 		Permissions: &authorityv1.ProjectPermissions{
 			CreateRoles:    cmd.Bool("create-roles"),
 			Escalate:       cmd.Bool("escalate"),
@@ -110,5 +107,5 @@ func roleCreate(ctx context.Context, cmd *cli.Command, store connections.Store) 
 		return callFailed("creating the role", connection, err)
 	}
 
-	return printResult(cmd, newRoleResult(response.Msg.GetRole()))
+	return printResult(cmd, newRoleResult(response.Msg))
 }

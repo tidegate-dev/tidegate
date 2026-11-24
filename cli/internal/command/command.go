@@ -49,6 +49,7 @@ func New(store connections.Store) *cli.Command {
 			projectCommand(store),
 			roleCommand(store),
 			assetCommand(store),
+			bindingCommand(store),
 			dummyCommand(store),
 		},
 	}

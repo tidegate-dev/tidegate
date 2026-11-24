@@ -19,9 +19,9 @@ const tokenBytes = 32
 
 // SessionFinder finds a session by the hash of its token.
 type SessionFinder interface {
-	// ActiveByTokenHash returns the session with the token hash that expires
-	// after now, or model.ErrSessionNotFound.
-	ActiveByTokenHash(ctx context.Context, tokenHash secret.Bytes, now time.Time) (*model.Session, error)
+	// FindActiveByTokenHash returns the session with the token hash that
+	// expires after now, or model.ErrSessionNotFound.
+	FindActiveByTokenHash(ctx context.Context, tokenHash secret.Bytes, now time.Time) (*model.Session, error)
 }
 
 // Sessions issues, looks up and revokes the tokens that signed-in users
@@ -58,7 +58,7 @@ func (s *Sessions) Issue(ctx context.Context, userID model.UserID) (secret.Strin
 	now := s.clk.Now()
 
 	unit := s.units.NewUnit()
-	unit.Sessions().RemoveExpiredOfUser(userID, now)
+	unit.Sessions().RemoveExpiredForUserID(userID, now)
 	unit.Sessions().Add(&model.Session{
 		ID:        id,
 		UserID:    userID,
@@ -75,10 +75,10 @@ func (s *Sessions) Issue(ctx context.Context, userID model.UserID) (secret.Strin
 	return token, nil
 }
 
-// Session returns the session of the token. It returns ErrNotSignedIn if the
-// token is unknown or expired.
-func (s *Sessions) Session(ctx context.Context, token secret.String) (model.Session, error) {
-	session, err := s.sessions.ActiveByTokenHash(ctx, hash(token), s.clk.Now())
+// FindByToken returns the session of the token. It returns ErrNotSignedIn if
+// the token is unknown or expired.
+func (s *Sessions) FindByToken(ctx context.Context, token secret.String) (model.Session, error) {
+	session, err := s.sessions.FindActiveByTokenHash(ctx, hash(token), s.clk.Now())
 	if errors.Is(err, model.ErrSessionNotFound) {
 		return model.Session{}, fmt.Errorf("%w: unknown or expired token", ErrNotSignedIn)
 	}
@@ -106,7 +106,7 @@ func (s *Sessions) Revoke(ctx context.Context, session model.Session) error {
 // RevokeAll deletes every token of the user.
 func (s *Sessions) RevokeAll(ctx context.Context, userID model.UserID) error {
 	unit := s.units.NewUnit()
-	unit.Sessions().RemoveOfUser(userID)
+	unit.Sessions().RemoveAllForUserID(userID)
 
 	err := unit.Commit(ctx)
 	if err != nil {

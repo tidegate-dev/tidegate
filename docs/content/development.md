@@ -94,6 +94,26 @@ string password = 2 [(buf.validate.field).string = {
 
 The reference shows that paragraph in its own column.
 
+If two methods share a message, you can't change it for one method without changing it for the other. A field that you add for a list then also appears in what a create returns.
+
+```proto
+message CreateProjectResponse {
+  string id = 1;
+  string name = 2;
+}
+
+message ListProjectsResponse {
+  message Project {
+    string id = 1;
+    string name = 2;
+  }
+
+  repeated Project projects = 1;
+}
+```
+
+`CreateProject` and `ListProjects` both return an ID and a name, and each has its own message for them. If two methods use fields that look alike, give each method its own message anyway. If a message is only a value, like `SSHTarget`, several messages can use it.
+
 ### Database
 
 The authority's SQL queries are in `authority/internal/db/queries/`, and sqlc generates Go code for them in `authority/internal/db/sqlc/`. After you change a query, run `just generate` and commit the result.
