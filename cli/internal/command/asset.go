@@ -24,6 +24,9 @@ import (
 // IANA assigns port 22 to SSH.
 const defaultSSHPort = 22
 
+// The authority accepts a private key of at most this many bytes.
+const maxPrivateKeyBytes = 16384
+
 var errAddress = errors.New("want an address like host or host:port")
 
 type sshTargetResult struct {
@@ -292,12 +295,12 @@ func setSSHSecret(
 	prompts io.Writer,
 ) error {
 	if privateKeyFile != "" {
-		privateKey, err := os.ReadFile(privateKeyFile) //nolint:gosec // The path is the file that the user names.
+		privateKey, err := readPrivateKeyFile(privateKeyFile)
 		if err != nil {
 			return fmt.Errorf("--private-key-file: %w", err)
 		}
 
-		asset.Secret = &authorityv1.CreateAssetRequest_SSHAsset_PrivateKey{PrivateKey: string(privateKey)}
+		asset.Secret = &authorityv1.CreateAssetRequest_SSHAsset_PrivateKey{PrivateKey: privateKey}
 
 		return nil
 	}
@@ -312,6 +315,30 @@ func setSSHSecret(
 	asset.Secret = &authorityv1.CreateAssetRequest_SSHAsset_Password{Password: password}
 
 	return nil
+}
+
+// readPrivateKeyFile returns the content of the file at path. It fails for a
+// file of more than maxPrivateKeyBytes bytes, without reading the rest.
+func readPrivateKeyFile(path string) (string, error) {
+	file, err := os.Open(path) //nolint:gosec // The path is the file that the user names.
+	if err != nil {
+		return "", err
+	}
+
+	defer func() {
+		_ = file.Close()
+	}()
+
+	privateKey, err := io.ReadAll(io.LimitReader(file, maxPrivateKeyBytes+1))
+	if err != nil {
+		return "", err
+	}
+
+	if len(privateKey) > maxPrivateKeyBytes {
+		return "", fmt.Errorf("the file has more than %d bytes, which is too big for a private key", maxPrivateKeyBytes)
+	}
+
+	return string(privateKey), nil
 }
 
 func assetList(ctx context.Context, cmd *cli.Command, store connections.Store) error {

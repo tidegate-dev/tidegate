@@ -310,6 +310,40 @@ func TestSetSSHSecretPutsTheContentOfThePrivateKeyFileIntoTheRequest(t *testing.
 	assert.Equal(t, "a private key\n", asset.GetPrivateKey())
 }
 
+func TestSetSSHSecretTakesAPrivateKeyFileOfTheMaximumSize(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	privateKeyFile := filepath.Join(t.TempDir(), "key")
+	require.NoError(t, os.WriteFile(privateKeyFile, []byte(strings.Repeat("k", maxPrivateKeyBytes)), 0o600))
+
+	asset := &authorityv1.CreateAssetRequest_SSHAsset{}
+
+	// act
+	err := setSSHSecret(t.Context(), asset, privateKeyFile, strings.NewReader(""), io.Discard)
+
+	// assert
+	require.NoError(t, err)
+	assert.Len(t, asset.GetPrivateKey(), maxPrivateKeyBytes)
+}
+
+func TestSetSSHSecretRefusesAPrivateKeyFileOverTheMaximumSize(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	privateKeyFile := filepath.Join(t.TempDir(), "key")
+	require.NoError(t, os.WriteFile(privateKeyFile, []byte(strings.Repeat("k", maxPrivateKeyBytes+1)), 0o600))
+
+	asset := &authorityv1.CreateAssetRequest_SSHAsset{}
+
+	// act
+	err := setSSHSecret(t.Context(), asset, privateKeyFile, strings.NewReader(""), io.Discard)
+
+	// assert
+	require.ErrorContains(t, err, "--private-key-file: the file has more than 16384 bytes")
+	assert.Nil(t, asset.GetSecret())
+}
+
 func TestSetSSHSecretFailsForAPrivateKeyFileThatDoesNotExist(t *testing.T) {
 	t.Parallel()
 
