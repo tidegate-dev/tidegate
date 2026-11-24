@@ -48,37 +48,39 @@ type Asset struct {
 }
 
 // SSHTarget is the address of an SSH host, the key that the host proves its
-// identity with, and the login that tidegate uses on the host.
+// identity with, and the user that tidegate logs in as.
 type SSHTarget struct {
 	Host string
 	Port uint16
 	// HostKey is the host's public key as the key type and the key in
 	// base64, like "ssh-ed25519 AAAAC3...".
 	HostKey string
-	// Login is nil for a target that has no login.
-	Login *SSHLogin
+	// UserName is the user that tidegate logs in as on the host. It is empty
+	// for a target without a login.
+	UserName string
+	// Secret says where the user's password or private key is stored. It is
+	// nil for a target without a login.
+	Secret *StoredSSHSecret
 }
 
-// SSHLoginKind names what an SSH host checks at a login.
-type SSHLoginKind string
+// SSHSecretKind says what a user logs in to an SSH host with.
+type SSHSecretKind string
 
 const (
-	// SSHLoginKindPassword is a login with the user's password.
-	SSHLoginKindPassword SSHLoginKind = "password"
-	// SSHLoginKindPrivateKey is a login with a private key of the user.
-	SSHLoginKindPrivateKey SSHLoginKind = "private_key"
+	// SSHSecretKindPassword is the user's password.
+	SSHSecretKindPassword SSHSecretKind = "password"
+	// SSHSecretKindPrivateKey is a private key of the user.
+	SSHSecretKindPrivateKey SSHSecretKind = "private_key"
 )
 
-// SSHLogin is the user that tidegate logs in to an SSH host as, and where the
-// user's password or private key is stored.
-type SSHLogin struct {
-	UserName string
-	// EngineName names the secret engine that holds the password or private
-	// key.
+// StoredSSHSecret says where a secret engine keeps the password or private
+// key of an SSH target's user. It doesn't hold the password or the key.
+type StoredSSHSecret struct {
+	// EngineName names the secret engine.
 	EngineName string
 	// Reference names the password or private key within that engine.
 	Reference string
-	Kind      SSHLoginKind
+	Kind      SSHSecretKind
 }
 
 // AssetReadWriter belongs to a Unit. It records writes, which the unit runs

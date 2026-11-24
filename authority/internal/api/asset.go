@@ -36,10 +36,11 @@ func (s *AssetService) CreateAsset(
 	switch target := req.Msg.GetTarget().(type) {
 	case *authorityv1.CreateAssetRequest_Ssh:
 		asset, err = s.assets.CreateSSH(ctx, req.Msg.GetProjectName(), req.Msg.GetName(), req.Msg.GetLabels(), model.SSHTarget{
-			Host:    target.Ssh.GetHost(),
-			Port:    uint16(target.Ssh.GetPort()), //nolint:gosec // The API definition allows 1 to 65535.
-			HostKey: target.Ssh.GetHostKey(),
-		}, newSSHLoginInput(req.Msg))
+			Host:     target.Ssh.GetHost(),
+			Port:     uint16(target.Ssh.GetPort()), //nolint:gosec // The API definition allows 1 to 65535.
+			HostKey:  target.Ssh.GetHostKey(),
+			UserName: target.Ssh.GetUserName(),
+		}, newSSHSecretInput(req.Msg))
 	default:
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("the asset needs a target of a known kind"))
 	}
@@ -108,19 +109,17 @@ func newListedAsset(asset *model.Asset) (*authorityv1.ListAssetsResponse_Asset, 
 	}, nil
 }
 
-func newSSHLoginInput(msg *authorityv1.CreateAssetRequest) *service.SSHLoginInput {
+func newSSHSecretInput(msg *authorityv1.CreateAssetRequest) *service.SSHSecretInput {
 	switch value := msg.GetSshSecret().(type) {
 	case *authorityv1.CreateAssetRequest_SshPassword:
-		return &service.SSHLoginInput{
-			UserName: msg.GetSsh().GetUserName(),
-			Kind:     model.SSHLoginKindPassword,
-			Value:    secret.NewBytes([]byte(value.SshPassword)),
+		return &service.SSHSecretInput{
+			Kind:  model.SSHSecretKindPassword,
+			Value: secret.NewBytes([]byte(value.SshPassword)),
 		}
 	case *authorityv1.CreateAssetRequest_SshPrivateKey:
-		return &service.SSHLoginInput{
-			UserName: msg.GetSsh().GetUserName(),
-			Kind:     model.SSHLoginKindPrivateKey,
-			Value:    secret.NewBytes([]byte(value.SshPrivateKey)),
+		return &service.SSHSecretInput{
+			Kind:  model.SSHSecretKindPrivateKey,
+			Value: secret.NewBytes([]byte(value.SshPrivateKey)),
 		}
 	default:
 		return nil
@@ -132,15 +131,10 @@ func sshTarget(asset *model.Asset) (*authorityv1.SSHTarget, error) {
 		return nil, fmt.Errorf("asset %s has no target", asset.ID)
 	}
 
-	target := &authorityv1.SSHTarget{
-		Host:    asset.SSH.Host,
-		Port:    uint32(asset.SSH.Port),
-		HostKey: asset.SSH.HostKey,
-	}
-
-	if asset.SSH.Login != nil {
-		target.UserName = asset.SSH.Login.UserName
-	}
-
-	return target, nil
+	return &authorityv1.SSHTarget{
+		Host:     asset.SSH.Host,
+		Port:     uint32(asset.SSH.Port),
+		HostKey:  asset.SSH.HostKey,
+		UserName: asset.SSH.UserName,
+	}, nil
 }

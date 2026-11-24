@@ -14,16 +14,17 @@ import (
 	"github.com/tidegate-dev/tidegate/internal/secretengine"
 )
 
-const deleteLoginValueTimeout = 10 * time.Second
+const deleteStoredValueTimeout = 10 * time.Second
 
 var (
-	// ErrSSHPasswordEmpty means the password of a login has no characters.
+	// ErrSSHPasswordEmpty means the password for an SSH target has no
+	// characters.
 	ErrSSHPasswordEmpty = errors.New("the SSH password is empty")
-	// ErrSSHPrivateKeyInvalid means the private key of a login isn't a
+	// ErrSSHPrivateKeyInvalid means the private key for an SSH target isn't a
 	// private key in a format that tidegate reads.
 	ErrSSHPrivateKeyInvalid = errors.New("the SSH private key isn't a private key that tidegate can read")
-	// ErrSSHPrivateKeyEncrypted means the private key of a login needs a
-	// passphrase.
+	// ErrSSHPrivateKeyEncrypted means the private key for an SSH target needs
+	// a passphrase.
 	ErrSSHPrivateKeyEncrypted = errors.New("the SSH private key has a passphrase, which tidegate can't use")
 )
 
@@ -33,11 +34,11 @@ type AssetLister interface {
 	ListForProjectID(ctx context.Context, projectID model.ProjectID) ([]*model.Asset, error)
 }
 
-// SSHLoginInput is the login for a new SSH asset.
-type SSHLoginInput struct {
-	UserName string
-	Kind     model.SSHLoginKind
-	// Value is the user's password or private key, as Kind says.
+// SSHSecretInput is the password or private key that the user of a new SSH
+// asset logs in with.
+type SSHSecretInput struct {
+	Kind model.SSHSecretKind
+	// Value is the password or the private key, as Kind says.
 	Value secret.Bytes
 }
 
@@ -52,7 +53,7 @@ type Assets struct {
 
 // NewAssets returns Assets that find projects in projects, read assets from
 // assets and write in units of work from units. They store the password or
-// private key of a new asset's login in the engine that engines has under
+// private key for a new SSH asset in the engine that engines has under
 // engineName.
 func NewAssets(
 	projects ProjectFinder,
@@ -65,21 +66,21 @@ func NewAssets(
 }
 
 // CreateSSH creates an asset for an SSH host in the project named
-// projectName and returns it. If login isn't nil, it stores the login's value
-// in the secret engine and the rest of the login with the asset. It returns
-// model.ErrProjectNotFound if no project has that name, and
-// model.ErrAssetNameTaken if another asset of the project has the name. The
-// API checks the form of every value before it calls CreateSSH.
+// projectName and returns it. If secretInput isn't nil, it stores the
+// password or private key in the secret engine and records on the asset
+// where it is. It returns model.ErrProjectNotFound if no project has that
+// name, and model.ErrAssetNameTaken if another asset of the project has the
+// name. The API checks the form of every value before it calls CreateSSH.
 func (a *Assets) CreateSSH(
 	ctx context.Context,
 	projectName string,
 	name string,
 	labels map[string]string,
 	target model.SSHTarget,
-	login *SSHLoginInput,
+	secretInput *SSHSecretInput,
 ) (*model.Asset, error) {
-	if login != nil {
-		err := checkSSHLoginInput(login)
+	if secretInput != nil {
+		err := checkSSHSecretInput(secretInput)
 		if err != nil {
 			return nil, err
 		}
@@ -95,8 +96,8 @@ func (a *Assets) CreateSSH(
 		return nil, err
 	}
 
-	if login != nil {
-		target.Login, err = a.storeLogin(ctx, login)
+	if secretInput != nil {
+		target.Secret, err = a.storeValue(ctx, secretInput)
 		if err != nil {
 			return nil, err
 		}
@@ -116,7 +117,7 @@ func (a *Assets) CreateSSH(
 
 	err = unit.Commit(ctx)
 	if err != nil {
-		a.deleteLoginValue(ctx, target.Login)
+		a.deleteStoredValue(ctx, target.Secret)
 
 		return nil, err
 	}
@@ -124,16 +125,16 @@ func (a *Assets) CreateSSH(
 	return asset, nil
 }
 
-func checkSSHLoginInput(login *SSHLoginInput) error {
-	switch login.Kind {
-	case model.SSHLoginKindPassword:
-		if len(login.Value.Reveal()) == 0 {
+func checkSSHSecretInput(secretInput *SSHSecretInput) error {
+	switch secretInput.Kind {
+	case model.SSHSecretKindPassword:
+		if len(secretInput.Value.Reveal()) == 0 {
 			return ErrSSHPasswordEmpty
 		}
 
 		return nil
-	case model.SSHLoginKindPrivateKey:
-		_, err := ssh.ParseRawPrivateKey(login.Value.Reveal())
+	case model.SSHSecretKindPrivateKey:
+		_, err := ssh.ParseRawPrivateKey(secretInput.Value.Reveal())
 
 		var passphraseMissing *ssh.PassphraseMissingError
 		if errors.As(err, &passphraseMissing) {
@@ -146,46 +147,45 @@ func checkSSHLoginInput(login *SSHLoginInput) error {
 
 		return nil
 	default:
-		return fmt.Errorf("unknown login kind %q", login.Kind)
+		return fmt.Errorf("unknown SSH secret kind %q", secretInput.Kind)
 	}
 }
 
-func (a *Assets) storeLogin(ctx context.Context, login *SSHLoginInput) (*model.SSHLogin, error) {
+func (a *Assets) storeValue(ctx context.Context, secretInput *SSHSecretInput) (*model.StoredSSHSecret, error) {
 	engine, err := a.engines.ByName(a.engineName)
 	if err != nil {
 		return nil, err
 	}
 
-	reference, err := engine.Store(ctx, login.Value)
+	reference, err := engine.Store(ctx, secretInput.Value)
 	if err != nil {
 		return nil, err
 	}
 
-	return &model.SSHLogin{
-		UserName:   login.UserName,
+	return &model.StoredSSHSecret{
 		EngineName: a.engineName,
 		Reference:  string(reference),
-		Kind:       login.Kind,
+		Kind:       secretInput.Kind,
 	}, nil
 }
 
-func (a *Assets) deleteLoginValue(ctx context.Context, login *model.SSHLogin) {
-	if login == nil {
+func (a *Assets) deleteStoredValue(ctx context.Context, stored *model.StoredSSHSecret) {
+	if stored == nil {
 		return
 	}
 
 	// The commit also fails when the request's context ends.
-	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), deleteLoginValueTimeout)
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), deleteStoredValueTimeout)
 	defer cancel()
 
-	engine, err := a.engines.ByName(login.EngineName)
+	engine, err := a.engines.ByName(stored.EngineName)
 	if err == nil {
-		err = engine.Delete(ctx, secretengine.Reference(login.Reference))
+		err = engine.Delete(ctx, secretengine.Reference(stored.Reference))
 	}
 
 	if err != nil {
 		slog.ErrorContext(ctx, "a secret engine keeps a value that no asset uses, because deleting it failed",
-			"engine", login.EngineName, "reference", login.Reference, "error", err)
+			"engine", stored.EngineName, "reference", stored.Reference, "error", err)
 	}
 }
 

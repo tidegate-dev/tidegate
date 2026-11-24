@@ -70,38 +70,51 @@ var _ = Describe("Assets", func() {
 		})
 
 		When("the asset has a login", func() {
-			var login *SSHLoginInput
+			var (
+				loginTarget model.SSHTarget
+				secretInput *SSHSecretInput
+			)
 
 			BeforeEach(func(ctx SpecContext) {
 				_, err := projects.Create(ctx, "payments")
 				Expect(err).NotTo(HaveOccurred())
 
-				login = &SSHLoginInput{
-					UserName: "deploy",
-					Kind:     model.SSHLoginKindPassword,
-					Value:    secret.NewBytes([]byte("the value")),
+				loginTarget = target
+				loginTarget.UserName = "deploy"
+				secretInput = &SSHSecretInput{
+					Kind:  model.SSHSecretKindPassword,
+					Value: secret.NewBytes([]byte("the value")),
 				}
 			})
 
-			It("stores the login's value in the engine", func(ctx SpecContext) {
-				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, login)
+			It("stores the password in the engine", func(ctx SpecContext) {
+				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, loginTarget, secretInput)
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(engine.values).To(Equal(map[secretengine.Reference][]byte{"reference-1": []byte("the value")}))
 			})
 
-			It("stores the user name, the kind and where the value is with the asset", func(ctx SpecContext) {
-				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, login)
+			It("stores the user name with the asset", func(ctx SpecContext) {
+				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, loginTarget, secretInput)
 				Expect(err).NotTo(HaveOccurred())
 
 				stored, err := assets.List(ctx, "payments")
 
 				Expect(err).NotTo(HaveOccurred())
-				Expect(stored).To(ConsistOf(HaveField("SSH.Login", Equal(&model.SSHLogin{
-					UserName:   "deploy",
+				Expect(stored).To(ConsistOf(HaveField("SSH.UserName", "deploy")))
+			})
+
+			It("stores the kind and where the value is with the asset", func(ctx SpecContext) {
+				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, loginTarget, secretInput)
+				Expect(err).NotTo(HaveOccurred())
+
+				stored, err := assets.List(ctx, "payments")
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(stored).To(ConsistOf(HaveField("SSH.Secret", Equal(&model.StoredSSHSecret{
 					EngineName: "test-engine",
 					Reference:  "reference-1",
-					Kind:       model.SSHLoginKindPassword,
+					Kind:       model.SSHSecretKindPassword,
 				}))))
 			})
 
@@ -109,7 +122,7 @@ var _ = Describe("Assets", func() {
 				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, nil)
 				Expect(err).NotTo(HaveOccurred())
 
-				_, err = assets.CreateSSH(ctx, "payments", "bastion", nil, target, login)
+				_, err = assets.CreateSSH(ctx, "payments", "bastion", nil, loginTarget, secretInput)
 
 				Expect(err).To(MatchError(model.ErrAssetNameTaken))
 				Expect(engine.values).To(BeEmpty())
@@ -121,22 +134,22 @@ var _ = Describe("Assets", func() {
 
 				engine.deleteErr = errors.New("the engine is down")
 
-				_, err = assets.CreateSSH(ctx, "payments", "bastion", nil, target, login)
+				_, err = assets.CreateSSH(ctx, "payments", "bastion", nil, loginTarget, secretInput)
 
 				Expect(err).To(MatchError(model.ErrAssetNameTaken))
 			})
 
 			It("stores nothing in the engine for a project that doesn't exist", func(ctx SpecContext) {
-				_, err := assets.CreateSSH(ctx, "search", "bastion", nil, target, login)
+				_, err := assets.CreateSSH(ctx, "search", "bastion", nil, loginTarget, secretInput)
 
 				Expect(err).To(MatchError(model.ErrProjectNotFound))
 				Expect(engine.values).To(BeEmpty())
 			})
 
 			It("returns ErrSSHPasswordEmpty for an empty password and stores nothing", func(ctx SpecContext) {
-				login.Value = secret.NewBytes(nil)
+				secretInput.Value = secret.NewBytes(nil)
 
-				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, login)
+				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, loginTarget, secretInput)
 
 				Expect(err).To(MatchError(ErrSSHPasswordEmpty))
 				Expect(engine.values).To(BeEmpty())
@@ -145,20 +158,20 @@ var _ = Describe("Assets", func() {
 
 			It("stores a private key that has no passphrase in the engine", func(ctx SpecContext) {
 				privateKey := newPrivateKey("")
-				login.Kind = model.SSHLoginKindPrivateKey
-				login.Value = secret.NewBytes(privateKey)
+				secretInput.Kind = model.SSHSecretKindPrivateKey
+				secretInput.Value = secret.NewBytes(privateKey)
 
-				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, login)
+				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, loginTarget, secretInput)
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(engine.values).To(Equal(map[secretengine.Reference][]byte{"reference-1": privateKey}))
 			})
 
 			It("returns ErrSSHPrivateKeyEncrypted for a private key with a passphrase and stores nothing", func(ctx SpecContext) {
-				login.Kind = model.SSHLoginKindPrivateKey
-				login.Value = secret.NewBytes(newPrivateKey("a passphrase"))
+				secretInput.Kind = model.SSHSecretKindPrivateKey
+				secretInput.Value = secret.NewBytes(newPrivateKey("a passphrase"))
 
-				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, login)
+				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, loginTarget, secretInput)
 
 				Expect(err).To(MatchError(ErrSSHPrivateKeyEncrypted))
 				Expect(engine.values).To(BeEmpty())
@@ -166,21 +179,21 @@ var _ = Describe("Assets", func() {
 			})
 
 			It("returns ErrSSHPrivateKeyInvalid for a value that isn't a private key and stores nothing", func(ctx SpecContext) {
-				login.Kind = model.SSHLoginKindPrivateKey
+				secretInput.Kind = model.SSHSecretKindPrivateKey
 
-				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, login)
+				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, loginTarget, secretInput)
 
 				Expect(err).To(MatchError(ErrSSHPrivateKeyInvalid))
 				Expect(engine.values).To(BeEmpty())
 				Expect(assets.List(ctx, "payments")).To(BeEmpty())
 			})
 
-			It("stores nothing for a login of an unknown kind", func(ctx SpecContext) {
-				login.Kind = "certificate"
+			It("stores nothing for a password or private key of an unknown kind", func(ctx SpecContext) {
+				secretInput.Kind = "certificate"
 
-				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, login)
+				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, loginTarget, secretInput)
 
-				Expect(err).To(MatchError(ContainSubstring(`unknown login kind "certificate"`)))
+				Expect(err).To(MatchError(ContainSubstring(`unknown SSH secret kind "certificate"`)))
 				Expect(engine.values).To(BeEmpty())
 				Expect(assets.List(ctx, "payments")).To(BeEmpty())
 			})

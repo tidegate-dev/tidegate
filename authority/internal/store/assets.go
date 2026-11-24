@@ -12,17 +12,17 @@ import (
 
 // The details column stores these keys, so renaming one needs a migration.
 type sshDetails struct {
-	Host    string           `json:"host"`
-	Port    uint16           `json:"port"`
-	HostKey string           `json:"host_key"`
-	Login   *sshLoginDetails `json:"login,omitempty"`
+	Host     string            `json:"host"`
+	Port     uint16            `json:"port"`
+	HostKey  string            `json:"host_key"`
+	UserName string            `json:"user_name,omitempty"`
+	Secret   *sshSecretDetails `json:"secret,omitempty"`
 }
 
-type sshLoginDetails struct {
-	UserName   string `json:"user_name"`
-	EngineName string `json:"secret_engine_name"`
-	Reference  string `json:"secret_reference"`
-	Kind       string `json:"secret_kind"`
+type sshSecretDetails struct {
+	EngineName string `json:"engine_name"`
+	Reference  string `json:"reference"`
+	Kind       string `json:"kind"`
 }
 
 // AssetReader queries the assets table on the connection pool.
@@ -72,14 +72,18 @@ func assetFromRow(row sqlc.Asset) (*model.Asset, error) {
 			return nil, fmt.Errorf("reading the details of asset %s: %w", asset.ID, err)
 		}
 
-		target := model.SSHTarget{Host: details.Host, Port: details.Port, HostKey: details.HostKey}
+		target := model.SSHTarget{
+			Host:     details.Host,
+			Port:     details.Port,
+			HostKey:  details.HostKey,
+			UserName: details.UserName,
+		}
 
-		if details.Login != nil {
-			target.Login = &model.SSHLogin{
-				UserName:   details.Login.UserName,
-				EngineName: details.Login.EngineName,
-				Reference:  details.Login.Reference,
-				Kind:       model.SSHLoginKind(details.Login.Kind),
+		if details.Secret != nil {
+			target.Secret = &model.StoredSSHSecret{
+				EngineName: details.Secret.EngineName,
+				Reference:  details.Secret.Reference,
+				Kind:       model.SSHSecretKind(details.Secret.Kind),
 			}
 		}
 
@@ -153,14 +157,18 @@ func assetDetails(asset *model.Asset) ([]byte, error) {
 			return nil, err
 		}
 
-		details := sshDetails{Host: asset.SSH.Host, Port: asset.SSH.Port, HostKey: asset.SSH.HostKey}
+		details := sshDetails{
+			Host:     asset.SSH.Host,
+			Port:     asset.SSH.Port,
+			HostKey:  asset.SSH.HostKey,
+			UserName: asset.SSH.UserName,
+		}
 
-		if login := asset.SSH.Login; login != nil {
-			details.Login = &sshLoginDetails{
-				UserName:   login.UserName,
-				EngineName: login.EngineName,
-				Reference:  login.Reference,
-				Kind:       string(login.Kind),
+		if stored := asset.SSH.Secret; stored != nil {
+			details.Secret = &sshSecretDetails{
+				EngineName: stored.EngineName,
+				Reference:  stored.Reference,
+				Kind:       string(stored.Kind),
 			}
 		}
 
@@ -176,22 +184,26 @@ func checkSSHTarget(target *model.SSHTarget) error {
 		return errors.New("an SSH asset needs a host, a port and a host key")
 	}
 
-	if target.Login == nil {
+	if target.UserName == "" && target.Secret == nil {
 		return nil
 	}
 
-	return checkSSHLogin(target.Login)
+	if target.UserName == "" || target.Secret == nil {
+		return errors.New("an SSH asset needs its user name and its stored secret together")
+	}
+
+	return checkStoredSSHSecret(target.Secret)
 }
 
-func checkSSHLogin(login *model.SSHLogin) error {
-	if login.UserName == "" || login.EngineName == "" || login.Reference == "" {
-		return errors.New("an SSH login needs a user name, a secret engine name and a secret reference")
+func checkStoredSSHSecret(stored *model.StoredSSHSecret) error {
+	if stored.EngineName == "" || stored.Reference == "" {
+		return errors.New("a stored SSH secret needs an engine name and a reference")
 	}
 
-	switch login.Kind {
-	case model.SSHLoginKindPassword, model.SSHLoginKindPrivateKey:
+	switch stored.Kind {
+	case model.SSHSecretKindPassword, model.SSHSecretKindPrivateKey:
 		return nil
 	default:
-		return fmt.Errorf("unknown login kind %q", login.Kind)
+		return fmt.Errorf("unknown SSH secret kind %q", stored.Kind)
 	}
 }
