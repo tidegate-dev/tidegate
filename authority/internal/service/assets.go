@@ -4,16 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/authority/internal/sshkey"
-	"github.com/tidegate-dev/tidegate/internal/logging"
 	"github.com/tidegate-dev/tidegate/internal/secret"
 	"github.com/tidegate-dev/tidegate/internal/secretengine"
 )
-
-const deleteStoredValueTimeout = 10 * time.Second
 
 // ErrSSHPasswordEmpty means the password for an SSH target has no characters.
 var ErrSSHPasswordEmpty = errors.New("the SSH password is empty")
@@ -57,7 +53,9 @@ func NewAssets(
 
 // CreateSSH creates an asset for an SSH host in the project named
 // projectName and returns it. It stores the password or private key from
-// secretInput in the secret engine and records on the asset where it is.
+// secretInput in the secret engine and records on the asset where it is. If
+// storing the asset fails after that, the password or private key stays in
+// the engine.
 //
 // It returns ErrSSHPasswordEmpty, sshkey.ErrPrivateKeyInvalid or
 // sshkey.ErrPrivateKeyEncrypted for a password or private key that tidegate
@@ -117,8 +115,6 @@ func (a *Assets) CreateSSH(
 
 	err = unit.Commit(ctx)
 	if err != nil {
-		deleteStoredValue(ctx, engine, a.engineName, reference)
-
 		return nil, err
 	}
 
@@ -137,18 +133,6 @@ func checkSSHSecretInput(secretInput SSHSecretInput) error {
 		return sshkey.CheckPrivateKey(secretInput.Value)
 	default:
 		return fmt.Errorf("unknown SSH secret kind %q", secretInput.Kind)
-	}
-}
-
-func deleteStoredValue(ctx context.Context, engine secretengine.Engine, engineName string, reference secretengine.Reference) {
-	// The commit also fails when the request's context ends.
-	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), deleteStoredValueTimeout)
-	defer cancel()
-
-	err := engine.Delete(ctx, reference)
-	if err != nil {
-		logging.FromContext(ctx).ErrorContext(ctx, "a secret engine keeps a value that no asset uses, because deleting it failed",
-			"engine", engineName, "reference", reference, "error", err)
 	}
 }
 

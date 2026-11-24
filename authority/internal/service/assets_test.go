@@ -6,7 +6,6 @@ import (
 	"context"
 	"crypto/ed25519"
 	"encoding/pem"
-	"errors"
 	"fmt"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -89,25 +88,14 @@ var _ = Describe("Assets", func() {
 				Expect(engine.values).To(Equal(map[secretengine.Reference][]byte{"reference-1": []byte("the value")}))
 			})
 
-			It("removes the value from the engine again when another asset has the name", func(ctx SpecContext) {
+			It("returns ErrAssetNameTaken when another asset has the name, and deletes nothing from the engine", func(ctx SpecContext) {
 				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, secretInput)
 				Expect(err).NotTo(HaveOccurred())
 
 				_, err = assets.CreateSSH(ctx, "payments", "bastion", nil, target, secretInput)
 
 				Expect(err).To(MatchError(model.ErrAssetNameTaken))
-				Expect(engine.values).To(Equal(map[secretengine.Reference][]byte{"reference-1": []byte("the value")}))
-			})
-
-			It("returns ErrAssetNameTaken when the engine can't delete the value either", func(ctx SpecContext) {
-				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, secretInput)
-				Expect(err).NotTo(HaveOccurred())
-
-				engine.deleteErr = errors.New("the engine is down")
-
-				_, err = assets.CreateSSH(ctx, "payments", "bastion", nil, target, secretInput)
-
-				Expect(err).To(MatchError(model.ErrAssetNameTaken))
+				Expect(engine.values).To(HaveLen(2))
 			})
 
 			It("returns ErrSSHPasswordEmpty for an empty password and stores nothing", func(ctx SpecContext) {
@@ -196,8 +184,6 @@ func newPrivateKey() []byte {
 type fakeEngine struct {
 	values map[secretengine.Reference][]byte
 	stored int
-	// deleteErr is what Delete returns, if it isn't nil.
-	deleteErr error
 }
 
 func (f *fakeEngine) Store(_ context.Context, value secret.Bytes) (secretengine.Reference, error) {
@@ -218,10 +204,6 @@ func (f *fakeEngine) Fetch(_ context.Context, reference secretengine.Reference) 
 }
 
 func (f *fakeEngine) Delete(_ context.Context, reference secretengine.Reference) error {
-	if f.deleteErr != nil {
-		return f.deleteErr
-	}
-
 	_, ok := f.values[reference]
 	if !ok {
 		return secretengine.ErrNotFound
