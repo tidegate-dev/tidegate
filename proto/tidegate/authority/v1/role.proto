@@ -64,6 +64,6 @@ message CreateRoleResponse {
   string project_id = 2;
   // Name is the new role's name.
   string name = 3;
-  // Permissions are the permissions that the new role gives its holders.
+  // Permissions say what the users who have the new role may do.
   ProjectPermissions permissions = 4;
 }

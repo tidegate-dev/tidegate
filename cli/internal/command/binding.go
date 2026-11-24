@@ -86,7 +86,7 @@ func bindingCommand(store connections.Store) *cli.Command {
 					},
 					&cli.StringFlag{
 						Name:  "role-name",
-						Usage: "name of the role of the project that the user gets",
+						Usage: "name of the role that the user gets",
 					},
 					&cli.StringFlag{
 						Name:  "user-name",

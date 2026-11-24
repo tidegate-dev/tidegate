@@ -30,12 +30,14 @@ type CreateBindingRequest struct {
 	// Rules: Starts with a lowercase letter, goes on with lowercase letters,
 	// digits and dashes, and ends with a letter or digit. At most 63 characters.
 	ProjectName string `protobuf:"bytes,1,opt,name=project_name,json=projectName,proto3" json:"project_name,omitempty"`
-	// RoleName is the name of the role of the project that the user gets.
+	// RoleName is the name of the role that the user gets. The role must belong
+	// to the project.
 	//
 	// Rules: Starts with a lowercase letter, goes on with lowercase letters,
 	// digits and dashes, and ends with a letter or digit. At most 63 characters.
 	RoleName string `protobuf:"bytes,2,opt,name=role_name,json=roleName,proto3" json:"role_name,omitempty"`
-	// UserName is the name of the user who gets the role, in any letter case.
+	// UserName is the name of the user who gets the role. Uppercase and
+	// lowercase letters count as the same.
 	//
 	// Rules: Not empty.
 	UserName      string `protobuf:"bytes,3,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`

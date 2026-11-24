@@ -53,9 +53,8 @@ type BindingWithNames struct {
 // BindingReadWriter belongs to a Unit. It records writes, which the unit runs
 // at Commit.
 type BindingReadWriter interface {
-	// Add records the insert of binding. Commit returns ErrRoleNotFound if
-	// the project has no role with the ID, ErrUserNotFound if the user
-	// doesn't exist, and ErrBindingExists if the user already has the role.
+	// Add records the insert of binding. Commit returns ErrRoleNotFound,
+	// ErrUserNotFound or ErrBindingExists if the insert fails.
 	Add(binding *Binding)
 	// Remove records the delete of binding. A binding that is already gone
 	// counts as removed.

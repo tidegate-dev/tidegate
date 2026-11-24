@@ -6,17 +6,16 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/model"
 )
 
-// RoleFinder finds a role of a project by its name.
+// RoleFinder finds a role in a project by the role's name.
 type RoleFinder interface {
-	// FindByProjectIDAndName returns the role of the project with the name,
-	// ignoring letter case, or model.ErrRoleNotFound.
+	// FindByProjectIDAndName ignores letter case and returns
+	// model.ErrRoleNotFound if the project has no such role.
 	FindByProjectIDAndName(ctx context.Context, projectID model.ProjectID, name string) (*model.Role, error)
 }
 
 // BindingLister lists the bindings of a project.
 type BindingLister interface {
-	// ListForProjectID returns the bindings of the project with the names of
-	// their role and user, ordered by the role name and then the user name.
+	// ListForProjectID orders the bindings by role name and then by user name.
 	ListForProjectID(ctx context.Context, projectID model.ProjectID) ([]*model.BindingWithNames, error)
 }
 
@@ -29,9 +28,7 @@ type Bindings struct {
 	units    model.UnitFactory
 }
 
-// NewBindings returns Bindings that find projects, roles and users in
-// projects, roles and users, read bindings from bindings and write in units of
-// work from units.
+// NewBindings returns Bindings.
 func NewBindings(
 	projects ProjectFinder,
 	roles RoleFinder,
@@ -42,12 +39,8 @@ func NewBindings(
 	return &Bindings{projects: projects, roles: roles, users: users, bindings: bindings, units: units}
 }
 
-// Create binds the role named roleName of the project named projectName to
-// the user named userName and returns the binding. It returns
-// model.ErrProjectNotFound, model.ErrRoleNotFound or model.ErrUserNotFound if
-// the project, the role or the user doesn't exist, and model.ErrBindingExists
-// if the user already has the role. The API checks the form of the project
-// name and the role name before it calls Create.
+// Create gives a role of a project to a user. It doesn't check the form of the
+// names, because the API has done that.
 func (b *Bindings) Create(
 	ctx context.Context,
 	projectName string,
@@ -85,9 +78,8 @@ func (b *Bindings) Create(
 	return &model.BindingWithNames{ID: id, ProjectID: project.ID, RoleName: role.Name, UserName: user.Name}, nil
 }
 
-// List returns the bindings of the project named projectName, ordered by the
-// role name and then the user name. It returns model.ErrProjectNotFound if no
-// project has that name.
+// List returns the bindings of a project, ordered by role name and then by
+// user name.
 func (b *Bindings) List(ctx context.Context, projectName string) ([]*model.BindingWithNames, error) {
 	project, err := b.projects.FindByName(ctx, projectName)
 	if err != nil {

@@ -9,12 +9,12 @@ option go_package = "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;
 // BindingService creates and lists bindings. A binding gives a role of one
 // project to a user.
 service BindingService {
-  // CreateBinding gives a role of a project to a user and returns the
-  // binding. A project, a role or a user that doesn't exist fails with
-  // not_found. A role that the user already has fails with already_exists.
+  // CreateBinding gives a role of a project to a user. It fails with not_found
+  // if the project, the role or the user doesn't exist, and with
+  // already_exists if the user already has the role.
   rpc CreateBinding(CreateBindingRequest) returns (CreateBindingResponse);
-  // ListBindings returns every binding of a project. A project that doesn't
-  // exist fails with not_found.
+  // ListBindings returns every binding of a project. It fails with not_found
+  // if the project doesn't exist.
   rpc ListBindings(ListBindingsRequest) returns (ListBindingsResponse);
 }
 
@@ -29,7 +29,8 @@ message CreateBindingRequest {
     message: "must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters"
     expression: "this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')"
   }];
-  // RoleName is the name of the role of the project that the user gets.
+  // RoleName is the name of the role that the user gets. The role must belong
+  // to the project.
   //
   // Rules: Starts with a lowercase letter, goes on with lowercase letters,
   // digits and dashes, and ends with a letter or digit. At most 63 characters.
@@ -38,7 +39,8 @@ message CreateBindingRequest {
     message: "must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters"
     expression: "this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')"
   }];
-  // UserName is the name of the user who gets the role, in any letter case.
+  // UserName is the name of the user who gets the role. Uppercase and
+  // lowercase letters count as the same.
   //
   // Rules: Not empty.
   string user_name = 3 [(buf.validate.field).string.min_len = 1];

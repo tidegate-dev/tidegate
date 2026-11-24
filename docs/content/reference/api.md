@@ -19,8 +19,8 @@ project to a user.
 
 | Method | Request | Response | Description |
 | ------ | ------- | -------- | ----------- |
-| `CreateBinding` | [tidegate.authority.v1.CreateBindingRequest](#tidegate.authority.v1.CreateBindingRequest) | [tidegate.authority.v1.CreateBindingResponse](#tidegate.authority.v1.CreateBindingResponse) | CreateBinding gives a role of a project to a user and returns the binding. A project, a role or a user that doesn't exist fails with not_found. A role that the user already has fails with already_exists. |
-| `ListBindings` | [tidegate.authority.v1.ListBindingsRequest](#tidegate.authority.v1.ListBindingsRequest) | [tidegate.authority.v1.ListBindingsResponse](#tidegate.authority.v1.ListBindingsResponse) | ListBindings returns every binding of a project. A project that doesn't exist fails with not_found. |
+| `CreateBinding` | [tidegate.authority.v1.CreateBindingRequest](#tidegate.authority.v1.CreateBindingRequest) | [tidegate.authority.v1.CreateBindingResponse](#tidegate.authority.v1.CreateBindingResponse) | CreateBinding gives a role of a project to a user. It fails with not_found if the project, the role or the user doesn't exist, and with already_exists if the user already has the role. |
+| `ListBindings` | [tidegate.authority.v1.ListBindingsRequest](#tidegate.authority.v1.ListBindingsRequest) | [tidegate.authority.v1.ListBindingsResponse](#tidegate.authority.v1.ListBindingsResponse) | ListBindings returns every binding of a project. It fails with not_found if the project doesn't exist. |
 
 ## tidegate.authority.v1.DummyService { #tidegate.authority.v1.DummyService }
 
@@ -166,8 +166,8 @@ CreateBindingRequest is the input of BindingService.CreateBinding.
 | Field | Type | Description | Rules |
 | ----- | ---- | ----------- | ----- |
 | `project_name` | `string` | ProjectName is the name of the project that gets the binding. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
-| `role_name` | `string` | RoleName is the name of the role of the project that the user gets. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
-| `user_name` | `string` | UserName is the name of the user who gets the role, in any letter case. | Not empty. |
+| `role_name` | `string` | RoleName is the name of the role that the user gets. The role must belong to the project. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
+| `user_name` | `string` | UserName is the name of the user who gets the role. Uppercase and lowercase letters count as the same. | Not empty. |
 
 ### tidegate.authority.v1.CreateBindingResponse { #tidegate.authority.v1.CreateBindingResponse }
 
@@ -337,7 +337,7 @@ CreateRoleResponse is the result of RoleService.CreateRole.
 | `id` | `string` | ID identifies the new role. It is a UUID. |  |
 | `project_id` | `string` | ProjectID identifies the project that the new role belongs to. It is a UUID. |  |
 | `name` | `string` | Name is the new role's name. |  |
-| `permissions` | `tidegate.authority.v1.ProjectPermissions` | Permissions are the permissions that the new role gives its holders. |  |
+| `permissions` | `tidegate.authority.v1.ProjectPermissions` | Permissions say what the users who have the new role may do. |  |
 
 ### tidegate.authority.v1.ProjectPermissions { #tidegate.authority.v1.ProjectPermissions }
 

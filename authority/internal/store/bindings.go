@@ -35,8 +35,7 @@ func (b *BindingReader) FindByID(ctx context.Context, id model.BindingID) (*mode
 	}, nil
 }
 
-// ListForProjectID returns the bindings of the project with the names of their
-// role and user. It orders them by the role name and then the user name,
+// ListForProjectID orders the bindings by role name and then by user name,
 // without regard to letter case.
 func (b *BindingReader) ListForProjectID(ctx context.Context, projectID model.ProjectID) ([]*model.BindingWithNames, error) {
 	rows, err := b.queries.ListBindingsOfProject(ctx, databaseID(projectID))
@@ -64,9 +63,7 @@ type BindingReadWriter struct {
 	unit *Unit
 }
 
-// Add records the insert of binding. Commit returns model.ErrRoleNotFound if
-// the project has no role with the ID, model.ErrUserNotFound if the user
-// doesn't exist, and model.ErrBindingExists if the user already has the role.
+// Add records the insert of binding.
 func (b *BindingReadWriter) Add(binding *model.Binding) {
 	b.unit.add(func(ctx context.Context, queries *sqlc.Queries) error {
 		err := queries.InsertBinding(ctx, sqlc.InsertBindingParams{

@@ -179,7 +179,7 @@ type CreateRoleResponse struct {
 	ProjectId string `protobuf:"bytes,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
 	// Name is the new role's name.
 	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	// Permissions are the permissions that the new role gives its holders.
+	// Permissions say what the users who have the new role may do.
 	Permissions   *ProjectPermissions `protobuf:"bytes,4,opt,name=permissions,proto3" json:"permissions,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
