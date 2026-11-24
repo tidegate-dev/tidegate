@@ -20,6 +20,12 @@ Every pull request needs one approval from a maintainer other than its author be
 
 Before you open a pull request, run `just ci`. It runs the linters, the tests and every other check that CI runs, except fuzzing and `just mutate`. The [development docs](https://tidegate-dev.github.io/tidegate/development/) explain how to run those two locally. A pull request can only be merged when these checks pass and its branch is up to date with `main`.
 
+## Naming
+
+A name says what the value holds. If a field, parameter or variable holds a project's ID, call it `project_id` in a proto file and `projectID` in Go. If it holds the project's name, call it `project_name` or `projectName`. Use `project` alone only for a value that holds the whole project.
+
+This applies to roles, users, assets and every other type, and to every place where a value gets a name.
+
 ## Pull request titles
 
 Pull requests are squash merged, so the pull request title becomes the commit message on `main`. Titles must follow [Conventional Commits](https://www.conventionalcommits.org/):
