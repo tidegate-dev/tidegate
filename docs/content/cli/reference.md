@@ -30,7 +30,7 @@ Global flags work before or after the command. A command that fails prints `Erro
 | Flag | Commands | Values |
 |---|---|---|
 | `--connection <name>`, `-c <name>` | All | The name of a saved connection. With `tidegate login <url>`, the name to save the connection under. |
-| `--output <format>`, `-o <format>` | All | `text`, `json` or `yaml`. The default is `text`. The `text` format escapes some characters for terminal display. To recover the original text you can run use the `json` format and decode the text from there. |
+| `--output <format>`, `-o <format>` | All | `text`, `json` or `yaml`. The default is `text`. The `text` format escapes some characters for terminal display. To recover the original text you can use the `json` format and decode the text from there. |
 | `--print-token` | `login <url>` | Writes the session token to stdout and saves no connection. Can't be combined with `--connection`. |
 | `--project <project>` | `role create`, `asset create ssh`, `asset list` | The name of the project that gets the role or the asset, or whose assets are listed. Required. |
 | `--create-roles` | `role create` | The holders of the role may create roles in the project. |
