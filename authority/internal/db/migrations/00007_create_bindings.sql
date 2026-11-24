@@ -3,7 +3,7 @@
 ALTER TABLE roles ADD CONSTRAINT roles_id_unique_in_project UNIQUE (project_id, id);
 
 CREATE TABLE bindings (
-    id uuid CONSTRAINT bindings_pk PRIMARY KEY DEFAULT gen_random_uuid(),
+    id uuid CONSTRAINT bindings_pk PRIMARY KEY,
     project_id uuid NOT NULL,
     role_id uuid NOT NULL,
     user_id uuid NOT NULL CONSTRAINT bindings_user_fk REFERENCES users (id) ON DELETE CASCADE,
