@@ -35,18 +35,20 @@ func (s *AssetService) CreateAsset(
 
 	switch target := req.Msg.GetTarget().(type) {
 	case *authorityv1.CreateAssetRequest_Ssh:
-		secretInput, inputErr := newSSHSecretInput(target.Ssh)
+		sshAsset := target.Ssh
+
+		secretInput, inputErr := newSSHSecretInput(sshAsset)
 		if inputErr != nil {
 			return nil, inputErr
 		}
 
-		requested := target.Ssh.GetTarget()
+		sshTarget := sshAsset.GetTarget()
 
 		asset, err = s.assets.CreateSSH(ctx, req.Msg.GetProjectName(), req.Msg.GetName(), req.Msg.GetLabels(), model.SSHTarget{
-			Host:     requested.GetHost(),
-			Port:     uint16(requested.GetPort()), //nolint:gosec // The API definition allows 1 to 65535.
-			HostKey:  requested.GetHostKey(),
-			UserName: requested.GetUserName(),
+			Host:     sshTarget.GetHost(),
+			Port:     uint16(sshTarget.GetPort()), //nolint:gosec // The API definition allows 1 to 65535.
+			HostKey:  sshTarget.GetHostKey(),
+			UserName: sshTarget.GetUserName(),
 		}, secretInput)
 	default:
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("the asset needs a target of a known kind"))
@@ -87,7 +89,7 @@ func (s *AssetService) ListAssets(
 }
 
 func newCreateAssetResponse(asset *model.Asset) (*authorityv1.CreateAssetResponse, error) {
-	ssh, err := sshTarget(asset)
+	ssh, err := newSSHTarget(asset)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +104,7 @@ func newCreateAssetResponse(asset *model.Asset) (*authorityv1.CreateAssetRespons
 }
 
 func newListedAsset(asset *model.Asset) (*authorityv1.ListAssetsResponse_Asset, error) {
-	ssh, err := sshTarget(asset)
+	ssh, err := newSSHTarget(asset)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +136,7 @@ func newSSHSecretInput(msg *authorityv1.CreateAssetRequest_SSHAsset) (service.SS
 	}
 }
 
-func sshTarget(asset *model.Asset) (*authorityv1.SSHTarget, error) {
+func newSSHTarget(asset *model.Asset) (*authorityv1.SSHTarget, error) {
 	if asset.SSH == nil {
 		return nil, fmt.Errorf("asset %s has no target", asset.ID)
 	}
