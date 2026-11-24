@@ -137,13 +137,14 @@ setup() {
     sign_in login "$TIDEGATE_TEST_AUTHORITY"
     tidegate project create "$project"
 
-    run tidegate -o json asset create ssh --project-name "$project" --address 127.0.0.1:2222 --host-key "$host_key" --user-name tidegate --password ssh-host <<<tidegate
+    run tidegate -o json asset create ssh --project-name "$project" --address 127.0.0.1:2222 --host-key "$host_key" --user-name tidegate --password ssh-host <<<a-password-only-for-this-test
     [ "$status" -eq 0 ]
     [ "$(jq -r .ssh.userName <<<"$output")" = tidegate ]
-    [[ $output != *assword* ]]
+    [[ $output != *a-password-only-for-this-test* ]]
 
     run tidegate -o json asset list --project-name "$project"
     [ "$status" -eq 0 ]
+    [[ $output != *a-password-only-for-this-test* ]]
     [ "$(jq -r '.assets[0].ssh.userName' <<<"$output")" = tidegate ]
 }
 

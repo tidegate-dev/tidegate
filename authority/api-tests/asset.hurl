@@ -138,7 +138,7 @@ HTTP 200
 [Asserts]
 jsonpath "$.name" == "database"
 jsonpath "$.ssh.userName" == "deploy"
-jsonpath "$.ssh.password" not exists
+body not contains "the password of deploy"
 
 POST {{authority}}/tidegate.authority.v1.AssetService/ListAssets
 Content-Type: application/json
