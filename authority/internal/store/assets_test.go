@@ -152,7 +152,81 @@ var _ = Describe("AssetReadWriter", func() {
 
 		Expect(err).To(MatchError(ContainSubstring("an SSH asset needs a host, a port and a host key")))
 	})
+
+	It("stores the login of an SSH asset at Commit, which ListForProjectID then returns", func(ctx SpecContext) {
+		asset := newSSHAsset(model.AssetID{2}, model.ProjectID{1}, "bastion")
+		asset.SSH.Login = newSSHLogin()
+
+		addAsset(ctx, data, asset)
+
+		Expect(data.Assets().ListForProjectID(ctx, model.ProjectID{1})).To(ConsistOf(asset))
+	})
+
+	It("writes the login as JSON into the details column", func(ctx SpecContext) {
+		asset := newSSHAsset(model.AssetID{2}, model.ProjectID{1}, "bastion")
+		asset.SSH.Login = newSSHLogin()
+		addAsset(ctx, data, asset)
+
+		var login string
+
+		Expect(pool.QueryRow(ctx, "SELECT details -> 'login' FROM assets").Scan(&login)).To(Succeed())
+		Expect(login).To(MatchJSON(`{
+			"user_name": "deploy",
+			"secret_engine_name": "tidegate",
+			"secret_reference": "reference-1",
+			"secret_kind": "private_key"
+		}`))
+	})
+
+	DescribeTable("stores nothing at Commit for an SSH asset with a login",
+		func(ctx SpecContext, change func(login *model.SSHLogin), message string) {
+			asset := newSSHAsset(model.AssetID{2}, model.ProjectID{1}, "bastion")
+			asset.SSH.Login = newSSHLogin()
+			change(asset.SSH.Login)
+
+			unit := data.NewUnit()
+			unit.Assets().Add(asset)
+
+			Expect(unit.Commit(ctx)).To(MatchError(ContainSubstring(message)))
+			Expect(count(ctx, pool, "assets")).To(Equal(0))
+		},
+		Entry("without a user name", func(login *model.SSHLogin) { login.UserName = "" },
+			"an SSH login needs a user name, a secret engine name and a secret reference"),
+		Entry("without an engine name", func(login *model.SSHLogin) { login.EngineName = "" },
+			"an SSH login needs a user name, a secret engine name and a secret reference"),
+		Entry("without a reference", func(login *model.SSHLogin) { login.Reference = "" },
+			"an SSH login needs a user name, a secret engine name and a secret reference"),
+		Entry("of an unknown kind", func(login *model.SSHLogin) { login.Kind = "certificate" },
+			`unknown login kind "certificate"`),
+		Entry("without a kind", func(login *model.SSHLogin) { login.Kind = "" },
+			`unknown login kind ""`),
+	)
+
+	It("fails to read an SSH asset whose login lacks the reference", func(ctx SpecContext) {
+		_, err := pool.Exec(ctx,
+			`INSERT INTO assets (id, project_id, name, kind, labels, details)
+			 VALUES ($1, $2, 'bastion', 'ssh', '{}', '{
+			     "host": "bastion.example", "port": 22, "host_key": "ssh-ed25519 AAAA",
+			     "login": {"user_name": "deploy", "secret_engine_name": "tidegate", "secret_kind": "password"}
+			 }')`,
+			databaseID(model.AssetID{2}), databaseID(model.ProjectID{1}),
+		)
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = data.Assets().ListForProjectID(ctx, model.ProjectID{1})
+
+		Expect(err).To(MatchError(ContainSubstring("an SSH login needs a user name, a secret engine name and a secret reference")))
+	})
 })
+
+func newSSHLogin() *model.SSHLogin {
+	return &model.SSHLogin{
+		UserName:   "deploy",
+		EngineName: "tidegate",
+		Reference:  "reference-1",
+		Kind:       model.SSHLoginKindPrivateKey,
+	}
+}
 
 func newSSHAsset(id model.AssetID, projectID model.ProjectID, name string) *model.Asset {
 	return &model.Asset{
