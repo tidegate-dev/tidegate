@@ -40,12 +40,12 @@ func TestCreateRoleRequestRefusesARoleNameOfAnotherForm(t *testing.T) {
 func TestCreateRoleRequestRefusesAProjectNameOfAnotherForm(t *testing.T) {
 	t.Parallel()
 
-	for description, project := range refusedNames() {
+	for description, projectName := range refusedNames() {
 		t.Run(description, func(t *testing.T) {
 			t.Parallel()
 
 			// act
-			err := validationError(t, &authorityv1.CreateRoleRequest{ProjectName: project, Name: "operator"})
+			err := validationError(t, &authorityv1.CreateRoleRequest{ProjectName: projectName, Name: "operator"})
 
 			// assert
 			assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))

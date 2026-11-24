@@ -261,13 +261,13 @@ func TestCreateAssetRequestRefusesAnAssetNameOfAnotherForm(t *testing.T) {
 func TestCreateAssetRequestRefusesAProjectNameOfAnotherForm(t *testing.T) {
 	t.Parallel()
 
-	for description, project := range refusedNames() {
+	for description, projectName := range refusedNames() {
 		t.Run(description, func(t *testing.T) {
 			t.Parallel()
 
 			// arrange
 			request := validCreateAssetRequest()
-			request.ProjectName = project
+			request.ProjectName = projectName
 
 			// act
 			err := validationError(t, request)

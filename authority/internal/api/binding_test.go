@@ -24,12 +24,12 @@ func TestCreateBindingRequestAcceptsTheNamesOfAProjectARoleAndAUser(t *testing.T
 func TestCreateBindingRequestRefusesAProjectNameOfAnotherForm(t *testing.T) {
 	t.Parallel()
 
-	for description, project := range refusedNames() {
+	for description, projectName := range refusedNames() {
 		t.Run(description, func(t *testing.T) {
 			t.Parallel()
 
 			// act
-			err := validationError(t, &authorityv1.CreateBindingRequest{ProjectName: project, RoleName: "operator", UserName: "alice"})
+			err := validationError(t, &authorityv1.CreateBindingRequest{ProjectName: projectName, RoleName: "operator", UserName: "alice"})
 
 			// assert
 			assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
@@ -41,12 +41,12 @@ func TestCreateBindingRequestRefusesAProjectNameOfAnotherForm(t *testing.T) {
 func TestCreateBindingRequestRefusesARoleNameOfAnotherForm(t *testing.T) {
 	t.Parallel()
 
-	for description, role := range refusedNames() {
+	for description, roleName := range refusedNames() {
 		t.Run(description, func(t *testing.T) {
 			t.Parallel()
 
 			// act
-			err := validationError(t, &authorityv1.CreateBindingRequest{ProjectName: "payments", RoleName: role, UserName: "alice"})
+			err := validationError(t, &authorityv1.CreateBindingRequest{ProjectName: "payments", RoleName: roleName, UserName: "alice"})
 
 			// assert
 			assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
