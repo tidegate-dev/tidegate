@@ -121,7 +121,7 @@ var _ = Describe("Assets", func() {
 			})
 
 			It("stores a private key that has no passphrase in the engine", func(ctx SpecContext) {
-				privateKey := newPrivateKey("")
+				privateKey := newPrivateKey()
 				secretInput.Kind = model.SSHSecretKindPrivateKey
 				secretInput.Value = secret.NewBytes(privateKey)
 
@@ -131,9 +131,13 @@ var _ = Describe("Assets", func() {
 				Expect(engine.values).To(Equal(map[secretengine.Reference][]byte{"reference-1": privateKey}))
 			})
 
-			It("returns ErrPrivateKeyEncrypted for a private key with a passphrase and stores nothing", func(ctx SpecContext) {
+			It("returns ErrPrivateKeyEncrypted for an encrypted private key and stores nothing", func(ctx SpecContext) {
 				secretInput.Kind = model.SSHSecretKindPrivateKey
-				secretInput.Value = secret.NewBytes(newPrivateKey("a passphrase"))
+				secretInput.Value = secret.NewBytes(pem.EncodeToMemory(&pem.Block{
+					Type:    "RSA PRIVATE KEY",
+					Headers: map[string]string{"Proc-Type": "4,ENCRYPTED", "DEK-Info": "AES-128-CBC,00000000000000000000000000000000"},
+					Bytes:   []byte("the encrypted key"),
+				}))
 
 				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, secretInput)
 
@@ -173,22 +177,15 @@ var _ = Describe("Assets", func() {
 	})
 })
 
-// newPrivateKey returns a new Ed25519 private key in OpenSSH's format. It is
-// encrypted if passphrase isn't empty.
-func newPrivateKey(passphrase string) []byte {
+// newPrivateKey returns a new Ed25519 private key in OpenSSH's format, without
+// a passphrase.
+func newPrivateKey() []byte {
 	GinkgoHelper()
 
 	_, key, err := ed25519.GenerateKey(nil)
 	Expect(err).NotTo(HaveOccurred())
 
-	var block *pem.Block
-
-	if passphrase == "" {
-		block, err = ssh.MarshalPrivateKey(key, "")
-	} else {
-		block, err = ssh.MarshalPrivateKeyWithPassphrase(key, "", []byte(passphrase))
-	}
-
+	block, err := ssh.MarshalPrivateKey(key, "")
 	Expect(err).NotTo(HaveOccurred())
 
 	return pem.EncodeToMemory(block)
