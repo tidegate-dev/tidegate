@@ -41,7 +41,7 @@ func TestClientErrorGivesEachErrorItsCode(t *testing.T) {
 		"role not found":     {fmt.Errorf("reading: %w", model.ErrRoleNotFound), connect.CodeNotFound},
 		"asset name taken":   {model.ErrAssetNameTaken, connect.CodeAlreadyExists},
 		"binding exists":     {model.ErrBindingExists, connect.CodeAlreadyExists},
-		"user not found":     {model.ErrUserNotFound, connect.CodeUnknown},
+		"user not found":     {fmt.Errorf("reading: %w", model.ErrUserNotFound), connect.CodeNotFound},
 		"canceled":           {context.Canceled, connect.CodeUnknown},
 		"anything else":      {errors.New("database down"), connect.CodeUnknown},
 	} {

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -117,26 +116,4 @@ func TestListedBindingHoldsTheBindingWithTheNamesOfItsRoleAndUser(t *testing.T) 
 	assert.Equal(t, binding.ProjectID.String(), message.GetProjectId())
 	assert.Equal(t, "operator", message.GetRoleName())
 	assert.Equal(t, "alice", message.GetUserName())
-}
-
-func TestBindingErrorAnswersNotFoundForAUserThatDoesNotExist(t *testing.T) {
-	t.Parallel()
-
-	// act
-	err := bindingError(fmt.Errorf("reading: %w", model.ErrUserNotFound))
-
-	// assert
-	assert.Equal(t, connect.CodeNotFound, connect.CodeOf(err))
-	assert.EqualError(t, err, "not_found: user not found")
-}
-
-func TestBindingErrorGivesARoleThatDoesNotExistTheCodeOfClientError(t *testing.T) {
-	t.Parallel()
-
-	// act
-	err := bindingError(model.ErrRoleNotFound)
-
-	// assert
-	assert.Equal(t, connect.CodeNotFound, connect.CodeOf(err))
-	assert.EqualError(t, err, "not_found: role not found")
 }

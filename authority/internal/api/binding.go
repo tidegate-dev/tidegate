@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"errors"
 
 	"connectrpc.com/connect"
 
@@ -28,7 +27,7 @@ func (s *BindingService) CreateBinding(
 ) (*connect.Response[authorityv1.CreateBindingResponse], error) {
 	binding, err := s.bindings.Create(ctx, req.Msg.GetProjectName(), req.Msg.GetRoleName(), req.Msg.GetUserName())
 	if err != nil {
-		return nil, bindingError(err)
+		return nil, clientError(err)
 	}
 
 	return connect.NewResponse(createBindingResponse(binding)), nil
@@ -50,16 +49,6 @@ func (s *BindingService) ListBindings(
 	}
 
 	return connect.NewResponse(&authorityv1.ListBindingsResponse{Bindings: messages}), nil
-}
-
-// bindingError tells a caller that a user doesn't exist, which clientError
-// keeps from everyone so that a login can't reveal it.
-func bindingError(err error) error {
-	if errors.Is(err, model.ErrUserNotFound) {
-		return connect.NewError(connect.CodeNotFound, model.ErrUserNotFound)
-	}
-
-	return clientError(err)
 }
 
 func createBindingResponse(binding *model.BindingWithNames) *authorityv1.CreateBindingResponse {
