@@ -81,16 +81,19 @@ func bindingCommand(store connections.Store) *cli.Command {
 				Usage: "assign a role to a user inside the project and print the binding ID, the role and the user",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						Name:  "project-name",
-						Usage: "name of the project the binding is added to",
+						Name:     "project-name",
+						Usage:    "name of the project the binding is added to",
+						Required: true,
 					},
 					&cli.StringFlag{
-						Name:  "role-name",
-						Usage: "name of the role the binding is referencing",
+						Name:     "role-name",
+						Usage:    "name of the role the binding is referencing",
+						Required: true,
 					},
 					&cli.StringFlag{
-						Name:  "user-name",
-						Usage: "name of the user subject to the binding",
+						Name:     "user-name",
+						Usage:    "name of the user subject to the binding",
+						Required: true,
 					},
 				},
 				Action: func(ctx context.Context, cmd *cli.Command) error {
@@ -102,8 +105,9 @@ func bindingCommand(store connections.Store) *cli.Command {
 				Usage: "print the ID, the role and the user name of every binding inside the project",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						Name:  "project-name",
-						Usage: "name of the project whose bindings are listed",
+						Name:     "project-name",
+						Usage:    "name of the project whose bindings are listed",
+						Required: true,
 					},
 				},
 				Action: func(ctx context.Context, cmd *cli.Command) error {
@@ -117,18 +121,6 @@ func bindingCommand(store connections.Store) *cli.Command {
 func bindingCreate(ctx context.Context, cmd *cli.Command, store connections.Store) error {
 	if cmd.Args().Len() != 0 {
 		return errors.New("want no arguments")
-	}
-
-	if cmd.String("project-name") == "" {
-		return errors.New("want a project, name it with --project-name")
-	}
-
-	if cmd.String("role-name") == "" {
-		return errors.New("want a role, name it with --role-name")
-	}
-
-	if cmd.String("user-name") == "" {
-		return errors.New("want a user, name them with --user-name")
 	}
 
 	clients, connection, err := connectToCurrent(cmd, store)
@@ -151,10 +143,6 @@ func bindingCreate(ctx context.Context, cmd *cli.Command, store connections.Stor
 func bindingList(ctx context.Context, cmd *cli.Command, store connections.Store) error {
 	if cmd.Args().Len() != 0 {
 		return errors.New("want no arguments")
-	}
-
-	if cmd.String("project-name") == "" {
-		return errors.New("want a project, name it with --project-name")
 	}
 
 	clients, connection, err := connectToCurrent(cmd, store)

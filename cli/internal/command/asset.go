@@ -143,16 +143,19 @@ func assetCommand(store connections.Store) *cli.Command {
 						DisableSliceFlagSeparator: true,
 						Flags: []cli.Flag{
 							&cli.StringFlag{
-								Name:  "project-name",
-								Usage: "name of the project that gets the asset",
+								Name:     "project-name",
+								Usage:    "name of the project that gets the asset",
+								Required: true,
 							},
 							&cli.StringFlag{
-								Name:  "address",
-								Usage: "the host's DNS name or IP address, as host or host:port, with port 22 by default",
+								Name:     "address",
+								Usage:    "the host's DNS name or IP address, as host or host:port, with port 22 by default",
+								Required: true,
 							},
 							&cli.StringFlag{
-								Name:  "host-key",
-								Usage: "the host's public key, like the content of /etc/ssh/ssh_host_ed25519_key.pub",
+								Name:     "host-key",
+								Usage:    "the host's public key, like the content of /etc/ssh/ssh_host_ed25519_key.pub",
+								Required: true,
 							},
 							&cli.StringSliceFlag{
 								Name:  "label",
@@ -170,8 +173,9 @@ func assetCommand(store connections.Store) *cli.Command {
 				Usage: "print the ID, the name, the address and the labels of every asset of a project",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						Name:  "project-name",
-						Usage: "name of the project whose assets are listed",
+						Name:     "project-name",
+						Usage:    "name of the project whose assets are listed",
+						Required: true,
 					},
 				},
 				Action: func(ctx context.Context, cmd *cli.Command) error {
@@ -185,10 +189,6 @@ func assetCommand(store connections.Store) *cli.Command {
 func assetCreateSSH(ctx context.Context, cmd *cli.Command, store connections.Store) error {
 	if cmd.Args().Len() != 1 {
 		return errors.New("want exactly one name")
-	}
-
-	if cmd.String("project-name") == "" {
-		return errors.New("want a project, name it with --project-name")
 	}
 
 	host, port, err := parseAddress(cmd.String("address"))
@@ -227,10 +227,6 @@ func assetCreateSSH(ctx context.Context, cmd *cli.Command, store connections.Sto
 func assetList(ctx context.Context, cmd *cli.Command, store connections.Store) error {
 	if cmd.Args().Len() != 0 {
 		return errors.New("want no arguments")
-	}
-
-	if cmd.String("project-name") == "" {
-		return errors.New("want a project, name it with --project-name")
 	}
 
 	clients, connection, err := connectToCurrent(cmd, store)

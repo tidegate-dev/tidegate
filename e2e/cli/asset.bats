@@ -103,15 +103,15 @@ setup() {
 
     run --separate-stderr tidegate asset create ssh --address bastion.example --host-key "$host_key" bastion
     [ "$status" -eq 1 ]
-    [[ $stderr == *"want a project, name it with --project-name"* ]]
+    [[ $stderr == *'Required flag "project-name" not set'* ]]
 
     run --separate-stderr tidegate asset create ssh --project-name "$project" --host-key "$host_key" bastion
     [ "$status" -eq 1 ]
-    [[ $stderr == *"--address: want an address like host or host:port"* ]]
+    [[ $stderr == *'Required flag "address" not set'* ]]
 
     run --separate-stderr tidegate asset create ssh --project-name "$project" --address bastion.example bastion
     [ "$status" -eq 1 ]
-    [[ $stderr == *"--host-key: want a host key like"* ]]
+    [[ $stderr == *'Required flag "host-key" not set'* ]]
 }
 
 @test "asset create ssh refuses a label that isn't key=value" {
@@ -133,7 +133,7 @@ setup() {
 @test "asset list wants a project and no arguments" {
     run --separate-stderr tidegate asset list
     [ "$status" -eq 1 ]
-    [[ $stderr == *"want a project, name it with --project-name"* ]]
+    [[ $stderr == *'Required flag "project-name" not set'* ]]
 
     run --separate-stderr tidegate asset list --project-name "$project" bastion
     [ "$status" -eq 1 ]

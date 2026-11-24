@@ -77,6 +77,5 @@ FLAGS
 @test "role create wants a project" {
     run --separate-stderr tidegate role create operator
     [ "$status" -eq 1 ]
-    [ -z "$output" ]
-    [[ $stderr == *"want a project, name it with --project-name"* ]]
+    [[ $stderr == *'Required flag "project-name" not set'* ]]
 }

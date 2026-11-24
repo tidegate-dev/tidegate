@@ -112,15 +112,15 @@ setup() {
 @test "binding create wants a project, a role, a user and no arguments" {
     run --separate-stderr tidegate binding create --role-name operator --user-name alice
     [ "$status" -eq 1 ]
-    [[ $stderr == *"want a project, name it with --project-name"* ]]
+    [[ $stderr == *'Required flag "project-name" not set'* ]]
 
     run --separate-stderr tidegate binding create --project-name "$project" --user-name alice
     [ "$status" -eq 1 ]
-    [[ $stderr == *"want a role, name it with --role-name"* ]]
+    [[ $stderr == *'Required flag "role-name" not set'* ]]
 
     run --separate-stderr tidegate binding create --project-name "$project" --role-name operator
     [ "$status" -eq 1 ]
-    [[ $stderr == *"want a user, name them with --user-name"* ]]
+    [[ $stderr == *'Required flag "user-name" not set'* ]]
 
     run --separate-stderr tidegate binding create --project-name "$project" --role-name operator --user-name alice extra
     [ "$status" -eq 1 ]
@@ -130,7 +130,7 @@ setup() {
 @test "binding list wants a project and no arguments" {
     run --separate-stderr tidegate binding list
     [ "$status" -eq 1 ]
-    [[ $stderr == *"want a project, name it with --project-name"* ]]
+    [[ $stderr == *'Required flag "project-name" not set'* ]]
 
     run --separate-stderr tidegate binding list --project-name "$project" extra
     [ "$status" -eq 1 ]
