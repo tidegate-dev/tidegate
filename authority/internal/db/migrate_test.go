@@ -40,29 +40,7 @@ var _ = Describe("Migrate", func() {
 		Expect(pool.QueryRow(ctx, "SELECT to_regclass('dummies')::text").Scan(&table)).To(Succeed())
 		Expect(table).To(BeNil())
 	})
-})
 
-var _ = Describe("OpenMigrated", func() {
-	It("refuses an empty database", func(ctx SpecContext) {
-		url := dbtest.NewDatabase()
-
-		_, err := OpenMigrated(ctx, url)
-
-		Expect(err).To(MatchError(ErrSchemaTooOld))
-	})
-
-	It("opens a migrated database", func(ctx SpecContext) {
-		url := dbtest.NewDatabase()
-		Expect(MigrateAt(ctx, url)).To(Succeed())
-
-		pool, err := OpenMigrated(ctx, url)
-
-		Expect(err).NotTo(HaveOccurred())
-		pool.Close()
-	})
-})
-
-var _ = Describe("MigrateAt", func() {
 	It("migrates once when two authorities wait for the lock", func(ctx SpecContext) {
 		url := dbtest.NewDatabase()
 		holder := dbtest.Connect(ctx, url)
@@ -79,6 +57,26 @@ var _ = Describe("MigrateAt", func() {
 		Expect(<-secondMigrationErrorChan).To(Succeed())
 		Expect(maxTimesAMigrationWasApplied(ctx, holder)).To(Equal(1))
 	}, SpecTimeout(time.Minute))
+})
+
+var _ = Describe("OpenMigrated", func() {
+	It("refuses an empty database", func(ctx SpecContext) {
+		url := dbtest.NewDatabase()
+
+		_, err := OpenMigrated(ctx, url)
+
+		Expect(err).To(MatchError(ErrSchemaTooOld))
+	})
+
+	It("opens a migrated database", func(ctx SpecContext) {
+		url := dbtest.NewDatabase()
+		Expect(migrateAt(ctx, url)).To(Succeed())
+
+		pool, err := OpenMigrated(ctx, url)
+
+		Expect(err).NotTo(HaveOccurred())
+		pool.Close()
+	})
 })
 
 type appliedMigration struct {
@@ -98,16 +96,28 @@ func appliedMigrations(ctx context.Context, pool *pgxpool.Pool) []appliedMigrati
 	return migrations
 }
 
-// startMigration migrates the database in the background and sends
-// MigrateAt's error on the returned channel.
+// startMigration migrates the database in the background and sends the
+// migration's error on the returned channel.
 func startMigration(ctx context.Context, url string) <-chan error {
 	migrationErrorChan := make(chan error, 1)
 
 	go func() {
-		migrationErrorChan <- MigrateAt(ctx, url)
+		migrationErrorChan <- migrateAt(ctx, url)
 	}()
 
 	return migrationErrorChan
+}
+
+// migrateAt migrates the database at url on a connection pool of its own,
+// like one authority does.
+func migrateAt(ctx context.Context, url string) error {
+	pool, err := Open(ctx, url)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
+	return Migrate(ctx, pool)
 }
 
 func takeMigrationLock(ctx context.Context, conn *pgx.Conn) {

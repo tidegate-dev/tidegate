@@ -76,18 +76,6 @@ func OpenMigrated(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-// MigrateAt connects to the database at url and applies every migration
-// that it doesn't have yet.
-func MigrateAt(ctx context.Context, url string) error {
-	pool, err := Open(ctx, url)
-	if err != nil {
-		return err
-	}
-	defer pool.Close()
-
-	return Migrate(ctx, pool)
-}
-
 // Migrate applies every migration that the database doesn't have yet.
 func Migrate(ctx context.Context, pool *pgxpool.Pool) (err error) {
 	provider, err := newProvider(pool)

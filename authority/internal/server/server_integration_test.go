@@ -36,7 +36,7 @@ var _ = Describe("run", func() {
 
 		BeforeEach(func(ctx SpecContext) {
 			url := dbtest.NewDatabase()
-			Expect(db.MigrateAt(ctx, url)).To(Succeed())
+			Expect(MigrateDatabase(ctx, url)).To(Succeed())
 			authority = serveAuthority(ctx, url)
 			token := signIn(ctx, url)
 
@@ -62,7 +62,7 @@ var _ = Describe("run", func() {
 
 		BeforeEach(func(ctx SpecContext) {
 			url := dbtest.NewDatabase()
-			Expect(db.MigrateAt(ctx, url)).To(Succeed())
+			Expect(MigrateDatabase(ctx, url)).To(Succeed())
 			authority = serveAuthority(ctx, url)
 		}, NodeTimeout(30*time.Second))
 
