@@ -20,9 +20,9 @@ var (
 
 // CheckPrivateKey returns ErrPrivateKeyEncrypted for a private key that needs
 // a passphrase, and ErrPrivateKeyInvalid for a value that is no private key
-// in PEM.
+// in PEM that SSH can log in with.
 func CheckPrivateKey(privateKey secret.Bytes) error {
-	_, err := ssh.ParseRawPrivateKey(privateKey.Reveal())
+	_, err := ssh.ParsePrivateKey(privateKey.Reveal())
 
 	var passphraseMissing *ssh.PassphraseMissingError
 	if errors.As(err, &passphraseMissing) {

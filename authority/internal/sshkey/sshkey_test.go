@@ -1,7 +1,10 @@
 package sshkey
 
 import (
+	"crypto/ecdh"
 	"crypto/ed25519"
+	"crypto/rand"
+	"crypto/x509"
 	"encoding/pem"
 	"testing"
 
@@ -51,6 +54,25 @@ func TestCheckPrivateKeyRefusesWhatIsNoPrivateKey(t *testing.T) {
 			assert.ErrorIs(t, err, ErrPrivateKeyInvalid)
 		})
 	}
+}
+
+func TestCheckPrivateKeyRefusesAPrivateKeyThatSSHCanNotLogInWith(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	key, err := ecdh.X25519().GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	encoded, err := x509.MarshalPKCS8PrivateKey(key)
+	require.NoError(t, err)
+
+	privateKey := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: encoded})
+
+	// act
+	err = CheckPrivateKey(secret.NewBytes(privateKey))
+
+	// assert
+	assert.ErrorIs(t, err, ErrPrivateKeyInvalid)
 }
 
 func TestCheckPrivateKeyRefusesAnEncryptedPEMBlock(t *testing.T) {
