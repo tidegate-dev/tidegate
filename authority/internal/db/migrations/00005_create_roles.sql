@@ -1,6 +1,6 @@
 -- +goose Up
 CREATE TABLE roles (
-    id uuid CONSTRAINT roles_pk PRIMARY KEY DEFAULT gen_random_uuid(),
+    id uuid CONSTRAINT roles_pk PRIMARY KEY,
     project_id uuid NOT NULL CONSTRAINT roles_project_fk REFERENCES projects (id),
     name text NOT NULL CONSTRAINT roles_name_check_not_blank CHECK (btrim(name) <> ''),
     create_roles boolean NOT NULL,

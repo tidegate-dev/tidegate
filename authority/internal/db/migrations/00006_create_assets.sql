@@ -1,6 +1,6 @@
 -- +goose Up
 CREATE TABLE assets (
-    id uuid CONSTRAINT assets_pk PRIMARY KEY DEFAULT gen_random_uuid(),
+    id uuid CONSTRAINT assets_pk PRIMARY KEY,
     project_id uuid NOT NULL CONSTRAINT assets_project_fk REFERENCES projects (id),
     name text NOT NULL CONSTRAINT assets_name_check_not_blank CHECK (btrim(name) <> ''),
     kind text NOT NULL CONSTRAINT assets_kind_check_known CHECK (kind = 'ssh'),

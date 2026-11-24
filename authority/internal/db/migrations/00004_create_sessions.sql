@@ -1,6 +1,6 @@
 -- +goose Up
 CREATE TABLE sessions (
-    id uuid CONSTRAINT sessions_pk PRIMARY KEY DEFAULT gen_random_uuid(),
+    id uuid CONSTRAINT sessions_pk PRIMARY KEY,
     -- A hash, so a copy of the table can't sign anyone in.
     token_hash bytea NOT NULL
         CONSTRAINT sessions_token_hash_unique UNIQUE

@@ -72,8 +72,8 @@ var _ = Describe("Issue", func() {
 	})
 
 	It("deletes the user's expired sessions", func(ctx SpecContext) {
-		_, err := pool.Exec(ctx, `INSERT INTO sessions (token_hash, user_id, created_at, expires_at)
-			VALUES (sha256('expired'), $1, now(), now() - interval '1 second')`, userID.String())
+		_, err := pool.Exec(ctx, `INSERT INTO sessions (id, token_hash, user_id, created_at, expires_at)
+			VALUES (gen_random_uuid(), sha256('expired'), $1, now(), now() - interval '1 second')`, userID.String())
 		Expect(err).NotTo(HaveOccurred())
 
 		token, err := newSessions(data, 12*time.Hour).Issue(ctx, userID)
@@ -213,8 +213,8 @@ var _ = Describe("FindByToken", func() {
 
 	It("refuses an expired token", func(ctx SpecContext) {
 		expired := secret.New("expired")
-		_, err := pool.Exec(ctx, `INSERT INTO sessions (token_hash, user_id, created_at, expires_at)
-			VALUES ($1, $2, now(), now() - interval '1 second')`, hash(expired).Reveal(), alice.String())
+		_, err := pool.Exec(ctx, `INSERT INTO sessions (id, token_hash, user_id, created_at, expires_at)
+			VALUES (gen_random_uuid(), $1, $2, now(), now() - interval '1 second')`, hash(expired).Reveal(), alice.String())
 		Expect(err).NotTo(HaveOccurred())
 
 		_, err = sessions.FindByToken(ctx, expired)
