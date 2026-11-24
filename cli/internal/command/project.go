@@ -26,7 +26,7 @@ func (result projectResult) String() string {
 }
 
 func (result projectResult) tableRow() []string {
-	return []string{quoteIfUnprintable(result.Name), quoteIfUnprintable(result.ID)}
+	return []string{quoteIfUnprintable(result.ID), quoteIfUnprintable(result.Name)}
 }
 
 type projectsResult struct {
@@ -52,7 +52,7 @@ func (result projectsResult) String() string {
 		rows = append(rows, project.tableRow())
 	}
 
-	return tableText([]string{"NAME", "ID"}, rows)
+	return tableText([]string{"ID", "NAME"}, rows)
 }
 
 func projectCommand(store connections.Store) *cli.Command {
@@ -62,7 +62,7 @@ func projectCommand(store connections.Store) *cli.Command {
 		Commands: []*cli.Command{
 			{
 				Name:      "create",
-				Usage:     "create a project and print its name and ID",
+				Usage:     "create a project and print its ID and name",
 				ArgsUsage: "<name>",
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					return projectCreate(ctx, cmd, store)
@@ -70,7 +70,7 @@ func projectCommand(store connections.Store) *cli.Command {
 			},
 			{
 				Name:  "list",
-				Usage: "print the name and the ID of every project",
+				Usage: "print the ID and the name of every project",
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					return projectList(ctx, cmd, store)
 				},

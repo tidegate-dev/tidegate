@@ -60,15 +60,15 @@ func newAssetResult(response *authorityv1.CreateAssetResponse) assetResult {
 }
 
 func (result assetResult) String() string {
-	return quoteIfUnprintable(result.Name) + "\t" + quoteIfUnprintable(result.ID)
+	return quoteIfUnprintable(result.ID) + "\t" + quoteIfUnprintable(result.Name)
 }
 
 func (result assetResult) tableRow() []string {
 	return []string{
+		quoteIfUnprintable(result.ID),
 		quoteIfUnprintable(result.Name),
 		quoteIfUnprintable(result.address()),
 		quoteIfUnprintable(result.labelsText()),
-		quoteIfUnprintable(result.ID),
 	}
 }
 
@@ -123,7 +123,7 @@ func (result assetsResult) String() string {
 		rows = append(rows, asset.tableRow())
 	}
 
-	return tableText([]string{"NAME", "ADDRESS", "LABELS", "ID"}, rows)
+	return tableText([]string{"ID", "NAME", "ADDRESS", "LABELS"}, rows)
 }
 
 func assetCommand(store connections.Store) *cli.Command {
@@ -137,7 +137,7 @@ func assetCommand(store connections.Store) *cli.Command {
 				Commands: []*cli.Command{
 					{
 						Name:      "ssh",
-						Usage:     "add an SSH host to a project and print the asset's name and ID",
+						Usage:     "add an SSH host to a project and print the asset's ID and name",
 						ArgsUsage: "<name>",
 						// urfave/cli splits the value of a repeated flag at commas by default.
 						DisableSliceFlagSeparator: true,
@@ -167,7 +167,7 @@ func assetCommand(store connections.Store) *cli.Command {
 			},
 			{
 				Name:  "list",
-				Usage: "print the name, the address, the labels and the ID of every asset of a project",
+				Usage: "print the ID, the name, the address and the labels of every asset of a project",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:  "project-name",

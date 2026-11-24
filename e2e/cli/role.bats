@@ -7,13 +7,13 @@ setup() {
     project=roles-$BATS_TEST_NUMBER
 }
 
-@test "role create prints the name and the ID of the new role" {
+@test "role create prints the ID and the name of the new role" {
     sign_in login "$TIDEGATE_TEST_AUTHORITY"
     tidegate project create "$project"
 
     run tidegate role create --project-name "$project" operator
     [ "$status" -eq 0 ]
-    [[ $output == operator$'\t'?* ]]
+    [[ $output == ?*$'\t'operator ]]
 }
 
 @test "role create gives the role the permission of each flag and no other" {

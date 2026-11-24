@@ -34,9 +34,9 @@ func (result bindingResult) String() string {
 
 func (result bindingResult) tableRow() []string {
 	return []string{
+		quoteIfUnprintable(result.ID),
 		quoteIfUnprintable(result.RoleName),
 		quoteIfUnprintable(result.UserName),
-		quoteIfUnprintable(result.ID),
 	}
 }
 
@@ -68,7 +68,7 @@ func (result bindingsResult) String() string {
 		rows = append(rows, binding.tableRow())
 	}
 
-	return tableText([]string{"ROLE", "USER", "ID"}, rows)
+	return tableText([]string{"ID", "ROLE", "USER"}, rows)
 }
 
 func bindingCommand(store connections.Store) *cli.Command {
@@ -78,7 +78,7 @@ func bindingCommand(store connections.Store) *cli.Command {
 		Commands: []*cli.Command{
 			{
 				Name:  "create",
-				Usage: "give a role of a project to a user and print the role, the user and the binding's ID",
+				Usage: "give a role of a project to a user and print the binding's ID, the role and the user",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:  "project-name",
@@ -99,7 +99,7 @@ func bindingCommand(store connections.Store) *cli.Command {
 			},
 			{
 				Name:  "list",
-				Usage: "print the role, the user and the ID of every binding of a project",
+				Usage: "print the ID, the role and the user of every binding of a project",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:  "project-name",

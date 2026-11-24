@@ -176,8 +176,8 @@ func TestAssetsResultTextShowsTheAddressAndTheLabelsInTheOrderOfTheirKeys(t *tes
 	text := result.String()
 
 	// assert
-	assert.Equal(t, "NAME     ADDRESS             LABELS                  ID\n"+
-		"bastion  [2001:db8::7]:2222  env=prod,team=payments  1", text)
+	assert.Equal(t, "ID  NAME     ADDRESS             LABELS\n"+
+		"1   bastion  [2001:db8::7]:2222  env=prod,team=payments", text)
 }
 
 func TestAssetsResultTextNamesTheCreateCommandWhenThereAreNoAssets(t *testing.T) {

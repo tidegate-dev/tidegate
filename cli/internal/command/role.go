@@ -40,7 +40,7 @@ func newRoleResult(response *authorityv1.CreateRoleResponse) roleResult {
 }
 
 func (result roleResult) String() string {
-	return quoteIfUnprintable(result.Name) + "\t" + quoteIfUnprintable(result.ID)
+	return quoteIfUnprintable(result.ID) + "\t" + quoteIfUnprintable(result.Name)
 }
 
 func roleCommand(store connections.Store) *cli.Command {
@@ -50,7 +50,7 @@ func roleCommand(store connections.Store) *cli.Command {
 		Commands: []*cli.Command{
 			{
 				Name:      "create",
-				Usage:     "create a role in a project and print its name and ID",
+				Usage:     "create a role in a project and print its ID and name",
 				ArgsUsage: "<name>",
 				Flags: []cli.Flag{
 					&cli.StringFlag{

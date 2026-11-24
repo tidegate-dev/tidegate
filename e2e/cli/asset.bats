@@ -15,13 +15,13 @@ setup() {
 
     run tidegate asset create ssh --project-name "$project" --address 127.0.0.1:2222 --host-key "$(cat "$host_key_file")" --label env=dev ssh-host
     [ "$status" -eq 0 ]
-    [[ $output == ssh-host$'\t'?* ]]
-    id=${output#*$'\t'}
+    [[ $output == ?*$'\t'ssh-host ]]
+    id=${output%%$'\t'*}
 
     run tidegate asset list --project-name "$project"
     [ "$status" -eq 0 ]
-    [[ ${lines[0]} == NAME*ADDRESS*LABELS*ID ]]
-    grep -qE "^ssh-host +127\.0\.0\.1:2222 +env=dev +$id\$" <<<"$output"
+    [[ ${lines[0]} == ID*NAME*ADDRESS*LABELS ]]
+    grep -qE "^$id +ssh-host +127\.0\.0\.1:2222 +env=dev\$" <<<"$output"
 }
 
 @test "asset create ssh and asset list print json" {

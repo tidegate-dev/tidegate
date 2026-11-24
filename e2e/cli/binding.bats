@@ -14,13 +14,13 @@ setup() {
 
     run tidegate binding create --project-name "$project" --role-name operator --user-name "$TIDEGATE_TEST_USER"
     [ "$status" -eq 0 ]
-    [[ $output == operator$'\t'$TIDEGATE_TEST_USER$'\t'?* ]]
-    id=${output##*$'\t'}
+    [[ $output == ?*$'\t'operator$'\t'$TIDEGATE_TEST_USER ]]
+    id=${output%%$'\t'*}
 
     run tidegate binding list --project-name "$project"
     [ "$status" -eq 0 ]
-    [[ ${lines[0]} == ROLE*USER*ID ]]
-    grep -qE "^operator +$TIDEGATE_TEST_USER +$id\$" <<<"$output"
+    [[ ${lines[0]} == ID*ROLE*USER ]]
+    grep -qE "^$id +operator +$TIDEGATE_TEST_USER\$" <<<"$output"
 }
 
 @test "binding create and binding list print json" {

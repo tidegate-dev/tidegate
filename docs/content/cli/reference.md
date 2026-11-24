@@ -16,13 +16,13 @@ Global flags work before or after the command. A command that fails prints `Erro
 | `tidegate connections list` | Prints the name and the URL of every saved connection and whether it holds a session token |
 | `tidegate connections current` | Prints the saved connection that a command selects |
 | `tidegate connections remove <name>` | Revokes the session token and deletes the connection |
-| `tidegate project create <name>` | Creates a project and prints its name and ID |
-| `tidegate project list` | Prints the name and the ID of every project |
-| `tidegate role create --project-name <project> <name>` | Creates a role in the project and prints its name and ID |
-| `tidegate asset create ssh --project-name <project> --address <address> --host-key <key> <name>` | Adds an SSH host to the project as an asset and prints the asset's name and ID |
-| `tidegate asset list --project-name <project>` | Prints the name, the address, the labels and the ID of every asset of the project |
-| `tidegate binding create --project-name <project> --role-name <role> --user-name <user>` | Gives the role of the project to the user and prints the role, the user and the binding's ID |
-| `tidegate binding list --project-name <project>` | Prints the role, the user and the ID of every binding of the project |
+| `tidegate project create <name>` | Creates a project and prints its ID and name |
+| `tidegate project list` | Prints the ID and the name of every project |
+| `tidegate role create --project-name <project> <name>` | Creates a role in the project and prints its ID and name |
+| `tidegate asset create ssh --project-name <project> --address <address> --host-key <key> <name>` | Adds an SSH host to the project as an asset and prints the asset's ID and name |
+| `tidegate asset list --project-name <project>` | Prints the ID, the name, the address and the labels of every asset of the project |
+| `tidegate binding create --project-name <project> --role-name <role> --user-name <user>` | Gives the role of the project to the user and prints the binding's ID, the role and the user |
+| `tidegate binding list --project-name <project>` | Prints the ID, the role and the user of every binding of the project |
 | `tidegate ping` | Checks that the authority can be reached and prints `pong` |
 | `tidegate dummy write <text>` | Stores a text in the authority's database and prints its ID |
 | `tidegate dummy read <id>` | Prints the text with the ID |

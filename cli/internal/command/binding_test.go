@@ -8,7 +8,7 @@ import (
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 )
 
-func TestBindingResultTextShowsTheRoleTheUserAndTheID(t *testing.T) {
+func TestBindingResultTextShowsTheIDTheRoleAndTheUser(t *testing.T) {
 	t.Parallel()
 
 	// arrange
@@ -18,10 +18,10 @@ func TestBindingResultTextShowsTheRoleTheUserAndTheID(t *testing.T) {
 	text := result.String()
 
 	// assert
-	assert.Equal(t, "operator\talice\t1", text)
+	assert.Equal(t, "1\toperator\talice", text)
 }
 
-func TestBindingsResultTextShowsTheRoleTheUserAndTheIDOfEachBinding(t *testing.T) {
+func TestBindingsResultTextShowsTheIDTheRoleAndTheUserOfEachBinding(t *testing.T) {
 	t.Parallel()
 
 	// arrange
@@ -34,9 +34,9 @@ func TestBindingsResultTextShowsTheRoleTheUserAndTheIDOfEachBinding(t *testing.T
 	text := result.String()
 
 	// assert
-	assert.Equal(t, "ROLE      USER   ID\n"+
-		"auditor   bob    1\n"+
-		"operator  alice  2", text)
+	assert.Equal(t, "ID  ROLE      USER\n"+
+		"1   auditor   bob\n"+
+		"2   operator  alice", text)
 }
 
 func TestBindingsResultTextNamesTheCreateCommandWhenThereAreNoBindings(t *testing.T) {
