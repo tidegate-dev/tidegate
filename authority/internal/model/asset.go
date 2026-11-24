@@ -55,12 +55,10 @@ type SSHTarget struct {
 	// HostKey is the host's public key as the key type and the key in
 	// base64, like "ssh-ed25519 AAAAC3...".
 	HostKey string
-	// UserName is the user that tidegate logs in as on the host. It is empty
-	// for a target without a login.
+	// UserName is the user that tidegate logs in as on the host.
 	UserName string
-	// Secret says where the user's password or private key is stored. It is
-	// nil for a target without a login.
-	Secret *StoredSSHSecret
+	// Secret says where the user's password or private key is stored.
+	Secret StoredSSHSecret
 }
 
 // SSHSecretKind says what a user logs in to an SSH host with.

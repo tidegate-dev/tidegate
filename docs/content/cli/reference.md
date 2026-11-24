@@ -19,7 +19,7 @@ Global flags work before or after the command. A command that fails prints `Erro
 | `tidegate project create <name>` | Creates a project and prints its ID and name |
 | `tidegate project list` | Prints the ID and the name of every project |
 | `tidegate role create --project-name <project> <name>` | Creates a role in the project and prints its ID and name |
-| `tidegate asset create ssh --project-name <project> --address <address> --host-key <key> <name>` | Adds an SSH host to the project as an asset and prints the asset's ID and name |
+| `tidegate asset create ssh --project-name <project> --address <address> --host-key <key> --user-name <user> (--password \| --private-key-file <file>) <name>` | Adds an SSH host to the project as an asset and prints the asset's ID and name |
 | `tidegate asset list --project-name <project>` | Prints the ID, the name, the address and the labels of every asset of the project |
 | `tidegate binding create --project-name <project> --role-name <role> --user-name <user>` | Gives the role of the project to the user and prints the binding's ID, the role and the user |
 | `tidegate binding list --project-name <project>` | Prints the ID, the role and the user of every binding of the project |
@@ -39,9 +39,9 @@ Global flags work before or after the command. A command that fails prints `Erro
 | `--address <address>` | `asset create ssh` | The host's DNS name or IP address, as `host` or `host:port`. Without a port, it's 22. An IPv6 address with a port needs brackets, like `[2001:db8::7]:2222`. Required. |
 | `--host-key <key>` | `asset create ssh` | The host's public key, like the content of `/etc/ssh/ssh_host_ed25519_key.pub`. A comment after the key is dropped. Required. |
 | `--label <key>=<value>` | `asset create ssh` | A label that roles select the asset by, like `env=prod`. Can be given several times. |
-| `--user-name <user>` | `asset create ssh` | The user that tidegate logs in as on the host. Needs `--password` or `--private-key-file`. |
-| `--password` | `asset create ssh` | The user logs in with a password. The command asks for it on a terminal, or reads it from the first line of stdin. Needs `--user-name`. Can't be combined with `--private-key-file`. |
-| `--private-key-file <file>` | `asset create ssh` | The user logs in with the private key in the file. The key has no passphrase. Needs `--user-name`. Can't be combined with `--password`. |
+| `--user-name <user>` | `asset create ssh` | The user that tidegate logs in as on the host. Required. |
+| `--password` | `asset create ssh` | The user logs in with a password. The command asks for it on a terminal, or reads it from the first line of stdin. The command needs this flag or `--private-key-file`, and not both. |
+| `--private-key-file <file>` | `asset create ssh` | The user logs in with the private key in the file. The key has no passphrase. The command needs this flag or `--password`, and not both. |
 | `--role-name <role>` | `binding create` | The name of the role that the user gets. The role must belong to the project. Required. |
 | `--user-name <user>` | `binding create` | The name of the user who gets the role. Uppercase and lowercase letters count as the same. Required. |
 

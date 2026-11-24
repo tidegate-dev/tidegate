@@ -248,20 +248,6 @@ func TestNewSSHTargetResultHoldsTheUserName(t *testing.T) {
 	assert.Equal(t, "deploy", result.UserName)
 }
 
-func TestSetSSHSecretLeavesTheRequestAloneWithoutAUserNameAPasswordAndAPrivateKeyFile(t *testing.T) {
-	t.Parallel()
-
-	// arrange
-	request := &authorityv1.CreateAssetRequest{}
-
-	// act
-	err := setSSHSecret(t.Context(), request, "", false, "", strings.NewReader("a password\n"), io.Discard)
-
-	// assert
-	require.NoError(t, err)
-	assert.Nil(t, request.GetSshSecret())
-}
-
 func TestSetSSHSecretRefusesFlagsThatDoNotFitTogether(t *testing.T) {
 	t.Parallel()
 
@@ -271,10 +257,8 @@ func TestSetSSHSecretRefusesFlagsThatDoNotFitTogether(t *testing.T) {
 		privateKeyFile string
 		message        string
 	}{
-		"password without a user name":         {"", true, "", "--password and --private-key-file need --user-name"},
-		"private key file without a user name": {"", false, "key", "--password and --private-key-file need --user-name"},
-		"password and private key file":        {"deploy", true, "key", "--password and --private-key-file can't be combined"},
-		"user name alone":                      {"deploy", false, "", "--user-name needs --password or --private-key-file"},
+		"password and private key file": {"deploy", true, "key", "--password and --private-key-file can't be combined"},
+		"neither of the two":            {"deploy", false, "", "want --password or --private-key-file"},
 	} {
 		t.Run(description, func(t *testing.T) {
 			t.Parallel()

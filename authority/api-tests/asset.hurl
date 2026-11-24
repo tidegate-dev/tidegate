@@ -1,6 +1,6 @@
 POST {{authority}}/tidegate.authority.v1.AssetService/CreateAsset
 Content-Type: application/json
-{"projectName": "api-tests-assets", "name": "bastion", "ssh": {"host": "bastion.example", "port": 22, "hostKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGVtcHR5"}}
+{"projectName": "api-tests-assets", "name": "bastion", "ssh": {"host": "bastion.example", "port": 22, "hostKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGVtcHR5", "userName": "deploy"}, "sshPassword": "the password of deploy"}
 HTTP 401
 [Asserts]
 jsonpath "$.code" == "unauthenticated"
@@ -24,7 +24,7 @@ token: jsonpath "$.token"
 POST {{authority}}/tidegate.authority.v1.AssetService/CreateAsset
 Content-Type: application/json
 Authorization: Bearer {{token}}
-{"projectName": "api-tests-assets", "name": "bastion", "ssh": {"host": "bastion.example", "port": 22, "hostKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGVtcHR5"}}
+{"projectName": "api-tests-assets", "name": "bastion", "ssh": {"host": "bastion.example", "port": 22, "hostKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGVtcHR5", "userName": "deploy"}, "sshPassword": "the password of deploy"}
 HTTP 404
 [Asserts]
 jsonpath "$.code" == "not_found"
@@ -58,7 +58,7 @@ jsonpath "$.code" == "invalid_argument"
 POST {{authority}}/tidegate.authority.v1.AssetService/CreateAsset
 Content-Type: application/json
 Authorization: Bearer {{token}}
-{"projectName": "api-tests-assets", "name": "bastion", "ssh": {"host": "bastion.example", "port": 22, "hostKey": "not a key"}}
+{"projectName": "api-tests-assets", "name": "bastion", "ssh": {"host": "bastion.example", "port": 22, "hostKey": "not a key", "userName": "deploy"}, "sshPassword": "the password of deploy"}
 HTTP 400
 [Asserts]
 jsonpath "$.code" == "invalid_argument"
@@ -67,7 +67,7 @@ jsonpath "$.message" contains "must be the key type"
 POST {{authority}}/tidegate.authority.v1.AssetService/CreateAsset
 Content-Type: application/json
 Authorization: Bearer {{token}}
-{"projectName": "api-tests-assets", "name": "bastion", "labels": {"env": "prod"}, "ssh": {"host": "bastion.example", "port": 2222, "hostKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGVtcHR5"}}
+{"projectName": "api-tests-assets", "name": "bastion", "labels": {"env": "prod"}, "ssh": {"host": "bastion.example", "port": 2222, "hostKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGVtcHR5", "userName": "deploy"}, "sshPassword": "the password of deploy"}
 HTTP 200
 [Captures]
 asset_id: jsonpath "$.id"
@@ -83,7 +83,7 @@ jsonpath "$.ssh.hostKey" == "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGVtcHR5"
 POST {{authority}}/tidegate.authority.v1.AssetService/CreateAsset
 Content-Type: application/json
 Authorization: Bearer {{token}}
-{"projectName": "api-tests-assets", "name": "bastion", "ssh": {"host": "other.example", "port": 22, "hostKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGVtcHR5"}}
+{"projectName": "api-tests-assets", "name": "bastion", "ssh": {"host": "other.example", "port": 22, "hostKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGVtcHR5", "userName": "deploy"}, "sshPassword": "the password of deploy"}
 HTTP 409
 [Asserts]
 jsonpath "$.code" == "already_exists"
@@ -101,7 +101,7 @@ jsonpath "$.assets[0].name" == "bastion"
 jsonpath "$.assets[0].labels.env" == "prod"
 jsonpath "$.assets[0].ssh.host" == "bastion.example"
 jsonpath "$.assets[0].ssh.port" == 2222
-jsonpath "$.assets[0].ssh.userName" not exists
+jsonpath "$.assets[0].ssh.userName" == "deploy"
 
 POST {{authority}}/tidegate.authority.v1.AssetService/CreateAsset
 Content-Type: application/json
@@ -110,7 +110,16 @@ Authorization: Bearer {{token}}
 HTTP 400
 [Asserts]
 jsonpath "$.code" == "invalid_argument"
-jsonpath "$.message" contains "must be set together"
+jsonpath "$.message" contains "ssh_secret"
+
+POST {{authority}}/tidegate.authority.v1.AssetService/CreateAsset
+Content-Type: application/json
+Authorization: Bearer {{token}}
+{"projectName": "api-tests-assets", "name": "database", "ssh": {"host": "database.example", "port": 22, "hostKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGVtcHR5"}, "sshPassword": "the password of deploy"}
+HTTP 400
+[Asserts]
+jsonpath "$.code" == "invalid_argument"
+jsonpath "$.message" contains "ssh.user_name"
 
 POST {{authority}}/tidegate.authority.v1.AssetService/CreateAsset
 Content-Type: application/json

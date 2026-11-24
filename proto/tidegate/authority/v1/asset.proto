@@ -48,14 +48,13 @@ message SSHTarget {
     message: "must be the key type ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521 or ssh-rsa, one space and the key in base64, and have at most 8192 characters"
     expression: "this.size() <= 8192 && this.matches('^(ssh-ed25519|ecdsa-sha2-nistp(256|384|521)|ssh-rsa) ([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$')"
   }];
-  // UserName is the user that tidegate logs in as on the host. It is empty
-  // for a host without a login.
+  // UserName is the user that tidegate logs in as on the host.
   //
-  // Rules: At most 64 characters, without spaces and control characters. It
+  // Rules: 1 to 64 characters, without spaces and control characters. It
   // doesn't start with a dash.
   string user_name = 4 [(buf.validate.field).string = {
     max_len: 64
-    pattern: "^([^\\s\\p{Z}\\p{Cc}-][^\\s\\p{Z}\\p{Cc}]*)?$"
+    pattern: "^[^\\s\\p{Z}\\p{Cc}-][^\\s\\p{Z}\\p{Cc}]*$"
   }];
 }
 
@@ -108,9 +107,10 @@ message CreateAssetRequest {
     SSHTarget ssh = 4;
   }
   // SSHSecret is what the user of an SSH target logs in with. tidegate stores
-  // it and never returns it. A request has it if and only if its SSH target
-  // has a user name.
+  // it and never returns it.
   oneof ssh_secret {
+    option (buf.validate.oneof).required = true;
+
     // SSHPassword is the user's password on the host.
     //
     // Rules: Not empty, at most 1024 bytes.
@@ -128,12 +128,6 @@ message CreateAssetRequest {
       max_bytes: 16384
     }];
   }
-
-  option (buf.validate.message).cel = {
-    id: "asset.ssh_login"
-    message: "the user name of an SSH target and an SSH password or private key must be set together"
-    expression: "(has(this.ssh_password) || has(this.ssh_private_key)) == (this.ssh.user_name != '')"
-  };
 }
 
 // CreateAssetResponse is the result of AssetService.CreateAsset.

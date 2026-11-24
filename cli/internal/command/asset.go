@@ -27,10 +27,10 @@ const defaultSSHPort = 22
 var errAddress = errors.New("want an address like host or host:port")
 
 type sshTargetResult struct {
-	Host     string `json:"host"               yaml:"host"`
-	Port     uint32 `json:"port"               yaml:"port"`
-	HostKey  string `json:"hostKey"            yaml:"hostKey"`
-	UserName string `json:"userName,omitempty" yaml:"userName,omitempty"`
+	Host     string `json:"host"     yaml:"host"`
+	Port     uint32 `json:"port"     yaml:"port"`
+	HostKey  string `json:"hostKey"  yaml:"hostKey"`
+	UserName string `json:"userName" yaml:"userName"`
 }
 
 type assetResult struct {
@@ -171,17 +171,19 @@ func assetCommand(store connections.Store) *cli.Command {
 								Usage: "a label as key=value that roles select the asset by, can be given several times",
 							},
 							&cli.StringFlag{
-								Name:  "user-name",
-								Usage: "the user that tidegate logs in as on the host. Needs --password or --private-key-file",
+								Name:     "user-name",
+								Usage:    "the user that tidegate logs in as on the host",
+								Required: true,
 							},
 							&cli.BoolFlag{
 								Name: "password",
 								Usage: "the user logs in with a password. The command asks for it on a terminal, " +
-									"or reads it from the first line of stdin. Needs --user-name",
+									"or reads it from the first line of stdin. The command needs this flag or --private-key-file",
 							},
 							&cli.StringFlag{
-								Name:  "private-key-file",
-								Usage: "the user logs in with the private key in this file, which has no passphrase. Needs --user-name",
+								Name: "private-key-file",
+								Usage: "the user logs in with the private key in this file, which has no passphrase. " +
+									"The command needs this flag or --password",
 							},
 						},
 						Action: func(ctx context.Context, cmd *cli.Command) error {
@@ -264,8 +266,7 @@ func assetCreateSSH(ctx context.Context, cmd *cli.Command, store connections.Sto
 // setSSHSecret puts what the user logs in with into the request. With
 // askForPassword that is the password, which it asks for on a terminal and
 // otherwise reads from the first line of in. With privateKeyFile it is the
-// file's content. Without a user name, a password and a file it puts nothing
-// into the request.
+// file's content.
 func setSSHSecret(
 	ctx context.Context,
 	request *authorityv1.CreateAssetRequest,
@@ -276,10 +277,6 @@ func setSSHSecret(
 	prompts io.Writer,
 ) error {
 	switch {
-	case userName == "" && !askForPassword && privateKeyFile == "":
-		return nil
-	case userName == "":
-		return errors.New("--password and --private-key-file need --user-name")
 	case askForPassword && privateKeyFile != "":
 		return errors.New("--password and --private-key-file can't be combined")
 	case privateKeyFile != "":
@@ -292,7 +289,7 @@ func setSSHSecret(
 
 		return nil
 	case !askForPassword:
-		return errors.New("--user-name needs --password or --private-key-file")
+		return errors.New("want --password or --private-key-file")
 	default:
 		prompt := "Password of " + quoteIfUnprintable(userName) + " on the host: "
 

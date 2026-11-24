@@ -66,24 +66,22 @@ func NewAssets(
 }
 
 // CreateSSH creates an asset for an SSH host in the project named
-// projectName and returns it. If secretInput isn't nil, it stores the
-// password or private key in the secret engine and records on the asset
-// where it is. It returns model.ErrProjectNotFound if no project has that
-// name, and model.ErrAssetNameTaken if another asset of the project has the
-// name. The API checks the form of every value before it calls CreateSSH.
+// projectName and returns it. It stores the password or private key from
+// secretInput in the secret engine and records on the asset where it is. It
+// returns model.ErrProjectNotFound if no project has that name, and
+// model.ErrAssetNameTaken if another asset of the project has the name. The
+// API checks the form of every value before it calls CreateSSH.
 func (a *Assets) CreateSSH(
 	ctx context.Context,
 	projectName string,
 	name string,
 	labels map[string]string,
 	target model.SSHTarget,
-	secretInput *SSHSecretInput,
+	secretInput SSHSecretInput,
 ) (*model.Asset, error) {
-	if secretInput != nil {
-		err := checkSSHSecretInput(secretInput)
-		if err != nil {
-			return nil, err
-		}
+	err := checkSSHSecretInput(secretInput)
+	if err != nil {
+		return nil, err
 	}
 
 	project, err := a.projects.FindByName(ctx, projectName)
@@ -96,11 +94,9 @@ func (a *Assets) CreateSSH(
 		return nil, err
 	}
 
-	if secretInput != nil {
-		target.Secret, err = a.storeValue(ctx, secretInput)
-		if err != nil {
-			return nil, err
-		}
+	target.Secret, err = a.storeValue(ctx, secretInput)
+	if err != nil {
+		return nil, err
 	}
 
 	asset := &model.Asset{
@@ -125,7 +121,7 @@ func (a *Assets) CreateSSH(
 	return asset, nil
 }
 
-func checkSSHSecretInput(secretInput *SSHSecretInput) error {
+func checkSSHSecretInput(secretInput SSHSecretInput) error {
 	switch secretInput.Kind {
 	case model.SSHSecretKindPassword:
 		if len(secretInput.Value.Reveal()) == 0 {
@@ -151,29 +147,25 @@ func checkSSHSecretInput(secretInput *SSHSecretInput) error {
 	}
 }
 
-func (a *Assets) storeValue(ctx context.Context, secretInput *SSHSecretInput) (*model.StoredSSHSecret, error) {
+func (a *Assets) storeValue(ctx context.Context, secretInput SSHSecretInput) (model.StoredSSHSecret, error) {
 	engine, err := a.engines.ByName(a.engineName)
 	if err != nil {
-		return nil, err
+		return model.StoredSSHSecret{}, err
 	}
 
 	reference, err := engine.Store(ctx, secretInput.Value)
 	if err != nil {
-		return nil, err
+		return model.StoredSSHSecret{}, err
 	}
 
-	return &model.StoredSSHSecret{
+	return model.StoredSSHSecret{
 		EngineName: a.engineName,
 		Reference:  string(reference),
 		Kind:       secretInput.Kind,
 	}, nil
 }
 
-func (a *Assets) deleteStoredValue(ctx context.Context, stored *model.StoredSSHSecret) {
-	if stored == nil {
-		return
-	}
-
+func (a *Assets) deleteStoredValue(ctx context.Context, stored model.StoredSSHSecret) {
 	// The commit also fails when the request's context ends.
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), deleteStoredValueTimeout)
 	defer cancel()

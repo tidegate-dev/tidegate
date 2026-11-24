@@ -219,21 +219,13 @@ func TestCreateAssetRequestRefusesWhatBreaksARule(t *testing.T) {
 			},
 			"labels",
 		},
-		"user name without a password or private key": {
-			func(request *authorityv1.CreateAssetRequest) { request.GetSsh().UserName = "deploy" },
-			"must be set together",
+		"no password and no private key": {
+			func(request *authorityv1.CreateAssetRequest) { request.SshSecret = nil },
+			"ssh_secret",
 		},
-		"password without a user name": {
-			func(request *authorityv1.CreateAssetRequest) {
-				request.SshSecret = &authorityv1.CreateAssetRequest_SshPassword{SshPassword: "a password"}
-			},
-			"must be set together",
-		},
-		"private key without a user name": {
-			func(request *authorityv1.CreateAssetRequest) {
-				request.SshSecret = &authorityv1.CreateAssetRequest_SshPrivateKey{SshPrivateKey: "a private key"}
-			},
-			"must be set together",
+		"empty user name": {
+			func(request *authorityv1.CreateAssetRequest) { request.GetSsh().UserName = "" },
+			"ssh.user_name",
 		},
 		"user name with a space": {
 			func(request *authorityv1.CreateAssetRequest) { setSSHLogin(request, "de ploy") },
@@ -496,10 +488,12 @@ func validCreateAssetRequest() *authorityv1.CreateAssetRequest {
 		ProjectName: "payments",
 		Name:        "bastion",
 		Target: &authorityv1.CreateAssetRequest_Ssh{Ssh: &authorityv1.SSHTarget{
-			Host:    "bastion.example",
-			Port:    22,
-			HostKey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGVtcHR5",
+			Host:     "bastion.example",
+			Port:     22,
+			HostKey:  "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGVtcHR5",
+			UserName: "deploy",
 		}},
+		SshSecret: &authorityv1.CreateAssetRequest_SshPassword{SshPassword: "a password"},
 	}
 }
 
@@ -558,10 +552,10 @@ func TestNewSSHSecretInputTakesThePasswordFromTheRequest(t *testing.T) {
 	setSSHLogin(request, "deploy")
 
 	// act
-	secretInput := newSSHSecretInput(request)
+	secretInput, err := newSSHSecretInput(request)
 
 	// assert
-	require.NotNil(t, secretInput)
+	require.NoError(t, err)
 	assert.Equal(t, model.SSHSecretKindPassword, secretInput.Kind)
 	assert.Equal(t, []byte("a password"), secretInput.Value.Reveal())
 }
@@ -575,22 +569,26 @@ func TestNewSSHSecretInputTakesThePrivateKeyFromTheRequest(t *testing.T) {
 	request.SshSecret = &authorityv1.CreateAssetRequest_SshPrivateKey{SshPrivateKey: "a private key"}
 
 	// act
-	secretInput := newSSHSecretInput(request)
+	secretInput, err := newSSHSecretInput(request)
 
 	// assert
-	require.NotNil(t, secretInput)
+	require.NoError(t, err)
 	assert.Equal(t, model.SSHSecretKindPrivateKey, secretInput.Kind)
 	assert.Equal(t, []byte("a private key"), secretInput.Value.Reveal())
 }
 
-func TestNewSSHSecretInputIsNilForARequestWithoutAPasswordOrPrivateKey(t *testing.T) {
+func TestNewSSHSecretInputRefusesARequestWithoutAPasswordOrPrivateKey(t *testing.T) {
 	t.Parallel()
 
+	// arrange
+	request := validCreateAssetRequest()
+	request.SshSecret = nil
+
 	// act
-	secretInput := newSSHSecretInput(validCreateAssetRequest())
+	_, err := newSSHSecretInput(request)
 
 	// assert
-	assert.Nil(t, secretInput)
+	assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
 }
 
 func TestNewCreateAssetResponseHoldsTheUserNameOfTheLogin(t *testing.T) {
@@ -632,7 +630,7 @@ func assetWithLogin() *model.Asset {
 			Port:     2222,
 			HostKey:  "ssh-ed25519 AAAA",
 			UserName: "deploy",
-			Secret: &model.StoredSSHSecret{
+			Secret: model.StoredSSHSecret{
 				EngineName: "tidegate",
 				Reference:  "reference-1",
 				Kind:       model.SSHSecretKindPassword,

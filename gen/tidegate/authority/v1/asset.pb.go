@@ -42,10 +42,9 @@ type SSHTarget struct {
 	// The key type is ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384,
 	// ecdsa-sha2-nistp521 or ssh-rsa. At most 8192 characters.
 	HostKey string `protobuf:"bytes,3,opt,name=host_key,json=hostKey,proto3" json:"host_key,omitempty"`
-	// UserName is the user that tidegate logs in as on the host. It is empty
-	// for a host without a login.
+	// UserName is the user that tidegate logs in as on the host.
 	//
-	// Rules: At most 64 characters, without spaces and control characters. It
+	// Rules: 1 to 64 characters, without spaces and control characters. It
 	// doesn't start with a dash.
 	UserName      string `protobuf:"bytes,4,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -138,8 +137,7 @@ type CreateAssetRequest struct {
 	//	*CreateAssetRequest_Ssh
 	Target isCreateAssetRequest_Target `protobuf_oneof:"target"`
 	// SSHSecret is what the user of an SSH target logs in with. tidegate stores
-	// it and never returns it. A request has it if and only if its SSH target
-	// has a user name.
+	// it and never returns it.
 	//
 	// Types that are valid to be assigned to SshSecret:
 	//
@@ -590,15 +588,14 @@ var File_tidegate_authority_v1_asset_proto protoreflect.FileDescriptor
 
 const file_tidegate_authority_v1_asset_proto_rawDesc = "" +
 	"\n" +
-	"!tidegate/authority/v1/asset.proto\x12\x15tidegate.authority.v1\x1a\x1bbuf/validate/validate.proto\"\xb6\x04\n" +
+	"!tidegate/authority/v1/asset.proto\x12\x15tidegate.authority.v1\x1a\x1bbuf/validate/validate.proto\"\xb3\x04\n" +
 	"\tSSHTarget\x12#\n" +
 	"\x04host\x18\x01 \x01(\tB\x0f\xbaH\fr\n" +
 	"\x18\xfd\x01\xba\x01\x01%\xa8\x01\x01R\x04host\x12\x1f\n" +
 	"\x04port\x18\x02 \x01(\rB\v\xbaH\b*\x06\x18\xff\xff\x03(\x01R\x04port\x12\x93\x03\n" +
 	"\bhost_key\x18\x03 \x01(\tB\xf7\x02\xbaH\xf3\x02\xba\x01\xef\x02\n" +
-	"\x13ssh_target.host_key\x12\xad\x01must be the key type ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521 or ssh-rsa, one space and the key in base64, and have at most 8192 characters\x1a\xa7\x01this.size() <= 8192 && this.matches('^(ssh-ed25519|ecdsa-sha2-nistp(256|384|521)|ssh-rsa) ([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$')R\ahostKey\x12M\n" +
-	"\tuser_name\x18\x04 \x01(\tB0\xbaH-r+\x18@2'^([^\\s\\p{Z}\\p{Cc}-][^\\s\\p{Z}\\p{Cc}]*)?$R\buserName\"\xe2\n" +
-	"\n" +
+	"\x13ssh_target.host_key\x12\xad\x01must be the key type ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521 or ssh-rsa, one space and the key in base64, and have at most 8192 characters\x1a\xa7\x01this.size() <= 8192 && this.matches('^(ssh-ed25519|ecdsa-sha2-nistp(256|384|521)|ssh-rsa) ([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$')R\ahostKey\x12J\n" +
+	"\tuser_name\x18\x04 \x01(\tB-\xbaH*r(\x18@2$^[^\\s\\p{Z}\\p{Cc}-][^\\s\\p{Z}\\p{Cc}]*$R\buserName\"\xa1\t\n" +
 	"\x12CreateAssetRequest\x12\x85\x02\n" +
 	"\fproject_name\x18\x01 \x01(\tB\xe1\x01\xbaH\xdd\x01\xba\x01\xd9\x01\n" +
 	"\x12asset.project_name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\vprojectName\x12\xee\x01\n" +
@@ -613,11 +610,10 @@ const file_tidegate_authority_v1_asset_proto_rawDesc = "" +
 	"\x0fssh_private_key\x18\x06 \x01(\tB\v\xbaH\br\x06\x10\x01(\x80\x80\x01H\x01R\rsshPrivateKey\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01:\xc5\x01\xbaH\xc1\x01\x1a\xbe\x01\n" +
-	"\x0fasset.ssh_login\x12Vthe user name of an SSH target and an SSH password or private key must be set together\x1aS(has(this.ssh_password) || has(this.ssh_private_key)) == (this.ssh.user_name != '')B\x0f\n" +
-	"\x06target\x12\x05\xbaH\x02\b\x01B\f\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x0f\n" +
+	"\x06target\x12\x05\xbaH\x02\b\x01B\x13\n" +
 	"\n" +
-	"ssh_secret\"\xa3\x02\n" +
+	"ssh_secret\x12\x05\xbaH\x02\b\x01\"\xa3\x02\n" +
 	"\x13CreateAssetResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
