@@ -4,11 +4,14 @@ package service
 
 import (
 	"context"
+	"crypto/ed25519"
+	"encoding/pem"
 	"errors"
 	"fmt"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"golang.org/x/crypto/ssh"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/authority/internal/storetest"
@@ -129,6 +132,58 @@ var _ = Describe("Assets", func() {
 				Expect(err).To(MatchError(model.ErrProjectNotFound))
 				Expect(engine.values).To(BeEmpty())
 			})
+
+			It("returns ErrSSHPasswordEmpty for an empty password and stores nothing", func(ctx SpecContext) {
+				login.Value = secret.NewBytes(nil)
+
+				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, login)
+
+				Expect(err).To(MatchError(ErrSSHPasswordEmpty))
+				Expect(engine.values).To(BeEmpty())
+				Expect(assets.List(ctx, "payments")).To(BeEmpty())
+			})
+
+			It("stores a private key that has no passphrase in the engine", func(ctx SpecContext) {
+				privateKey := newPrivateKey("")
+				login.Kind = model.SSHLoginKindPrivateKey
+				login.Value = secret.NewBytes(privateKey)
+
+				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, login)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(engine.values).To(Equal(map[secretengine.Reference][]byte{"reference-1": privateKey}))
+			})
+
+			It("returns ErrSSHPrivateKeyEncrypted for a private key with a passphrase and stores nothing", func(ctx SpecContext) {
+				login.Kind = model.SSHLoginKindPrivateKey
+				login.Value = secret.NewBytes(newPrivateKey("a passphrase"))
+
+				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, login)
+
+				Expect(err).To(MatchError(ErrSSHPrivateKeyEncrypted))
+				Expect(engine.values).To(BeEmpty())
+				Expect(assets.List(ctx, "payments")).To(BeEmpty())
+			})
+
+			It("returns ErrSSHPrivateKeyInvalid for a value that isn't a private key and stores nothing", func(ctx SpecContext) {
+				login.Kind = model.SSHLoginKindPrivateKey
+
+				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, login)
+
+				Expect(err).To(MatchError(ErrSSHPrivateKeyInvalid))
+				Expect(engine.values).To(BeEmpty())
+				Expect(assets.List(ctx, "payments")).To(BeEmpty())
+			})
+
+			It("stores nothing for a login of an unknown kind", func(ctx SpecContext) {
+				login.Kind = "certificate"
+
+				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, login)
+
+				Expect(err).To(MatchError(ContainSubstring(`unknown login kind "certificate"`)))
+				Expect(engine.values).To(BeEmpty())
+				Expect(assets.List(ctx, "payments")).To(BeEmpty())
+			})
 		})
 	})
 
@@ -140,6 +195,27 @@ var _ = Describe("Assets", func() {
 		})
 	})
 })
+
+// newPrivateKey returns a new Ed25519 private key in OpenSSH's format. It is
+// encrypted if passphrase isn't empty.
+func newPrivateKey(passphrase string) []byte {
+	GinkgoHelper()
+
+	_, key, err := ed25519.GenerateKey(nil)
+	Expect(err).NotTo(HaveOccurred())
+
+	var block *pem.Block
+
+	if passphrase == "" {
+		block, err = ssh.MarshalPrivateKey(key, "")
+	} else {
+		block, err = ssh.MarshalPrivateKeyWithPassphrase(key, "", []byte(passphrase))
+	}
+
+	Expect(err).NotTo(HaveOccurred())
+
+	return pem.EncodeToMemory(block)
+}
 
 // fakeEngine keeps its values in memory and numbers its references from
 // reference-1.

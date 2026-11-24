@@ -2,8 +2,12 @@ package service
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"time"
+
+	"golang.org/x/crypto/ssh"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/internal/secret"
@@ -11,6 +15,17 @@ import (
 )
 
 const deleteLoginValueTimeout = 10 * time.Second
+
+var (
+	// ErrSSHPasswordEmpty means the password of a login has no characters.
+	ErrSSHPasswordEmpty = errors.New("the SSH password is empty")
+	// ErrSSHPrivateKeyInvalid means the private key of a login isn't a
+	// private key in a format that tidegate reads.
+	ErrSSHPrivateKeyInvalid = errors.New("the SSH private key isn't a private key that tidegate can read")
+	// ErrSSHPrivateKeyEncrypted means the private key of a login needs a
+	// passphrase.
+	ErrSSHPrivateKeyEncrypted = errors.New("the SSH private key has a passphrase, which tidegate can't use")
+)
 
 // AssetLister lists the assets of a project.
 type AssetLister interface {
@@ -63,6 +78,13 @@ func (a *Assets) CreateSSH(
 	target model.SSHTarget,
 	login *SSHLoginInput,
 ) (*model.Asset, error) {
+	if login != nil {
+		err := checkSSHLoginInput(login)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	project, err := a.projects.FindByName(ctx, projectName)
 	if err != nil {
 		return nil, err
@@ -100,6 +122,32 @@ func (a *Assets) CreateSSH(
 	}
 
 	return asset, nil
+}
+
+func checkSSHLoginInput(login *SSHLoginInput) error {
+	switch login.Kind {
+	case model.SSHLoginKindPassword:
+		if len(login.Value.Reveal()) == 0 {
+			return ErrSSHPasswordEmpty
+		}
+
+		return nil
+	case model.SSHLoginKindPrivateKey:
+		_, err := ssh.ParseRawPrivateKey(login.Value.Reveal())
+
+		var passphraseMissing *ssh.PassphraseMissingError
+		if errors.As(err, &passphraseMissing) {
+			return ErrSSHPrivateKeyEncrypted
+		}
+
+		if err != nil {
+			return ErrSSHPrivateKeyInvalid
+		}
+
+		return nil
+	default:
+		return fmt.Errorf("unknown login kind %q", login.Kind)
+	}
 }
 
 func (a *Assets) storeLogin(ctx context.Context, login *SSHLoginInput) (*model.SSHLogin, error) {
