@@ -15,16 +15,16 @@ import (
 type bindingResult struct {
 	ID        string `json:"id"        yaml:"id"`
 	ProjectID string `json:"projectId" yaml:"projectId"`
-	Role      string `json:"role"      yaml:"role"`
-	User      string `json:"user"      yaml:"user"`
+	RoleName  string `json:"roleName"  yaml:"roleName"`
+	UserName  string `json:"userName"  yaml:"userName"`
 }
 
 func newBindingResult(response *authorityv1.CreateBindingResponse) bindingResult {
 	return bindingResult{
 		ID:        response.GetId(),
 		ProjectID: response.GetProjectId(),
-		Role:      response.GetRoleName(),
-		User:      response.GetUserName(),
+		RoleName:  response.GetRoleName(),
+		UserName:  response.GetUserName(),
 	}
 }
 
@@ -34,8 +34,8 @@ func (result bindingResult) String() string {
 
 func (result bindingResult) tableRow() []string {
 	return []string{
-		quoteIfUnprintable(result.Role),
-		quoteIfUnprintable(result.User),
+		quoteIfUnprintable(result.RoleName),
+		quoteIfUnprintable(result.UserName),
 		quoteIfUnprintable(result.ID),
 	}
 }
@@ -50,8 +50,8 @@ func newBindingsResult(bindings []*authorityv1.ListBindingsResponse_Binding) bin
 		result.Bindings = append(result.Bindings, bindingResult{
 			ID:        binding.GetId(),
 			ProjectID: binding.GetProjectId(),
-			Role:      binding.GetRoleName(),
-			User:      binding.GetUserName(),
+			RoleName:  binding.GetRoleName(),
+			UserName:  binding.GetUserName(),
 		})
 	}
 

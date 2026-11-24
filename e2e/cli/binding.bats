@@ -32,16 +32,16 @@ setup() {
     run tidegate -o json binding create --project-name "$project" --role-name operator --user-name "$TIDEGATE_TEST_USER"
     [ "$status" -eq 0 ]
     [ "$(jq -r .projectId <<<"$output")" = "$project_id" ]
-    [ "$(jq -r .role <<<"$output")" = operator ]
-    [ "$(jq -r .user <<<"$output")" = "$TIDEGATE_TEST_USER" ]
+    [ "$(jq -r .roleName <<<"$output")" = operator ]
+    [ "$(jq -r .userName <<<"$output")" = "$TIDEGATE_TEST_USER" ]
     id=$(jq -r .id <<<"$output")
 
     run tidegate -o json binding list --project-name "$project"
     [ "$status" -eq 0 ]
     [ "$(jq -r '.bindings | length' <<<"$output")" = 1 ]
     [ "$(jq -r '.bindings[0].id' <<<"$output")" = "$id" ]
-    [ "$(jq -r '.bindings[0].role' <<<"$output")" = operator ]
-    [ "$(jq -r '.bindings[0].user' <<<"$output")" = "$TIDEGATE_TEST_USER" ]
+    [ "$(jq -r '.bindings[0].roleName' <<<"$output")" = operator ]
+    [ "$(jq -r '.bindings[0].userName' <<<"$output")" = "$TIDEGATE_TEST_USER" ]
 }
 
 @test "binding list of a project without bindings says how to add one" {
