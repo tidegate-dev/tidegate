@@ -3,24 +3,33 @@
 package service
 
 import (
+	"context"
+	"errors"
+	"fmt"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/authority/internal/storetest"
+	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/tidegate-dev/tidegate/internal/secretengine"
 )
 
 var _ = Describe("Assets", func() {
 	var (
 		projects *Projects
 		assets   *Assets
+		engine   *fakeEngine
 		target   model.SSHTarget
 	)
 
 	BeforeEach(func(ctx SpecContext) {
 		_, data := storetest.New(ctx)
 		projects = NewProjects(data.Projects(), data)
-		assets = NewAssets(data.Projects(), data.Assets(), data)
+		engine = &fakeEngine{values: map[secretengine.Reference][]byte{}}
+		engines := secretengine.NewEngines(map[string]secretengine.Engine{"test-engine": engine})
+		assets = NewAssets(data.Projects(), data.Assets(), data, engines, "test-engine")
 		target = model.SSHTarget{Host: "bastion.example", Port: 22, HostKey: "ssh-ed25519 AAAA"}
 	})
 
@@ -29,7 +38,7 @@ var _ = Describe("Assets", func() {
 			project, err := projects.Create(ctx, "payments")
 			Expect(err).NotTo(HaveOccurred())
 
-			asset, err := assets.CreateSSH(ctx, "payments", "bastion", map[string]string{"env": "prod"}, target)
+			asset, err := assets.CreateSSH(ctx, "payments", "bastion", map[string]string{"env": "prod"}, target, nil)
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(asset.ID).NotTo(BeZero())
@@ -42,9 +51,84 @@ var _ = Describe("Assets", func() {
 		})
 
 		It("returns ErrProjectNotFound for a project that doesn't exist", func(ctx SpecContext) {
-			_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target)
+			_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, nil)
 
 			Expect(err).To(MatchError(model.ErrProjectNotFound))
+		})
+
+		It("stores nothing in the engine for an asset without a login", func(ctx SpecContext) {
+			_, err := projects.Create(ctx, "payments")
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = assets.CreateSSH(ctx, "payments", "bastion", nil, target, nil)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(engine.values).To(BeEmpty())
+		})
+
+		When("the asset has a login", func() {
+			var login *SSHLoginInput
+
+			BeforeEach(func(ctx SpecContext) {
+				_, err := projects.Create(ctx, "payments")
+				Expect(err).NotTo(HaveOccurred())
+
+				login = &SSHLoginInput{
+					UserName: "deploy",
+					Kind:     model.SSHLoginKindPassword,
+					Value:    secret.NewBytes([]byte("the value")),
+				}
+			})
+
+			It("stores the login's value in the engine", func(ctx SpecContext) {
+				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, login)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(engine.values).To(Equal(map[secretengine.Reference][]byte{"reference-1": []byte("the value")}))
+			})
+
+			It("stores the user name, the kind and where the value is with the asset", func(ctx SpecContext) {
+				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, login)
+				Expect(err).NotTo(HaveOccurred())
+
+				stored, err := assets.List(ctx, "payments")
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(stored).To(ConsistOf(HaveField("SSH.Login", Equal(&model.SSHLogin{
+					UserName:   "deploy",
+					EngineName: "test-engine",
+					Reference:  "reference-1",
+					Kind:       model.SSHLoginKindPassword,
+				}))))
+			})
+
+			It("leaves no value in the engine when another asset has the name", func(ctx SpecContext) {
+				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, nil)
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = assets.CreateSSH(ctx, "payments", "bastion", nil, target, login)
+
+				Expect(err).To(MatchError(model.ErrAssetNameTaken))
+				Expect(engine.values).To(BeEmpty())
+			})
+
+			It("returns ErrAssetNameTaken when the engine can't delete the value either", func(ctx SpecContext) {
+				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, nil)
+				Expect(err).NotTo(HaveOccurred())
+
+				engine.deleteErr = errors.New("the engine is down")
+
+				_, err = assets.CreateSSH(ctx, "payments", "bastion", nil, target, login)
+
+				Expect(err).To(MatchError(model.ErrAssetNameTaken))
+			})
+
+			It("stores nothing in the engine for a project that doesn't exist", func(ctx SpecContext) {
+				_, err := assets.CreateSSH(ctx, "search", "bastion", nil, target, login)
+
+				Expect(err).To(MatchError(model.ErrProjectNotFound))
+				Expect(engine.values).To(BeEmpty())
+			})
 		})
 	})
 
@@ -56,3 +140,44 @@ var _ = Describe("Assets", func() {
 		})
 	})
 })
+
+// fakeEngine keeps its values in memory and numbers its references from
+// reference-1.
+type fakeEngine struct {
+	values map[secretengine.Reference][]byte
+	stored int
+	// deleteErr is what Delete returns, if it isn't nil.
+	deleteErr error
+}
+
+func (f *fakeEngine) Store(_ context.Context, value secret.Bytes) (secretengine.Reference, error) {
+	f.stored++
+	reference := secretengine.Reference(fmt.Sprintf("reference-%d", f.stored))
+	f.values[reference] = value.Reveal()
+
+	return reference, nil
+}
+
+func (f *fakeEngine) Fetch(_ context.Context, reference secretengine.Reference) (secret.Bytes, error) {
+	value, ok := f.values[reference]
+	if !ok {
+		return secret.Bytes{}, secretengine.ErrNotFound
+	}
+
+	return secret.NewBytes(value), nil
+}
+
+func (f *fakeEngine) Delete(_ context.Context, reference secretengine.Reference) error {
+	if f.deleteErr != nil {
+		return f.deleteErr
+	}
+
+	_, ok := f.values[reference]
+	if !ok {
+		return secretengine.ErrNotFound
+	}
+
+	delete(f.values, reference)
+
+	return nil
+}

@@ -18,10 +18,15 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	"github.com/tidegate-dev/tidegate/authority/internal/store"
 	"github.com/tidegate-dev/tidegate/internal/metrics"
+	"github.com/tidegate-dev/tidegate/internal/secretengine"
 	"github.com/tidegate-dev/tidegate/internal/systemd"
 )
 
 const shutdownTimeout = 10 * time.Second
+
+// Assets store this name next to each reference, so changing it needs a
+// migration.
+const builtInEngineName = "tidegate"
 
 // Run serves the authority's APIs and metrics until ctx ends or a server
 // fails.
@@ -64,7 +69,8 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	logins := service.NewLogins(authenticator, sessions)
 	projects := service.NewProjects(data.Projects(), data)
 	roles := service.NewRoles(data.Projects(), data)
-	assets := service.NewAssets(data.Projects(), data.Assets(), data)
+	engines := secretengine.NewEngines(map[string]secretengine.Engine{builtInEngineName: postgres.New(pool)})
+	assets := service.NewAssets(data.Projects(), data.Assets(), data, engines, builtInEngineName)
 	bindings := service.NewBindings(data.Projects(), data.Roles(), data.Users(), data.Bindings(), data)
 
 	notifier, err := systemd.Open()

@@ -38,7 +38,7 @@ func (s *AssetService) CreateAsset(
 			Host:    target.Ssh.GetHost(),
 			Port:    uint16(target.Ssh.GetPort()), //nolint:gosec // The API definition allows 1 to 65535.
 			HostKey: target.Ssh.GetHostKey(),
-		})
+		}, nil)
 	default:
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("the asset needs a target of a known kind"))
 	}
