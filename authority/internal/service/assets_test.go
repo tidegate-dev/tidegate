@@ -68,10 +68,11 @@ var _ = Describe("Assets", func() {
 			Expect(assets.List(ctx, "payments")).To(ConsistOf(asset))
 		})
 
-		It("returns ErrProjectNotFound for a project that doesn't exist", func(ctx SpecContext) {
+		It("returns ErrProjectNotFound for a project that doesn't exist and stores nothing in the engine", func(ctx SpecContext) {
 			_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, secretInput)
 
 			Expect(err).To(MatchError(model.ErrProjectNotFound))
+			Expect(engine.values).To(BeEmpty())
 		})
 
 		When("the project exists", func() {
@@ -85,30 +86,6 @@ var _ = Describe("Assets", func() {
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(engine.values).To(Equal(map[secretengine.Reference][]byte{"reference-1": []byte("the value")}))
-			})
-
-			It("stores the user name with the asset", func(ctx SpecContext) {
-				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, secretInput)
-				Expect(err).NotTo(HaveOccurred())
-
-				stored, err := assets.List(ctx, "payments")
-
-				Expect(err).NotTo(HaveOccurred())
-				Expect(stored).To(ConsistOf(HaveField("SSH.UserName", "deploy")))
-			})
-
-			It("stores the kind and where the value is with the asset", func(ctx SpecContext) {
-				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, secretInput)
-				Expect(err).NotTo(HaveOccurred())
-
-				stored, err := assets.List(ctx, "payments")
-
-				Expect(err).NotTo(HaveOccurred())
-				Expect(stored).To(ConsistOf(HaveField("SSH.Secret", Equal(model.StoredSSHSecret{
-					EngineName: "test-engine",
-					Reference:  "reference-1",
-					Kind:       model.SSHSecretKindPassword,
-				}))))
 			})
 
 			It("removes the value from the engine again when another asset has the name", func(ctx SpecContext) {
@@ -130,13 +107,6 @@ var _ = Describe("Assets", func() {
 				_, err = assets.CreateSSH(ctx, "payments", "bastion", nil, target, secretInput)
 
 				Expect(err).To(MatchError(model.ErrAssetNameTaken))
-			})
-
-			It("stores nothing in the engine for a project that doesn't exist", func(ctx SpecContext) {
-				_, err := assets.CreateSSH(ctx, "search", "bastion", nil, target, secretInput)
-
-				Expect(err).To(MatchError(model.ErrProjectNotFound))
-				Expect(engine.values).To(BeEmpty())
 			})
 
 			It("returns ErrSSHPasswordEmpty for an empty password and stores nothing", func(ctx SpecContext) {

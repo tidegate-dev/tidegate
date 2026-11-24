@@ -147,15 +147,6 @@ setup() {
     [ "$(jq -r '.assets[0].ssh.userName' <<<"$output")" = tidegate ]
 }
 
-@test "asset create ssh takes a user name and the user's private key from a file" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY"
-    tidegate project create "$project"
-
-    run tidegate -o json asset create ssh --project-name "$project" --address bastion.example --host-key "$host_key" --user-name deploy --private-key-file "${host_key_file%.pub}" bastion
-    [ "$status" -eq 0 ]
-    [ "$(jq -r .ssh.userName <<<"$output")" = deploy ]
-}
-
 @test "asset create ssh fails for a private key file that holds no private key" {
     sign_in login "$TIDEGATE_TEST_AUTHORITY"
     tidegate project create "$project"

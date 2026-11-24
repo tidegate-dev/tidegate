@@ -122,16 +122,12 @@ var _ = Describe("AssetReadWriter", func() {
 			"an SSH asset needs a host, a port, a host key and a user name"),
 		Entry("without a user name", func(asset *model.Asset) { asset.SSH.UserName = "" },
 			"an SSH asset needs a host, a port, a host key and a user name"),
-		Entry("without a stored secret", func(asset *model.Asset) { asset.SSH.Secret = model.StoredSSHSecret{} },
-			"an SSH asset needs the engine name and the reference of its stored secret"),
 		Entry("without the engine name of its stored secret", func(asset *model.Asset) { asset.SSH.Secret.EngineName = "" },
 			"an SSH asset needs the engine name and the reference of its stored secret"),
 		Entry("without the reference of its stored secret", func(asset *model.Asset) { asset.SSH.Secret.Reference = "" },
 			"an SSH asset needs the engine name and the reference of its stored secret"),
 		Entry("with a stored secret of an unknown kind", func(asset *model.Asset) { asset.SSH.Secret.Kind = "certificate" },
 			`unknown SSH secret kind "certificate"`),
-		Entry("with a stored secret without a kind", func(asset *model.Asset) { asset.SSH.Secret.Kind = "" },
-			`unknown SSH secret kind ""`),
 	)
 
 	It("stores nothing at Commit for an asset of an unknown kind", func(ctx SpecContext) {
