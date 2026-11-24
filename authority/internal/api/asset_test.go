@@ -290,7 +290,7 @@ func TestListAssetsRequestRefusesAProjectNameOfAnotherForm(t *testing.T) {
 	assert.ErrorContains(t, err, "project_name: must start with a lowercase letter")
 }
 
-func TestCreateAssetResponseHoldsTheAssetWithItsSSHTarget(t *testing.T) {
+func TestNewCreateAssetResponseHoldsTheAssetWithItsSSHTarget(t *testing.T) {
 	t.Parallel()
 
 	// arrange
@@ -304,7 +304,7 @@ func TestCreateAssetResponseHoldsTheAssetWithItsSSHTarget(t *testing.T) {
 	}
 
 	// act
-	response, err := createAssetResponse(asset)
+	response, err := newCreateAssetResponse(asset)
 
 	// assert
 	require.NoError(t, err)
@@ -317,17 +317,17 @@ func TestCreateAssetResponseHoldsTheAssetWithItsSSHTarget(t *testing.T) {
 	assert.Equal(t, "ssh-ed25519 AAAA", response.GetSsh().GetHostKey())
 }
 
-func TestCreateAssetResponseFailsForAnAssetWithoutATarget(t *testing.T) {
+func TestNewCreateAssetResponseFailsForAnAssetWithoutATarget(t *testing.T) {
 	t.Parallel()
 
 	// act
-	_, err := createAssetResponse(&model.Asset{Name: "bastion"})
+	_, err := newCreateAssetResponse(&model.Asset{Name: "bastion"})
 
 	// assert
 	assert.ErrorContains(t, err, "has no target")
 }
 
-func TestListedAssetHoldsTheAssetWithItsSSHTarget(t *testing.T) {
+func TestNewListedAssetHoldsTheAssetWithItsSSHTarget(t *testing.T) {
 	t.Parallel()
 
 	// arrange
@@ -341,7 +341,7 @@ func TestListedAssetHoldsTheAssetWithItsSSHTarget(t *testing.T) {
 	}
 
 	// act
-	message, err := listedAsset(asset)
+	message, err := newListedAsset(asset)
 
 	// assert
 	require.NoError(t, err)
@@ -354,11 +354,11 @@ func TestListedAssetHoldsTheAssetWithItsSSHTarget(t *testing.T) {
 	assert.Equal(t, "ssh-ed25519 AAAA", message.GetSsh().GetHostKey())
 }
 
-func TestListedAssetFailsForAnAssetWithoutATarget(t *testing.T) {
+func TestNewListedAssetFailsForAnAssetWithoutATarget(t *testing.T) {
 	t.Parallel()
 
 	// act
-	_, err := listedAsset(&model.Asset{Name: "bastion"})
+	_, err := newListedAsset(&model.Asset{Name: "bastion"})
 
 	// assert
 	assert.ErrorContains(t, err, "has no target")

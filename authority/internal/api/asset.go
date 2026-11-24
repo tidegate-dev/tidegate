@@ -47,7 +47,7 @@ func (s *AssetService) CreateAsset(
 		return nil, clientError(err)
 	}
 
-	response, err := createAssetResponse(asset)
+	response, err := newCreateAssetResponse(asset)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (s *AssetService) ListAssets(
 	messages := make([]*authorityv1.ListAssetsResponse_Asset, len(assets))
 
 	for i, asset := range assets {
-		messages[i], err = listedAsset(asset)
+		messages[i], err = newListedAsset(asset)
 		if err != nil {
 			return nil, err
 		}
@@ -77,7 +77,7 @@ func (s *AssetService) ListAssets(
 	return connect.NewResponse(&authorityv1.ListAssetsResponse{Assets: messages}), nil
 }
 
-func createAssetResponse(asset *model.Asset) (*authorityv1.CreateAssetResponse, error) {
+func newCreateAssetResponse(asset *model.Asset) (*authorityv1.CreateAssetResponse, error) {
 	ssh, err := sshTarget(asset)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func createAssetResponse(asset *model.Asset) (*authorityv1.CreateAssetResponse, 
 	}, nil
 }
 
-func listedAsset(asset *model.Asset) (*authorityv1.ListAssetsResponse_Asset, error) {
+func newListedAsset(asset *model.Asset) (*authorityv1.ListAssetsResponse_Asset, error) {
 	ssh, err := sshTarget(asset)
 	if err != nil {
 		return nil, err

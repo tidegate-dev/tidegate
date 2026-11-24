@@ -30,7 +30,7 @@ func (s *RoleService) CreateRole(
 		return nil, clientError(err)
 	}
 
-	return connect.NewResponse(createRoleResponse(role)), nil
+	return connect.NewResponse(newCreateRoleResponse(role)), nil
 }
 
 func permissions(message *authorityv1.ProjectPermissions) model.ProjectPermissions {
@@ -42,7 +42,7 @@ func permissions(message *authorityv1.ProjectPermissions) model.ProjectPermissio
 	}
 }
 
-func createRoleResponse(role *model.Role) *authorityv1.CreateRoleResponse {
+func newCreateRoleResponse(role *model.Role) *authorityv1.CreateRoleResponse {
 	return &authorityv1.CreateRoleResponse{
 		Id:        role.ID.String(),
 		ProjectId: role.ProjectID.String(),

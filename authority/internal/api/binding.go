@@ -30,7 +30,7 @@ func (s *BindingService) CreateBinding(
 		return nil, clientError(err)
 	}
 
-	return connect.NewResponse(createBindingResponse(binding)), nil
+	return connect.NewResponse(newCreateBindingResponse(binding)), nil
 }
 
 // ListBindings returns every binding of a project.
@@ -45,13 +45,13 @@ func (s *BindingService) ListBindings(
 
 	messages := make([]*authorityv1.ListBindingsResponse_Binding, len(bindings))
 	for i, binding := range bindings {
-		messages[i] = listedBinding(binding)
+		messages[i] = newListedBinding(binding)
 	}
 
 	return connect.NewResponse(&authorityv1.ListBindingsResponse{Bindings: messages}), nil
 }
 
-func createBindingResponse(binding *model.BindingWithNames) *authorityv1.CreateBindingResponse {
+func newCreateBindingResponse(binding *model.BindingWithNames) *authorityv1.CreateBindingResponse {
 	return &authorityv1.CreateBindingResponse{
 		Id:        binding.ID.String(),
 		ProjectId: binding.ProjectID.String(),
@@ -60,7 +60,7 @@ func createBindingResponse(binding *model.BindingWithNames) *authorityv1.CreateB
 	}
 }
 
-func listedBinding(binding *model.BindingWithNames) *authorityv1.ListBindingsResponse_Binding {
+func newListedBinding(binding *model.BindingWithNames) *authorityv1.ListBindingsResponse_Binding {
 	return &authorityv1.ListBindingsResponse_Binding{
 		Id:        binding.ID.String(),
 		ProjectId: binding.ProjectID.String(),

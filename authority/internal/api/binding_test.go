@@ -76,7 +76,7 @@ func TestListBindingsRequestRefusesAProjectNameOfAnotherForm(t *testing.T) {
 	assert.ErrorContains(t, err, "project_name: must start with a lowercase letter")
 }
 
-func TestCreateBindingResponseHoldsTheBindingWithTheNamesOfItsRoleAndUser(t *testing.T) {
+func TestNewCreateBindingResponseHoldsTheBindingWithTheNamesOfItsRoleAndUser(t *testing.T) {
 	t.Parallel()
 
 	// arrange
@@ -88,7 +88,7 @@ func TestCreateBindingResponseHoldsTheBindingWithTheNamesOfItsRoleAndUser(t *tes
 	}
 
 	// act
-	response := createBindingResponse(binding)
+	response := newCreateBindingResponse(binding)
 
 	// assert
 	assert.Equal(t, binding.ID.String(), response.GetId())
@@ -97,7 +97,7 @@ func TestCreateBindingResponseHoldsTheBindingWithTheNamesOfItsRoleAndUser(t *tes
 	assert.Equal(t, "alice", response.GetUserName())
 }
 
-func TestListedBindingHoldsTheBindingWithTheNamesOfItsRoleAndUser(t *testing.T) {
+func TestNewListedBindingHoldsTheBindingWithTheNamesOfItsRoleAndUser(t *testing.T) {
 	t.Parallel()
 
 	// arrange
@@ -109,7 +109,7 @@ func TestListedBindingHoldsTheBindingWithTheNamesOfItsRoleAndUser(t *testing.T) 
 	}
 
 	// act
-	message := listedBinding(binding)
+	message := newListedBinding(binding)
 
 	// assert
 	assert.Equal(t, binding.ID.String(), message.GetId())
