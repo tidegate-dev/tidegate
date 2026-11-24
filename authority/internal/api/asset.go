@@ -35,16 +35,18 @@ func (s *AssetService) CreateAsset(
 
 	switch target := req.Msg.GetTarget().(type) {
 	case *authorityv1.CreateAssetRequest_Ssh:
-		secretInput, inputErr := newSSHSecretInput(req.Msg)
+		secretInput, inputErr := newSSHSecretInput(target.Ssh)
 		if inputErr != nil {
 			return nil, inputErr
 		}
 
+		requested := target.Ssh.GetTarget()
+
 		asset, err = s.assets.CreateSSH(ctx, req.Msg.GetProjectName(), req.Msg.GetName(), req.Msg.GetLabels(), model.SSHTarget{
-			Host:     target.Ssh.GetHost(),
-			Port:     uint16(target.Ssh.GetPort()), //nolint:gosec // The API definition allows 1 to 65535.
-			HostKey:  target.Ssh.GetHostKey(),
-			UserName: target.Ssh.GetUserName(),
+			Host:     requested.GetHost(),
+			Port:     uint16(requested.GetPort()), //nolint:gosec // The API definition allows 1 to 65535.
+			HostKey:  requested.GetHostKey(),
+			UserName: requested.GetUserName(),
 		}, secretInput)
 	default:
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("the asset needs a target of a known kind"))
@@ -114,17 +116,17 @@ func newListedAsset(asset *model.Asset) (*authorityv1.ListAssetsResponse_Asset, 
 	}, nil
 }
 
-func newSSHSecretInput(msg *authorityv1.CreateAssetRequest) (service.SSHSecretInput, error) {
-	switch value := msg.GetSshSecret().(type) {
-	case *authorityv1.CreateAssetRequest_SshPassword:
+func newSSHSecretInput(msg *authorityv1.CreateAssetRequest_SSHAsset) (service.SSHSecretInput, error) {
+	switch value := msg.GetSecret().(type) {
+	case *authorityv1.CreateAssetRequest_SSHAsset_Password:
 		return service.SSHSecretInput{
 			Kind:  model.SSHSecretKindPassword,
-			Value: secret.NewBytes([]byte(value.SshPassword)),
+			Value: secret.NewBytes([]byte(value.Password)),
 		}, nil
-	case *authorityv1.CreateAssetRequest_SshPrivateKey:
+	case *authorityv1.CreateAssetRequest_SSHAsset_PrivateKey:
 		return service.SSHSecretInput{
 			Kind:  model.SSHSecretKindPrivateKey,
-			Value: secret.NewBytes([]byte(value.SshPrivateKey)),
+			Value: secret.NewBytes([]byte(value.PrivateKey)),
 		}, nil
 	default:
 		return service.SSHSecretInput{}, connect.NewError(connect.CodeInvalidArgument,

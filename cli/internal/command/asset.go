@@ -230,19 +230,14 @@ func assetCreateSSH(ctx context.Context, cmd *cli.Command, store connections.Sto
 		return fmt.Errorf("--label: %w", err)
 	}
 
-	request := &authorityv1.CreateAssetRequest{
-		ProjectName: cmd.String("project-name"),
-		Name:        cmd.Args().First(),
-		Labels:      labels,
-		Target: &authorityv1.CreateAssetRequest_Ssh{Ssh: &authorityv1.SSHTarget{
-			Host:     host,
-			Port:     port,
-			HostKey:  hostKey,
-			UserName: cmd.String("user-name"),
-		}},
-	}
+	asset := &authorityv1.CreateAssetRequest_SSHAsset{Target: &authorityv1.SSHTarget{
+		Host:     host,
+		Port:     port,
+		HostKey:  hostKey,
+		UserName: cmd.String("user-name"),
+	}}
 
-	err = setSSHSecret(ctx, request, cmd.Bool("password"), cmd.String("private-key-file"),
+	err = setSSHSecret(ctx, asset, cmd.Bool("password"), cmd.String("private-key-file"),
 		cmd.Root().Reader, cmd.Root().ErrWriter)
 	if err != nil {
 		return err
@@ -253,7 +248,12 @@ func assetCreateSSH(ctx context.Context, cmd *cli.Command, store connections.Sto
 		return err
 	}
 
-	response, err := clients.Asset().CreateAsset(ctx, connect.NewRequest(request))
+	response, err := clients.Asset().CreateAsset(ctx, connect.NewRequest(&authorityv1.CreateAssetRequest{
+		ProjectName: cmd.String("project-name"),
+		Name:        cmd.Args().First(),
+		Labels:      labels,
+		Target:      &authorityv1.CreateAssetRequest_Ssh{Ssh: asset},
+	}))
 	if err != nil {
 		return callFailed("creating the asset", connection, err)
 	}
@@ -261,13 +261,13 @@ func assetCreateSSH(ctx context.Context, cmd *cli.Command, store connections.Sto
 	return printResult(cmd, newAssetResult(response.Msg))
 }
 
-// setSSHSecret puts what the user of the request's SSH target logs in with
-// into the request. With askForPassword that is the password, which it asks
-// for on a terminal and otherwise reads from the first line of in. With
-// privateKeyFile it is the file's content.
+// setSSHSecret puts what the user of the asset's target logs in with into the
+// asset. With askForPassword that is the password, which it asks for on a
+// terminal and otherwise reads from the first line of in. With privateKeyFile
+// it is the file's content.
 func setSSHSecret(
 	ctx context.Context,
-	request *authorityv1.CreateAssetRequest,
+	asset *authorityv1.CreateAssetRequest_SSHAsset,
 	askForPassword bool,
 	privateKeyFile string,
 	in io.Reader,
@@ -282,20 +282,20 @@ func setSSHSecret(
 			return fmt.Errorf("--private-key-file: %w", err)
 		}
 
-		request.SshSecret = &authorityv1.CreateAssetRequest_SshPrivateKey{SshPrivateKey: string(privateKey)}
+		asset.Secret = &authorityv1.CreateAssetRequest_SSHAsset_PrivateKey{PrivateKey: string(privateKey)}
 
 		return nil
 	case !askForPassword:
 		return errors.New("want --password or --private-key-file")
 	default:
-		prompt := "Password of " + quoteIfUnprintable(request.GetSsh().GetUserName()) + " on the host: "
+		prompt := "Password of " + quoteIfUnprintable(asset.GetTarget().GetUserName()) + " on the host: "
 
 		password, err := readPassword(ctx, terminal.New(in, prompts), prompt)
 		if err != nil {
 			return err
 		}
 
-		request.SshSecret = &authorityv1.CreateAssetRequest_SshPassword{SshPassword: password}
+		asset.Secret = &authorityv1.CreateAssetRequest_SSHAsset_Password{Password: password}
 
 		return nil
 	}

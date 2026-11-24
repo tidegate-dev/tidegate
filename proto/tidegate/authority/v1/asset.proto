@@ -60,6 +60,37 @@ message SSHTarget {
 
 // CreateAssetRequest is the input of AssetService.CreateAsset.
 message CreateAssetRequest {
+  // SSHAsset is an SSH host and what tidegate logs in to it with.
+  message SSHAsset {
+    // Target is the host's address, its host key and the user that tidegate
+    // logs in as.
+    //
+    // Rules: Required.
+    SSHTarget target = 1 [(buf.validate.field).required = true];
+    // Secret is what the user logs in with. tidegate stores it and never
+    // returns it.
+    oneof secret {
+      option (buf.validate.oneof).required = true;
+
+      // Password is the user's password on the host.
+      //
+      // Rules: Not empty, at most 1024 bytes.
+      string password = 2 [(buf.validate.field).string = {
+        min_len: 1
+        max_bytes: 1024
+      }];
+      // PrivateKey is a private key of the user in PEM, without a
+      // passphrase. A key that tidegate can't read or that has a passphrase
+      // fails with invalid_argument.
+      //
+      // Rules: Not empty, at most 16384 bytes.
+      string private_key = 3 [(buf.validate.field).string = {
+        min_len: 1
+        max_bytes: 16384
+      }];
+    }
+  }
+
   // ProjectName is the name of the project that gets the asset.
   //
   // Rules: Starts with a lowercase letter, goes on with lowercase letters,
@@ -104,29 +135,7 @@ message CreateAssetRequest {
     option (buf.validate.oneof).required = true;
 
     // SSH makes the asset a host that tidegate reaches over SSH.
-    SSHTarget ssh = 4;
-  }
-  // SSHSecret is what the user of an SSH target logs in with. tidegate stores
-  // it and never returns it.
-  oneof ssh_secret {
-    option (buf.validate.oneof).required = true;
-
-    // SSHPassword is the user's password on the host.
-    //
-    // Rules: Not empty, at most 1024 bytes.
-    string ssh_password = 5 [(buf.validate.field).string = {
-      min_len: 1
-      max_bytes: 1024
-    }];
-    // SSHPrivateKey is a private key of the user in PEM, without a
-    // passphrase. A key that tidegate can't read or that has a passphrase
-    // fails with invalid_argument.
-    //
-    // Rules: Not empty, at most 16384 bytes.
-    string ssh_private_key = 6 [(buf.validate.field).string = {
-      min_len: 1
-      max_bytes: 16384
-    }];
+    SSHAsset ssh = 4;
   }
 }
 

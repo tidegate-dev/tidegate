@@ -135,15 +135,7 @@ type CreateAssetRequest struct {
 	// Types that are valid to be assigned to Target:
 	//
 	//	*CreateAssetRequest_Ssh
-	Target isCreateAssetRequest_Target `protobuf_oneof:"target"`
-	// SSHSecret is what the user of an SSH target logs in with. tidegate stores
-	// it and never returns it.
-	//
-	// Types that are valid to be assigned to SshSecret:
-	//
-	//	*CreateAssetRequest_SshPassword
-	//	*CreateAssetRequest_SshPrivateKey
-	SshSecret     isCreateAssetRequest_SshSecret `protobuf_oneof:"ssh_secret"`
+	Target        isCreateAssetRequest_Target `protobuf_oneof:"target"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -206,7 +198,7 @@ func (x *CreateAssetRequest) GetTarget() isCreateAssetRequest_Target {
 	return nil
 }
 
-func (x *CreateAssetRequest) GetSsh() *SSHTarget {
+func (x *CreateAssetRequest) GetSsh() *CreateAssetRequest_SSHAsset {
 	if x != nil {
 		if x, ok := x.Target.(*CreateAssetRequest_Ssh); ok {
 			return x.Ssh
@@ -215,65 +207,16 @@ func (x *CreateAssetRequest) GetSsh() *SSHTarget {
 	return nil
 }
 
-func (x *CreateAssetRequest) GetSshSecret() isCreateAssetRequest_SshSecret {
-	if x != nil {
-		return x.SshSecret
-	}
-	return nil
-}
-
-func (x *CreateAssetRequest) GetSshPassword() string {
-	if x != nil {
-		if x, ok := x.SshSecret.(*CreateAssetRequest_SshPassword); ok {
-			return x.SshPassword
-		}
-	}
-	return ""
-}
-
-func (x *CreateAssetRequest) GetSshPrivateKey() string {
-	if x != nil {
-		if x, ok := x.SshSecret.(*CreateAssetRequest_SshPrivateKey); ok {
-			return x.SshPrivateKey
-		}
-	}
-	return ""
-}
-
 type isCreateAssetRequest_Target interface {
 	isCreateAssetRequest_Target()
 }
 
 type CreateAssetRequest_Ssh struct {
 	// SSH makes the asset a host that tidegate reaches over SSH.
-	Ssh *SSHTarget `protobuf:"bytes,4,opt,name=ssh,proto3,oneof"`
+	Ssh *CreateAssetRequest_SSHAsset `protobuf:"bytes,4,opt,name=ssh,proto3,oneof"`
 }
 
 func (*CreateAssetRequest_Ssh) isCreateAssetRequest_Target() {}
-
-type isCreateAssetRequest_SshSecret interface {
-	isCreateAssetRequest_SshSecret()
-}
-
-type CreateAssetRequest_SshPassword struct {
-	// SSHPassword is the user's password on the host.
-	//
-	// Rules: Not empty, at most 1024 bytes.
-	SshPassword string `protobuf:"bytes,5,opt,name=ssh_password,json=sshPassword,proto3,oneof"`
-}
-
-type CreateAssetRequest_SshPrivateKey struct {
-	// SSHPrivateKey is a private key of the user in PEM, without a
-	// passphrase. A key that tidegate can't read or that has a passphrase
-	// fails with invalid_argument.
-	//
-	// Rules: Not empty, at most 16384 bytes.
-	SshPrivateKey string `protobuf:"bytes,6,opt,name=ssh_private_key,json=sshPrivateKey,proto3,oneof"`
-}
-
-func (*CreateAssetRequest_SshPassword) isCreateAssetRequest_SshSecret() {}
-
-func (*CreateAssetRequest_SshPrivateKey) isCreateAssetRequest_SshSecret() {}
 
 // CreateAssetResponse is the result of AssetService.CreateAsset.
 type CreateAssetResponse struct {
@@ -477,6 +420,112 @@ func (x *ListAssetsResponse) GetAssets() []*ListAssetsResponse_Asset {
 	return nil
 }
 
+// SSHAsset is an SSH host and what tidegate logs in to it with.
+type CreateAssetRequest_SSHAsset struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Target is the host's address, its host key and the user that tidegate
+	// logs in as.
+	//
+	// Rules: Required.
+	Target *SSHTarget `protobuf:"bytes,1,opt,name=target,proto3" json:"target,omitempty"`
+	// Secret is what the user logs in with. tidegate stores it and never
+	// returns it.
+	//
+	// Types that are valid to be assigned to Secret:
+	//
+	//	*CreateAssetRequest_SSHAsset_Password
+	//	*CreateAssetRequest_SSHAsset_PrivateKey
+	Secret        isCreateAssetRequest_SSHAsset_Secret `protobuf_oneof:"secret"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateAssetRequest_SSHAsset) Reset() {
+	*x = CreateAssetRequest_SSHAsset{}
+	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateAssetRequest_SSHAsset) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateAssetRequest_SSHAsset) ProtoMessage() {}
+
+func (x *CreateAssetRequest_SSHAsset) ProtoReflect() protoreflect.Message {
+	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateAssetRequest_SSHAsset.ProtoReflect.Descriptor instead.
+func (*CreateAssetRequest_SSHAsset) Descriptor() ([]byte, []int) {
+	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{1, 0}
+}
+
+func (x *CreateAssetRequest_SSHAsset) GetTarget() *SSHTarget {
+	if x != nil {
+		return x.Target
+	}
+	return nil
+}
+
+func (x *CreateAssetRequest_SSHAsset) GetSecret() isCreateAssetRequest_SSHAsset_Secret {
+	if x != nil {
+		return x.Secret
+	}
+	return nil
+}
+
+func (x *CreateAssetRequest_SSHAsset) GetPassword() string {
+	if x != nil {
+		if x, ok := x.Secret.(*CreateAssetRequest_SSHAsset_Password); ok {
+			return x.Password
+		}
+	}
+	return ""
+}
+
+func (x *CreateAssetRequest_SSHAsset) GetPrivateKey() string {
+	if x != nil {
+		if x, ok := x.Secret.(*CreateAssetRequest_SSHAsset_PrivateKey); ok {
+			return x.PrivateKey
+		}
+	}
+	return ""
+}
+
+type isCreateAssetRequest_SSHAsset_Secret interface {
+	isCreateAssetRequest_SSHAsset_Secret()
+}
+
+type CreateAssetRequest_SSHAsset_Password struct {
+	// Password is the user's password on the host.
+	//
+	// Rules: Not empty, at most 1024 bytes.
+	Password string `protobuf:"bytes,2,opt,name=password,proto3,oneof"`
+}
+
+type CreateAssetRequest_SSHAsset_PrivateKey struct {
+	// PrivateKey is a private key of the user in PEM, without a
+	// passphrase. A key that tidegate can't read or that has a passphrase
+	// fails with invalid_argument.
+	//
+	// Rules: Not empty, at most 16384 bytes.
+	PrivateKey string `protobuf:"bytes,3,opt,name=private_key,json=privateKey,proto3,oneof"`
+}
+
+func (*CreateAssetRequest_SSHAsset_Password) isCreateAssetRequest_SSHAsset_Secret() {}
+
+func (*CreateAssetRequest_SSHAsset_PrivateKey) isCreateAssetRequest_SSHAsset_Secret() {}
+
 // Asset is one asset in the list.
 type ListAssetsResponse_Asset struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -501,7 +550,7 @@ type ListAssetsResponse_Asset struct {
 
 func (x *ListAssetsResponse_Asset) Reset() {
 	*x = ListAssetsResponse_Asset{}
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[7]
+	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -513,7 +562,7 @@ func (x *ListAssetsResponse_Asset) String() string {
 func (*ListAssetsResponse_Asset) ProtoMessage() {}
 
 func (x *ListAssetsResponse_Asset) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[7]
+	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -595,7 +644,7 @@ const file_tidegate_authority_v1_asset_proto_rawDesc = "" +
 	"\x04port\x18\x02 \x01(\rB\v\xbaH\b*\x06\x18\xff\xff\x03(\x01R\x04port\x12\x93\x03\n" +
 	"\bhost_key\x18\x03 \x01(\tB\xf7\x02\xbaH\xf3\x02\xba\x01\xef\x02\n" +
 	"\x13ssh_target.host_key\x12\xad\x01must be the key type ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521 or ssh-rsa, one space and the key in base64, and have at most 8192 characters\x1a\xa7\x01this.size() <= 8192 && this.matches('^(ssh-ed25519|ecdsa-sha2-nistp(256|384|521)|ssh-rsa) ([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$')R\ahostKey\x12J\n" +
-	"\tuser_name\x18\x04 \x01(\tB-\xbaH*r(\x18@2$^[^\\s\\p{Z}\\p{Cc}-][^\\s\\p{Z}\\p{Cc}]*$R\buserName\"\xa1\t\n" +
+	"\tuser_name\x18\x04 \x01(\tB-\xbaH*r(\x18@2$^[^\\s\\p{Z}\\p{Cc}-][^\\s\\p{Z}\\p{Cc}]*$R\buserName\"\xf0\t\n" +
 	"\x12CreateAssetRequest\x12\x85\x02\n" +
 	"\fproject_name\x18\x01 \x01(\tB\xe1\x01\xbaH\xdd\x01\xba\x01\xd9\x01\n" +
 	"\x12asset.project_name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\vprojectName\x12\xee\x01\n" +
@@ -603,17 +652,19 @@ const file_tidegate_authority_v1_asset_proto_rawDesc = "" +
 	"\n" +
 	"asset.name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\x04name\x12\x92\x03\n" +
 	"\x06labels\x18\x03 \x03(\v25.tidegate.authority.v1.CreateAssetRequest.LabelsEntryB\xc2\x02\xbaH\xbe\x02\x9a\x01\xba\x02\x10@\"\xfd\x01\xba\x01z\n" +
-	"\x19asset.labels.key_dns_name\x12>the DNS name before the slash must have at most 253 characters\x1a\x1d!this.matches('^[^/]{254,}/')r~2|^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*/)?[A-Za-z0-9]([A-Za-z0-9_.-]{0,61}[A-Za-z0-9])?$*6r422^([A-Za-z0-9]([A-Za-z0-9_.-]{0,61}[A-Za-z0-9])?)?$R\x06labels\x124\n" +
-	"\x03ssh\x18\x04 \x01(\v2 .tidegate.authority.v1.SSHTargetH\x00R\x03ssh\x12/\n" +
-	"\fssh_password\x18\x05 \x01(\tB\n" +
-	"\xbaH\ar\x05\x10\x01(\x80\bH\x01R\vsshPassword\x125\n" +
-	"\x0fssh_private_key\x18\x06 \x01(\tB\v\xbaH\br\x06\x10\x01(\x80\x80\x01H\x01R\rsshPrivateKey\x1a9\n" +
+	"\x19asset.labels.key_dns_name\x12>the DNS name before the slash must have at most 253 characters\x1a\x1d!this.matches('^[^/]{254,}/')r~2|^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*/)?[A-Za-z0-9]([A-Za-z0-9_.-]{0,61}[A-Za-z0-9])?$*6r422^([A-Za-z0-9]([A-Za-z0-9_.-]{0,61}[A-Za-z0-9])?)?$R\x06labels\x12F\n" +
+	"\x03ssh\x18\x04 \x01(\v22.tidegate.authority.v1.CreateAssetRequest.SSHAssetH\x00R\x03ssh\x1a\xb7\x01\n" +
+	"\bSSHAsset\x12@\n" +
+	"\x06target\x18\x01 \x01(\v2 .tidegate.authority.v1.SSHTargetB\x06\xbaH\x03\xc8\x01\x01R\x06target\x12(\n" +
+	"\bpassword\x18\x02 \x01(\tB\n" +
+	"\xbaH\ar\x05\x10\x01(\x80\bH\x00R\bpassword\x12.\n" +
+	"\vprivate_key\x18\x03 \x01(\tB\v\xbaH\br\x06\x10\x01(\x80\x80\x01H\x00R\n" +
+	"privateKeyB\x0f\n" +
+	"\x06secret\x12\x05\xbaH\x02\b\x01\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x0f\n" +
-	"\x06target\x12\x05\xbaH\x02\b\x01B\x13\n" +
-	"\n" +
-	"ssh_secret\x12\x05\xbaH\x02\b\x01\"\xa3\x02\n" +
+	"\x06target\x12\x05\xbaH\x02\b\x01\"\xa3\x02\n" +
 	"\x13CreateAssetResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -658,35 +709,37 @@ func file_tidegate_authority_v1_asset_proto_rawDescGZIP() []byte {
 	return file_tidegate_authority_v1_asset_proto_rawDescData
 }
 
-var file_tidegate_authority_v1_asset_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_tidegate_authority_v1_asset_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_tidegate_authority_v1_asset_proto_goTypes = []any{
-	(*SSHTarget)(nil),                // 0: tidegate.authority.v1.SSHTarget
-	(*CreateAssetRequest)(nil),       // 1: tidegate.authority.v1.CreateAssetRequest
-	(*CreateAssetResponse)(nil),      // 2: tidegate.authority.v1.CreateAssetResponse
-	(*ListAssetsRequest)(nil),        // 3: tidegate.authority.v1.ListAssetsRequest
-	(*ListAssetsResponse)(nil),       // 4: tidegate.authority.v1.ListAssetsResponse
-	nil,                              // 5: tidegate.authority.v1.CreateAssetRequest.LabelsEntry
-	nil,                              // 6: tidegate.authority.v1.CreateAssetResponse.LabelsEntry
-	(*ListAssetsResponse_Asset)(nil), // 7: tidegate.authority.v1.ListAssetsResponse.Asset
-	nil,                              // 8: tidegate.authority.v1.ListAssetsResponse.Asset.LabelsEntry
+	(*SSHTarget)(nil),                   // 0: tidegate.authority.v1.SSHTarget
+	(*CreateAssetRequest)(nil),          // 1: tidegate.authority.v1.CreateAssetRequest
+	(*CreateAssetResponse)(nil),         // 2: tidegate.authority.v1.CreateAssetResponse
+	(*ListAssetsRequest)(nil),           // 3: tidegate.authority.v1.ListAssetsRequest
+	(*ListAssetsResponse)(nil),          // 4: tidegate.authority.v1.ListAssetsResponse
+	(*CreateAssetRequest_SSHAsset)(nil), // 5: tidegate.authority.v1.CreateAssetRequest.SSHAsset
+	nil,                                 // 6: tidegate.authority.v1.CreateAssetRequest.LabelsEntry
+	nil,                                 // 7: tidegate.authority.v1.CreateAssetResponse.LabelsEntry
+	(*ListAssetsResponse_Asset)(nil),    // 8: tidegate.authority.v1.ListAssetsResponse.Asset
+	nil,                                 // 9: tidegate.authority.v1.ListAssetsResponse.Asset.LabelsEntry
 }
 var file_tidegate_authority_v1_asset_proto_depIdxs = []int32{
-	5, // 0: tidegate.authority.v1.CreateAssetRequest.labels:type_name -> tidegate.authority.v1.CreateAssetRequest.LabelsEntry
-	0, // 1: tidegate.authority.v1.CreateAssetRequest.ssh:type_name -> tidegate.authority.v1.SSHTarget
-	6, // 2: tidegate.authority.v1.CreateAssetResponse.labels:type_name -> tidegate.authority.v1.CreateAssetResponse.LabelsEntry
-	0, // 3: tidegate.authority.v1.CreateAssetResponse.ssh:type_name -> tidegate.authority.v1.SSHTarget
-	7, // 4: tidegate.authority.v1.ListAssetsResponse.assets:type_name -> tidegate.authority.v1.ListAssetsResponse.Asset
-	8, // 5: tidegate.authority.v1.ListAssetsResponse.Asset.labels:type_name -> tidegate.authority.v1.ListAssetsResponse.Asset.LabelsEntry
-	0, // 6: tidegate.authority.v1.ListAssetsResponse.Asset.ssh:type_name -> tidegate.authority.v1.SSHTarget
-	1, // 7: tidegate.authority.v1.AssetService.CreateAsset:input_type -> tidegate.authority.v1.CreateAssetRequest
-	3, // 8: tidegate.authority.v1.AssetService.ListAssets:input_type -> tidegate.authority.v1.ListAssetsRequest
-	2, // 9: tidegate.authority.v1.AssetService.CreateAsset:output_type -> tidegate.authority.v1.CreateAssetResponse
-	4, // 10: tidegate.authority.v1.AssetService.ListAssets:output_type -> tidegate.authority.v1.ListAssetsResponse
-	9, // [9:11] is the sub-list for method output_type
-	7, // [7:9] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	6,  // 0: tidegate.authority.v1.CreateAssetRequest.labels:type_name -> tidegate.authority.v1.CreateAssetRequest.LabelsEntry
+	5,  // 1: tidegate.authority.v1.CreateAssetRequest.ssh:type_name -> tidegate.authority.v1.CreateAssetRequest.SSHAsset
+	7,  // 2: tidegate.authority.v1.CreateAssetResponse.labels:type_name -> tidegate.authority.v1.CreateAssetResponse.LabelsEntry
+	0,  // 3: tidegate.authority.v1.CreateAssetResponse.ssh:type_name -> tidegate.authority.v1.SSHTarget
+	8,  // 4: tidegate.authority.v1.ListAssetsResponse.assets:type_name -> tidegate.authority.v1.ListAssetsResponse.Asset
+	0,  // 5: tidegate.authority.v1.CreateAssetRequest.SSHAsset.target:type_name -> tidegate.authority.v1.SSHTarget
+	9,  // 6: tidegate.authority.v1.ListAssetsResponse.Asset.labels:type_name -> tidegate.authority.v1.ListAssetsResponse.Asset.LabelsEntry
+	0,  // 7: tidegate.authority.v1.ListAssetsResponse.Asset.ssh:type_name -> tidegate.authority.v1.SSHTarget
+	1,  // 8: tidegate.authority.v1.AssetService.CreateAsset:input_type -> tidegate.authority.v1.CreateAssetRequest
+	3,  // 9: tidegate.authority.v1.AssetService.ListAssets:input_type -> tidegate.authority.v1.ListAssetsRequest
+	2,  // 10: tidegate.authority.v1.AssetService.CreateAsset:output_type -> tidegate.authority.v1.CreateAssetResponse
+	4,  // 11: tidegate.authority.v1.AssetService.ListAssets:output_type -> tidegate.authority.v1.ListAssetsResponse
+	10, // [10:12] is the sub-list for method output_type
+	8,  // [8:10] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_tidegate_authority_v1_asset_proto_init() }
@@ -696,13 +749,15 @@ func file_tidegate_authority_v1_asset_proto_init() {
 	}
 	file_tidegate_authority_v1_asset_proto_msgTypes[1].OneofWrappers = []any{
 		(*CreateAssetRequest_Ssh)(nil),
-		(*CreateAssetRequest_SshPassword)(nil),
-		(*CreateAssetRequest_SshPrivateKey)(nil),
 	}
 	file_tidegate_authority_v1_asset_proto_msgTypes[2].OneofWrappers = []any{
 		(*CreateAssetResponse_Ssh)(nil),
 	}
-	file_tidegate_authority_v1_asset_proto_msgTypes[7].OneofWrappers = []any{
+	file_tidegate_authority_v1_asset_proto_msgTypes[5].OneofWrappers = []any{
+		(*CreateAssetRequest_SSHAsset_Password)(nil),
+		(*CreateAssetRequest_SSHAsset_PrivateKey)(nil),
+	}
+	file_tidegate_authority_v1_asset_proto_msgTypes[8].OneofWrappers = []any{
 		(*ListAssetsResponse_Asset_Ssh)(nil),
 	}
 	type x struct{}
@@ -711,7 +766,7 @@ func file_tidegate_authority_v1_asset_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_tidegate_authority_v1_asset_proto_rawDesc), len(file_tidegate_authority_v1_asset_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
