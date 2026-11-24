@@ -81,15 +81,15 @@ func bindingCommand(store connections.Store) *cli.Command {
 				Usage: "give a role of a project to a user and print the role, the user and the binding's ID",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						Name:  "project",
+						Name:  "project-name",
 						Usage: "name of the project that gets the binding",
 					},
 					&cli.StringFlag{
-						Name:  "role",
+						Name:  "role-name",
 						Usage: "name of the role of the project that the user gets",
 					},
 					&cli.StringFlag{
-						Name:  "user",
+						Name:  "user-name",
 						Usage: "name of the user who gets the role",
 					},
 				},
@@ -102,7 +102,7 @@ func bindingCommand(store connections.Store) *cli.Command {
 				Usage: "print the role, the user and the ID of every binding of a project",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						Name:  "project",
+						Name:  "project-name",
 						Usage: "name of the project whose bindings are listed",
 					},
 				},
@@ -119,16 +119,16 @@ func bindingCreate(ctx context.Context, cmd *cli.Command, store connections.Stor
 		return errors.New("want no arguments")
 	}
 
-	if cmd.String("project") == "" {
-		return errors.New("want a project, name it with --project")
+	if cmd.String("project-name") == "" {
+		return errors.New("want a project, name it with --project-name")
 	}
 
-	if cmd.String("role") == "" {
-		return errors.New("want a role, name it with --role")
+	if cmd.String("role-name") == "" {
+		return errors.New("want a role, name it with --role-name")
 	}
 
-	if cmd.String("user") == "" {
-		return errors.New("want a user, name them with --user")
+	if cmd.String("user-name") == "" {
+		return errors.New("want a user, name them with --user-name")
 	}
 
 	clients, connection, err := connectToCurrent(cmd, store)
@@ -137,9 +137,9 @@ func bindingCreate(ctx context.Context, cmd *cli.Command, store connections.Stor
 	}
 
 	response, err := clients.Binding().CreateBinding(ctx, connect.NewRequest(&authorityv1.CreateBindingRequest{
-		ProjectName: cmd.String("project"),
-		RoleName:    cmd.String("role"),
-		UserName:    cmd.String("user"),
+		ProjectName: cmd.String("project-name"),
+		RoleName:    cmd.String("role-name"),
+		UserName:    cmd.String("user-name"),
 	}))
 	if err != nil {
 		return callFailed("creating the binding", connection, err)
@@ -153,8 +153,8 @@ func bindingList(ctx context.Context, cmd *cli.Command, store connections.Store)
 		return errors.New("want no arguments")
 	}
 
-	if cmd.String("project") == "" {
-		return errors.New("want a project, name it with --project")
+	if cmd.String("project-name") == "" {
+		return errors.New("want a project, name it with --project-name")
 	}
 
 	clients, connection, err := connectToCurrent(cmd, store)
@@ -163,7 +163,7 @@ func bindingList(ctx context.Context, cmd *cli.Command, store connections.Store)
 	}
 
 	response, err := clients.Binding().ListBindings(ctx, connect.NewRequest(&authorityv1.ListBindingsRequest{
-		ProjectName: cmd.String("project"),
+		ProjectName: cmd.String("project-name"),
 	}))
 	if err != nil {
 		return callFailed("listing the bindings", connection, err)

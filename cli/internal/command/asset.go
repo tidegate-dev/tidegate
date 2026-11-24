@@ -143,7 +143,7 @@ func assetCommand(store connections.Store) *cli.Command {
 						DisableSliceFlagSeparator: true,
 						Flags: []cli.Flag{
 							&cli.StringFlag{
-								Name:  "project",
+								Name:  "project-name",
 								Usage: "name of the project that gets the asset",
 							},
 							&cli.StringFlag{
@@ -170,7 +170,7 @@ func assetCommand(store connections.Store) *cli.Command {
 				Usage: "print the name, the address, the labels and the ID of every asset of a project",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						Name:  "project",
+						Name:  "project-name",
 						Usage: "name of the project whose assets are listed",
 					},
 				},
@@ -187,8 +187,8 @@ func assetCreateSSH(ctx context.Context, cmd *cli.Command, store connections.Sto
 		return errors.New("want exactly one name")
 	}
 
-	if cmd.String("project") == "" {
-		return errors.New("want a project, name it with --project")
+	if cmd.String("project-name") == "" {
+		return errors.New("want a project, name it with --project-name")
 	}
 
 	host, port, err := parseAddress(cmd.String("address"))
@@ -212,7 +212,7 @@ func assetCreateSSH(ctx context.Context, cmd *cli.Command, store connections.Sto
 	}
 
 	response, err := clients.Asset().CreateAsset(ctx, connect.NewRequest(&authorityv1.CreateAssetRequest{
-		ProjectName: cmd.String("project"),
+		ProjectName: cmd.String("project-name"),
 		Name:        cmd.Args().First(),
 		Labels:      labels,
 		Target:      &authorityv1.CreateAssetRequest_Ssh{Ssh: &authorityv1.SSHTarget{Host: host, Port: port, HostKey: hostKey}},
@@ -229,8 +229,8 @@ func assetList(ctx context.Context, cmd *cli.Command, store connections.Store) e
 		return errors.New("want no arguments")
 	}
 
-	if cmd.String("project") == "" {
-		return errors.New("want a project, name it with --project")
+	if cmd.String("project-name") == "" {
+		return errors.New("want a project, name it with --project-name")
 	}
 
 	clients, connection, err := connectToCurrent(cmd, store)
@@ -239,7 +239,7 @@ func assetList(ctx context.Context, cmd *cli.Command, store connections.Store) e
 	}
 
 	response, err := clients.Asset().ListAssets(ctx, connect.NewRequest(&authorityv1.ListAssetsRequest{
-		ProjectName: cmd.String("project"),
+		ProjectName: cmd.String("project-name"),
 	}))
 	if err != nil {
 		return callFailed("listing the assets", connection, err)

@@ -54,7 +54,7 @@ func roleCommand(store connections.Store) *cli.Command {
 				ArgsUsage: "<name>",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						Name:  "project",
+						Name:  "project-name",
 						Usage: "name of the project that gets the role",
 					},
 					&cli.BoolFlag{
@@ -87,8 +87,8 @@ func roleCreate(ctx context.Context, cmd *cli.Command, store connections.Store) 
 		return errors.New("want exactly one name")
 	}
 
-	if cmd.String("project") == "" {
-		return errors.New("want a project, name it with --project")
+	if cmd.String("project-name") == "" {
+		return errors.New("want a project, name it with --project-name")
 	}
 
 	clients, connection, err := connectToCurrent(cmd, store)
@@ -97,7 +97,7 @@ func roleCreate(ctx context.Context, cmd *cli.Command, store connections.Store) 
 	}
 
 	response, err := clients.Role().CreateRole(ctx, connect.NewRequest(&authorityv1.CreateRoleRequest{
-		ProjectName: cmd.String("project"),
+		ProjectName: cmd.String("project-name"),
 		Name:        cmd.Args().First(),
 		Permissions: &authorityv1.ProjectPermissions{
 			CreateRoles:    cmd.Bool("create-roles"),

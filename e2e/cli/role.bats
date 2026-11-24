@@ -11,7 +11,7 @@ setup() {
     sign_in login "$TIDEGATE_TEST_AUTHORITY"
     tidegate project create "$project"
 
-    run tidegate role create --project "$project" operator
+    run tidegate role create --project-name "$project" operator
     [ "$status" -eq 0 ]
     [[ $output == operator$'\t'?* ]]
 }
@@ -21,7 +21,7 @@ setup() {
     tidegate project create "$project"
 
     while read -r flag field; do
-        run tidegate -o json role create --project "$project" "$flag" "role$flag"
+        run tidegate -o json role create --project-name "$project" "$flag" "role$flag"
         [ "$status" -eq 0 ]
         [ "$(jq -c '.permissions | map_values(select(.)) | keys' <<<"$output")" = "[\"$field\"]" ]
     done <<'FLAGS'
@@ -37,7 +37,7 @@ FLAGS
     tidegate project create "$project"
     project_id=$(tidegate -o json project list | jq -r --arg name "$project" '.projects[] | select(.name == $name) | .id')
 
-    run tidegate -o json role create --project "$project" operator
+    run tidegate -o json role create --project-name "$project" operator
     [ "$status" -eq 0 ]
     [ "$(jq -r .name <<<"$output")" = operator ]
     [ "$(jq -r .projectId <<<"$output")" = "$project_id" ]
@@ -47,9 +47,9 @@ FLAGS
 @test "role create fails for a name that another role of the project has" {
     sign_in login "$TIDEGATE_TEST_AUTHORITY"
     tidegate project create "$project"
-    tidegate role create --project "$project" operator
+    tidegate role create --project-name "$project" operator
 
-    run --separate-stderr tidegate role create --project "$project" operator
+    run --separate-stderr tidegate role create --project-name "$project" operator
     [ "$status" -eq 1 ]
     [ -z "$output" ]
     [[ $stderr == *"the role name is taken"* ]]
@@ -58,18 +58,18 @@ FLAGS
 @test "role create fails for a project that doesn't exist" {
     sign_in login "$TIDEGATE_TEST_AUTHORITY"
 
-    run --separate-stderr tidegate role create --project "$project" operator
+    run --separate-stderr tidegate role create --project-name "$project" operator
     [ "$status" -eq 1 ]
     [ -z "$output" ]
     [[ $stderr == *"project not found"* ]]
 }
 
 @test "role create wants exactly one name" {
-    run --separate-stderr tidegate role create --project "$project"
+    run --separate-stderr tidegate role create --project-name "$project"
     [ "$status" -eq 1 ]
     [[ $stderr == *"want exactly one name"* ]]
 
-    run --separate-stderr tidegate role create --project "$project" first second
+    run --separate-stderr tidegate role create --project-name "$project" first second
     [ "$status" -eq 1 ]
     [[ $stderr == *"want exactly one name"* ]]
 }
@@ -78,5 +78,5 @@ FLAGS
     run --separate-stderr tidegate role create operator
     [ "$status" -eq 1 ]
     [ -z "$output" ]
-    [[ $stderr == *"want a project, name it with --project"* ]]
+    [[ $stderr == *"want a project, name it with --project-name"* ]]
 }
