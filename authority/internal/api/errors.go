@@ -37,6 +37,12 @@ func clientError(err error) error {
 		return connect.NewError(connect.CodeAlreadyExists, model.ErrAssetNameTaken)
 	case errors.Is(err, model.ErrBindingExists):
 		return connect.NewError(connect.CodeAlreadyExists, model.ErrBindingExists)
+	case errors.Is(err, service.ErrSSHPasswordEmpty):
+		return connect.NewError(connect.CodeInvalidArgument, service.ErrSSHPasswordEmpty)
+	case errors.Is(err, service.ErrSSHPrivateKeyInvalid):
+		return connect.NewError(connect.CodeInvalidArgument, service.ErrSSHPrivateKeyInvalid)
+	case errors.Is(err, service.ErrSSHPrivateKeyEncrypted):
+		return connect.NewError(connect.CodeInvalidArgument, service.ErrSSHPrivateKeyEncrypted)
 	default:
 		return err
 	}

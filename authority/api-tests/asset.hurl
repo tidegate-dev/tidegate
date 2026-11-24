@@ -101,3 +101,42 @@ jsonpath "$.assets[0].name" == "bastion"
 jsonpath "$.assets[0].labels.env" == "prod"
 jsonpath "$.assets[0].ssh.host" == "bastion.example"
 jsonpath "$.assets[0].ssh.port" == 2222
+jsonpath "$.assets[0].ssh.userName" not exists
+
+POST {{authority}}/tidegate.authority.v1.AssetService/CreateAsset
+Content-Type: application/json
+Authorization: Bearer {{token}}
+{"projectName": "api-tests-assets", "name": "database", "ssh": {"host": "database.example", "port": 22, "hostKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGVtcHR5", "userName": "deploy"}}
+HTTP 400
+[Asserts]
+jsonpath "$.code" == "invalid_argument"
+jsonpath "$.message" contains "must be set together"
+
+POST {{authority}}/tidegate.authority.v1.AssetService/CreateAsset
+Content-Type: application/json
+Authorization: Bearer {{token}}
+{"projectName": "api-tests-assets", "name": "database", "ssh": {"host": "database.example", "port": 22, "hostKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGVtcHR5", "userName": "deploy"}, "sshPrivateKey": "not a private key"}
+HTTP 400
+[Asserts]
+jsonpath "$.code" == "invalid_argument"
+jsonpath "$.message" == "the SSH private key isn't a private key that tidegate can read"
+
+POST {{authority}}/tidegate.authority.v1.AssetService/CreateAsset
+Content-Type: application/json
+Authorization: Bearer {{token}}
+{"projectName": "api-tests-assets", "name": "database", "ssh": {"host": "database.example", "port": 22, "hostKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGVtcHR5", "userName": "deploy"}, "sshPassword": "the password of deploy"}
+HTTP 200
+[Asserts]
+jsonpath "$.name" == "database"
+jsonpath "$.ssh.userName" == "deploy"
+jsonpath "$.sshPassword" not exists
+
+POST {{authority}}/tidegate.authority.v1.AssetService/ListAssets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+{"projectName": "api-tests-assets"}
+HTTP 200
+[Asserts]
+jsonpath "$.assets" count == 2
+jsonpath "$.assets[1].name" == "database"
+jsonpath "$.assets[1].ssh.userName" == "deploy"

@@ -219,6 +219,70 @@ func TestCreateAssetRequestRefusesWhatBreaksARule(t *testing.T) {
 			},
 			"labels",
 		},
+		"user name without a password or private key": {
+			func(request *authorityv1.CreateAssetRequest) { request.GetSsh().UserName = "deploy" },
+			"must be set together",
+		},
+		"password without a user name": {
+			func(request *authorityv1.CreateAssetRequest) {
+				request.SshSecret = &authorityv1.CreateAssetRequest_SshPassword{SshPassword: "a password"}
+			},
+			"must be set together",
+		},
+		"private key without a user name": {
+			func(request *authorityv1.CreateAssetRequest) {
+				request.SshSecret = &authorityv1.CreateAssetRequest_SshPrivateKey{SshPrivateKey: "a private key"}
+			},
+			"must be set together",
+		},
+		"user name with a space": {
+			func(request *authorityv1.CreateAssetRequest) { setSSHLogin(request, "de ploy") },
+			"ssh.user_name",
+		},
+		"user name with a line break": {
+			func(request *authorityv1.CreateAssetRequest) { setSSHLogin(request, "deploy\n") },
+			"ssh.user_name",
+		},
+		"user name with an escape sequence": {
+			func(request *authorityv1.CreateAssetRequest) { setSSHLogin(request, "a\x1b[2Jb") },
+			"ssh.user_name",
+		},
+		"user name that starts with a dash": {
+			func(request *authorityv1.CreateAssetRequest) { setSSHLogin(request, "-oProxyCommand=x") },
+			"ssh.user_name",
+		},
+		"user name with 65 characters": {
+			func(request *authorityv1.CreateAssetRequest) { setSSHLogin(request, strings.Repeat("u", 65)) },
+			"ssh.user_name",
+		},
+		"empty password": {
+			func(request *authorityv1.CreateAssetRequest) {
+				setSSHLogin(request, "deploy")
+				request.SshSecret = &authorityv1.CreateAssetRequest_SshPassword{}
+			},
+			"ssh_password",
+		},
+		"password of 1025 bytes": {
+			func(request *authorityv1.CreateAssetRequest) {
+				setSSHLogin(request, "deploy")
+				request.SshSecret = &authorityv1.CreateAssetRequest_SshPassword{SshPassword: strings.Repeat("p", 1025)}
+			},
+			"ssh_password",
+		},
+		"empty private key": {
+			func(request *authorityv1.CreateAssetRequest) {
+				setSSHLogin(request, "deploy")
+				request.SshSecret = &authorityv1.CreateAssetRequest_SshPrivateKey{}
+			},
+			"ssh_private_key",
+		},
+		"private key of 16385 bytes": {
+			func(request *authorityv1.CreateAssetRequest) {
+				setSSHLogin(request, "deploy")
+				request.SshSecret = &authorityv1.CreateAssetRequest_SshPrivateKey{SshPrivateKey: strings.Repeat("k", 16385)}
+			},
+			"ssh_private_key",
+		},
 	} {
 		t.Run(description, func(t *testing.T) {
 			t.Parallel()
@@ -436,6 +500,146 @@ func validCreateAssetRequest() *authorityv1.CreateAssetRequest {
 			Port:    22,
 			HostKey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGVtcHR5",
 		}},
+	}
+}
+
+// setSSHLogin gives the request's SSH target the user name and the request a
+// password.
+func setSSHLogin(request *authorityv1.CreateAssetRequest, userName string) {
+	request.GetSsh().UserName = userName
+	request.SshSecret = &authorityv1.CreateAssetRequest_SshPassword{SshPassword: "a password"}
+}
+
+func TestCreateAssetRequestAcceptsAnSSHHostWithALogin(t *testing.T) {
+	t.Parallel()
+
+	for description, change := range map[string]func(request *authorityv1.CreateAssetRequest){
+		"password": func(request *authorityv1.CreateAssetRequest) { setSSHLogin(request, "deploy") },
+		"private key": func(request *authorityv1.CreateAssetRequest) {
+			setSSHLogin(request, "deploy")
+			request.SshSecret = &authorityv1.CreateAssetRequest_SshPrivateKey{SshPrivateKey: "a private key"}
+		},
+		"user name of 64 characters": func(request *authorityv1.CreateAssetRequest) {
+			setSSHLogin(request, strings.Repeat("u", 64))
+		},
+		"user name with a domain": func(request *authorityv1.CreateAssetRequest) {
+			setSSHLogin(request, `EXAMPLE\deploy@example.com`)
+		},
+		"password of 1024 bytes": func(request *authorityv1.CreateAssetRequest) {
+			setSSHLogin(request, "deploy")
+			request.SshSecret = &authorityv1.CreateAssetRequest_SshPassword{SshPassword: strings.Repeat("p", 1024)}
+		},
+		"private key of 16384 bytes": func(request *authorityv1.CreateAssetRequest) {
+			setSSHLogin(request, "deploy")
+			request.SshSecret = &authorityv1.CreateAssetRequest_SshPrivateKey{SshPrivateKey: strings.Repeat("k", 16384)}
+		},
+	} {
+		t.Run(description, func(t *testing.T) {
+			t.Parallel()
+
+			// arrange
+			request := validCreateAssetRequest()
+			change(request)
+
+			// act
+			err := validationError(t, request)
+
+			// assert
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestNewSSHLoginInputTakesTheUserNameAndThePasswordFromTheRequest(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	request := validCreateAssetRequest()
+	setSSHLogin(request, "deploy")
+
+	// act
+	login := newSSHLoginInput(request)
+
+	// assert
+	require.NotNil(t, login)
+	assert.Equal(t, "deploy", login.UserName)
+	assert.Equal(t, model.SSHLoginKindPassword, login.Kind)
+	assert.Equal(t, []byte("a password"), login.Value.Reveal())
+}
+
+func TestNewSSHLoginInputTakesTheUserNameAndThePrivateKeyFromTheRequest(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	request := validCreateAssetRequest()
+	setSSHLogin(request, "deploy")
+	request.SshSecret = &authorityv1.CreateAssetRequest_SshPrivateKey{SshPrivateKey: "a private key"}
+
+	// act
+	login := newSSHLoginInput(request)
+
+	// assert
+	require.NotNil(t, login)
+	assert.Equal(t, "deploy", login.UserName)
+	assert.Equal(t, model.SSHLoginKindPrivateKey, login.Kind)
+	assert.Equal(t, []byte("a private key"), login.Value.Reveal())
+}
+
+func TestNewSSHLoginInputIsNilForARequestWithoutAPasswordOrPrivateKey(t *testing.T) {
+	t.Parallel()
+
+	// act
+	login := newSSHLoginInput(validCreateAssetRequest())
+
+	// assert
+	assert.Nil(t, login)
+}
+
+func TestNewCreateAssetResponseHoldsTheUserNameOfTheLogin(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	asset := assetWithLogin()
+
+	// act
+	response, err := newCreateAssetResponse(asset)
+
+	// assert
+	require.NoError(t, err)
+	assert.Equal(t, "deploy", response.GetSsh().GetUserName())
+}
+
+func TestNewListedAssetHoldsTheUserNameOfTheLogin(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	asset := assetWithLogin()
+
+	// act
+	message, err := newListedAsset(asset)
+
+	// assert
+	require.NoError(t, err)
+	assert.Equal(t, "deploy", message.GetSsh().GetUserName())
+}
+
+func assetWithLogin() *model.Asset {
+	return &model.Asset{
+		ID:        model.AssetID{1},
+		ProjectID: model.ProjectID{2},
+		Name:      "bastion",
+		Kind:      model.AssetKindSSH,
+		SSH: &model.SSHTarget{
+			Host:    "bastion.example",
+			Port:    2222,
+			HostKey: "ssh-ed25519 AAAA",
+			Login: &model.SSHLogin{
+				UserName:   "deploy",
+				EngineName: "tidegate",
+				Reference:  "reference-1",
+				Kind:       model.SSHLoginKindPassword,
+			},
+		},
 	}
 }
 

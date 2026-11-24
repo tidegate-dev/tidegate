@@ -10,6 +10,7 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
+	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 // AssetService creates and lists assets.
@@ -38,7 +39,7 @@ func (s *AssetService) CreateAsset(
 			Host:    target.Ssh.GetHost(),
 			Port:    uint16(target.Ssh.GetPort()), //nolint:gosec // The API definition allows 1 to 65535.
 			HostKey: target.Ssh.GetHostKey(),
-		}, nil)
+		}, newSSHLoginInput(req.Msg))
 	default:
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("the asset needs a target of a known kind"))
 	}
@@ -107,14 +108,39 @@ func newListedAsset(asset *model.Asset) (*authorityv1.ListAssetsResponse_Asset, 
 	}, nil
 }
 
+func newSSHLoginInput(msg *authorityv1.CreateAssetRequest) *service.SSHLoginInput {
+	switch value := msg.GetSshSecret().(type) {
+	case *authorityv1.CreateAssetRequest_SshPassword:
+		return &service.SSHLoginInput{
+			UserName: msg.GetSsh().GetUserName(),
+			Kind:     model.SSHLoginKindPassword,
+			Value:    secret.NewBytes([]byte(value.SshPassword)),
+		}
+	case *authorityv1.CreateAssetRequest_SshPrivateKey:
+		return &service.SSHLoginInput{
+			UserName: msg.GetSsh().GetUserName(),
+			Kind:     model.SSHLoginKindPrivateKey,
+			Value:    secret.NewBytes([]byte(value.SshPrivateKey)),
+		}
+	default:
+		return nil
+	}
+}
+
 func sshTarget(asset *model.Asset) (*authorityv1.SSHTarget, error) {
 	if asset.SSH == nil {
 		return nil, fmt.Errorf("asset %s has no target", asset.ID)
 	}
 
-	return &authorityv1.SSHTarget{
+	target := &authorityv1.SSHTarget{
 		Host:    asset.SSH.Host,
 		Port:    uint32(asset.SSH.Port),
 		HostKey: asset.SSH.HostKey,
-	}, nil
+	}
+
+	if asset.SSH.Login != nil {
+		target.UserName = asset.SSH.Login.UserName
+	}
+
+	return target, nil
 }

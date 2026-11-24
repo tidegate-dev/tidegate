@@ -32,18 +32,21 @@ func TestClientErrorGivesEachErrorItsCode(t *testing.T) {
 		err  error
 		code connect.Code
 	}{
-		"password too long":  {fmt.Errorf("checking: %w", password.ErrTooLong), connect.CodeInvalidArgument},
-		"not signed in":      {fmt.Errorf("%w: expired token", service.ErrNotSignedIn), connect.CodeUnauthenticated},
-		"busy":               {service.ErrBusy, connect.CodeUnavailable},
-		"project name taken": {model.ErrProjectNameTaken, connect.CodeAlreadyExists},
-		"project not found":  {fmt.Errorf("reading: %w", model.ErrProjectNotFound), connect.CodeNotFound},
-		"role name taken":    {model.ErrRoleNameTaken, connect.CodeAlreadyExists},
-		"role not found":     {fmt.Errorf("reading: %w", model.ErrRoleNotFound), connect.CodeNotFound},
-		"asset name taken":   {model.ErrAssetNameTaken, connect.CodeAlreadyExists},
-		"binding exists":     {model.ErrBindingExists, connect.CodeAlreadyExists},
-		"user not found":     {fmt.Errorf("reading: %w", model.ErrUserNotFound), connect.CodeNotFound},
-		"canceled":           {context.Canceled, connect.CodeUnknown},
-		"anything else":      {errors.New("database down"), connect.CodeUnknown},
+		"password too long":         {fmt.Errorf("checking: %w", password.ErrTooLong), connect.CodeInvalidArgument},
+		"not signed in":             {fmt.Errorf("%w: expired token", service.ErrNotSignedIn), connect.CodeUnauthenticated},
+		"busy":                      {service.ErrBusy, connect.CodeUnavailable},
+		"project name taken":        {model.ErrProjectNameTaken, connect.CodeAlreadyExists},
+		"project not found":         {fmt.Errorf("reading: %w", model.ErrProjectNotFound), connect.CodeNotFound},
+		"role name taken":           {model.ErrRoleNameTaken, connect.CodeAlreadyExists},
+		"role not found":            {fmt.Errorf("reading: %w", model.ErrRoleNotFound), connect.CodeNotFound},
+		"asset name taken":          {model.ErrAssetNameTaken, connect.CodeAlreadyExists},
+		"binding exists":            {model.ErrBindingExists, connect.CodeAlreadyExists},
+		"empty SSH password":        {service.ErrSSHPasswordEmpty, connect.CodeInvalidArgument},
+		"invalid SSH private key":   {service.ErrSSHPrivateKeyInvalid, connect.CodeInvalidArgument},
+		"encrypted SSH private key": {service.ErrSSHPrivateKeyEncrypted, connect.CodeInvalidArgument},
+		"user not found":            {fmt.Errorf("reading: %w", model.ErrUserNotFound), connect.CodeNotFound},
+		"canceled":                  {context.Canceled, connect.CodeUnknown},
+		"anything else":             {errors.New("database down"), connect.CodeUnknown},
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()

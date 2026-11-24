@@ -62,6 +62,8 @@ CreateAssetRequest is the input of AssetService.CreateAsset.
 | `name` | `string` | Name is the name of the new asset. | Starts with a lowercase letter, goes on with lowercase letters, digits and dashes, and ends with a letter or digit. At most 63 characters. |
 | `labels` | `repeated tidegate.authority.v1.CreateAssetRequest.LabelsEntry` | Labels are the labels of the new asset. | At most 64 labels. A key is an optional DNS name and a slash, followed by a name. The DNS name has at most 253 characters, in lowercase parts of at most 63. A name has at most 63 letters, digits, dashes, underscores and dots, and starts and ends with a letter or digit. A value is empty or follows the rule for a name. |
 | `ssh` | `tidegate.authority.v1.SSHTarget` | SSH makes the asset a host that tidegate reaches over SSH. |  |
+| `ssh_password` | `string` | SSHPassword is the user's password on the host. | Not empty, at most 1024 bytes. |
+| `ssh_private_key` | `string` | SSHPrivateKey is a private key of the user in PEM, without a passphrase. A key that tidegate can't read or that has a passphrase fails with invalid_argument. | Not empty, at most 16384 bytes. |
 
 ### tidegate.authority.v1.CreateAssetRequest.LabelsEntry { #tidegate.authority.v1.CreateAssetRequest.LabelsEntry }
 
@@ -140,6 +142,7 @@ its identity with.
 | `host` | `string` | Host is the host's DNS name or IP address. | A DNS name of at most 253 characters, or an IPv4 or IPv6 address without brackets and without a zone. |
 | `port` | `uint32` | Port is the TCP port that the host's SSH server listens on. | 1 to 65535. |
 | `host_key` | `string` | HostKey is the host's public key as the key type and the key in base64, like "ssh-ed25519 AAAAC3...". | The key type, one space and the key in base64 with its padding. The key type is ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521 or ssh-rsa. At most 8192 characters. |
+| `user_name` | `string` | UserName is the user that tidegate logs in as on the host. It is empty for a host without a login. | At most 64 characters, without spaces and control characters. It doesn't start with a dash. |
 
 ### tidegate.authority.v1.CreateBindingRequest { #tidegate.authority.v1.CreateBindingRequest }
 
