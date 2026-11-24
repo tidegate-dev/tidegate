@@ -48,13 +48,17 @@ message SSHTarget {
     message: "must be the key type ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521 or ssh-rsa, one space and the key in base64, and have at most 8192 characters"
     expression: "this.size() <= 8192 && this.matches('^(ssh-ed25519|ecdsa-sha2-nistp(256|384|521)|ssh-rsa) ([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$')"
   }];
-  // UserName is the user that tidegate logs in as on the host.
+  // UserName is the user that tidegate logs in as on the host, like "deploy",
+  // "deploy@example.com" or "EXAMPLE\deploy".
   //
-  // Rules: 1 to 64 characters, without spaces and control characters. It
-  // doesn't start with a dash.
+  // Rules: Letters from A to Z in uppercase and lowercase, digits,
+  // underscores, dots, dashes and at signs, without a dash at the start.
+  // These are the characters that useradd(8) allows, and the at sign of a
+  // name with a domain. One backslash may separate a Windows domain from the
+  // name, and the domain follows the same rule. At most 64 characters.
   string user_name = 4 [(buf.validate.field).string = {
     max_len: 64
-    pattern: "^[^\\s\\p{Z}\\p{Cc}-][^\\s\\p{Z}\\p{Cc}]*$"
+    pattern: "^([A-Za-z0-9_.@][A-Za-z0-9_.@-]*\\\\)?[A-Za-z0-9_.@][A-Za-z0-9_.@-]*$"
   }];
 }
 

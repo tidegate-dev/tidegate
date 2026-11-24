@@ -269,6 +269,48 @@ func TestCreateAssetRequestRefusesWhatBreaksARule(t *testing.T) {
 			},
 			"ssh.target.user_name",
 		},
+		"user name with a zero-width space": {
+			func(request *authorityv1.CreateAssetRequest) {
+				request.GetSsh().GetTarget().UserName = "de\u200bploy"
+			},
+			"ssh.target.user_name",
+		},
+		"user name with a right-to-left override": {
+			func(request *authorityv1.CreateAssetRequest) {
+				request.GetSsh().GetTarget().UserName = "de\u202eploy"
+			},
+			"ssh.target.user_name",
+		},
+		"user name with a letter outside ASCII": {
+			func(request *authorityv1.CreateAssetRequest) {
+				request.GetSsh().GetTarget().UserName = "d\u00ebploy"
+			},
+			"ssh.target.user_name",
+		},
+		"user name with a semicolon": {
+			func(request *authorityv1.CreateAssetRequest) {
+				request.GetSsh().GetTarget().UserName = "deploy;id"
+			},
+			"ssh.target.user_name",
+		},
+		"user name with two backslashes": {
+			func(request *authorityv1.CreateAssetRequest) {
+				request.GetSsh().GetTarget().UserName = `EXAMPLE\EU\deploy`
+			},
+			"ssh.target.user_name",
+		},
+		"user name that ends with a backslash": {
+			func(request *authorityv1.CreateAssetRequest) {
+				request.GetSsh().GetTarget().UserName = `EXAMPLE\`
+			},
+			"ssh.target.user_name",
+		},
+		"domain that starts with a dash": {
+			func(request *authorityv1.CreateAssetRequest) {
+				request.GetSsh().GetTarget().UserName = `-EXAMPLE\deploy`
+			},
+			"ssh.target.user_name",
+		},
 		"empty password": {
 			func(request *authorityv1.CreateAssetRequest) {
 				request.GetSsh().Secret = &authorityv1.CreateAssetRequest_SSHAsset_Password{}
@@ -530,8 +572,14 @@ func TestCreateAssetRequestAcceptsAUserNameWithAPasswordOrAPrivateKey(t *testing
 		"user name of 64 characters": func(request *authorityv1.CreateAssetRequest) {
 			request.GetSsh().GetTarget().UserName = strings.Repeat("u", 64)
 		},
-		"user name with a domain": func(request *authorityv1.CreateAssetRequest) {
-			request.GetSsh().GetTarget().UserName = `EXAMPLE\deploy@example.com`
+		"user name with a Windows domain": func(request *authorityv1.CreateAssetRequest) {
+			request.GetSsh().GetTarget().UserName = `EXAMPLE\deploy`
+		},
+		"user name with an at sign": func(request *authorityv1.CreateAssetRequest) {
+			request.GetSsh().GetTarget().UserName = "deploy@example.com"
+		},
+		"user name with a dot, an underscore and a dash": func(request *authorityv1.CreateAssetRequest) {
+			request.GetSsh().GetTarget().UserName = "svc_deploy-1.prod"
 		},
 		"password of 1024 bytes": func(request *authorityv1.CreateAssetRequest) {
 			request.GetSsh().Secret = &authorityv1.CreateAssetRequest_SSHAsset_Password{Password: strings.Repeat("p", 1024)}
