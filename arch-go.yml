@@ -43,6 +43,11 @@ dependenciesRules:
       internal:
         - '^github.com/tidegate-dev/tidegate/internal/secret$'
 
+  - package: '^github.com/tidegate-dev/tidegate/authority/internal/sshkey$'
+    shouldOnlyDependsOn:
+      internal:
+        - '^github.com/tidegate-dev/tidegate/internal/secret$'
+
   - package: '^github.com/tidegate-dev/tidegate/authority/internal/config$'
     shouldOnlyDependsOn:
       internal:
@@ -92,6 +97,7 @@ dependenciesRules:
       internal:
         - '^github.com/tidegate-dev/tidegate/authority/internal/model$'
         - '^github.com/tidegate-dev/tidegate/authority/internal/password$'
+        - '^github.com/tidegate-dev/tidegate/authority/internal/sshkey$'
         - '^github.com/tidegate-dev/tidegate/internal/logging$'
         - '^github.com/tidegate-dev/tidegate/internal/secret$'
         - '^github.com/tidegate-dev/tidegate/internal/secretengine$'
@@ -106,6 +112,7 @@ dependenciesRules:
         - '^github.com/tidegate-dev/tidegate/authority/internal/service$'
         - '^github.com/tidegate-dev/tidegate/authority/internal/model$'
         - '^github.com/tidegate-dev/tidegate/authority/internal/password$'
+        - '^github.com/tidegate-dev/tidegate/authority/internal/sshkey$'
         - '^github.com/tidegate-dev/tidegate/gen.**'
         - '^github.com/tidegate-dev/tidegate/internal/logging$'
         - '^github.com/tidegate-dev/tidegate/internal/secret$'

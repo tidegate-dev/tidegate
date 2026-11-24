@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"golang.org/x/crypto/ssh"
-
 	"github.com/tidegate-dev/tidegate/authority/internal/model"
+	"github.com/tidegate-dev/tidegate/authority/internal/sshkey"
 	"github.com/tidegate-dev/tidegate/internal/logging"
 	"github.com/tidegate-dev/tidegate/internal/secret"
 	"github.com/tidegate-dev/tidegate/internal/secretengine"
@@ -16,17 +15,8 @@ import (
 
 const deleteStoredValueTimeout = 10 * time.Second
 
-var (
-	// ErrSSHPasswordEmpty means the password for an SSH target has no
-	// characters.
-	ErrSSHPasswordEmpty = errors.New("the SSH password is empty")
-	// ErrSSHPrivateKeyInvalid means the private key for an SSH target isn't a
-	// private key in a format that tidegate reads.
-	ErrSSHPrivateKeyInvalid = errors.New("the SSH private key isn't a private key that tidegate can read")
-	// ErrSSHPrivateKeyEncrypted means the private key for an SSH target needs
-	// a passphrase.
-	ErrSSHPrivateKeyEncrypted = errors.New("the SSH private key has a passphrase, which tidegate can't use")
-)
+// ErrSSHPasswordEmpty means the password for an SSH target has no characters.
+var ErrSSHPasswordEmpty = errors.New("the SSH password is empty")
 
 // AssetLister lists the assets of a project.
 type AssetLister interface {
@@ -69,8 +59,8 @@ func NewAssets(
 // projectName and returns it. It stores the password or private key from
 // secretInput in the secret engine and records on the asset where it is.
 //
-// It returns ErrSSHPasswordEmpty, ErrSSHPrivateKeyInvalid or
-// ErrSSHPrivateKeyEncrypted for a password or private key that tidegate
+// It returns ErrSSHPasswordEmpty, sshkey.ErrPrivateKeyInvalid or
+// sshkey.ErrPrivateKeyEncrypted for a password or private key that tidegate
 // can't use, model.ErrProjectNotFound if no project has that name, and
 // model.ErrAssetNameTaken if another asset of the project has the name. The
 // API checks the form of every other value before it calls CreateSSH.
@@ -144,18 +134,7 @@ func checkSSHSecretInput(secretInput SSHSecretInput) error {
 
 		return nil
 	case model.SSHSecretKindPrivateKey:
-		_, err := ssh.ParseRawPrivateKey(secretInput.Value.Reveal())
-
-		var passphraseMissing *ssh.PassphraseMissingError
-		if errors.As(err, &passphraseMissing) {
-			return ErrSSHPrivateKeyEncrypted
-		}
-
-		if err != nil {
-			return ErrSSHPrivateKeyInvalid
-		}
-
-		return nil
+		return sshkey.CheckPrivateKey(secretInput.Value)
 	default:
 		return fmt.Errorf("unknown SSH secret kind %q", secretInput.Kind)
 	}

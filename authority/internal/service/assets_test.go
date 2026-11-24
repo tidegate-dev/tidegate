@@ -14,6 +14,7 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/model"
+	"github.com/tidegate-dev/tidegate/authority/internal/sshkey"
 	"github.com/tidegate-dev/tidegate/authority/internal/storetest"
 	"github.com/tidegate-dev/tidegate/internal/secret"
 	"github.com/tidegate-dev/tidegate/internal/secretengine"
@@ -130,23 +131,23 @@ var _ = Describe("Assets", func() {
 				Expect(engine.values).To(Equal(map[secretengine.Reference][]byte{"reference-1": privateKey}))
 			})
 
-			It("returns ErrSSHPrivateKeyEncrypted for a private key with a passphrase and stores nothing", func(ctx SpecContext) {
+			It("returns ErrPrivateKeyEncrypted for a private key with a passphrase and stores nothing", func(ctx SpecContext) {
 				secretInput.Kind = model.SSHSecretKindPrivateKey
 				secretInput.Value = secret.NewBytes(newPrivateKey("a passphrase"))
 
 				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, secretInput)
 
-				Expect(err).To(MatchError(ErrSSHPrivateKeyEncrypted))
+				Expect(err).To(MatchError(sshkey.ErrPrivateKeyEncrypted))
 				Expect(engine.values).To(BeEmpty())
 				Expect(assets.List(ctx, "payments")).To(BeEmpty())
 			})
 
-			It("returns ErrSSHPrivateKeyInvalid for a value that isn't a private key and stores nothing", func(ctx SpecContext) {
+			It("returns ErrPrivateKeyInvalid for a value that isn't a private key and stores nothing", func(ctx SpecContext) {
 				secretInput.Kind = model.SSHSecretKindPrivateKey
 
 				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, secretInput)
 
-				Expect(err).To(MatchError(ErrSSHPrivateKeyInvalid))
+				Expect(err).To(MatchError(sshkey.ErrPrivateKeyInvalid))
 				Expect(engine.values).To(BeEmpty())
 				Expect(assets.List(ctx, "payments")).To(BeEmpty())
 			})

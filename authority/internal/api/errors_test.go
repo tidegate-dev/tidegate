@@ -12,6 +12,7 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/authority/internal/password"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
+	"github.com/tidegate-dev/tidegate/authority/internal/sshkey"
 )
 
 func TestClientErrorLeavesOutTheReasonOfWrongCredentials(t *testing.T) {
@@ -42,8 +43,8 @@ func TestClientErrorGivesEachErrorItsCode(t *testing.T) {
 		"asset name taken":          {model.ErrAssetNameTaken, connect.CodeAlreadyExists},
 		"binding exists":            {model.ErrBindingExists, connect.CodeAlreadyExists},
 		"empty SSH password":        {service.ErrSSHPasswordEmpty, connect.CodeInvalidArgument},
-		"invalid SSH private key":   {service.ErrSSHPrivateKeyInvalid, connect.CodeInvalidArgument},
-		"encrypted SSH private key": {service.ErrSSHPrivateKeyEncrypted, connect.CodeInvalidArgument},
+		"invalid SSH private key":   {sshkey.ErrPrivateKeyInvalid, connect.CodeInvalidArgument},
+		"encrypted SSH private key": {sshkey.ErrPrivateKeyEncrypted, connect.CodeInvalidArgument},
 		"user not found":            {fmt.Errorf("reading: %w", model.ErrUserNotFound), connect.CodeNotFound},
 		"canceled":                  {context.Canceled, connect.CodeUnknown},
 		"anything else":             {errors.New("database down"), connect.CodeUnknown},
