@@ -46,6 +46,21 @@ func TestByNameReturnsTheEngineWithThatName(t *testing.T) {
 	assert.Same(t, second, engine)
 }
 
+func TestByNameIgnoresAnEngineThatWasAddedToTheMapAfterNewEngines(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	enginesByName := map[string]secretengine.Engine{"first": &fakeEngine{label: "first"}}
+	engines := secretengine.NewEngines(enginesByName)
+	enginesByName["second"] = &fakeEngine{label: "second"}
+
+	// act
+	_, err := engines.ByName("second")
+
+	// assert
+	require.ErrorIs(t, err, secretengine.ErrUnknownEngine)
+}
+
 func TestByNameReturnsErrUnknownEngineForANameWithoutAnEngine(t *testing.T) {
 	t.Parallel()
 
