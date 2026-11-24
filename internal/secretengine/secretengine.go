@@ -1,5 +1,5 @@
-// Package secretengine describes a place that stores secret values, like the
-// password or the private key that logs in to an SSH host.
+// Package secretengine has the interface of a store for secret values, like
+// the password or the private key for an SSH host.
 package secretengine
 
 import (
@@ -9,10 +9,10 @@ import (
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
-// ErrNotFound means that an engine holds no secret under a reference.
+// ErrNotFound means that an engine holds no value under a reference.
 var ErrNotFound = errors.New("secret not found")
 
-// Reference names one stored secret within the engine that returned it.
+// Reference names one stored value within the engine that returned it.
 type Reference string
 
 // Engine stores secret values and returns them by reference. It doesn't look

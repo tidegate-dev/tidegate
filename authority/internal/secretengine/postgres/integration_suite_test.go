@@ -18,7 +18,6 @@ func TestIntegration(t *testing.T) {
 	RunSpecs(t, "postgres secret engine integration")
 }
 
-// newPool returns a pool on an empty database.
 func newPool(ctx context.Context) *pgxpool.Pool {
 	GinkgoHelper()
 

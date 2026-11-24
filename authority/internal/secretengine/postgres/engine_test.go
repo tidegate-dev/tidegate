@@ -86,8 +86,6 @@ var _ = Describe("Engine", func() {
 	})
 })
 
-// newEngine returns an engine on an empty database that has the engine's
-// schema.
 func newEngine(ctx context.Context) secretengine.Engine {
 	GinkgoHelper()
 

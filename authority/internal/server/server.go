@@ -24,8 +24,7 @@ import (
 
 const shutdownTimeout = 10 * time.Second
 
-// Assets store this name next to each reference, so changing it needs a
-// migration.
+// Assets store this name, so changing it needs a migration.
 const builtInEngineName = "tidegate"
 
 // Run serves the authority's APIs and metrics until ctx ends or a server
@@ -122,9 +121,8 @@ func openDatabase(ctx context.Context, cfg config.Database) (*pgxpool.Pool, erro
 	return db.OpenMigrated(ctx, cfg.URL)
 }
 
-// MigrateDatabase connects to the database at url and applies every migration
-// of the authority that it doesn't have yet. Then it creates the schema of
-// the Postgres secret engine if the database doesn't have it yet.
+// MigrateDatabase applies the authority's migrations to the database at url.
+// Then it creates the schema of the Postgres secret engine, if it's missing.
 func MigrateDatabase(ctx context.Context, url string) error {
 	pool, err := db.Open(ctx, url)
 	if err != nil {

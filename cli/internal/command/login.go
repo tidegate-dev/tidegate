@@ -159,8 +159,6 @@ func readCredentials(ctx context.Context, in io.Reader, prompts io.Writer) (stri
 	return userName, password, nil
 }
 
-// readPassword asks for a password with prompt on a terminal. Otherwise it
-// reads the password from the next line of the input.
 func readPassword(ctx context.Context, tty *terminal.Terminal, prompt string) (string, error) {
 	password, err := tty.ReadSecret(ctx, prompt)
 	if errors.Is(err, io.EOF) {

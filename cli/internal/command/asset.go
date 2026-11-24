@@ -270,8 +270,6 @@ func assetCreateSSH(ctx context.Context, cmd *cli.Command, store connections.Sto
 	return printResult(cmd, newAssetResult(response.Msg))
 }
 
-// checkSSHSecretFlags fails unless exactly one of --password and
-// --private-key-file is given.
 func checkSSHSecretFlags(askForPassword bool, privateKeyFile string) error {
 	switch {
 	case askForPassword && privateKeyFile != "":
@@ -283,10 +281,6 @@ func checkSSHSecretFlags(askForPassword bool, privateKeyFile string) error {
 	}
 }
 
-// setSSHSecret puts what the user of the asset's target logs in with into the
-// asset. With privateKeyFile that is the file's content. Without it, it is
-// the password, which it asks for on a terminal and otherwise reads from the
-// first line of in.
 func setSSHSecret(
 	ctx context.Context,
 	asset *authorityv1.CreateAssetRequest_SSHAsset,
@@ -317,8 +311,6 @@ func setSSHSecret(
 	return nil
 }
 
-// readPrivateKeyFile returns the content of the file at path. It fails for a
-// file of more than maxPrivateKeyBytes bytes, without reading the rest.
 func readPrivateKeyFile(path string) (string, error) {
 	file, err := os.Open(path) //nolint:gosec // The path is the file that the user names.
 	if err != nil {
@@ -329,6 +321,7 @@ func readPrivateKeyFile(path string) (string, error) {
 		_ = file.Close()
 	}()
 
+	// A path like /dev/zero never ends.
 	privateKey, err := io.ReadAll(io.LimitReader(file, maxPrivateKeyBytes+1))
 	if err != nil {
 		return "", err

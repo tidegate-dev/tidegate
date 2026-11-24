@@ -108,8 +108,7 @@ func startMigration(ctx context.Context, url string) <-chan error {
 	return migrationErrorChan
 }
 
-// migrateAt migrates the database at url on a connection pool of its own,
-// like one authority does.
+// Each authority migrates on a connection pool of its own.
 func migrateAt(ctx context.Context, url string) error {
 	pool, err := Open(ctx, url)
 	if err != nil {

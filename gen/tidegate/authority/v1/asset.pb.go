@@ -45,11 +45,11 @@ type SSHTarget struct {
 	// UserName is the user that tidegate logs in as on the host, like "deploy",
 	// "deploy@example.com" or "EXAMPLE\deploy".
 	//
-	// Rules: Letters from A to Z in uppercase and lowercase, digits,
-	// underscores, dots, dashes and at signs, without a dash at the start.
-	// These are the characters that useradd(8) allows, and the at sign of a
-	// name with a domain. One backslash may separate a Windows domain from the
-	// name, and the domain follows the same rule. At most 64 characters.
+	// Rules: Uppercase and lowercase letters from A to Z, digits, underscores,
+	// dots, dashes and at signs. It doesn't start with a dash. A Windows domain
+	// and one backslash may come first, and the domain follows the same rule.
+	// At most 64 characters. These are the characters that useradd(8) allows,
+	// plus the at sign of a name with a domain.
 	UserName      string `protobuf:"bytes,4,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

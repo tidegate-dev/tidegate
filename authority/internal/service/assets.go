@@ -52,10 +52,8 @@ func NewAssets(
 }
 
 // CreateSSH creates an asset for an SSH host in the project named
-// projectName and returns it. It stores the password or private key from
-// secretInput in the secret engine and records on the asset where it is. If
-// storing the asset fails after that, the password or private key stays in
-// the engine.
+// projectName and returns it. It stores the password or private key in the
+// secret engine first. The value stays there if storing the asset fails.
 //
 // It returns ErrSSHPasswordEmpty, sshkey.ErrPrivateKeyInvalid or
 // sshkey.ErrPrivateKeyEncrypted for a password or private key that tidegate

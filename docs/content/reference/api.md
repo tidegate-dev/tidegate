@@ -150,7 +150,7 @@ its identity with.
 | `host` | `string` | Host is the host's DNS name or IP address. | A DNS name of at most 253 characters, or an IPv4 or IPv6 address without brackets and without a zone. |
 | `port` | `uint32` | Port is the TCP port that the host's SSH server listens on. | 1 to 65535. |
 | `host_key` | `string` | HostKey is the host's public key as the key type and the key in base64, like "ssh-ed25519 AAAAC3...". | The key type, one space and the key in base64 with its padding. The key type is ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521 or ssh-rsa. At most 8192 characters. |
-| `user_name` | `string` | UserName is the user that tidegate logs in as on the host, like "deploy", "deploy@example.com" or "EXAMPLE\deploy". | Letters from A to Z in uppercase and lowercase, digits, underscores, dots, dashes and at signs, without a dash at the start. These are the characters that useradd(8) allows, and the at sign of a name with a domain. One backslash may separate a Windows domain from the name, and the domain follows the same rule. At most 64 characters. |
+| `user_name` | `string` | UserName is the user that tidegate logs in as on the host, like "deploy", "deploy@example.com" or "EXAMPLE\deploy". | Uppercase and lowercase letters from A to Z, digits, underscores, dots, dashes and at signs. It doesn't start with a dash. A Windows domain and one backslash may come first, and the domain follows the same rule. At most 64 characters. These are the characters that useradd(8) allows, plus the at sign of a name with a domain. |
 
 ### tidegate.authority.v1.CreateBindingRequest { #tidegate.authority.v1.CreateBindingRequest }
 

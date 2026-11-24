@@ -10,8 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Postgres fails a CREATE SCHEMA IF NOT EXISTS that runs at the same time as
-// another one for the same schema.
+// Postgres can fail one of two CREATE SCHEMA IF NOT EXISTS that run at once.
 const lockSchemaCreation = `SELECT pg_advisory_xact_lock(7214365028173645912)`
 
 const createSchema = `CREATE SCHEMA IF NOT EXISTS secret_engine`

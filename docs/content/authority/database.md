@@ -17,4 +17,4 @@ With `TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START` set to `true`, the authori
 
 When the authority migrates, it also creates the schema `secret_engine` with the table `secrets`. The authority stores the password or private key of every SSH asset in that table. The asset itself only holds a reference to its row.
 
-Note that the authority doesn't encrypt these values. Anyone who can read the database, or a backup of it, can read them. Restrict access to both accordingly.
+Note that the authority doesn't encrypt these values. Anyone who can read the database or a backup of it can read them, so limit who can.

@@ -165,8 +165,6 @@ var _ = Describe("Assets", func() {
 	})
 })
 
-// newPrivateKey returns a new Ed25519 private key in OpenSSH's format, without
-// a passphrase.
 func newPrivateKey() []byte {
 	GinkgoHelper()
 
@@ -179,8 +177,6 @@ func newPrivateKey() []byte {
 	return pem.EncodeToMemory(block)
 }
 
-// fakeEngine keeps its values in memory and numbers its references from
-// reference-1.
 type fakeEngine struct {
 	values map[secretengine.Reference][]byte
 	stored int

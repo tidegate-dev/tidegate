@@ -7,8 +7,7 @@ setup() {
     project=assets-$BATS_TEST_NUMBER
     host_key_file=$BATS_TEST_DIRNAME/../../dev/ssh-host/ssh_host_ed25519_key.pub
     host_key=$(cut -d' ' -f1,2 "$host_key_file")
-    # Every SSH asset needs a user and a password or private key. The host's own
-    # key is a private key without a passphrase.
+    # The test host's own key is a private key without a passphrase.
     login=(--user-name tidegate --private-key-file "${host_key_file%.pub}")
 }
 
