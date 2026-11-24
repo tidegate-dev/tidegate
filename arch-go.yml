@@ -53,6 +53,13 @@ dependenciesRules:
       internal:
         - '^github.com/tidegate-dev/tidegate/authority/internal/db.**'
 
+  # The Postgres secret engine imports nothing from the authority.
+  - package: '^github.com/tidegate-dev/tidegate/authority/internal/secretengine/postgres$'
+    shouldOnlyDependsOn:
+      internal:
+        - '^github.com/tidegate-dev/tidegate/internal/secretengine$'
+        - '^github.com/tidegate-dev/tidegate/internal/secret$'
+
   - package: '^github.com/tidegate-dev/tidegate/authority/internal/model$'
     shouldOnlyDependsOn:
       internal:
