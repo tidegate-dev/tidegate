@@ -24,11 +24,6 @@ type Binding struct {
 	UserID    pgtype.UUID
 }
 
-type Dummy struct {
-	ID   int64
-	Text string
-}
-
 type Project struct {
 	ID   pgtype.UUID
 	Name string

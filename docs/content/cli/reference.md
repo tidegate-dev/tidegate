@@ -23,8 +23,6 @@ Global flags work before or after the command. A command that fails prints `Erro
 | `tidegate asset list --project-name <project>` | Prints the ID, the name, the address and the labels of every asset of the project |
 | `tidegate binding create --project-name <project> --role-name <role> --user-name <user>` | Gives the role of the project to the user and prints the binding's ID, the role and the user |
 | `tidegate binding list --project-name <project>` | Prints the ID, the role and the user of every binding of the project |
-| `tidegate dummy write <text>` | Stores a text in the authority's database and prints its ID |
-| `tidegate dummy read <id>` | Prints the text with the ID |
 
 ## Flags
 
@@ -77,9 +75,9 @@ If several saved connections have this URL and no name is given, the command fai
 
 | Format | Result |
 |---|---|
-| `text` | The bare value, like the ID that `dummy write` prints. `connections list`, `project list`, `asset list` and `binding list` print a table. |
-| `json` | An object with the result's fields, like `{"id": 42}` |
-| `yaml` | A mapping with the result's fields, like `id: 42` |
+| `text` | The result's fields, separated by tabs, like the ID and the name that `project create` prints. `connections list`, `project list`, `asset list` and `binding list` print a table. |
+| `json` | An object with the result's fields, like `{"id": "…", "name": "payments"}` |
+| `yaml` | A mapping with the result's fields, like `name: payments` |
 
 `tidegate login` and `tidegate logout` print nothing to stdout, unless `--print-token` is given. Prompts and warnings go to stderr.
 

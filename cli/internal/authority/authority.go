@@ -19,7 +19,6 @@ import (
 // Clients talks to one authority.
 type Clients struct {
 	login   authorityv1connect.LoginServiceClient
-	dummy   authorityv1connect.DummyServiceClient
 	project authorityv1connect.ProjectServiceClient
 	role    authorityv1connect.RoleServiceClient
 	asset   authorityv1connect.AssetServiceClient
@@ -52,16 +51,12 @@ func Connect(server string, token secret.String) (*Clients, error) {
 
 	return &Clients{
 		login:   authorityv1connect.NewLoginServiceClient(httpClient, server, options),
-		dummy:   authorityv1connect.NewDummyServiceClient(httpClient, server, options),
 		project: authorityv1connect.NewProjectServiceClient(httpClient, server, options),
 		role:    authorityv1connect.NewRoleServiceClient(httpClient, server, options),
 		asset:   authorityv1connect.NewAssetServiceClient(httpClient, server, options),
 		binding: authorityv1connect.NewBindingServiceClient(httpClient, server, options),
 	}, nil
 }
-
-// Dummy returns the client for the DummyService.
-func (c *Clients) Dummy() authorityv1connect.DummyServiceClient { return c.dummy }
 
 // Project returns the client for the ProjectService.
 func (c *Clients) Project() authorityv1connect.ProjectServiceClient { return c.project }

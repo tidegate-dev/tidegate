@@ -28,6 +28,18 @@ var _ = Describe("Migrate", func() {
 
 		Expect(appliedMigrations(ctx, pool)).To(Equal(before))
 	})
+
+	It("leaves no dummies table", func(ctx SpecContext) {
+		pool, err := Open(ctx, dbtest.NewDatabase())
+		Expect(err).NotTo(HaveOccurred())
+		DeferCleanup(pool.Close)
+
+		Expect(Migrate(ctx, pool)).To(Succeed())
+
+		var table *string
+		Expect(pool.QueryRow(ctx, "SELECT to_regclass('dummies')::text").Scan(&table)).To(Succeed())
+		Expect(table).To(BeNil())
+	})
 })
 
 var _ = Describe("OpenMigrated", func() {

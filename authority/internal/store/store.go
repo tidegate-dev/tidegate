@@ -29,11 +29,6 @@ func (s *Store) Sessions() *SessionReader {
 	return &SessionReader{queries: sqlc.New(s.pool)}
 }
 
-// Dummies returns the queries for the dummies table.
-func (s *Store) Dummies() *DummyReader {
-	return &DummyReader{queries: sqlc.New(s.pool)}
-}
-
 // Projects returns the queries for the projects table.
 func (s *Store) Projects() *ProjectReader {
 	return &ProjectReader{queries: sqlc.New(s.pool)}

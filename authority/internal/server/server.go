@@ -61,7 +61,6 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 
 	sessions := service.NewSessions(data.Sessions(), data, rnd, clk, cfg.Login.TokenLifetime)
 	logins := service.NewLogins(authenticator, sessions)
-	dummies := service.NewDummies(data.Dummies(), data)
 	projects := service.NewProjects(data.Projects(), data)
 	roles := service.NewRoles(data.Projects(), data)
 	assets := service.NewAssets(data.Projects(), data.Assets(), data)
@@ -97,7 +96,7 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	defer stopReportingInternal()
 
 	err = serve(ctx, notifier, map[string]*http.Server{
-		"external-api": externalAPIServer(cfg.ExternalAPI.ListenAddress, externalCertificate, clk, dummies, logins, projects, roles, assets, bindings, sessions),
+		"external-api": externalAPIServer(cfg.ExternalAPI.ListenAddress, externalCertificate, clk, logins, projects, roles, assets, bindings, sessions),
 		"internal-api": internalAPIServer(cfg.InternalAPI.ListenAddress, internalCertificate),
 		"metrics":      metricsServer(cfg.Metrics.ListenAddress, metricsHandler),
 	}, timeout)

@@ -39,12 +39,6 @@ func (u *Unit) Sessions() model.SessionReadWriter {
 	return &SessionReadWriter{queries: sqlc.New(u.pool), unit: u}
 }
 
-// Dummies returns the dummies table for this unit. Its reads run right away,
-// its writes at Commit.
-func (u *Unit) Dummies() model.DummyReadWriter {
-	return &DummyReadWriter{queries: sqlc.New(u.pool), unit: u}
-}
-
 // Projects returns the projects table for this unit. Its writes run at
 // Commit.
 func (u *Unit) Projects() model.ProjectReadWriter {

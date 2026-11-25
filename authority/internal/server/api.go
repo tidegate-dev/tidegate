@@ -33,7 +33,6 @@ func externalAPIServer(
 	address string,
 	certificate *certreload.Certificate,
 	clk clock.Service,
-	dummies *service.Dummies,
 	logins *service.Logins,
 	projects *service.Projects,
 	roles *service.Roles,
@@ -44,7 +43,6 @@ func externalAPIServer(
 	options := connect.WithInterceptors(interceptors(clk, sessions)...)
 
 	mux := http.NewServeMux()
-	mux.Handle(authorityv1connect.NewDummyServiceHandler(api.NewDummyService(dummies), options))
 	mux.Handle(api.NewLoginServiceHandler(logins, options))
 	mux.Handle(authorityv1connect.NewProjectServiceHandler(api.NewProjectService(projects), options))
 	mux.Handle(authorityv1connect.NewRoleServiceHandler(api.NewRoleService(roles), options))

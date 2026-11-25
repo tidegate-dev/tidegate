@@ -4,29 +4,32 @@ setup() {
     export TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY
     TIDEGATE_TOKEN=$(print_token)
     export TIDEGATE_TOKEN
-    id=$(tidegate dummy write hello)
+    # The tests share one database, so each one creates a project of its own.
+    project=output-$BATS_TEST_NUMBER
 }
 
-@test "text output is the bare result" {
-    run tidegate dummy read "$id"
+@test "text output is the result's fields, separated by tabs" {
+    run tidegate project create "$project"
     [ "$status" -eq 0 ]
-    [ "$output" = hello ]
+    [[ $output == ?*$'\t'"$project" ]]
 }
 
 @test "json output is an object with the result's fields" {
-    run tidegate --output json dummy read "$id"
+    run tidegate --output json project create "$project"
     [ "$status" -eq 0 ]
-    [ "$(jq -r .text <<<"$output")" = hello ]
+    [ "$(jq -r .name <<<"$output")" = "$project" ]
+    [ -n "$(jq -r .id <<<"$output")" ]
 }
 
 @test "yaml output is a mapping with the result's fields" {
-    run tidegate -o yaml dummy read "$id"
+    run tidegate -o yaml project create "$project"
     [ "$status" -eq 0 ]
-    [ "$output" = "text: hello" ]
+    [[ ${lines[0]} == "id: "?* ]]
+    [ "${lines[1]}" = "name: $project" ]
 }
 
 @test "an unknown output format fails" {
-    run tidegate -o xml dummy read "$id"
+    run tidegate -o xml project list
     [ "$status" -eq 1 ]
     [[ $output == *'unknown output format "xml"'* ]]
 }
