@@ -3,6 +3,7 @@ mod authority
 mod docs
 mod internal
 mod proto
+mod ssh-proxy
 
 import 'authority/test-database.just'
 
@@ -18,7 +19,7 @@ clean:
     rm -rf bin coverage site
 
 # Run the unit tests of every component.
-test: authority::test cli::test internal::test
+test: authority::test cli::test ssh-proxy::test internal::test
 
 # Run the integration tests.
 test-integration: authority::test-integration
@@ -61,12 +62,12 @@ workflows:
 
 # Lint every component and the GitHub workflows, and report secrets in
 # exported APIs that aren't a secret.String.
-lint: workflows authority::lint cli::lint internal::lint proto::lint
+lint: workflows authority::lint cli::lint ssh-proxy::lint internal::lint proto::lint
     go tool secretcheck ./...
 
 # Check the dependencies of every component and of the Go tools for known
 # vulnerabilities.
-vuln: authority::vuln cli::vuln internal::vuln
+vuln: authority::vuln cli::vuln ssh-proxy::vuln internal::vuln
     govulncheck github.com/arch-go/arch-go/v2/...
     govulncheck github.com/go-gremlins/gremlins/...
 
@@ -113,7 +114,7 @@ licenses: build
     grant check --config .grant.yaml bin/sbom.json
 
 # Format the code of every component in place.
-fmt: authority::fmt cli::fmt internal::fmt
+fmt: authority::fmt cli::fmt ssh-proxy::fmt internal::fmt
 
 # Start tidegate's components and the services they need.
 dev: _dev-tls (_process-compose "dev/deps.yaml" "dev/tidegate.yaml")
@@ -200,4 +201,4 @@ kind-down:
     kind delete cluster --name tidegate
 
 # Run every check that CI runs, except fuzzing and mutate.
-ci: secrets arch images licenses workflows proto::ci authority::ci cli::ci test-e2e internal::ci docs::build
+ci: secrets arch images licenses workflows proto::ci authority::ci cli::ci ssh-proxy::ci test-e2e internal::ci docs::build
