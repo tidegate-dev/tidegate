@@ -10,3 +10,9 @@ setup() {
     [ "$status" -eq 1 ]
     [[ $stderr == *'unknown command "ping"'* ]]
 }
+
+@test "tidegate refuses dummy, which was removed" {
+    run --separate-stderr tidegate dummy write hello
+    [ "$status" -eq 1 ]
+    [[ $stderr == *'unknown command "dummy"'* ]]
+}

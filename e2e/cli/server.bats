@@ -19,7 +19,7 @@ setup() {
 }
 
 @test "a call with a session token refuses a plain HTTP server that isn't on this machine" {
-    TIDEGATE_SERVER=http://tidegate.example TIDEGATE_TOKEN=secret run --separate-stderr tidegate dummy write hello
+    TIDEGATE_SERVER=http://tidegate.example TIDEGATE_TOKEN=secret run --separate-stderr tidegate project create payments
     [ "$status" -eq 1 ]
     [[ $stderr == *"refusing to send a password or a token over plain HTTP"* ]]
 }
@@ -27,7 +27,7 @@ setup() {
 @test "a saved connection to a plain HTTP server that isn't on this machine is refused" {
     save '{"connections": {"plain": {"server": "http://tidegate.example", "token": "secret"}}}'
 
-    run --separate-stderr tidegate dummy write hello
+    run --separate-stderr tidegate project create payments
     [ "$status" -eq 1 ]
     [[ $stderr == *"refusing to send a password or a token over plain HTTP"* ]]
 }

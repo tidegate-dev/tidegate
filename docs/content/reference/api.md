@@ -22,16 +22,6 @@ project to a user.
 | `CreateBinding` | [tidegate.authority.v1.CreateBindingRequest](#tidegate.authority.v1.CreateBindingRequest) | [tidegate.authority.v1.CreateBindingResponse](#tidegate.authority.v1.CreateBindingResponse) | CreateBinding gives a role of a project to a user. It fails with not_found if the project, the role or the user doesn't exist, and with already_exists if the user already has the role. |
 | `ListBindings` | [tidegate.authority.v1.ListBindingsRequest](#tidegate.authority.v1.ListBindingsRequest) | [tidegate.authority.v1.ListBindingsResponse](#tidegate.authority.v1.ListBindingsResponse) | ListBindings returns every binding of a project. It fails with not_found if the project doesn't exist. |
 
-## tidegate.authority.v1.DummyService { #tidegate.authority.v1.DummyService }
-
-DummyService stores and reads texts, to check the path from a client through
-the authority into the database and back.
-
-| Method | Request | Response | Description |
-| ------ | ------- | -------- | ----------- |
-| `Write` | [tidegate.authority.v1.WriteRequest](#tidegate.authority.v1.WriteRequest) | [tidegate.authority.v1.WriteResponse](#tidegate.authority.v1.WriteResponse) | Write stores a text and returns its ID. |
-| `Read` | [tidegate.authority.v1.ReadRequest](#tidegate.authority.v1.ReadRequest) | [tidegate.authority.v1.ReadResponse](#tidegate.authority.v1.ReadResponse) | Read returns the text with the given ID. |
-
 ## tidegate.authority.v1.LoginService { #tidegate.authority.v1.LoginService }
 
 LoginService signs users in to the authority.
@@ -198,38 +188,6 @@ Binding is one binding in the list.
 | `project_id` | `string` | ProjectID identifies the project that the binding belongs to. It is a UUID. |  |
 | `role_name` | `string` | RoleName is the name of the role that the binding gives. |  |
 | `user_name` | `string` | UserName is the name of the user who has the role. |  |
-
-### tidegate.authority.v1.ReadRequest { #tidegate.authority.v1.ReadRequest }
-
-ReadRequest is the input of DummyService.Read.
-
-| Field | Type | Description | Rules |
-| ----- | ---- | ----------- | ----- |
-| `id` | `int64` | ID is the one DummyService.Write returned for the text. |  |
-
-### tidegate.authority.v1.ReadResponse { #tidegate.authority.v1.ReadResponse }
-
-ReadResponse is the result of DummyService.Read.
-
-| Field | Type | Description | Rules |
-| ----- | ---- | ----------- | ----- |
-| `text` | `string` | Text is the stored text. |  |
-
-### tidegate.authority.v1.WriteRequest { #tidegate.authority.v1.WriteRequest }
-
-WriteRequest is the input of DummyService.Write.
-
-| Field | Type | Description | Rules |
-| ----- | ---- | ----------- | ----- |
-| `text` | `string` | Text is the text to store. | At most 1024 characters. |
-
-### tidegate.authority.v1.WriteResponse { #tidegate.authority.v1.WriteResponse }
-
-WriteResponse is the result of DummyService.Write.
-
-| Field | Type | Description | Rules |
-| ----- | ---- | ----------- | ----- |
-| `id` | `int64` | ID identifies the stored text for DummyService.Read. |  |
 
 ### tidegate.authority.v1.LoginRequest { #tidegate.authority.v1.LoginRequest }
 

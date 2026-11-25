@@ -43,9 +43,9 @@ var _ = Describe("run", func() {
 			// The lock makes the authority's write wait until the spec ends,
 			// like a query to a Postgres that doesn't answer.
 			holder := dbtest.Connect(ctx, url)
-			lockDummies(ctx, holder)
+			lockProjects(ctx, holder)
 
-			go writeDummy(authority.externalAddress, token)
+			go createProject(authority.externalAddress, token)
 
 			Eventually(ctx, countSessionsWaitingForALock).WithArguments(holder).Should(Equal(1), "the write never waited for the lock")
 		}, NodeTimeout(30*time.Second))
@@ -139,12 +139,12 @@ func serveAuthority(ctx context.Context, url string) runningAuthority {
 	return authority
 }
 
-// lockDummies locks the dummies table in a transaction that stays open
+// lockProjects locks the projects table in a transaction that stays open
 // until the connection closes.
-func lockDummies(ctx context.Context, conn *pgx.Conn) {
+func lockProjects(ctx context.Context, conn *pgx.Conn) {
 	GinkgoHelper()
 
-	_, err := conn.Exec(ctx, "BEGIN; LOCK TABLE dummies IN ACCESS EXCLUSIVE MODE")
+	_, err := conn.Exec(ctx, "BEGIN; LOCK TABLE projects IN ACCESS EXCLUSIVE MODE")
 	Expect(err).NotTo(HaveOccurred())
 }
 
@@ -182,14 +182,14 @@ func listening(address string) error {
 	return conn.Close()
 }
 
-// writeDummy sends a write that only ends with the authority. A request
+// createProject sends a write that only ends with the authority. A request
 // whose client gives up would cancel its query without the shutdown.
-func writeDummy(address string, token secret.String) {
-	client := authorityv1connect.NewDummyServiceClient(http.DefaultClient, "http://"+address)
-	request := connect.NewRequest(&authorityv1.WriteRequest{Text: "waits"})
+func createProject(address string, token secret.String) {
+	client := authorityv1connect.NewProjectServiceClient(http.DefaultClient, "http://"+address)
+	request := connect.NewRequest(&authorityv1.CreateProjectRequest{Name: "waits"})
 	request.Header().Set("Authorization", "Bearer "+token.Reveal())
 
-	_, _ = client.Write(context.Background(), request)
+	_, _ = client.CreateProject(context.Background(), request)
 }
 
 func signIn(ctx context.Context, url string) secret.String {

@@ -3,6 +3,8 @@ bats_require_minimum_version 1.7.0
 setup() {
     load common
     isolate
+    # The tests share one database, so each one creates projects of its own.
+    project=script-$BATS_TEST_NUMBER
 }
 
 @test "login --print-token prints a token and saves nothing" {
@@ -27,22 +29,22 @@ setup() {
     [[ $stderr == *"takes no --connection"* ]]
 }
 
-@test "a script with TIDEGATE_SERVER and TIDEGATE_TOKEN can store a text and read it back" {
+@test "a script with TIDEGATE_SERVER and TIDEGATE_TOKEN can create a project and list it" {
     export TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY
     TIDEGATE_TOKEN=$(print_token)
     export TIDEGATE_TOKEN
 
-    run tidegate dummy write hello
+    run tidegate project create "$project"
     [ "$status" -eq 0 ]
 
-    run tidegate dummy read "$output"
+    run tidegate project list
     [ "$status" -eq 0 ]
-    [ "$output" = hello ]
+    grep -qE " $project\$" <<<"$output"
     [ ! -e "$saved" ]
 }
 
 @test "a call with TIDEGATE_SERVER and no token says to set TIDEGATE_TOKEN" {
-    TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY run --separate-stderr tidegate dummy write hello
+    TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY run --separate-stderr tidegate project create "$project"
     [ "$status" -eq 1 ]
     [[ $stderr == *"Set TIDEGATE_TOKEN"* ]]
 }
@@ -50,7 +52,7 @@ setup() {
 @test "a saved session isn't sent to the server in TIDEGATE_SERVER" {
     sign_in login "$TIDEGATE_TEST_AUTHORITY"
 
-    TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY run --separate-stderr tidegate dummy write hello
+    TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY run --separate-stderr tidegate project create "$project"
     [ "$status" -eq 1 ]
     [[ $stderr == *"Set TIDEGATE_TOKEN"* ]]
 }
@@ -58,7 +60,7 @@ setup() {
 @test "TIDEGATE_SERVER and TIDEGATE_TOKEN are used instead of a saved connection" {
     sign_in login "$TIDEGATE_TEST_AUTHORITY"
 
-    TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY TIDEGATE_TOKEN=not-a-token run --separate-stderr tidegate dummy write hello
+    TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY TIDEGATE_TOKEN=not-a-token run --separate-stderr tidegate project create "$project"
     [ "$status" -eq 1 ]
     [[ $stderr == *"TIDEGATE_TOKEN"* ]]
     [[ $stderr == *"--print-token"* ]]
@@ -67,7 +69,7 @@ setup() {
 @test "TIDEGATE_TOKEN without TIDEGATE_SERVER fails" {
     sign_in login "$TIDEGATE_TEST_AUTHORITY"
 
-    TIDEGATE_TOKEN=$(print_token) run --separate-stderr tidegate dummy write hello
+    TIDEGATE_TOKEN=$(print_token) run --separate-stderr tidegate project create "$project"
     [ "$status" -eq 1 ]
     [[ $stderr == *"TIDEGATE_SERVER isn't"* ]]
 }
@@ -76,7 +78,7 @@ setup() {
     sign_in login "$TIDEGATE_TEST_AUTHORITY" --connection first
 
     TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY TIDEGATE_TOKEN=$(print_token) \
-        run --separate-stderr tidegate --connection first dummy write hello
+        run --separate-stderr tidegate --connection first project create "$project"
     [ "$status" -eq 1 ]
     [[ $stderr == *"not both"* ]]
 }
@@ -90,7 +92,7 @@ setup() {
     [ "$status" -eq 0 ]
     [ -z "$output" ]
 
-    run --separate-stderr tidegate dummy write hello
+    run --separate-stderr tidegate project create "$project"
     [ "$status" -eq 1 ]
     [[ $stderr == *"TIDEGATE_TOKEN"* ]]
 }
@@ -103,7 +105,7 @@ setup() {
     TIDEGATE_TOKEN=$first run tidegate logout
     [ "$status" -eq 0 ]
 
-    TIDEGATE_TOKEN=$second run tidegate dummy write hello
+    TIDEGATE_TOKEN=$second run tidegate project create "$project"
     [ "$status" -eq 0 ]
 }
 
@@ -113,6 +115,6 @@ setup() {
     TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY TIDEGATE_TOKEN=$(print_token) run tidegate logout
     [ "$status" -eq 0 ]
 
-    run tidegate dummy write hello
+    run tidegate project create "$project"
     [ "$status" -eq 0 ]
 }

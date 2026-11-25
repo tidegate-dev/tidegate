@@ -96,7 +96,7 @@ setup() {
     [ -z "$output" ]
     [ "$(jq -r '.connections | keys[]' "$saved")" = second ]
 
-    TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY TIDEGATE_TOKEN=$token run --separate-stderr tidegate dummy write hello
+    TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY TIDEGATE_TOKEN=$token run --separate-stderr tidegate project create payments
     [ "$status" -eq 1 ]
     [[ $stderr == *"doesn't accept the session token in TIDEGATE_TOKEN"* ]]
 }

@@ -9,8 +9,6 @@ type Unit interface {
 	Users() UserReadWriter
 	// Sessions returns the sessions for this unit.
 	Sessions() SessionReadWriter
-	// Dummies returns the dummies for this unit.
-	Dummies() DummyReadWriter
 	// Projects returns the projects for this unit.
 	Projects() ProjectReadWriter
 	// Roles returns the roles for this unit.
