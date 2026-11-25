@@ -24,6 +24,8 @@ func (t *TicketReadWriter) Add(ticket *model.Ticket) {
 		switch {
 		case isForeignKeyViolationOf(err, "tickets_asset_fk"):
 			return model.ErrAssetNotFound
+		case isForeignKeyViolationOf(err, "tickets_user_fk"):
+			return model.ErrUserNotFound
 		case err != nil:
 			return fmt.Errorf("creating the ticket: %w", err)
 		}

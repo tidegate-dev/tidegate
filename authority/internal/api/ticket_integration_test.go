@@ -8,6 +8,7 @@ import (
 
 	"connectrpc.com/connect"
 	"connectrpc.com/validate"
+	"github.com/jackc/pgx/v5/pgxpool"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -20,19 +21,30 @@ import (
 )
 
 var _ = Describe("TicketService", func() {
-	It("issues a fresh ticket per request while the binding and role permission check assumes access", func(ctx SpecContext) {
-		pool, data := storetest.New(ctx)
+	var (
+		pool       *pgxpool.Pool
+		asset      *model.Asset
+		alice      model.UserID
+		aliceToken secret.String
+		client     authorityv1connect.TicketServiceClient
+	)
+
+	BeforeEach(func(ctx SpecContext) {
+		var err error
+
+		dbPool, data := storetest.New(ctx)
+		pool = dbPool
 		projects := service.NewProjects(data.Projects(), data)
 		assets := service.NewAssets(data.Projects(), data.Assets(), data)
 		sessions := newSessions(data)
-		alice := storetest.AddUser(ctx, data, "alice")
-		aliceToken, err := sessions.Issue(ctx, alice)
+		alice = storetest.AddUser(ctx, data, "alice")
+		aliceToken, err = sessions.Issue(ctx, alice)
 		Expect(err).NotTo(HaveOccurred())
 		_, err = projects.Create(ctx, "payments")
 		Expect(err).NotTo(HaveOccurred())
 
 		target := model.SSHTarget{Host: "host.example.com", Port: 22, HostKey: "ssh-ed25519 AAAA"}
-		asset, err := assets.CreateSSH(ctx, "payments", "host", nil, target)
+		asset, err = assets.CreateSSH(ctx, "payments", "host", nil, target)
 		Expect(err).NotTo(HaveOccurred())
 
 		tickets := service.NewTickets(data)
@@ -40,34 +52,46 @@ var _ = Describe("TicketService", func() {
 			connect.WithInterceptors(NewSessionInterceptor(sessions), validate.NewInterceptor()))
 		server := httptest.NewServer(handler)
 		DeferCleanup(server.Close)
-		client := authorityv1connect.NewTicketServiceClient(server.Client(), server.URL)
-		create := func(assetID string, token secret.String) (*connect.Response[authorityv1.CreateTicketResponse], error) {
-			request := connect.NewRequest(&authorityv1.CreateTicketRequest{AssetId: assetID})
-			if token.Reveal() != "" {
-				request.Header().Set("Authorization", "Bearer "+token.Reveal())
-			}
+		client = authorityv1connect.NewTicketServiceClient(server.Client(), server.URL)
+	})
 
-			return client.CreateTicket(ctx, request)
+	create := func(ctx SpecContext, assetID string, token secret.String) (*connect.Response[authorityv1.CreateTicketResponse], error) {
+		request := connect.NewRequest(&authorityv1.CreateTicketRequest{AssetId: assetID})
+		if token.Reveal() != "" {
+			request.Header().Set("Authorization", "Bearer "+token.Reveal())
 		}
 
-		_, err = create(asset.ID.String(), secret.String{})
+		return client.CreateTicket(ctx, request)
+	}
+
+	It("requires a signed-in user", func(ctx SpecContext) {
+		_, err := create(ctx, asset.ID.String(), secret.String{})
 		Expect(connect.CodeOf(err)).To(Equal(connect.CodeUnauthenticated))
-		_, err = create("invalid", aliceToken)
+	}, SpecTimeout(30*time.Second))
+
+	It("rejects a malformed asset ID", func(ctx SpecContext) {
+		_, err := create(ctx, "invalid", aliceToken)
 		Expect(connect.CodeOf(err)).To(Equal(connect.CodeInvalidArgument))
-		response, err := create(asset.ID.String(), aliceToken)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(response.Msg.GetAssetId()).To(Equal(asset.ID.String()))
-		Expect(response.Msg.GetUserId()).To(Equal(alice.String()))
+	}, SpecTimeout(30*time.Second))
 
-		Expect(response.Msg.GetId()).NotTo(BeEmpty())
-
-		again, err := create(asset.ID.String(), aliceToken)
+	It("issues a fresh ticket for the session user and requested asset on every call", func(ctx SpecContext) {
+		first, err := create(ctx, asset.ID.String(), aliceToken)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(again.Msg.GetId()).NotTo(Equal(response.Msg.GetId()))
+		Expect(first.Msg.GetAssetId()).To(Equal(asset.ID.String()))
+		Expect(first.Msg.GetUserId()).To(Equal(alice.String()))
+		Expect(first.Msg.GetId()).NotTo(BeEmpty())
 
-		_, err = pool.Exec(ctx, "DELETE FROM assets WHERE id = $1", asset.ID.String())
+		second, err := create(ctx, asset.ID.String(), aliceToken)
 		Expect(err).NotTo(HaveOccurred())
-		_, err = create(asset.ID.String(), aliceToken)
+		Expect(second.Msg.GetId()).NotTo(BeEmpty())
+		Expect(second.Msg.GetId()).NotTo(Equal(first.Msg.GetId()))
+	}, SpecTimeout(30*time.Second))
+
+	It("returns not_found for a deleted asset", func(ctx SpecContext) {
+		_, err := pool.Exec(ctx, "DELETE FROM assets WHERE id = $1", asset.ID.String())
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = create(ctx, asset.ID.String(), aliceToken)
 		Expect(connect.CodeOf(err)).To(Equal(connect.CodeNotFound))
 	}, SpecTimeout(30*time.Second))
 })
