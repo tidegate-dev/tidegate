@@ -36,6 +36,13 @@ dependenciesRules:
         - '^github.com/tidegate-dev/tidegate/internal.**'
         - '^github.com/tidegate-dev/tidegate/gen.**'
 
+  - package: '^github.com/tidegate-dev/tidegate/ssh-proxy.**'
+    shouldOnlyDependsOn:
+      internal:
+        - '^github.com/tidegate-dev/tidegate/ssh-proxy.**'
+        - '^github.com/tidegate-dev/tidegate/internal.**'
+        - '^github.com/tidegate-dev/tidegate/gen.**'
+
   # The authority's layers: api calls service, service uses model, and store
   # implements the storage interfaces from model.
   - package: '^github.com/tidegate-dev/tidegate/authority/internal/password$'

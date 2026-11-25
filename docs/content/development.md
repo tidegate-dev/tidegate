@@ -34,6 +34,8 @@ ssh -p 2222 tidegate@127.0.0.1
 
 Its host key is committed in `dev/ssh-host/`, so the host has the same fingerprint for everyone.
 
+`just dev` also starts the ssh-proxy on `127.0.0.1:2022`. The page on the [ssh-proxy](ssh-proxy/index.md) shows how to open a session on the SSH host through it.
+
 ## Run tidegate in Kubernetes
 
 To run tidegate in a local Kubernetes cluster with [kind](https://kind.sigs.k8s.io/), use:

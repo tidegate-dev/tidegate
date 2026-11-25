@@ -1,0 +1,24 @@
+# Build the ssh-proxy into bin/ at the root of the repository.
+build:
+    go build -o ../bin/ssh-proxy ./cmd/ssh-proxy
+
+# Run the ssh-proxy's unit tests with the race detector, and write their
+# coverage to coverage/ at the root of the repository.
+test:
+    mkdir -p ../coverage
+    go test -race -coverpkg=github.com/tidegate-dev/tidegate/... -coverprofile=../coverage/ssh-proxy.out ./...
+
+# Lint the ssh-proxy.
+lint:
+    golangci-lint run ./...
+
+# Format the ssh-proxy's code in place.
+fmt:
+    golangci-lint fmt ./...
+
+# Check the ssh-proxy's dependencies for known vulnerabilities.
+vuln:
+    govulncheck ./...
+
+# Run every check that CI runs on the ssh-proxy.
+ci: build test lint vuln
