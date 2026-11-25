@@ -68,6 +68,14 @@ project.
 | ------ | ------- | -------- | ----------- |
 | `CreateRole` | [tidegate.authority.v1.CreateRoleRequest](#tidegate.authority.v1.CreateRoleRequest) | [tidegate.authority.v1.CreateRoleResponse](#tidegate.authority.v1.CreateRoleResponse) | CreateRole creates a role in a project and returns it. A project that doesn't exist fails with not_found. A name that another role of the project has fails with already_exists. |
 
+## tidegate.authority.v1.TicketService { #tidegate.authority.v1.TicketService }
+
+TicketService records asset access requests.
+
+| Method | Request | Response | Description |
+| ------ | ------- | -------- | ----------- |
+| `CreateTicket` | [tidegate.authority.v1.CreateTicketRequest](#tidegate.authority.v1.CreateTicketRequest) | [tidegate.authority.v1.CreateTicketResponse](#tidegate.authority.v1.CreateTicketResponse) | CreateTicket issues a ticket for the signed-in user and the requested asset. For now, the authority assumes the user has a project binding whose role permits access to the asset. |
+
 ## Types
 
 ### tidegate.authority.v1.CreateAssetRequest { #tidegate.authority.v1.CreateAssetRequest }
@@ -350,4 +358,22 @@ and bindings of its project.
 | `escalate` | `bool` | Escalate means the holders may create roles with permissions that they don't have themselves. |  |
 | `create_bindings` | `bool` | CreateBindings means the holders may create bindings in the project. |  |
 | `bind` | `bool` | Bind means the holders may bind roles with permissions that they don't have themselves. |  |
+
+### tidegate.authority.v1.CreateTicketRequest { #tidegate.authority.v1.CreateTicketRequest }
+
+CreateTicketRequest is the input of TicketService.CreateTicket.
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `asset_id` | `string` | AssetID identifies the asset to connect to. It is a UUID. |  |
+
+### tidegate.authority.v1.CreateTicketResponse { #tidegate.authority.v1.CreateTicketResponse }
+
+CreateTicketResponse is the result of TicketService.CreateTicket.
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `id` | `string` | ID identifies the ticket. It is a UUID. |  |
+| `asset_id` | `string` | AssetID identifies the requested asset. It is a UUID. |  |
+| `user_id` | `string` | UserID identifies the signed-in user. It is a UUID. |  |
 

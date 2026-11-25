@@ -52,6 +52,12 @@ type Session struct {
 	ExpiresAt pgtype.Timestamptz
 }
 
+type Ticket struct {
+	ID      pgtype.UUID
+	AssetID pgtype.UUID
+	UserID  pgtype.UUID
+}
+
 type User struct {
 	ID           pgtype.UUID
 	Name         string

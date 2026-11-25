@@ -19,6 +19,8 @@ type Unit interface {
 	Assets() AssetReadWriter
 	// Bindings returns the bindings for this unit.
 	Bindings() BindingReadWriter
+	// Tickets returns the tickets for this unit.
+	Tickets() TicketReadWriter
 	// Commit runs the pending writes in the order they were added. If one
 	// fails, none is kept. It returns ErrChangedSinceRead if a row changed
 	// after it was read. If it fails, the models it wrote may hold versions

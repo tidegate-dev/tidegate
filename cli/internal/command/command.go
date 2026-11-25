@@ -50,6 +50,7 @@ func New(store connections.Store) *cli.Command {
 			roleCommand(store),
 			assetCommand(store),
 			bindingCommand(store),
+			connectCommand(store),
 			dummyCommand(store),
 		},
 	}

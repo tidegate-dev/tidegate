@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package tidegate.authority.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;authorityv1";
+
+// TicketService records asset access requests.
+service TicketService {
+  // CreateTicket issues a ticket for the signed-in user and the requested
+  // asset. For now, the authority assumes the user has a project binding
+  // whose role permits access to the asset.
+  rpc CreateTicket(CreateTicketRequest) returns (CreateTicketResponse);
+}
+
+// CreateTicketRequest is the input of TicketService.CreateTicket.
+message CreateTicketRequest {
+  // AssetID identifies the asset to connect to. It is a UUID.
+  string asset_id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// CreateTicketResponse is the result of TicketService.CreateTicket.
+message CreateTicketResponse {
+  // ID identifies the ticket. It is a UUID.
+  string id = 1;
+  // AssetID identifies the requested asset. It is a UUID.
+  string asset_id = 2;
+  // UserID identifies the signed-in user. It is a UUID.
+  string user_id = 3;
+}
