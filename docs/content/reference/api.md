@@ -41,14 +41,6 @@ LoginService signs users in to the authority.
 | `Login` | [tidegate.authority.v1.LoginRequest](#tidegate.authority.v1.LoginRequest) | [tidegate.authority.v1.LoginResponse](#tidegate.authority.v1.LoginResponse) | Login checks a user's local password and returns a session token. All wrong credentials get the same error. |
 | `Logout` | [tidegate.authority.v1.LogoutRequest](#tidegate.authority.v1.LogoutRequest) | [tidegate.authority.v1.LogoutResponse](#tidegate.authority.v1.LogoutResponse) | Logout revokes the session token in the call's `Authorization: Bearer` header, so later calls with it fail. A missing, unknown or expired token fails with unauthenticated. |
 
-## tidegate.authority.v1.PingService { #tidegate.authority.v1.PingService }
-
-PingService checks that a client can reach the authority.
-
-| Method | Request | Response | Description |
-| ------ | ------- | -------- | ----------- |
-| `Ping` | [tidegate.authority.v1.PingRequest](#tidegate.authority.v1.PingRequest) | [tidegate.authority.v1.PingResponse](#tidegate.authority.v1.PingResponse) | Ping answers with pong. |
-
 ## tidegate.authority.v1.ProjectService { #tidegate.authority.v1.ProjectService }
 
 ProjectService creates and lists projects. A project holds assets, roles and
@@ -267,18 +259,6 @@ LogoutRequest is the input of LoginService.Logout.
 ### tidegate.authority.v1.LogoutResponse { #tidegate.authority.v1.LogoutResponse }
 
 LogoutResponse is the result of LoginService.Logout.
-
-### tidegate.authority.v1.PingRequest { #tidegate.authority.v1.PingRequest }
-
-PingRequest is the input of PingService.Ping. It has no fields.
-
-### tidegate.authority.v1.PingResponse { #tidegate.authority.v1.PingResponse }
-
-PingResponse is the result of PingService.Ping.
-
-| Field | Type | Description | Rules |
-| ----- | ---- | ----------- | ----- |
-| `message` | `string` | Message is always "pong". |  |
 
 ### tidegate.authority.v1.CreateProjectRequest { #tidegate.authority.v1.CreateProjectRequest }
 

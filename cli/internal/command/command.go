@@ -42,7 +42,6 @@ func New(store connections.Store) *cli.Command {
 			},
 		},
 		Commands: []*cli.Command{
-			pingCommand(store),
 			loginCommand(store),
 			logoutCommand(store),
 			connectionsCommand(store),

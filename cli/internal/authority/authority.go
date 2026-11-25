@@ -18,7 +18,6 @@ import (
 
 // Clients talks to one authority.
 type Clients struct {
-	ping    authorityv1connect.PingServiceClient
 	login   authorityv1connect.LoginServiceClient
 	dummy   authorityv1connect.DummyServiceClient
 	project authorityv1connect.ProjectServiceClient
@@ -37,35 +36,29 @@ var httpClient = &http.Client{
 
 // Connect refuses a plain HTTP server that isn't on this machine, and returns
 // clients that give every call 10 seconds and send token with it, if it isn't
-// empty. A ping never gets the token, because the authority answers it
-// without a login.
+// empty.
 func Connect(server string, token secret.String) (*Clients, error) {
 	err := CheckServer(server)
 	if err != nil {
 		return nil, err
 	}
 
-	timeout := timeoutInterceptor{limit: requestTimeout}
-	withoutToken := connect.WithInterceptors(timeout)
-	withToken := withoutToken
-
+	interceptors := []connect.Interceptor{timeoutInterceptor{limit: requestTimeout}}
 	if token.Reveal() != "" {
-		withToken = connect.WithInterceptors(timeout, sessionTokenInterceptor{token: token})
+		interceptors = append(interceptors, sessionTokenInterceptor{token: token})
 	}
 
+	options := connect.WithInterceptors(interceptors...)
+
 	return &Clients{
-		ping:    authorityv1connect.NewPingServiceClient(httpClient, server, withoutToken),
-		login:   authorityv1connect.NewLoginServiceClient(httpClient, server, withToken),
-		dummy:   authorityv1connect.NewDummyServiceClient(httpClient, server, withToken),
-		project: authorityv1connect.NewProjectServiceClient(httpClient, server, withToken),
-		role:    authorityv1connect.NewRoleServiceClient(httpClient, server, withToken),
-		asset:   authorityv1connect.NewAssetServiceClient(httpClient, server, withToken),
-		binding: authorityv1connect.NewBindingServiceClient(httpClient, server, withToken),
+		login:   authorityv1connect.NewLoginServiceClient(httpClient, server, options),
+		dummy:   authorityv1connect.NewDummyServiceClient(httpClient, server, options),
+		project: authorityv1connect.NewProjectServiceClient(httpClient, server, options),
+		role:    authorityv1connect.NewRoleServiceClient(httpClient, server, options),
+		asset:   authorityv1connect.NewAssetServiceClient(httpClient, server, options),
+		binding: authorityv1connect.NewBindingServiceClient(httpClient, server, options),
 	}, nil
 }
-
-// Ping returns the client for the PingService.
-func (c *Clients) Ping() authorityv1connect.PingServiceClient { return c.ping }
 
 // Dummy returns the client for the DummyService.
 func (c *Clients) Dummy() authorityv1connect.DummyServiceClient { return c.dummy }

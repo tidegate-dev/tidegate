@@ -9,7 +9,7 @@ tidegate login https://tidegate.example
 `tidegate login` reads your user name and password from the terminal and requests a session token. It saves the URL and the token as a connection. Later commands read the connection:
 
 ```sh
-tidegate ping
+tidegate project list
 ```
 
 `tidegate logout` revokes the session token and removes it from the connection. The URL stays saved, so `tidegate login` without a URL signs in again.
@@ -28,7 +28,7 @@ tidegate login https://staging.tidegate.example --connection staging
 If one connection is saved, every command uses it. If several are saved, select one with `--connection` or with `TIDEGATE_CONNECTION`:
 
 ```sh
-tidegate ping --connection staging
+tidegate project list --connection staging
 export TIDEGATE_CONNECTION=production
 ```
 
@@ -54,7 +54,7 @@ tidegate connections remove staging
 export TIDEGATE_SERVER=https://tidegate.example
 export TIDEGATE_TOKEN=$(tidegate login "$TIDEGATE_SERVER" --print-token < credentials.txt)
 
-tidegate ping
+tidegate project list
 tidegate logout
 ```
 

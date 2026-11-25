@@ -49,7 +49,29 @@ This builds the components' container images, creates the cluster if it doesn't 
 Both `just dev` and `just kind` serve the authority over HTTPS on port 8080, with a certificate from a local CA. They create the CA in `dev/tls/` the first time, and in `just kind`, cert-manager issues the authority's certificates from it. To trust the CA, point `SSL_CERT_FILE` to it:
 
 ```sh
-SSL_CERT_FILE=dev/tls/ca.pem TIDEGATE_SERVER=https://127.0.0.1:8080 tidegate ping
+export SSL_CERT_FILE=dev/tls/ca.pem
+```
+
+## Sign in
+
+A new database has no user, so first create the [first admin](authority/initial-admin.md). With `just dev`, run:
+
+```sh
+TIDEGATE_AUTHORITY__DATABASE__URL='postgres://tidegate:tidegate@127.0.0.1:5432/tidegate?sslmode=disable' \
+    go run ./authority/cmd/authority create-initial-admin alice
+```
+
+With `just kind`, run:
+
+```sh
+kubectl exec -it -n tidegate deploy/authority -- /authority create-initial-admin alice
+```
+
+Then sign in with the CLI and call the authority:
+
+```sh
+tidegate login https://127.0.0.1:8080
+tidegate project list
 ```
 
 Other tools take the CA file as a flag, like `buf curl --cacert dev/tls/ca.pem`. Your system's trust store stays unchanged.

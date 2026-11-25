@@ -14,11 +14,10 @@ import (
 	"connectrpc.com/connect"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
-	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
-	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
 	"github.com/tidegate-dev/tidegate/internal/logging"
 	"github.com/tidegate-dev/tidegate/internal/secret"
 )
@@ -33,7 +32,7 @@ func TestSessionInterceptorPutsTheSessionIntoTheContext(t *testing.T) {
 	}
 	sessions := &fakeSessions{byToken: map[string]model.Session{"abc": session}}
 	found := make(chan model.Session, 1)
-	client := pingClient(t, NewSessionInterceptor(sessions), connect.UnaryInterceptorFunc(
+	client := testClient(t, NewSessionInterceptor(sessions), connect.UnaryInterceptorFunc(
 		func(next connect.UnaryFunc) connect.UnaryFunc {
 			return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 				inContext, _ := sessionFromContext(ctx)
@@ -45,7 +44,7 @@ func TestSessionInterceptorPutsTheSessionIntoTheContext(t *testing.T) {
 	))
 
 	// act
-	_, err := client.Ping(t.Context(), pingWithToken("abc"))
+	_, err := client.CallUnary(t.Context(), requestWithToken("abc"))
 
 	// assert
 	require.NoError(t, err)
@@ -67,13 +66,13 @@ func TestSessionInterceptorAddsTheUserAndTheSessionToTheLogger(t *testing.T) {
 		func(ctx context.Context, _ connect.AnyRequest) (connect.AnyResponse, error) {
 			logging.FromContext(ctx).InfoContext(ctx, "handled")
 
-			return connect.NewResponse(&authorityv1.PingResponse{}), nil
+			return connect.NewResponse(&emptypb.Empty{}), nil
 		},
 	)
 	ctx := logging.NewContext(t.Context(), logging.New(&out, slog.LevelInfo, logging.FormatText))
 
 	// act
-	_, err := handler(ctx, pingWithToken("abc"))
+	_, err := handler(ctx, requestWithToken("abc"))
 
 	// assert
 	require.NoError(t, err)
@@ -86,10 +85,10 @@ func TestSessionInterceptorRefusesACallWithoutAToken(t *testing.T) {
 
 	// arrange
 	sessions := &fakeSessions{}
-	client := pingClient(t, NewSessionInterceptor(sessions))
+	client := testClient(t, NewSessionInterceptor(sessions))
 
 	// act
-	_, err := client.Ping(t.Context(), connect.NewRequest(&authorityv1.PingRequest{}))
+	_, err := client.CallUnary(t.Context(), connect.NewRequest(&emptypb.Empty{}))
 
 	// assert
 	assert.Equal(t, connect.CodeUnauthenticated, connect.CodeOf(err))
@@ -100,10 +99,10 @@ func TestSessionInterceptorRefusesAnUnknownTokenWithoutTheReason(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	client := pingClient(t, NewSessionInterceptor(&fakeSessions{}))
+	client := testClient(t, NewSessionInterceptor(&fakeSessions{}))
 
 	// act
-	_, err := client.Ping(t.Context(), pingWithToken("unknown"))
+	_, err := client.CallUnary(t.Context(), requestWithToken("unknown"))
 
 	// assert
 	var connectErr *connect.Error
@@ -117,10 +116,10 @@ func TestSessionInterceptorDoesNotReportAFailedLookupAsNotSignedIn(t *testing.T)
 	t.Parallel()
 
 	// arrange
-	client := pingClient(t, NewSessionInterceptor(&fakeSessions{err: errors.New("connection refused")}))
+	client := testClient(t, NewSessionInterceptor(&fakeSessions{err: errors.New("connection refused")}))
 
 	// act
-	_, err := client.Ping(t.Context(), pingWithToken("abc"))
+	_, err := client.CallUnary(t.Context(), requestWithToken("abc"))
 
 	// assert
 	assert.Equal(t, connect.CodeUnknown, connect.CodeOf(err))
@@ -131,10 +130,10 @@ func TestSessionInterceptorLetsAPublicProcedureThroughWithoutAToken(t *testing.T
 
 	// arrange
 	sessions := &fakeSessions{}
-	client := pingClient(t, NewSessionInterceptor(sessions, authorityv1connect.PingServicePingProcedure))
+	client := testClient(t, NewSessionInterceptor(sessions, testProcedure))
 
 	// act
-	_, err := client.Ping(t.Context(), connect.NewRequest(&authorityv1.PingRequest{}))
+	_, err := client.CallUnary(t.Context(), connect.NewRequest(&emptypb.Empty{}))
 
 	// assert
 	require.NoError(t, err)
@@ -229,19 +228,29 @@ func (streamWithoutToken) RequestHeader() http.Header {
 	return http.Header{}
 }
 
-func pingClient(t *testing.T, interceptors ...connect.Interceptor) authorityv1connect.PingServiceClient {
+// testProcedure is a unary procedure that the tests serve themselves, so they
+// don't depend on a procedure of the API.
+const testProcedure = "/tidegate.authority.v1.TestService/Call"
+
+func testClient(t *testing.T, interceptors ...connect.Interceptor) *connect.Client[emptypb.Empty, emptypb.Empty] {
 	t.Helper()
 
 	mux := http.NewServeMux()
-	mux.Handle(authorityv1connect.NewPingServiceHandler(PingService{}, connect.WithInterceptors(interceptors...)))
+	mux.Handle(testProcedure, connect.NewUnaryHandler(
+		testProcedure,
+		func(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
+			return connect.NewResponse(&emptypb.Empty{}), nil
+		},
+		connect.WithInterceptors(interceptors...),
+	))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 
-	return authorityv1connect.NewPingServiceClient(server.Client(), server.URL)
+	return connect.NewClient[emptypb.Empty, emptypb.Empty](server.Client(), server.URL+testProcedure)
 }
 
-func pingWithToken(token string) *connect.Request[authorityv1.PingRequest] {
-	request := connect.NewRequest(&authorityv1.PingRequest{})
+func requestWithToken(token string) *connect.Request[emptypb.Empty] {
+	request := connect.NewRequest(&emptypb.Empty{})
 	request.Header().Set("Authorization", "Bearer "+token)
 
 	return request
