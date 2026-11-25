@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tidegate-dev/tidegate/internal/logging"
+	"github.com/phemera-dev/phemera/internal/logging"
 )
 
 func TestNewWritesJSON(t *testing.T) {

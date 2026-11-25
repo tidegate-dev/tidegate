@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
+	"github.com/phemera-dev/phemera/authority/internal/model"
 )
 
 // ErrAssetAccessDenied means the user may not access the requested asset.

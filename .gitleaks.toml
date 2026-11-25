@@ -12,7 +12,7 @@ keywords = ["://"]
 
 # The local development environment uses this password.
 [[rules.allowlists]]
-regexes = ['''^tidegate$''']
+regexes = ['''^(tidegate|phemera)$''']
 
 [[allowlists]]
 description = "Throwaway host key of the local test SSH host"

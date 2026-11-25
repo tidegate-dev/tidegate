@@ -5,8 +5,8 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/tidegate-dev/tidegate/cli/internal/authority"
-	"github.com/tidegate-dev/tidegate/cli/internal/connections"
+	"github.com/phemera-dev/phemera/cli/internal/authority"
+	"github.com/phemera-dev/phemera/cli/internal/connections"
 )
 
 // endSession ends the session of connection at its authority, if it has one.

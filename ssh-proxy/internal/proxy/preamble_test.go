@@ -14,7 +14,7 @@ func TestReadPreambleReturnsTheTicket(t *testing.T) {
 	t.Parallel()
 
 	// act
-	ticket, _, err := readPreamble(strings.NewReader("tidegate-session-v1 the-ticket\n"))
+	ticket, _, err := readPreamble(strings.NewReader("phemera-session-v1 the-ticket\n"))
 
 	// assert
 	require.NoError(t, err)
@@ -25,7 +25,7 @@ func TestReadPreambleReturnsAReaderWithWhatFollowsTheLine(t *testing.T) {
 	t.Parallel()
 
 	// act
-	_, reader, err := readPreamble(strings.NewReader("tidegate-session-v1 the-ticket\nSSH-2.0-client\r\n"))
+	_, reader, err := readPreamble(strings.NewReader("phemera-session-v1 the-ticket\nSSH-2.0-client\r\n"))
 
 	// assert
 	require.NoError(t, err)
@@ -40,16 +40,16 @@ func TestReadPreambleRefusesALineThatIsNoPreamble(t *testing.T) {
 
 	tests := map[string]string{
 		"nothing":                     "",
-		"no line break":               "tidegate-session-v1 the-ticket",
-		"another version":             "tidegate-session-v2 the-ticket\n",
-		"no ticket":                   "tidegate-session-v1\n",
-		"empty ticket":                "tidegate-session-v1 \n",
-		"two tickets":                 "tidegate-session-v1 one two\n",
-		"carriage return":             "tidegate-session-v1 the-ticket\r\n",
-		"control character in ticket": "tidegate-session-v1 the\x00ticket\n",
-		"letter outside ASCII":        "tidegate-session-v1 the-tickét\n",
+		"no line break":               "phemera-session-v1 the-ticket",
+		"another version":             "phemera-session-v2 the-ticket\n",
+		"no ticket":                   "phemera-session-v1\n",
+		"empty ticket":                "phemera-session-v1 \n",
+		"two tickets":                 "phemera-session-v1 one two\n",
+		"carriage return":             "phemera-session-v1 the-ticket\r\n",
+		"control character in ticket": "phemera-session-v1 the\x00ticket\n",
+		"letter outside ASCII":        "phemera-session-v1 the-tickét\n",
 		"an SSH client's first line":  "SSH-2.0-OpenSSH_10.0\r\n",
-		"longer than the limit":       "tidegate-session-v1 " + strings.Repeat("a", maxPreambleBytes) + "\n",
+		"longer than the limit":       "phemera-session-v1 " + strings.Repeat("a", maxPreambleBytes) + "\n",
 	}
 
 	for name, input := range tests {
@@ -69,7 +69,7 @@ func TestReadPreambleAcceptsALineOfExactlyTheLimit(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	start := "tidegate-session-v1 "
+	start := "phemera-session-v1 "
 	ticket := strings.Repeat("a", maxPreambleBytes-len(start)-1)
 
 	// act
@@ -81,8 +81,8 @@ func TestReadPreambleAcceptsALineOfExactlyTheLimit(t *testing.T) {
 }
 
 func FuzzReadPreambleTakesOnlyTheLineItAccepts(f *testing.F) {
-	f.Add([]byte("tidegate-session-v1 the-ticket\nSSH-2.0-client\r\n"))
-	f.Add([]byte("tidegate-session-v1 \n"))
+	f.Add([]byte("phemera-session-v1 the-ticket\nSSH-2.0-client\r\n"))
+	f.Add([]byte("phemera-session-v1 \n"))
 	f.Add([]byte("SSH-2.0-OpenSSH_10.0\r\n"))
 	f.Add([]byte{})
 
@@ -94,6 +94,6 @@ func FuzzReadPreambleTakesOnlyTheLineItAccepts(f *testing.F) {
 
 		rest, err := io.ReadAll(reader)
 		require.NoError(t, err)
-		assert.Equal(t, string(input), "tidegate-session-v1 "+ticket.Reveal()+"\n"+string(rest))
+		assert.Equal(t, string(input), "phemera-session-v1 "+ticket.Reveal()+"\n"+string(rest))
 	})
 }

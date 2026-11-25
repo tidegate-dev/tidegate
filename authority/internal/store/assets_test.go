@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
+	"github.com/phemera-dev/phemera/authority/internal/model"
 )
 
 var _ = Describe("AssetReadWriter", func() {
@@ -48,7 +48,7 @@ var _ = Describe("AssetReadWriter", func() {
 			"port": 2222,
 			"host_key": "ssh-ed25519 AAAA",
 			"user_name": "deploy",
-			"secret": {"engine_name": "tidegate", "reference": "reference-1", "kind": "private_key"}
+			"secret": {"engine_name": "phemera", "reference": "reference-1", "kind": "private_key"}
 		}`))
 	})
 
@@ -189,7 +189,7 @@ var _ = Describe("AssetReadWriter", func() {
 			`INSERT INTO assets (id, project_id, name, kind, labels, details)
 			 VALUES ($1, $2, 'bastion', 'ssh', '{}', '{
 			     "host": "bastion.example", "port": 22, "host_key": "ssh-ed25519 AAAA",
-			     "user_name": "deploy", "secret": {"engine_name": "tidegate", "kind": "password"}
+			     "user_name": "deploy", "secret": {"engine_name": "phemera", "kind": "password"}
 			 }')`,
 			databaseID(model.AssetID{2}), databaseID(model.ProjectID{1}),
 		)
@@ -214,7 +214,7 @@ func newSSHAsset(id model.AssetID, projectID model.ProjectID, name string) *mode
 			HostKey:  "ssh-ed25519 AAAA",
 			UserName: "deploy",
 			Secret: model.StoredSSHSecret{
-				EngineName: "tidegate",
+				EngineName: "phemera",
 				Reference:  "reference-1",
 				Kind:       model.SSHSecretKindPrivateKey,
 			},

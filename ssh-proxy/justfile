@@ -6,7 +6,7 @@ build:
 # coverage to coverage/ at the root of the repository.
 test:
     mkdir -p ../coverage
-    go test -race -coverpkg=github.com/tidegate-dev/tidegate/... -coverprofile=../coverage/ssh-proxy.out ./...
+    go test -race -coverpkg=github.com/phemera-dev/phemera/... -coverprofile=../coverage/ssh-proxy.out ./...
 
 # Lint the ssh-proxy.
 lint:

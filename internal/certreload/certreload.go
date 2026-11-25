@@ -21,7 +21,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 
-	"github.com/tidegate-dev/tidegate/internal/logging"
+	"github.com/phemera-dev/phemera/internal/logging"
 )
 
 // ErrKeyTooShort means the certificate's key is shorter than NIST allows
@@ -134,9 +134,9 @@ func (c *Certificate) Watch(ctx context.Context) {
 // ReportExpiry reports on the global meter provider when the certificate in
 // use expires.
 func (c *Certificate) ReportExpiry() (metric.Registration, error) {
-	meter := otel.Meter("github.com/tidegate-dev/tidegate/internal/certreload")
+	meter := otel.Meter("github.com/phemera-dev/phemera/internal/certreload")
 
-	expiry, err := meter.Int64ObservableGauge("tidegate.tls.certificate.expiry",
+	expiry, err := meter.Int64ObservableGauge("phemera.tls.certificate.expiry",
 		metric.WithUnit("s"),
 		metric.WithDescription("When the TLS certificate in use expires, in seconds since 1970"))
 	if err != nil {
@@ -211,11 +211,11 @@ func checkKeyLength(leaf *x509.Certificate) error {
 	switch key := leaf.PublicKey.(type) {
 	case *rsa.PublicKey:
 		if bits := key.N.BitLen(); bits < minRSABits {
-			return fmt.Errorf("%w: its RSA key has %d bits, and tidegate needs at least %d", ErrKeyTooShort, bits, minRSABits)
+			return fmt.Errorf("%w: its RSA key has %d bits, and phemera needs at least %d", ErrKeyTooShort, bits, minRSABits)
 		}
 	case *ecdsa.PublicKey:
 		if bits := key.Curve.Params().BitSize; bits < minCurveBits {
-			return fmt.Errorf("%w: its elliptic curve has %d bits, and tidegate needs at least %d", ErrKeyTooShort, bits, minCurveBits)
+			return fmt.Errorf("%w: its elliptic curve has %d bits, and phemera needs at least %d", ErrKeyTooShort, bits, minCurveBits)
 		}
 	}
 

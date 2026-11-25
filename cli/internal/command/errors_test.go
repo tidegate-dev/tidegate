@@ -7,7 +7,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/tidegate-dev/tidegate/cli/internal/connections"
+	"github.com/phemera-dev/phemera/cli/internal/connections"
 )
 
 func TestMessageQuotesAnAuthoritysErrorTextThatATerminalWouldInterpret(t *testing.T) {
@@ -21,7 +21,7 @@ func TestMessageQuotesAnAuthoritysErrorTextThatATerminalWouldInterpret(t *testin
 			t.Parallel()
 
 			// arrange
-			connection := connections.Connection{Name: "first", Server: "https://tidegate.example"}
+			connection := connections.Connection{Name: "first", Server: "https://phemera.example"}
 			err := callFailed("creating the project", connection, connect.NewError(code, errors.New("taken\x1b[2J")))
 
 			// act

@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
+	"github.com/phemera-dev/phemera/authority/internal/model"
 )
 
 // RoleFinder finds a role in a project by the role's name.

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.12
 // 	protoc        (unknown)
-// source: tidegate/authority/v1/asset.proto
+// source: phemera/authority/v1/asset.proto
 
 package authorityv1
 
@@ -48,7 +48,7 @@ type SSHTarget struct {
 
 func (x *SSHTarget) Reset() {
 	*x = SSHTarget{}
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[0]
+	mi := &file_phemera_authority_v1_asset_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -60,7 +60,7 @@ func (x *SSHTarget) String() string {
 func (*SSHTarget) ProtoMessage() {}
 
 func (x *SSHTarget) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[0]
+	mi := &file_phemera_authority_v1_asset_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -73,7 +73,7 @@ func (x *SSHTarget) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SSHTarget.ProtoReflect.Descriptor instead.
 func (*SSHTarget) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{0}
+	return file_phemera_authority_v1_asset_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *SSHTarget) GetHost() string {
@@ -130,7 +130,7 @@ type CreateAssetRequest struct {
 
 func (x *CreateAssetRequest) Reset() {
 	*x = CreateAssetRequest{}
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[1]
+	mi := &file_phemera_authority_v1_asset_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -142,7 +142,7 @@ func (x *CreateAssetRequest) String() string {
 func (*CreateAssetRequest) ProtoMessage() {}
 
 func (x *CreateAssetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[1]
+	mi := &file_phemera_authority_v1_asset_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -155,7 +155,7 @@ func (x *CreateAssetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateAssetRequest.ProtoReflect.Descriptor instead.
 func (*CreateAssetRequest) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{1}
+	return file_phemera_authority_v1_asset_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *CreateAssetRequest) GetProjectName() string {
@@ -200,7 +200,7 @@ type isCreateAssetRequest_Target interface {
 }
 
 type CreateAssetRequest_Ssh struct {
-	// SSH makes the asset a host that tidegate reaches over SSH.
+	// SSH makes the asset a host that phemera reaches over SSH.
 	Ssh *CreateAssetRequest_SSHAsset `protobuf:"bytes,4,opt,name=ssh,proto3,oneof"`
 }
 
@@ -230,7 +230,7 @@ type CreateAssetResponse struct {
 
 func (x *CreateAssetResponse) Reset() {
 	*x = CreateAssetResponse{}
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[2]
+	mi := &file_phemera_authority_v1_asset_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -242,7 +242,7 @@ func (x *CreateAssetResponse) String() string {
 func (*CreateAssetResponse) ProtoMessage() {}
 
 func (x *CreateAssetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[2]
+	mi := &file_phemera_authority_v1_asset_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -255,7 +255,7 @@ func (x *CreateAssetResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateAssetResponse.ProtoReflect.Descriptor instead.
 func (*CreateAssetResponse) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{2}
+	return file_phemera_authority_v1_asset_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CreateAssetResponse) GetId() string {
@@ -307,7 +307,7 @@ type isCreateAssetResponse_Target interface {
 }
 
 type CreateAssetResponse_Ssh struct {
-	// SSH is set for a host that tidegate reaches over SSH.
+	// SSH is set for a host that phemera reaches over SSH.
 	Ssh *CreateAssetResponse_SSHAsset `protobuf:"bytes,5,opt,name=ssh,proto3,oneof"`
 }
 
@@ -327,7 +327,7 @@ type ListAssetsRequest struct {
 
 func (x *ListAssetsRequest) Reset() {
 	*x = ListAssetsRequest{}
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[3]
+	mi := &file_phemera_authority_v1_asset_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -339,7 +339,7 @@ func (x *ListAssetsRequest) String() string {
 func (*ListAssetsRequest) ProtoMessage() {}
 
 func (x *ListAssetsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[3]
+	mi := &file_phemera_authority_v1_asset_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -352,7 +352,7 @@ func (x *ListAssetsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAssetsRequest.ProtoReflect.Descriptor instead.
 func (*ListAssetsRequest) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{3}
+	return file_phemera_authority_v1_asset_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ListAssetsRequest) GetProjectName() string {
@@ -373,7 +373,7 @@ type ListAssetsResponse struct {
 
 func (x *ListAssetsResponse) Reset() {
 	*x = ListAssetsResponse{}
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[4]
+	mi := &file_phemera_authority_v1_asset_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -385,7 +385,7 @@ func (x *ListAssetsResponse) String() string {
 func (*ListAssetsResponse) ProtoMessage() {}
 
 func (x *ListAssetsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[4]
+	mi := &file_phemera_authority_v1_asset_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -398,7 +398,7 @@ func (x *ListAssetsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAssetsResponse.ProtoReflect.Descriptor instead.
 func (*ListAssetsResponse) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{4}
+	return file_phemera_authority_v1_asset_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ListAssetsResponse) GetAssets() []*ListAssetsResponse_Asset {
@@ -408,11 +408,11 @@ func (x *ListAssetsResponse) GetAssets() []*ListAssetsResponse_Asset {
 	return nil
 }
 
-// SSHLogin is the user that tidegate logs in as on an SSH host and what the
+// SSHLogin is the user that phemera logs in as on an SSH host and what the
 // user logs in with.
 type CreateAssetRequest_SSHLogin struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// UserName is the user that tidegate logs in as on the host, like
+	// UserName is the user that phemera logs in as on the host, like
 	// "deploy", "deploy@example.com" or "EXAMPLE\deploy".
 	//
 	// Rules: Uppercase and lowercase letters from A to Z, digits,
@@ -421,7 +421,7 @@ type CreateAssetRequest_SSHLogin struct {
 	// the same rule. At most 64 characters. These are the characters that
 	// useradd(8) allows, plus the at sign of a name with a domain.
 	UserName string `protobuf:"bytes,1,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
-	// Secret is what the user logs in with. tidegate stores it and never
+	// Secret is what the user logs in with. phemera stores it and never
 	// returns it.
 	//
 	// Types that are valid to be assigned to Secret:
@@ -435,7 +435,7 @@ type CreateAssetRequest_SSHLogin struct {
 
 func (x *CreateAssetRequest_SSHLogin) Reset() {
 	*x = CreateAssetRequest_SSHLogin{}
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[5]
+	mi := &file_phemera_authority_v1_asset_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -447,7 +447,7 @@ func (x *CreateAssetRequest_SSHLogin) String() string {
 func (*CreateAssetRequest_SSHLogin) ProtoMessage() {}
 
 func (x *CreateAssetRequest_SSHLogin) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[5]
+	mi := &file_phemera_authority_v1_asset_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -460,7 +460,7 @@ func (x *CreateAssetRequest_SSHLogin) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateAssetRequest_SSHLogin.ProtoReflect.Descriptor instead.
 func (*CreateAssetRequest_SSHLogin) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{1, 0}
+	return file_phemera_authority_v1_asset_proto_rawDescGZIP(), []int{1, 0}
 }
 
 func (x *CreateAssetRequest_SSHLogin) GetUserName() string {
@@ -508,7 +508,7 @@ type CreateAssetRequest_SSHLogin_Password struct {
 
 type CreateAssetRequest_SSHLogin_PrivateKey struct {
 	// PrivateKey is a private key of the user in PEM, without a
-	// passphrase. A key that tidegate can't read or that has a passphrase
+	// passphrase. A key that phemera can't read or that has a passphrase
 	// fails with invalid_argument.
 	//
 	// Rules: Not empty, at most 16384 bytes.
@@ -519,14 +519,14 @@ func (*CreateAssetRequest_SSHLogin_Password) isCreateAssetRequest_SSHLogin_Secre
 
 func (*CreateAssetRequest_SSHLogin_PrivateKey) isCreateAssetRequest_SSHLogin_Secret() {}
 
-// SSHAsset is an SSH host and what tidegate logs in to it with.
+// SSHAsset is an SSH host and what phemera logs in to it with.
 type CreateAssetRequest_SSHAsset struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Target is the host's address and its host key.
 	//
 	// Rules: Required.
 	Target *SSHTarget `protobuf:"bytes,1,opt,name=target,proto3" json:"target,omitempty"`
-	// Login is the user that tidegate logs in as and what the user logs in
+	// Login is the user that phemera logs in as and what the user logs in
 	// with.
 	//
 	// Rules: Required.
@@ -537,7 +537,7 @@ type CreateAssetRequest_SSHAsset struct {
 
 func (x *CreateAssetRequest_SSHAsset) Reset() {
 	*x = CreateAssetRequest_SSHAsset{}
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[6]
+	mi := &file_phemera_authority_v1_asset_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -549,7 +549,7 @@ func (x *CreateAssetRequest_SSHAsset) String() string {
 func (*CreateAssetRequest_SSHAsset) ProtoMessage() {}
 
 func (x *CreateAssetRequest_SSHAsset) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[6]
+	mi := &file_phemera_authority_v1_asset_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -562,7 +562,7 @@ func (x *CreateAssetRequest_SSHAsset) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateAssetRequest_SSHAsset.ProtoReflect.Descriptor instead.
 func (*CreateAssetRequest_SSHAsset) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{1, 1}
+	return file_phemera_authority_v1_asset_proto_rawDescGZIP(), []int{1, 1}
 }
 
 func (x *CreateAssetRequest_SSHAsset) GetTarget() *SSHTarget {
@@ -579,12 +579,12 @@ func (x *CreateAssetRequest_SSHAsset) GetLogin() *CreateAssetRequest_SSHLogin {
 	return nil
 }
 
-// SSHAsset is an SSH host and the user that tidegate logs in as.
+// SSHAsset is an SSH host and the user that phemera logs in as.
 type CreateAssetResponse_SSHAsset struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Target is the host's address and its host key.
 	Target *SSHTarget `protobuf:"bytes,1,opt,name=target,proto3" json:"target,omitempty"`
-	// UserName is the user that tidegate logs in as on the host.
+	// UserName is the user that phemera logs in as on the host.
 	UserName      string `protobuf:"bytes,2,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -592,7 +592,7 @@ type CreateAssetResponse_SSHAsset struct {
 
 func (x *CreateAssetResponse_SSHAsset) Reset() {
 	*x = CreateAssetResponse_SSHAsset{}
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[8]
+	mi := &file_phemera_authority_v1_asset_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -604,7 +604,7 @@ func (x *CreateAssetResponse_SSHAsset) String() string {
 func (*CreateAssetResponse_SSHAsset) ProtoMessage() {}
 
 func (x *CreateAssetResponse_SSHAsset) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[8]
+	mi := &file_phemera_authority_v1_asset_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -617,7 +617,7 @@ func (x *CreateAssetResponse_SSHAsset) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateAssetResponse_SSHAsset.ProtoReflect.Descriptor instead.
 func (*CreateAssetResponse_SSHAsset) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{2, 0}
+	return file_phemera_authority_v1_asset_proto_rawDescGZIP(), []int{2, 0}
 }
 
 func (x *CreateAssetResponse_SSHAsset) GetTarget() *SSHTarget {
@@ -634,12 +634,12 @@ func (x *CreateAssetResponse_SSHAsset) GetUserName() string {
 	return ""
 }
 
-// SSHAsset is an SSH host and the user that tidegate logs in as.
+// SSHAsset is an SSH host and the user that phemera logs in as.
 type ListAssetsResponse_SSHAsset struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Target is the host's address and its host key.
 	Target *SSHTarget `protobuf:"bytes,1,opt,name=target,proto3" json:"target,omitempty"`
-	// UserName is the user that tidegate logs in as on the host.
+	// UserName is the user that phemera logs in as on the host.
 	UserName      string `protobuf:"bytes,2,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -647,7 +647,7 @@ type ListAssetsResponse_SSHAsset struct {
 
 func (x *ListAssetsResponse_SSHAsset) Reset() {
 	*x = ListAssetsResponse_SSHAsset{}
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[10]
+	mi := &file_phemera_authority_v1_asset_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -659,7 +659,7 @@ func (x *ListAssetsResponse_SSHAsset) String() string {
 func (*ListAssetsResponse_SSHAsset) ProtoMessage() {}
 
 func (x *ListAssetsResponse_SSHAsset) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[10]
+	mi := &file_phemera_authority_v1_asset_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -672,7 +672,7 @@ func (x *ListAssetsResponse_SSHAsset) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAssetsResponse_SSHAsset.ProtoReflect.Descriptor instead.
 func (*ListAssetsResponse_SSHAsset) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{4, 0}
+	return file_phemera_authority_v1_asset_proto_rawDescGZIP(), []int{4, 0}
 }
 
 func (x *ListAssetsResponse_SSHAsset) GetTarget() *SSHTarget {
@@ -713,7 +713,7 @@ type ListAssetsResponse_Asset struct {
 
 func (x *ListAssetsResponse_Asset) Reset() {
 	*x = ListAssetsResponse_Asset{}
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[11]
+	mi := &file_phemera_authority_v1_asset_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -725,7 +725,7 @@ func (x *ListAssetsResponse_Asset) String() string {
 func (*ListAssetsResponse_Asset) ProtoMessage() {}
 
 func (x *ListAssetsResponse_Asset) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_asset_proto_msgTypes[11]
+	mi := &file_phemera_authority_v1_asset_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -738,7 +738,7 @@ func (x *ListAssetsResponse_Asset) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAssetsResponse_Asset.ProtoReflect.Descriptor instead.
 func (*ListAssetsResponse_Asset) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_asset_proto_rawDescGZIP(), []int{4, 1}
+	return file_phemera_authority_v1_asset_proto_rawDescGZIP(), []int{4, 1}
 }
 
 func (x *ListAssetsResponse_Asset) GetId() string {
@@ -790,55 +790,55 @@ type isListAssetsResponse_Asset_Target interface {
 }
 
 type ListAssetsResponse_Asset_Ssh struct {
-	// SSH is set for a host that tidegate reaches over SSH.
+	// SSH is set for a host that phemera reaches over SSH.
 	Ssh *ListAssetsResponse_SSHAsset `protobuf:"bytes,5,opt,name=ssh,proto3,oneof"`
 }
 
 func (*ListAssetsResponse_Asset_Ssh) isListAssetsResponse_Asset_Target() {}
 
-var File_tidegate_authority_v1_asset_proto protoreflect.FileDescriptor
+var File_phemera_authority_v1_asset_proto protoreflect.FileDescriptor
 
-const file_tidegate_authority_v1_asset_proto_rawDesc = "" +
+const file_phemera_authority_v1_asset_proto_rawDesc = "" +
 	"\n" +
-	"!tidegate/authority/v1/asset.proto\x12\x15tidegate.authority.v1\x1a\x1bbuf/validate/validate.proto\"\xe7\x03\n" +
+	" phemera/authority/v1/asset.proto\x12\x14phemera.authority.v1\x1a\x1bbuf/validate/validate.proto\"\xe7\x03\n" +
 	"\tSSHTarget\x12#\n" +
 	"\x04host\x18\x01 \x01(\tB\x0f\xbaH\fr\n" +
 	"\x18\xfd\x01\xba\x01\x01%\xa8\x01\x01R\x04host\x12\x1f\n" +
 	"\x04port\x18\x02 \x01(\rB\v\xbaH\b*\x06\x18\xff\xff\x03(\x01R\x04port\x12\x93\x03\n" +
 	"\bhost_key\x18\x03 \x01(\tB\xf7\x02\xbaH\xf3\x02\xba\x01\xef\x02\n" +
-	"\x13ssh_target.host_key\x12\xad\x01must be the key type ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521 or ssh-rsa, one space and the key in base64, and have at most 8192 characters\x1a\xa7\x01this.size() <= 8192 && this.matches('^(ssh-ed25519|ecdsa-sha2-nistp(256|384|521)|ssh-rsa) ([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$')R\ahostKey\"\xba\v\n" +
+	"\x13ssh_target.host_key\x12\xad\x01must be the key type ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521 or ssh-rsa, one space and the key in base64, and have at most 8192 characters\x1a\xa7\x01this.size() <= 8192 && this.matches('^(ssh-ed25519|ecdsa-sha2-nistp(256|384|521)|ssh-rsa) ([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$')R\ahostKey\"\xb6\v\n" +
 	"\x12CreateAssetRequest\x12\x85\x02\n" +
 	"\fproject_name\x18\x01 \x01(\tB\xe1\x01\xbaH\xdd\x01\xba\x01\xd9\x01\n" +
 	"\x12asset.project_name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\vprojectName\x12\xee\x01\n" +
 	"\x04name\x18\x02 \x01(\tB\xd9\x01\xbaH\xd5\x01\xba\x01\xd1\x01\n" +
 	"\n" +
-	"asset.name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\x04name\x12\x92\x03\n" +
-	"\x06labels\x18\x03 \x03(\v25.tidegate.authority.v1.CreateAssetRequest.LabelsEntryB\xc2\x02\xbaH\xbe\x02\x9a\x01\xba\x02\x10@\"\xfd\x01\xba\x01z\n" +
-	"\x19asset.labels.key_dns_name\x12>the DNS name before the slash must have at most 253 characters\x1a\x1d!this.matches('^[^/]{254,}/')r~2|^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*/)?[A-Za-z0-9]([A-Za-z0-9_.-]{0,61}[A-Za-z0-9])?$*6r422^([A-Za-z0-9]([A-Za-z0-9_.-]{0,61}[A-Za-z0-9])?)?$R\x06labels\x12F\n" +
-	"\x03ssh\x18\x04 \x01(\v22.tidegate.authority.v1.CreateAssetRequest.SSHAssetH\x00R\x03ssh\x1a\xe0\x01\n" +
+	"asset.name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\x04name\x12\x91\x03\n" +
+	"\x06labels\x18\x03 \x03(\v24.phemera.authority.v1.CreateAssetRequest.LabelsEntryB\xc2\x02\xbaH\xbe\x02\x9a\x01\xba\x02\x10@\"\xfd\x01\xba\x01z\n" +
+	"\x19asset.labels.key_dns_name\x12>the DNS name before the slash must have at most 253 characters\x1a\x1d!this.matches('^[^/]{254,}/')r~2|^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*/)?[A-Za-z0-9]([A-Za-z0-9_.-]{0,61}[A-Za-z0-9])?$*6r422^([A-Za-z0-9]([A-Za-z0-9_.-]{0,61}[A-Za-z0-9])?)?$R\x06labels\x12E\n" +
+	"\x03ssh\x18\x04 \x01(\v21.phemera.authority.v1.CreateAssetRequest.SSHAssetH\x00R\x03ssh\x1a\xe0\x01\n" +
 	"\bSSHLogin\x12i\n" +
 	"\tuser_name\x18\x01 \x01(\tBL\xbaHIrG\x18@2C^([A-Za-z0-9_.@][A-Za-z0-9_.@-]*\\\\)?[A-Za-z0-9_.@][A-Za-z0-9_.@-]*$R\buserName\x12(\n" +
 	"\bpassword\x18\x02 \x01(\tB\n" +
 	"\xbaH\ar\x05\x10\x01(\x80\bH\x00R\bpassword\x12.\n" +
 	"\vprivate_key\x18\x03 \x01(\tB\v\xbaH\br\x06\x10\x01(\x80\x80\x01H\x00R\n" +
 	"privateKeyB\x0f\n" +
-	"\x06secret\x12\x05\xbaH\x02\b\x01\x1a\x9e\x01\n" +
-	"\bSSHAsset\x12@\n" +
-	"\x06target\x18\x01 \x01(\v2 .tidegate.authority.v1.SSHTargetB\x06\xbaH\x03\xc8\x01\x01R\x06target\x12P\n" +
-	"\x05login\x18\x02 \x01(\v22.tidegate.authority.v1.CreateAssetRequest.SSHLoginB\x06\xbaH\x03\xc8\x01\x01R\x05login\x1a9\n" +
+	"\x06secret\x12\x05\xbaH\x02\b\x01\x1a\x9c\x01\n" +
+	"\bSSHAsset\x12?\n" +
+	"\x06target\x18\x01 \x01(\v2\x1f.phemera.authority.v1.SSHTargetB\x06\xbaH\x03\xc8\x01\x01R\x06target\x12O\n" +
+	"\x05login\x18\x02 \x01(\v21.phemera.authority.v1.CreateAssetRequest.SSHLoginB\x06\xbaH\x03\xc8\x01\x01R\x05login\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x0f\n" +
-	"\x06target\x12\x05\xbaH\x02\b\x01\"\x99\x03\n" +
+	"\x06target\x12\x05\xbaH\x02\b\x01\"\x96\x03\n" +
 	"\x13CreateAssetResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name\x12N\n" +
-	"\x06labels\x18\x04 \x03(\v26.tidegate.authority.v1.CreateAssetResponse.LabelsEntryR\x06labels\x12G\n" +
-	"\x03ssh\x18\x05 \x01(\v23.tidegate.authority.v1.CreateAssetResponse.SSHAssetH\x00R\x03ssh\x1aa\n" +
-	"\bSSHAsset\x128\n" +
-	"\x06target\x18\x01 \x01(\v2 .tidegate.authority.v1.SSHTargetR\x06target\x12\x1b\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12M\n" +
+	"\x06labels\x18\x04 \x03(\v25.phemera.authority.v1.CreateAssetResponse.LabelsEntryR\x06labels\x12F\n" +
+	"\x03ssh\x18\x05 \x01(\v22.phemera.authority.v1.CreateAssetResponse.SSHAssetH\x00R\x03ssh\x1a`\n" +
+	"\bSSHAsset\x127\n" +
+	"\x06target\x18\x01 \x01(\v2\x1f.phemera.authority.v1.SSHTargetR\x06target\x12\x1b\n" +
 	"\tuser_name\x18\x02 \x01(\tR\buserName\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
@@ -846,72 +846,72 @@ const file_tidegate_authority_v1_asset_proto_rawDesc = "" +
 	"\x06target\"\x9b\x02\n" +
 	"\x11ListAssetsRequest\x12\x85\x02\n" +
 	"\fproject_name\x18\x01 \x01(\tB\xe1\x01\xbaH\xdd\x01\xba\x01\xd9\x01\n" +
-	"\x12asset.project_name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\vprojectName\"\xef\x03\n" +
-	"\x12ListAssetsResponse\x12G\n" +
-	"\x06assets\x18\x01 \x03(\v2/.tidegate.authority.v1.ListAssetsResponse.AssetR\x06assets\x1aa\n" +
-	"\bSSHAsset\x128\n" +
-	"\x06target\x18\x01 \x01(\v2 .tidegate.authority.v1.SSHTargetR\x06target\x12\x1b\n" +
-	"\tuser_name\x18\x02 \x01(\tR\buserName\x1a\xac\x02\n" +
+	"\x12asset.project_name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\vprojectName\"\xeb\x03\n" +
+	"\x12ListAssetsResponse\x12F\n" +
+	"\x06assets\x18\x01 \x03(\v2..phemera.authority.v1.ListAssetsResponse.AssetR\x06assets\x1a`\n" +
+	"\bSSHAsset\x127\n" +
+	"\x06target\x18\x01 \x01(\v2\x1f.phemera.authority.v1.SSHTargetR\x06target\x12\x1b\n" +
+	"\tuser_name\x18\x02 \x01(\tR\buserName\x1a\xaa\x02\n" +
 	"\x05Asset\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name\x12S\n" +
-	"\x06labels\x18\x04 \x03(\v2;.tidegate.authority.v1.ListAssetsResponse.Asset.LabelsEntryR\x06labels\x12F\n" +
-	"\x03ssh\x18\x05 \x01(\v22.tidegate.authority.v1.ListAssetsResponse.SSHAssetH\x00R\x03ssh\x1a9\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12R\n" +
+	"\x06labels\x18\x04 \x03(\v2:.phemera.authority.v1.ListAssetsResponse.Asset.LabelsEntryR\x06labels\x12E\n" +
+	"\x03ssh\x18\x05 \x01(\v21.phemera.authority.v1.ListAssetsResponse.SSHAssetH\x00R\x03ssh\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\b\n" +
-	"\x06target2\xd7\x01\n" +
-	"\fAssetService\x12d\n" +
-	"\vCreateAsset\x12).tidegate.authority.v1.CreateAssetRequest\x1a*.tidegate.authority.v1.CreateAssetResponse\x12a\n" +
+	"\x06target2\xd3\x01\n" +
+	"\fAssetService\x12b\n" +
+	"\vCreateAsset\x12(.phemera.authority.v1.CreateAssetRequest\x1a).phemera.authority.v1.CreateAssetResponse\x12_\n" +
 	"\n" +
-	"ListAssets\x12(.tidegate.authority.v1.ListAssetsRequest\x1a).tidegate.authority.v1.ListAssetsResponseBHZFgithub.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;authorityv1b\x06proto3"
+	"ListAssets\x12'.phemera.authority.v1.ListAssetsRequest\x1a(.phemera.authority.v1.ListAssetsResponseBEZCgithub.com/phemera-dev/phemera/gen/phemera/authority/v1;authorityv1b\x06proto3"
 
 var (
-	file_tidegate_authority_v1_asset_proto_rawDescOnce sync.Once
-	file_tidegate_authority_v1_asset_proto_rawDescData []byte
+	file_phemera_authority_v1_asset_proto_rawDescOnce sync.Once
+	file_phemera_authority_v1_asset_proto_rawDescData []byte
 )
 
-func file_tidegate_authority_v1_asset_proto_rawDescGZIP() []byte {
-	file_tidegate_authority_v1_asset_proto_rawDescOnce.Do(func() {
-		file_tidegate_authority_v1_asset_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_tidegate_authority_v1_asset_proto_rawDesc), len(file_tidegate_authority_v1_asset_proto_rawDesc)))
+func file_phemera_authority_v1_asset_proto_rawDescGZIP() []byte {
+	file_phemera_authority_v1_asset_proto_rawDescOnce.Do(func() {
+		file_phemera_authority_v1_asset_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_phemera_authority_v1_asset_proto_rawDesc), len(file_phemera_authority_v1_asset_proto_rawDesc)))
 	})
-	return file_tidegate_authority_v1_asset_proto_rawDescData
+	return file_phemera_authority_v1_asset_proto_rawDescData
 }
 
-var file_tidegate_authority_v1_asset_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
-var file_tidegate_authority_v1_asset_proto_goTypes = []any{
-	(*SSHTarget)(nil),                    // 0: tidegate.authority.v1.SSHTarget
-	(*CreateAssetRequest)(nil),           // 1: tidegate.authority.v1.CreateAssetRequest
-	(*CreateAssetResponse)(nil),          // 2: tidegate.authority.v1.CreateAssetResponse
-	(*ListAssetsRequest)(nil),            // 3: tidegate.authority.v1.ListAssetsRequest
-	(*ListAssetsResponse)(nil),           // 4: tidegate.authority.v1.ListAssetsResponse
-	(*CreateAssetRequest_SSHLogin)(nil),  // 5: tidegate.authority.v1.CreateAssetRequest.SSHLogin
-	(*CreateAssetRequest_SSHAsset)(nil),  // 6: tidegate.authority.v1.CreateAssetRequest.SSHAsset
-	nil,                                  // 7: tidegate.authority.v1.CreateAssetRequest.LabelsEntry
-	(*CreateAssetResponse_SSHAsset)(nil), // 8: tidegate.authority.v1.CreateAssetResponse.SSHAsset
-	nil,                                  // 9: tidegate.authority.v1.CreateAssetResponse.LabelsEntry
-	(*ListAssetsResponse_SSHAsset)(nil),  // 10: tidegate.authority.v1.ListAssetsResponse.SSHAsset
-	(*ListAssetsResponse_Asset)(nil),     // 11: tidegate.authority.v1.ListAssetsResponse.Asset
-	nil,                                  // 12: tidegate.authority.v1.ListAssetsResponse.Asset.LabelsEntry
+var file_phemera_authority_v1_asset_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_phemera_authority_v1_asset_proto_goTypes = []any{
+	(*SSHTarget)(nil),                    // 0: phemera.authority.v1.SSHTarget
+	(*CreateAssetRequest)(nil),           // 1: phemera.authority.v1.CreateAssetRequest
+	(*CreateAssetResponse)(nil),          // 2: phemera.authority.v1.CreateAssetResponse
+	(*ListAssetsRequest)(nil),            // 3: phemera.authority.v1.ListAssetsRequest
+	(*ListAssetsResponse)(nil),           // 4: phemera.authority.v1.ListAssetsResponse
+	(*CreateAssetRequest_SSHLogin)(nil),  // 5: phemera.authority.v1.CreateAssetRequest.SSHLogin
+	(*CreateAssetRequest_SSHAsset)(nil),  // 6: phemera.authority.v1.CreateAssetRequest.SSHAsset
+	nil,                                  // 7: phemera.authority.v1.CreateAssetRequest.LabelsEntry
+	(*CreateAssetResponse_SSHAsset)(nil), // 8: phemera.authority.v1.CreateAssetResponse.SSHAsset
+	nil,                                  // 9: phemera.authority.v1.CreateAssetResponse.LabelsEntry
+	(*ListAssetsResponse_SSHAsset)(nil),  // 10: phemera.authority.v1.ListAssetsResponse.SSHAsset
+	(*ListAssetsResponse_Asset)(nil),     // 11: phemera.authority.v1.ListAssetsResponse.Asset
+	nil,                                  // 12: phemera.authority.v1.ListAssetsResponse.Asset.LabelsEntry
 }
-var file_tidegate_authority_v1_asset_proto_depIdxs = []int32{
-	7,  // 0: tidegate.authority.v1.CreateAssetRequest.labels:type_name -> tidegate.authority.v1.CreateAssetRequest.LabelsEntry
-	6,  // 1: tidegate.authority.v1.CreateAssetRequest.ssh:type_name -> tidegate.authority.v1.CreateAssetRequest.SSHAsset
-	9,  // 2: tidegate.authority.v1.CreateAssetResponse.labels:type_name -> tidegate.authority.v1.CreateAssetResponse.LabelsEntry
-	8,  // 3: tidegate.authority.v1.CreateAssetResponse.ssh:type_name -> tidegate.authority.v1.CreateAssetResponse.SSHAsset
-	11, // 4: tidegate.authority.v1.ListAssetsResponse.assets:type_name -> tidegate.authority.v1.ListAssetsResponse.Asset
-	0,  // 5: tidegate.authority.v1.CreateAssetRequest.SSHAsset.target:type_name -> tidegate.authority.v1.SSHTarget
-	5,  // 6: tidegate.authority.v1.CreateAssetRequest.SSHAsset.login:type_name -> tidegate.authority.v1.CreateAssetRequest.SSHLogin
-	0,  // 7: tidegate.authority.v1.CreateAssetResponse.SSHAsset.target:type_name -> tidegate.authority.v1.SSHTarget
-	0,  // 8: tidegate.authority.v1.ListAssetsResponse.SSHAsset.target:type_name -> tidegate.authority.v1.SSHTarget
-	12, // 9: tidegate.authority.v1.ListAssetsResponse.Asset.labels:type_name -> tidegate.authority.v1.ListAssetsResponse.Asset.LabelsEntry
-	10, // 10: tidegate.authority.v1.ListAssetsResponse.Asset.ssh:type_name -> tidegate.authority.v1.ListAssetsResponse.SSHAsset
-	1,  // 11: tidegate.authority.v1.AssetService.CreateAsset:input_type -> tidegate.authority.v1.CreateAssetRequest
-	3,  // 12: tidegate.authority.v1.AssetService.ListAssets:input_type -> tidegate.authority.v1.ListAssetsRequest
-	2,  // 13: tidegate.authority.v1.AssetService.CreateAsset:output_type -> tidegate.authority.v1.CreateAssetResponse
-	4,  // 14: tidegate.authority.v1.AssetService.ListAssets:output_type -> tidegate.authority.v1.ListAssetsResponse
+var file_phemera_authority_v1_asset_proto_depIdxs = []int32{
+	7,  // 0: phemera.authority.v1.CreateAssetRequest.labels:type_name -> phemera.authority.v1.CreateAssetRequest.LabelsEntry
+	6,  // 1: phemera.authority.v1.CreateAssetRequest.ssh:type_name -> phemera.authority.v1.CreateAssetRequest.SSHAsset
+	9,  // 2: phemera.authority.v1.CreateAssetResponse.labels:type_name -> phemera.authority.v1.CreateAssetResponse.LabelsEntry
+	8,  // 3: phemera.authority.v1.CreateAssetResponse.ssh:type_name -> phemera.authority.v1.CreateAssetResponse.SSHAsset
+	11, // 4: phemera.authority.v1.ListAssetsResponse.assets:type_name -> phemera.authority.v1.ListAssetsResponse.Asset
+	0,  // 5: phemera.authority.v1.CreateAssetRequest.SSHAsset.target:type_name -> phemera.authority.v1.SSHTarget
+	5,  // 6: phemera.authority.v1.CreateAssetRequest.SSHAsset.login:type_name -> phemera.authority.v1.CreateAssetRequest.SSHLogin
+	0,  // 7: phemera.authority.v1.CreateAssetResponse.SSHAsset.target:type_name -> phemera.authority.v1.SSHTarget
+	0,  // 8: phemera.authority.v1.ListAssetsResponse.SSHAsset.target:type_name -> phemera.authority.v1.SSHTarget
+	12, // 9: phemera.authority.v1.ListAssetsResponse.Asset.labels:type_name -> phemera.authority.v1.ListAssetsResponse.Asset.LabelsEntry
+	10, // 10: phemera.authority.v1.ListAssetsResponse.Asset.ssh:type_name -> phemera.authority.v1.ListAssetsResponse.SSHAsset
+	1,  // 11: phemera.authority.v1.AssetService.CreateAsset:input_type -> phemera.authority.v1.CreateAssetRequest
+	3,  // 12: phemera.authority.v1.AssetService.ListAssets:input_type -> phemera.authority.v1.ListAssetsRequest
+	2,  // 13: phemera.authority.v1.AssetService.CreateAsset:output_type -> phemera.authority.v1.CreateAssetResponse
+	4,  // 14: phemera.authority.v1.AssetService.ListAssets:output_type -> phemera.authority.v1.ListAssetsResponse
 	13, // [13:15] is the sub-list for method output_type
 	11, // [11:13] is the sub-list for method input_type
 	11, // [11:11] is the sub-list for extension type_name
@@ -919,39 +919,39 @@ var file_tidegate_authority_v1_asset_proto_depIdxs = []int32{
 	0,  // [0:11] is the sub-list for field type_name
 }
 
-func init() { file_tidegate_authority_v1_asset_proto_init() }
-func file_tidegate_authority_v1_asset_proto_init() {
-	if File_tidegate_authority_v1_asset_proto != nil {
+func init() { file_phemera_authority_v1_asset_proto_init() }
+func file_phemera_authority_v1_asset_proto_init() {
+	if File_phemera_authority_v1_asset_proto != nil {
 		return
 	}
-	file_tidegate_authority_v1_asset_proto_msgTypes[1].OneofWrappers = []any{
+	file_phemera_authority_v1_asset_proto_msgTypes[1].OneofWrappers = []any{
 		(*CreateAssetRequest_Ssh)(nil),
 	}
-	file_tidegate_authority_v1_asset_proto_msgTypes[2].OneofWrappers = []any{
+	file_phemera_authority_v1_asset_proto_msgTypes[2].OneofWrappers = []any{
 		(*CreateAssetResponse_Ssh)(nil),
 	}
-	file_tidegate_authority_v1_asset_proto_msgTypes[5].OneofWrappers = []any{
+	file_phemera_authority_v1_asset_proto_msgTypes[5].OneofWrappers = []any{
 		(*CreateAssetRequest_SSHLogin_Password)(nil),
 		(*CreateAssetRequest_SSHLogin_PrivateKey)(nil),
 	}
-	file_tidegate_authority_v1_asset_proto_msgTypes[11].OneofWrappers = []any{
+	file_phemera_authority_v1_asset_proto_msgTypes[11].OneofWrappers = []any{
 		(*ListAssetsResponse_Asset_Ssh)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_tidegate_authority_v1_asset_proto_rawDesc), len(file_tidegate_authority_v1_asset_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_phemera_authority_v1_asset_proto_rawDesc), len(file_phemera_authority_v1_asset_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_tidegate_authority_v1_asset_proto_goTypes,
-		DependencyIndexes: file_tidegate_authority_v1_asset_proto_depIdxs,
-		MessageInfos:      file_tidegate_authority_v1_asset_proto_msgTypes,
+		GoTypes:           file_phemera_authority_v1_asset_proto_goTypes,
+		DependencyIndexes: file_phemera_authority_v1_asset_proto_depIdxs,
+		MessageInfos:      file_phemera_authority_v1_asset_proto_msgTypes,
 	}.Build()
-	File_tidegate_authority_v1_asset_proto = out.File
-	file_tidegate_authority_v1_asset_proto_goTypes = nil
-	file_tidegate_authority_v1_asset_proto_depIdxs = nil
+	File_phemera_authority_v1_asset_proto = out.File
+	file_phemera_authority_v1_asset_proto_goTypes = nil
+	file_phemera_authority_v1_asset_proto_depIdxs = nil
 }

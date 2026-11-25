@@ -3,27 +3,27 @@
 Each of the authority's [two APIs](config.md) serves HTTPS with its own certificate. The authority reads each certificate and its key from these files:
 
 ```
-/etc/tidegate/authority/external-api-tls/tls.crt
-/etc/tidegate/authority/external-api-tls/tls.key
-/etc/tidegate/authority/internal-api-tls/tls.crt
-/etc/tidegate/authority/internal-api-tls/tls.key
+/etc/phemera/authority/external-api-tls/tls.crt
+/etc/phemera/authority/external-api-tls/tls.key
+/etc/phemera/authority/internal-api-tls/tls.crt
+/etc/phemera/authority/internal-api-tls/tls.key
 ```
 
 The names are the ones in a Kubernetes TLS Secret, so in Kubernetes you can mount one Secret at each folder. If your files are somewhere else, set their paths:
 
 ```sh
-TIDEGATE_AUTHORITY__EXTERNAL_API__TLS__CERT_FILE=/srv/tls/external.pem \
-TIDEGATE_AUTHORITY__EXTERNAL_API__TLS__KEY_FILE=/srv/tls/external-key.pem \
-TIDEGATE_AUTHORITY__INTERNAL_API__TLS__CERT_FILE=/srv/tls/internal.pem \
-TIDEGATE_AUTHORITY__INTERNAL_API__TLS__KEY_FILE=/srv/tls/internal-key.pem \
+PHEMERA_AUTHORITY__EXTERNAL_API__TLS__CERT_FILE=/srv/tls/external.pem \
+PHEMERA_AUTHORITY__EXTERNAL_API__TLS__KEY_FILE=/srv/tls/external-key.pem \
+PHEMERA_AUTHORITY__INTERNAL_API__TLS__CERT_FILE=/srv/tls/internal.pem \
+PHEMERA_AUTHORITY__INTERNAL_API__TLS__KEY_FILE=/srv/tls/internal-key.pem \
 authority
 ```
 
 If a file is missing, the authority doesn't start and names the file. Only `authority` without a command, which serves the APIs, reads the files. `authority migrate` and `authority create-initial-admin` work without them.
 
-To serve the external API over plain HTTP, for example behind a proxy that terminates TLS, set `TIDEGATE_AUTHORITY__EXTERNAL_API__TLS__DISABLED=true`. The authority then logs a warning when it starts. If you also set the path of the external API's certificate or key, it doesn't start. The internal API has no such setting and always serves HTTPS.
+To serve the external API over plain HTTP, for example behind a proxy that terminates TLS, set `PHEMERA_AUTHORITY__EXTERNAL_API__TLS__DISABLED=true`. The authority then logs a warning when it starts. If you also set the path of the external API's certificate or key, it doesn't start. The internal API has no such setting and always serves HTTPS.
 
-Note that the connection from the proxy to the authority is then unencrypted, including the passwords and tokens of logins. Set `TIDEGATE_AUTHORITY__EXTERNAL_API__LISTEN_ADDRESS` so that only the proxy reaches the external API, for example `127.0.0.1:8080` when the proxy runs on the same host or in the same Pod. The container image listens for the external API on every interface by default.
+Note that the connection from the proxy to the authority is then unencrypted, including the passwords and tokens of logins. Set `PHEMERA_AUTHORITY__EXTERNAL_API__LISTEN_ADDRESS` so that only the proxy reaches the external API, for example `127.0.0.1:8080` when the proxy runs on the same host or in the same Pod. The container image listens for the external API on every interface by default.
 
 A certificate's key needs at least 2048 bits for RSA or 224 bits for an elliptic curve, the minimum NIST sets for use through 2030. The authority doesn't start with a shorter key.
 
@@ -41,10 +41,10 @@ spec:
     - name: authority
       volumeMounts:
         - name: external-api-tls
-          mountPath: /etc/tidegate/authority/external-api-tls
+          mountPath: /etc/phemera/authority/external-api-tls
           readOnly: true
         - name: internal-api-tls
-          mountPath: /etc/tidegate/authority/internal-api-tls
+          mountPath: /etc/phemera/authority/internal-api-tls
           readOnly: true
   volumes:
     - name: external-api-tls

@@ -9,10 +9,10 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
-	"github.com/tidegate-dev/tidegate/authority/internal/service"
-	"github.com/tidegate-dev/tidegate/internal/logging"
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/authority/internal/model"
+	"github.com/phemera-dev/phemera/authority/internal/service"
+	"github.com/phemera-dev/phemera/internal/logging"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 // SessionLookup finds the session that a session token belongs to.

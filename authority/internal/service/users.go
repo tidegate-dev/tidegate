@@ -7,9 +7,9 @@ import (
 
 	"github.com/The127/go-random"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
-	"github.com/tidegate-dev/tidegate/authority/internal/password"
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/authority/internal/model"
+	"github.com/phemera-dev/phemera/authority/internal/password"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 // ErrInvalidName means a user name is empty, starts or ends with whitespace,

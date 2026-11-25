@@ -1,4 +1,4 @@
-module github.com/tidegate-dev/tidegate
+module github.com/phemera-dev/phemera
 
 go 1.27.4
 
@@ -105,5 +105,5 @@ require (
 tool (
 	github.com/arch-go/arch-go/v2
 	github.com/go-gremlins/gremlins/cmd/gremlins
-	github.com/tidegate-dev/tidegate/internal/secretcheck/cmd/secretcheck
+	github.com/phemera-dev/phemera/internal/secretcheck/cmd/secretcheck
 )

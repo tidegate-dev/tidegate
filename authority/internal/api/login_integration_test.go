@@ -15,13 +15,13 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
-	"github.com/tidegate-dev/tidegate/authority/internal/service"
-	"github.com/tidegate-dev/tidegate/authority/internal/store"
-	"github.com/tidegate-dev/tidegate/authority/internal/storetest"
-	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
-	"github.com/tidegate-dev/tidegate/internal/logging"
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/authority/internal/model"
+	"github.com/phemera-dev/phemera/authority/internal/service"
+	"github.com/phemera-dev/phemera/authority/internal/store"
+	"github.com/phemera-dev/phemera/authority/internal/storetest"
+	authorityv1 "github.com/phemera-dev/phemera/gen/phemera/authority/v1"
+	"github.com/phemera-dev/phemera/internal/logging"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 const alicePassword = "correct horse battery staple"

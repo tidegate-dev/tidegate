@@ -1,27 +1,27 @@
 # Gives the test its own configuration directory and clears the variables
 # that choose an authority.
 isolate() {
-    export SSL_CERT_FILE=$TIDEGATE_TEST_CA_FILE
+    export SSL_CERT_FILE=$PHEMERA_TEST_CA_FILE
     export HOME=$BATS_TEST_TMPDIR/home
     export XDG_CONFIG_HOME=$BATS_TEST_TMPDIR/config
-    unset TIDEGATE_CONNECTION TIDEGATE_SERVER TIDEGATE_TOKEN
-    saved=$XDG_CONFIG_HOME/tidegate/connections.json
+    unset PHEMERA_CONNECTION PHEMERA_SERVER PHEMERA_TOKEN
+    saved=$XDG_CONFIG_HOME/phemera/connections.json
 }
 
-# Runs tidegate with the arguments and the admin's user name and password on stdin.
+# Runs phemera with the arguments and the admin's user name and password on stdin.
 sign_in() {
-    printf '%s\n%s\n' "$TIDEGATE_TEST_USER" "$TIDEGATE_TEST_PASSWORD" | tidegate "$@"
+    printf '%s\n%s\n' "$PHEMERA_TEST_USER" "$PHEMERA_TEST_PASSWORD" | phemera "$@"
 }
 
 # Prints a new session token and saves nothing.
 print_token() {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY" --print-token 2>/dev/null
+    sign_in login "$PHEMERA_TEST_AUTHORITY" --print-token 2>/dev/null
 }
 
 # Writes its argument as the file of saved connections, private to the user.
 save() {
     mkdir -p "$XDG_CONFIG_HOME"
-    mkdir -m 700 "$XDG_CONFIG_HOME/tidegate"
+    mkdir -m 700 "$XDG_CONFIG_HOME/phemera"
     (umask 077 && echo "$1" > "$saved")
 }
 

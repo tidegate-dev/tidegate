@@ -8,8 +8,8 @@ import (
 	"connectrpc.com/connect"
 	"github.com/urfave/cli/v3"
 
-	"github.com/tidegate-dev/tidegate/cli/internal/connections"
-	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
+	"github.com/phemera-dev/phemera/cli/internal/connections"
+	authorityv1 "github.com/phemera-dev/phemera/gen/phemera/authority/v1"
 )
 
 type projectResult struct {
@@ -44,7 +44,7 @@ func newProjectsResult(projects []*authorityv1.ListProjectsResponse_Project) pro
 
 func (result projectsResult) String() string {
 	if len(result.Projects) == 0 {
-		return "No projects. Run `tidegate project create <name>` to create one."
+		return "No projects. Run `phemera project create <name>` to create one."
 	}
 
 	rows := make([][]string, 0, len(result.Projects))

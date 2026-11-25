@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tidegate-dev/tidegate/internal/logging"
-	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/config"
+	"github.com/phemera-dev/phemera/internal/logging"
+	"github.com/phemera-dev/phemera/ssh-proxy/internal/config"
 )
 
 func TestDefaultsApplyWithoutVariables(t *testing.T) {
@@ -27,9 +27,9 @@ func TestVariablesOverrideDefaults(t *testing.T) {
 
 	// arrange
 	environ := []string{
-		"TIDEGATE_SSH_PROXY__LISTEN_ADDRESS=:2200",
-		"TIDEGATE_SSH_PROXY__LOG__LEVEL=debug",
-		"TIDEGATE_SSH_PROXY__LOG__FORMAT=text",
+		"PHEMERA_SSH_PROXY__LISTEN_ADDRESS=:2200",
+		"PHEMERA_SSH_PROXY__LOG__LEVEL=debug",
+		"PHEMERA_SSH_PROXY__LOG__FORMAT=text",
 	}
 
 	// act
@@ -48,8 +48,8 @@ func TestNamesAfterThePrefixAndValuesIgnoreLetterCase(t *testing.T) {
 
 	// arrange
 	environ := []string{
-		"TIDEGATE_SSH_PROXY__log__level=DEBUG",
-		"TIDEGATE_SSH_PROXY__Log__Format=Text",
+		"PHEMERA_SSH_PROXY__log__level=DEBUG",
+		"PHEMERA_SSH_PROXY__Log__Format=Text",
 	}
 
 	// act
@@ -64,7 +64,7 @@ func TestEmptyVariableKeepsTheDefault(t *testing.T) {
 	t.Parallel()
 
 	// act
-	cfg, err := config.Load([]string{"TIDEGATE_SSH_PROXY__LISTEN_ADDRESS="})
+	cfg, err := config.Load([]string{"PHEMERA_SSH_PROXY__LISTEN_ADDRESS="})
 
 	// assert
 	require.NoError(t, err)
@@ -76,10 +76,10 @@ func TestVariablesThatAreNotSettingsAreIgnored(t *testing.T) {
 
 	tests := map[string]string{
 		"without prefix":                    "LOG__LEVEL=loud",
-		"the authority's setting":           "TIDEGATE_AUTHORITY__LOG__LEVEL=loud",
-		"kubernetes service host":           "TIDEGATE_SSH_PROXY_SERVICE_HOST=10.0.0.1",
-		"single underscore after SSH_PROXY": "TIDEGATE_SSH_PROXY_LOG__LEVEL=loud",
-		"prefix in lower case":              "tidegate_ssh_proxy__LOG__LEVEL=loud",
+		"the authority's setting":           "PHEMERA_AUTHORITY__LOG__LEVEL=loud",
+		"kubernetes service host":           "PHEMERA_SSH_PROXY_SERVICE_HOST=10.0.0.1",
+		"single underscore after SSH_PROXY": "PHEMERA_SSH_PROXY_LOG__LEVEL=loud",
+		"prefix in lower case":              "phemera_ssh_proxy__LOG__LEVEL=loud",
 	}
 
 	for name, variable := range tests {
@@ -104,28 +104,28 @@ func TestInvalidVariableFailsWithItsNameAndTheReason(t *testing.T) {
 		message  string
 	}{
 		"unknown setting": {
-			variable: "TIDEGATE_SSH_PROXY__LOG__LEVL=debug",
-			message:  "TIDEGATE_SSH_PROXY__LOG__LEVL: unknown setting",
+			variable: "PHEMERA_SSH_PROXY__LOG__LEVL=debug",
+			message:  "PHEMERA_SSH_PROXY__LOG__LEVL: unknown setting",
 		},
 		"listen address without a port": {
-			variable: "TIDEGATE_SSH_PROXY__LISTEN_ADDRESS=localhost",
-			message:  `TIDEGATE_SSH_PROXY__LISTEN_ADDRESS: invalid listen address "localhost", want host:port`,
+			variable: "PHEMERA_SSH_PROXY__LISTEN_ADDRESS=localhost",
+			message:  `PHEMERA_SSH_PROXY__LISTEN_ADDRESS: invalid listen address "localhost", want host:port`,
 		},
 		"listen address with a port name": {
-			variable: "TIDEGATE_SSH_PROXY__LISTEN_ADDRESS=:ssh",
-			message:  `TIDEGATE_SSH_PROXY__LISTEN_ADDRESS: invalid port in listen address ":ssh"`,
+			variable: "PHEMERA_SSH_PROXY__LISTEN_ADDRESS=:ssh",
+			message:  `PHEMERA_SSH_PROXY__LISTEN_ADDRESS: invalid port in listen address ":ssh"`,
 		},
 		"listen address with a port that is too high": {
-			variable: "TIDEGATE_SSH_PROXY__LISTEN_ADDRESS=:65536",
-			message:  `TIDEGATE_SSH_PROXY__LISTEN_ADDRESS: invalid port in listen address ":65536"`,
+			variable: "PHEMERA_SSH_PROXY__LISTEN_ADDRESS=:65536",
+			message:  `PHEMERA_SSH_PROXY__LISTEN_ADDRESS: invalid port in listen address ":65536"`,
 		},
 		"log level": {
-			variable: "TIDEGATE_SSH_PROXY__LOG__LEVEL=loud",
-			message:  `TIDEGATE_SSH_PROXY__LOG__LEVEL: unknown log level "loud", want debug, info, warn or error`,
+			variable: "PHEMERA_SSH_PROXY__LOG__LEVEL=loud",
+			message:  `PHEMERA_SSH_PROXY__LOG__LEVEL: unknown log level "loud", want debug, info, warn or error`,
 		},
 		"log format": {
-			variable: "TIDEGATE_SSH_PROXY__LOG__FORMAT=xml",
-			message:  `TIDEGATE_SSH_PROXY__LOG__FORMAT: unknown log format "xml", want json or text`,
+			variable: "PHEMERA_SSH_PROXY__LOG__FORMAT=xml",
+			message:  `PHEMERA_SSH_PROXY__LOG__FORMAT: unknown log format "xml", want json or text`,
 		},
 	}
 
@@ -147,16 +147,16 @@ func TestEveryInvalidVariableIsReported(t *testing.T) {
 
 	// arrange
 	environ := []string{
-		"TIDEGATE_SSH_PROXY__LOG__LEVEL=loud",
-		"TIDEGATE_SSH_PROXY__LOG__FORMAT=xml",
+		"PHEMERA_SSH_PROXY__LOG__LEVEL=loud",
+		"PHEMERA_SSH_PROXY__LOG__FORMAT=xml",
 	}
 
 	// act
 	_, err := config.Load(environ)
 
 	// assert
-	require.ErrorContains(t, err, "TIDEGATE_SSH_PROXY__LOG__LEVEL: ")
-	require.ErrorContains(t, err, "TIDEGATE_SSH_PROXY__LOG__FORMAT: ")
+	require.ErrorContains(t, err, "PHEMERA_SSH_PROXY__LOG__LEVEL: ")
+	require.ErrorContains(t, err, "PHEMERA_SSH_PROXY__LOG__FORMAT: ")
 }
 
 func defaultConfig() config.Config {

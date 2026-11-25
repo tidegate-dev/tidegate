@@ -12,20 +12,20 @@ import (
 	"github.com/The127/go-random"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/config"
-	"github.com/tidegate-dev/tidegate/authority/internal/db"
-	"github.com/tidegate-dev/tidegate/authority/internal/secretengine/postgres"
-	"github.com/tidegate-dev/tidegate/authority/internal/service"
-	"github.com/tidegate-dev/tidegate/authority/internal/store"
-	"github.com/tidegate-dev/tidegate/internal/metrics"
-	"github.com/tidegate-dev/tidegate/internal/secretengine"
-	"github.com/tidegate-dev/tidegate/internal/systemd"
+	"github.com/phemera-dev/phemera/authority/internal/config"
+	"github.com/phemera-dev/phemera/authority/internal/db"
+	"github.com/phemera-dev/phemera/authority/internal/secretengine/postgres"
+	"github.com/phemera-dev/phemera/authority/internal/service"
+	"github.com/phemera-dev/phemera/authority/internal/store"
+	"github.com/phemera-dev/phemera/internal/metrics"
+	"github.com/phemera-dev/phemera/internal/secretengine"
+	"github.com/phemera-dev/phemera/internal/systemd"
 )
 
 const shutdownTimeout = 10 * time.Second
 
 // Assets store this name, so changing it needs a migration.
-const builtInEngineName = "tidegate"
+const builtInEngineName = "phemera"
 
 // Run serves the authority's APIs and metrics until ctx ends or a server
 // fails.

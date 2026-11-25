@@ -6,7 +6,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/tidegate-dev/tidegate/cli/internal/connections"
+	"github.com/phemera-dev/phemera/cli/internal/connections"
 )
 
 // callError is a call to an authority that failed.
@@ -30,7 +30,7 @@ func (callErr *callError) Error() string {
 
 func (callErr *callError) Unwrap() error { return callErr.err }
 
-// Message returns the text that tidegate shows when a command ends with err.
+// Message returns the text that phemera shows when a command ends with err.
 func Message(err error) string {
 	callErr, isCallError := errors.AsType[*callError](err)
 	if !isCallError {
@@ -50,17 +50,17 @@ func (callErr *callError) message() string {
 	notSignedIn := connect.CodeOf(callErr.err) == connect.CodeUnauthenticated
 	authorityUnreachable := connect.CodeOf(callErr.err) == connect.CodeUnavailable
 
-	// A connection from TIDEGATE_SERVER and TIDEGATE_TOKEN has no name.
+	// A connection from PHEMERA_SERVER and PHEMERA_TOKEN has no name.
 	fromEnvironment := callErr.connection.Name == ""
 	hasToken := callErr.connection.Token.Reveal() != ""
 
 	switch {
 	case notSignedIn && fromEnvironment && hasToken:
-		return "the authority doesn't accept the session token in TIDEGATE_TOKEN. Get a new one with `tidegate login <url> --print-token`."
+		return "the authority doesn't accept the session token in PHEMERA_TOKEN. Get a new one with `phemera login <url> --print-token`."
 	case notSignedIn && fromEnvironment:
-		return "not signed in. Set TIDEGATE_TOKEN to a token from `tidegate login <url> --print-token`, or unset TIDEGATE_SERVER to use a saved connection."
+		return "not signed in. Set PHEMERA_TOKEN to a token from `phemera login <url> --print-token`, or unset PHEMERA_SERVER to use a saved connection."
 	case notSignedIn:
-		return fmt.Sprintf("not signed in, or the session expired. Run `tidegate login --connection %q`.", callErr.connection.Name)
+		return fmt.Sprintf("not signed in, or the session expired. Run `phemera login --connection %q`.", callErr.connection.Name)
 	case authorityUnreachable && isConnectError:
 		return fmt.Sprintf("can't reach the authority at %s: %s", quoteIfUnprintable(callErr.connection.Server), quoteIfUnprintable(connectErr.Message()))
 	default:

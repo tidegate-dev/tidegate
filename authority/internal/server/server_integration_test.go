@@ -19,15 +19,15 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/config"
-	"github.com/tidegate-dev/tidegate/authority/internal/db"
-	"github.com/tidegate-dev/tidegate/authority/internal/dbtest"
-	"github.com/tidegate-dev/tidegate/authority/internal/service"
-	"github.com/tidegate-dev/tidegate/authority/internal/store"
-	"github.com/tidegate-dev/tidegate/authority/internal/storetest"
-	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
-	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/authority/internal/config"
+	"github.com/phemera-dev/phemera/authority/internal/db"
+	"github.com/phemera-dev/phemera/authority/internal/dbtest"
+	"github.com/phemera-dev/phemera/authority/internal/service"
+	"github.com/phemera-dev/phemera/authority/internal/store"
+	"github.com/phemera-dev/phemera/authority/internal/storetest"
+	authorityv1 "github.com/phemera-dev/phemera/gen/phemera/authority/v1"
+	"github.com/phemera-dev/phemera/gen/phemera/authority/v1/authorityv1connect"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 var _ = Describe("run", func() {

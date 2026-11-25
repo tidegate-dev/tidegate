@@ -1,0 +1,21 @@
+version: "0.5"
+
+processes:
+  authority:
+    command: go build -o bin/authority ./authority/cmd/authority && exec bin/authority
+    environment:
+      - PHEMERA_AUTHORITY__LOG__FORMAT=text
+      - PHEMERA_AUTHORITY__EXTERNAL_API__TLS__CERT_FILE=dev/tls/authority-external-api.pem
+      - PHEMERA_AUTHORITY__EXTERNAL_API__TLS__KEY_FILE=dev/tls/authority-external-api-key.pem
+      - PHEMERA_AUTHORITY__INTERNAL_API__TLS__CERT_FILE=dev/tls/authority-internal-api.pem
+      - PHEMERA_AUTHORITY__INTERNAL_API__TLS__KEY_FILE=dev/tls/authority-internal-api-key.pem
+      - PHEMERA_AUTHORITY__DATABASE__URL=postgres://phemera:phemera@127.0.0.1:5432/phemera?sslmode=disable
+      - PHEMERA_AUTHORITY__DATABASE__MIGRATE_ON_START=true
+    depends_on:
+      postgres:
+        condition: process_healthy
+
+  ssh-proxy:
+    command: go build -o bin/ssh-proxy ./ssh-proxy/cmd/ssh-proxy && exec bin/ssh-proxy
+    environment:
+      - PHEMERA_SSH_PROXY__LOG__FORMAT=text

@@ -15,10 +15,10 @@ import (
 	"github.com/The127/go-random"
 	"golang.org/x/crypto/ssh"
 
-	"github.com/tidegate-dev/tidegate/internal/secret"
-	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/authority"
-	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/target"
-	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/ticket"
+	"github.com/phemera-dev/phemera/internal/secret"
+	"github.com/phemera-dev/phemera/ssh-proxy/internal/authority"
+	"github.com/phemera-dev/phemera/ssh-proxy/internal/target"
+	"github.com/phemera-dev/phemera/ssh-proxy/internal/ticket"
 )
 
 const (
@@ -286,7 +286,7 @@ func refuseSession(ctx context.Context, channels <-chan ssh.NewChannel) {
 	select {
 	case newChannel, open := <-channels:
 		if open {
-			_ = newChannel.Reject(ssh.ConnectionFailed, "tidegate opened no session")
+			_ = newChannel.Reject(ssh.ConnectionFailed, "phemera opened no session")
 		}
 	case <-time.After(refusalTimeout):
 	case <-ctx.Done():

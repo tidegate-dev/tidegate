@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io/fs"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/config"
-	"github.com/tidegate-dev/tidegate/internal/certreload"
+	"github.com/phemera-dev/phemera/authority/internal/config"
+	"github.com/phemera-dev/phemera/internal/certreload"
 )
 
 // loadExternalCertificate returns nil when TLS is disabled.

@@ -24,7 +24,7 @@ linters:
           msg: Take a clock.Service from github.com/The127/go-clock.
         - pattern: ^random\.NewPseudoRandom
           pkg: ^github\.com/The127/go-random$
-          msg: Use random.NewCryptoRandom. A pseudo-random source isn't safe for secrets, and tidegate uses none outside tests.
+          msg: Use random.NewCryptoRandom. A pseudo-random source isn't safe for secrets, and phemera uses none outside tests.
         - pattern: ^randomtest\.
           pkg: ^github\.com/The127/go-random/randomtest$
           msg: The mock only works in tests. Use random.NewCryptoRandom.

@@ -1,13 +1,13 @@
 syntax = "proto3";
 
-package tidegate.authority.v1;
+package phemera.authority.v1;
 
 import "buf/validate/validate.proto";
 
-option go_package = "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;authorityv1";
+option go_package = "github.com/phemera-dev/phemera/gen/phemera/authority/v1;authorityv1";
 
 // AssetService creates and lists assets. An asset is a target in one project
-// that tidegate gives access to, like an SSH host.
+// that phemera gives access to, like an SSH host.
 service AssetService {
   // CreateAsset creates an asset in a project and returns it. A project that
   // doesn't exist fails with not_found. A name that another asset of the
@@ -52,10 +52,10 @@ message SSHTarget {
 
 // CreateAssetRequest is the input of AssetService.CreateAsset.
 message CreateAssetRequest {
-  // SSHLogin is the user that tidegate logs in as on an SSH host and what the
+  // SSHLogin is the user that phemera logs in as on an SSH host and what the
   // user logs in with.
   message SSHLogin {
-    // UserName is the user that tidegate logs in as on the host, like
+    // UserName is the user that phemera logs in as on the host, like
     // "deploy", "deploy@example.com" or "EXAMPLE\deploy".
     //
     // Rules: Uppercase and lowercase letters from A to Z, digits,
@@ -67,7 +67,7 @@ message CreateAssetRequest {
       max_len: 64
       pattern: "^([A-Za-z0-9_.@][A-Za-z0-9_.@-]*\\\\)?[A-Za-z0-9_.@][A-Za-z0-9_.@-]*$"
     }];
-    // Secret is what the user logs in with. tidegate stores it and never
+    // Secret is what the user logs in with. phemera stores it and never
     // returns it.
     oneof secret {
       option (buf.validate.oneof).required = true;
@@ -80,7 +80,7 @@ message CreateAssetRequest {
         max_bytes: 1024
       }];
       // PrivateKey is a private key of the user in PEM, without a
-      // passphrase. A key that tidegate can't read or that has a passphrase
+      // passphrase. A key that phemera can't read or that has a passphrase
       // fails with invalid_argument.
       //
       // Rules: Not empty, at most 16384 bytes.
@@ -91,13 +91,13 @@ message CreateAssetRequest {
     }
   }
 
-  // SSHAsset is an SSH host and what tidegate logs in to it with.
+  // SSHAsset is an SSH host and what phemera logs in to it with.
   message SSHAsset {
     // Target is the host's address and its host key.
     //
     // Rules: Required.
     SSHTarget target = 1 [(buf.validate.field).required = true];
-    // Login is the user that tidegate logs in as and what the user logs in
+    // Login is the user that phemera logs in as and what the user logs in
     // with.
     //
     // Rules: Required.
@@ -147,18 +147,18 @@ message CreateAssetRequest {
   oneof target {
     option (buf.validate.oneof).required = true;
 
-    // SSH makes the asset a host that tidegate reaches over SSH.
+    // SSH makes the asset a host that phemera reaches over SSH.
     SSHAsset ssh = 4;
   }
 }
 
 // CreateAssetResponse is the result of AssetService.CreateAsset.
 message CreateAssetResponse {
-  // SSHAsset is an SSH host and the user that tidegate logs in as.
+  // SSHAsset is an SSH host and the user that phemera logs in as.
   message SSHAsset {
     // Target is the host's address and its host key.
     SSHTarget target = 1;
-    // UserName is the user that tidegate logs in as on the host.
+    // UserName is the user that phemera logs in as on the host.
     string user_name = 2;
   }
 
@@ -173,7 +173,7 @@ message CreateAssetResponse {
   map<string, string> labels = 4;
   // Target says what kind of target the new asset is and how to reach it.
   oneof target {
-    // SSH is set for a host that tidegate reaches over SSH.
+    // SSH is set for a host that phemera reaches over SSH.
     SSHAsset ssh = 5;
   }
 }
@@ -193,11 +193,11 @@ message ListAssetsRequest {
 
 // ListAssetsResponse is the result of AssetService.ListAssets.
 message ListAssetsResponse {
-  // SSHAsset is an SSH host and the user that tidegate logs in as.
+  // SSHAsset is an SSH host and the user that phemera logs in as.
   message SSHAsset {
     // Target is the host's address and its host key.
     SSHTarget target = 1;
-    // UserName is the user that tidegate logs in as on the host.
+    // UserName is the user that phemera logs in as on the host.
     string user_name = 2;
   }
 
@@ -214,7 +214,7 @@ message ListAssetsResponse {
     map<string, string> labels = 4;
     // Target says what kind of target the asset is and how to reach it.
     oneof target {
-      // SSH is set for a host that tidegate reaches over SSH.
+      // SSH is set for a host that phemera reaches over SSH.
       SSHAsset ssh = 5;
     }
   }

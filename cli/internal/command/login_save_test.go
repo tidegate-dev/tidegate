@@ -14,9 +14,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tidegate-dev/tidegate/cli/internal/connections"
-	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
-	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
+	"github.com/phemera-dev/phemera/cli/internal/connections"
+	authorityv1 "github.com/phemera-dev/phemera/gen/phemera/authority/v1"
+	"github.com/phemera-dev/phemera/gen/phemera/authority/v1/authorityv1connect"
 )
 
 // fakeLoginService stands in for an authority. It gives out the session token
@@ -72,7 +72,7 @@ func (storeThatCannotSave) Save(connections.Connection) (connections.Connection,
 	return connections.Connection{}, errors.New("the disk is full")
 }
 
-// loginWhenSavingFails runs tidegate login against service, with saved
+// loginWhenSavingFails runs phemera login against service, with saved
 // connections that can't be written.
 func loginWhenSavingFails(t *testing.T, service *fakeLoginService) error {
 	t.Helper()
@@ -83,12 +83,12 @@ func loginWhenSavingFails(t *testing.T, service *fakeLoginService) error {
 	authority := httptest.NewServer(handlers)
 	t.Cleanup(authority.Close)
 
-	tidegate := New(storeThatCannotSave{})
-	tidegate.Reader = strings.NewReader("alice\nhunter2\n")
-	tidegate.Writer = io.Discard
-	tidegate.ErrWriter = io.Discard
+	phemera := New(storeThatCannotSave{})
+	phemera.Reader = strings.NewReader("alice\nhunter2\n")
+	phemera.Writer = io.Discard
+	phemera.ErrWriter = io.Discard
 
-	return tidegate.Run(t.Context(), []string{"tidegate", "login", authority.URL})
+	return phemera.Run(t.Context(), []string{"phemera", "login", authority.URL})
 }
 
 func TestLoginEndsTheNewSessionWhenItCannotSaveIt(t *testing.T) {

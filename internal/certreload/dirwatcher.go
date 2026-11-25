@@ -5,7 +5,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 
-	"github.com/tidegate-dev/tidegate/internal/logging"
+	"github.com/phemera-dev/phemera/internal/logging"
 )
 
 // dirWatcher watches directories with fsnotify. Kubernetes replaces a

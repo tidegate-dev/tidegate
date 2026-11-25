@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tidegate-dev/tidegate/internal/filelock"
+	"github.com/phemera-dev/phemera/internal/filelock"
 )
 
 func TestAcquireGivesUpAfterTheLimitWhileTheLockIsHeld(t *testing.T) {

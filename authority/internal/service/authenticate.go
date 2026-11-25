@@ -9,9 +9,9 @@ import (
 	"github.com/The127/go-random"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
-	"github.com/tidegate-dev/tidegate/authority/internal/password"
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/authority/internal/model"
+	"github.com/phemera-dev/phemera/authority/internal/password"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 // maxConcurrentChecks bounds memory, because each check needs up to 64 MiB.

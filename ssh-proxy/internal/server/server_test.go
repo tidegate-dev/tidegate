@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/config"
-	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/server"
+	"github.com/phemera-dev/phemera/ssh-proxy/internal/config"
+	"github.com/phemera-dev/phemera/ssh-proxy/internal/server"
 )
 
 func TestRunTellsSystemdWhenItListensAndWhenItStops(t *testing.T) {

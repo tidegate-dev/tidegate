@@ -9,11 +9,11 @@ import (
 	"github.com/The127/go-random"
 	"github.com/urfave/cli/v3"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/db"
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
-	"github.com/tidegate-dev/tidegate/authority/internal/service"
-	"github.com/tidegate-dev/tidegate/authority/internal/store"
-	"github.com/tidegate-dev/tidegate/internal/terminal"
+	"github.com/phemera-dev/phemera/authority/internal/db"
+	"github.com/phemera-dev/phemera/authority/internal/model"
+	"github.com/phemera-dev/phemera/authority/internal/service"
+	"github.com/phemera-dev/phemera/authority/internal/store"
+	"github.com/phemera-dev/phemera/internal/terminal"
 )
 
 func createInitialAdminCommand() *cli.Command {

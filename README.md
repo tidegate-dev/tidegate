@@ -1,15 +1,15 @@
-# tidegate
+# phemera
 
-[![CI](https://github.com/tidegate-dev/tidegate/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/tidegate-dev/tidegate/actions/workflows/ci.yaml?query=branch%3Amain)
-[![Coverage](https://codecov.io/gh/tidegate-dev/tidegate/graph/badge.svg)](https://codecov.io/gh/tidegate-dev/tidegate)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/tidegate-dev/tidegate/badge)](https://scorecard.dev/viewer/?uri=github.com/tidegate-dev/tidegate)
+[![CI](https://github.com/phemera-dev/phemera/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/phemera-dev/phemera/actions/workflows/ci.yaml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/phemera-dev/phemera/graph/badge.svg)](https://codecov.io/gh/phemera-dev/phemera)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/phemera-dev/phemera/badge)](https://scorecard.dev/viewer/?uri=github.com/phemera-dev/phemera)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/16081/badge)](https://www.bestpractices.dev/projects/16081)
 
 An open source privileged access management tool.
 
-The documentation is at [tidegate-dev.github.io/tidegate](https://tidegate-dev.github.io/tidegate/).
+The documentation is at [phemera-dev.github.io/phemera](https://phemera-dev.github.io/phemera/).
 
-tidegate is in early development and has no release yet. To try it, build it from source as described under [Development](#development).
+phemera is in early development and has no release yet. To try it, build it from source as described under [Development](#development).
 
 ## Platforms
 
@@ -18,7 +18,7 @@ The authority runs on Linux servers. The tools that people run on their own mach
 | Component | Shipped as | Platforms | Status |
 |---|---|---|---|
 | Authority | Binary and container image | Linux on amd64 and arm64 | In development |
-| `tidegate` CLI | Binary | Linux, macOS and Windows, each on amd64 and arm64 | In development |
+| `phemera` CLI | Binary | Linux, macOS and Windows, each on amd64 and arm64 | In development |
 
 ## Development
 
@@ -61,11 +61,11 @@ Then run `just` to see the recipes, for example `just build` and `just ci`. Note
 
 ## Contributing
 
-Report bugs and suggest features in [GitHub issues](https://github.com/tidegate-dev/tidegate/issues). Contributions are welcome. Before you open a pull request, read [CONTRIBUTING.md](CONTRIBUTING.md). It explains how to propose a change, how to title your pull request, how to sign off your commits and how you may use AI tools.
+Report bugs and suggest features in [GitHub issues](https://github.com/phemera-dev/phemera/issues). Contributions are welcome. Before you open a pull request, read [CONTRIBUTING.md](CONTRIBUTING.md). It explains how to propose a change, how to title your pull request, how to sign off your commits and how you may use AI tools.
 
 ## Security
 
-tidegate controls access to infrastructure. If you find a vulnerability, don't open a public issue. Report it privately as described in [SECURITY.md](SECURITY.md).
+phemera controls access to infrastructure. If you find a vulnerability, don't open a public issue. Report it privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 

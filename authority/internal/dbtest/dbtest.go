@@ -19,7 +19,7 @@ import (
 // URLVariable names the environment variable with the URL of the Postgres
 // server that integration tests use. The tests connect to the database it
 // names only to create their own, so its user needs the CREATEDB privilege.
-const URLVariable = "TIDEGATE_TEST_DATABASE_URL"
+const URLVariable = "PHEMERA_TEST_DATABASE_URL"
 
 // NewDatabase creates an empty database, drops it when the spec ends and
 // returns its URL. It fails the spec if URLVariable isn't set.

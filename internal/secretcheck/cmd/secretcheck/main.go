@@ -4,7 +4,7 @@ package main
 import (
 	"golang.org/x/tools/go/analysis/singlechecker"
 
-	"github.com/tidegate-dev/tidegate/internal/secretcheck"
+	"github.com/phemera-dev/phemera/internal/secretcheck"
 )
 
 func main() {

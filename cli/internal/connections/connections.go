@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tidegate-dev/tidegate/internal/filelock"
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/internal/filelock"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 // Connection is one authority that the user signed in to.
@@ -36,14 +36,14 @@ type Connection struct {
 type Store interface {
 	// Current returns the connection that a command uses. connectionFlag is
 	// the value of --connection. Without it, Current takes the name from
-	// TIDEGATE_CONNECTION, and without that the only saved connection.
+	// PHEMERA_CONNECTION, and without that the only saved connection.
 	//
-	// If TIDEGATE_SERVER or TIDEGATE_TOKEN is set, Current returns a
+	// If PHEMERA_SERVER or PHEMERA_TOKEN is set, Current returns a
 	// connection without a name that is made from these two, and uses
 	// nothing that is saved.
 	Current(connectionFlag string) (Connection, error)
 
-	// ForLogin returns the connection that tidegate login signs in to: its
+	// ForLogin returns the connection that phemera login signs in to: its
 	// server, the name it will be saved under, and no token. url is the
 	// server the user gave, and is empty to sign in again to a saved
 	// connection. connectionFlag is the value of --connection.
@@ -65,7 +65,7 @@ type Store interface {
 }
 
 // NewStore returns the Store that keeps the connections in the file
-// tidegate/connections.json in the user's configuration directory.
+// phemera/connections.json in the user's configuration directory.
 func NewStore() Store {
 	return fileStore{}
 }
@@ -73,15 +73,15 @@ func NewStore() Store {
 type fileStore struct{}
 
 func (fileStore) Current(connectionFlag string) (Connection, error) {
-	serverVariable := os.Getenv("TIDEGATE_SERVER")
-	tokenVariable := os.Getenv("TIDEGATE_TOKEN")
+	serverVariable := os.Getenv("PHEMERA_SERVER")
+	tokenVariable := os.Getenv("PHEMERA_TOKEN")
 	usesVariables := serverVariable != "" || tokenVariable != ""
 
 	switch {
 	case usesVariables && connectionFlag != "":
-		return Connection{}, errors.New("give --connection, or TIDEGATE_SERVER and TIDEGATE_TOKEN, not both")
+		return Connection{}, errors.New("give --connection, or PHEMERA_SERVER and PHEMERA_TOKEN, not both")
 	case usesVariables && serverVariable == "":
-		return Connection{}, errors.New("TIDEGATE_TOKEN is set, but TIDEGATE_SERVER isn't. Set both, or unset TIDEGATE_TOKEN to use a saved connection")
+		return Connection{}, errors.New("PHEMERA_TOKEN is set, but PHEMERA_SERVER isn't. Set both, or unset PHEMERA_TOKEN to use a saved connection")
 	case usesVariables:
 		return Connection{Server: serverVariable, Token: secret.New(tokenVariable)}, nil
 	}
@@ -182,10 +182,10 @@ func (fileStore) Remove(name string) (Connection, error) {
 }
 
 // findSaved returns the saved connection that the user means. That is the one
-// named by connectionFlag, without it the one named in TIDEGATE_CONNECTION,
+// named by connectionFlag, without it the one named in PHEMERA_CONNECTION,
 // and without that the only saved connection.
 func findSaved(savedByName map[string]Connection, connectionFlag string) (Connection, error) {
-	wantedName := cmp.Or(connectionFlag, os.Getenv("TIDEGATE_CONNECTION"))
+	wantedName := cmp.Or(connectionFlag, os.Getenv("PHEMERA_CONNECTION"))
 	wanted, isSaved := savedByName[wantedName]
 
 	switch {
@@ -193,20 +193,20 @@ func findSaved(savedByName map[string]Connection, connectionFlag string) (Connec
 		return wanted, nil
 	case wantedName != "" && len(savedByName) == 0:
 		return Connection{}, fmt.Errorf(
-			"%w. To save it, run `tidegate login <url> --connection %q`",
+			"%w. To save it, run `phemera login <url> --connection %q`",
 			noConnectionNamed(savedByName, wantedName), wantedName,
 		)
 	case wantedName != "":
 		return Connection{}, noConnectionNamed(savedByName, wantedName)
 	case len(savedByName) == 0:
-		return Connection{}, errors.New("no saved connections. Run `tidegate login <url>` to save one")
+		return Connection{}, errors.New("no saved connections. Run `phemera login <url>` to save one")
 	case len(savedByName) == 1:
 		onlyName := slices.Collect(maps.Keys(savedByName))[0]
 
 		return savedByName[onlyName], nil
 	default:
 		return Connection{}, fmt.Errorf(
-			"several saved connections: %s. Choose one with --connection or TIDEGATE_CONNECTION",
+			"several saved connections: %s. Choose one with --connection or PHEMERA_CONNECTION",
 			quotedNames(savedByName),
 		)
 	}
@@ -252,7 +252,7 @@ func nameSavedForAnotherServer(savedByName map[string]Connection, name, server s
 	savedUnderName, nameIsTaken := savedByName[name]
 	if nameIsTaken && savedUnderName.Server != server {
 		return fmt.Errorf(
-			"the connection %q is saved for %q. Choose another name, or remove it first with `tidegate connections remove %q`",
+			"the connection %q is saved for %q. Choose another name, or remove it first with `phemera connections remove %q`",
 			name, savedUnderName.Server, name,
 		)
 	}
@@ -336,7 +336,7 @@ const lockWaitLimit = 10 * time.Second
 // writes them back if change reports that it changed them. It creates the
 // directory of the file so that only the owner can use it.
 //
-// It holds a lock file next to the file meanwhile. Two tidegate processes
+// It holds a lock file next to the file meanwhile. Two phemera processes
 // that change the file at once take turns, and one gives up after it waited
 // 10 seconds for the other.
 func changeFile(change func(savedByName map[string]Connection) (changed bool, err error)) (err error) {
@@ -415,7 +415,7 @@ func writeFile(path string, savedByName map[string]Connection) error {
 	return nil
 }
 
-// filePath returns where the connections are saved: tidegate/connections.json
+// filePath returns where the connections are saved: phemera/connections.json
 // in the user's configuration directory.
 func filePath() (string, error) {
 	configDirectory, err := os.UserConfigDir()
@@ -430,5 +430,5 @@ func filePath() (string, error) {
 		)
 	}
 
-	return filepath.Join(configDirectory, "tidegate", "connections.json"), nil
+	return filepath.Join(configDirectory, "phemera", "connections.json"), nil
 }

@@ -2,7 +2,7 @@
 // session, and the ssh-proxy checks it before it calls the authority.
 package ticket
 
-import "github.com/tidegate-dev/tidegate/internal/secret"
+import "github.com/phemera-dev/phemera/internal/secret"
 
 // Claims are the parts of an admission ticket that the ssh-proxy acts on.
 type Claims struct {

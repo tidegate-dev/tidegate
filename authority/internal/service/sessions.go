@@ -11,8 +11,8 @@ import (
 	"github.com/The127/go-clock"
 	"github.com/The127/go-random"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/authority/internal/model"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 const tokenBytes = 32

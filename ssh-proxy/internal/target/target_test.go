@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
 
-	"github.com/tidegate-dev/tidegate/internal/secret"
-	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/sshtest"
-	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/target"
+	"github.com/phemera-dev/phemera/internal/secret"
+	"github.com/phemera-dev/phemera/ssh-proxy/internal/sshtest"
+	"github.com/phemera-dev/phemera/ssh-proxy/internal/target"
 )
 
 const (

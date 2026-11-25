@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
+	authorityv1 "github.com/phemera-dev/phemera/gen/phemera/authority/v1"
 )
 
 func TestParseAddressReturnsTheHostAndThePort(t *testing.T) {
@@ -193,7 +193,7 @@ func TestAssetsResultTextNamesTheCreateCommandWhenThereAreNoAssets(t *testing.T)
 	text := newAssetsResult(nil).String()
 
 	// assert
-	assert.Contains(t, text, "tidegate asset create ssh")
+	assert.Contains(t, text, "phemera asset create ssh")
 }
 
 func TestAssetsResultTextQuotesWhatATerminalWouldInterpret(t *testing.T) {

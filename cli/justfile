@@ -1,12 +1,12 @@
 # Build the CLI into bin/ at the root of the repository.
 build:
-    go build -o ../bin/ ./cmd/tidegate
+    go build -o ../bin/ ./cmd/phemera
 
 # Run the CLI's unit tests with the race detector, and write their coverage
 # to coverage/ at the root of the repository.
 test:
     mkdir -p ../coverage
-    go test -race -coverpkg=github.com/tidegate-dev/tidegate/... -coverprofile=../coverage/cli.out ./...
+    go test -race -coverpkg=github.com/phemera-dev/phemera/... -coverprofile=../coverage/cli.out ./...
 
 # Lint the CLI.
 lint:

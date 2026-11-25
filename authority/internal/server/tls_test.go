@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/config"
+	"github.com/phemera-dev/phemera/authority/internal/config"
 )
 
 func TestLoadExternalCertificateReturnsNoneWhenTLSIsDisabled(t *testing.T) {

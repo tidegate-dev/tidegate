@@ -39,7 +39,7 @@ for file in "${files[@]}"; do
 
 	for function in $(grep -oP '^func \KFuzz\w*(?=\((\w+ )?\*testing\.F\))' "$file"); do
 		# Unique across packages, and the corpus is stored under this name.
-		name=${package#github.com/tidegate-dev/tidegate/}
+		name=${package#github.com/phemera-dev/phemera/}
 		name=${name//\//_}_$function
 
 		# The build writes a wrapper into the current directory, and Go only lets

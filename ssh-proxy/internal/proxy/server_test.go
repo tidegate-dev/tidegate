@@ -17,11 +17,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
 
-	"github.com/tidegate-dev/tidegate/internal/secret"
-	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/authority"
-	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/proxy"
-	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/sshtest"
-	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/ticket"
+	"github.com/phemera-dev/phemera/internal/secret"
+	"github.com/phemera-dev/phemera/ssh-proxy/internal/authority"
+	"github.com/phemera-dev/phemera/ssh-proxy/internal/proxy"
+	"github.com/phemera-dev/phemera/ssh-proxy/internal/sshtest"
+	"github.com/phemera-dev/phemera/ssh-proxy/internal/ticket"
 )
 
 const (
@@ -683,7 +683,7 @@ func (s *setup) connect(t *testing.T, key ssh.Signer) (*ssh.Client, error) {
 		_ = connection.Close()
 	})
 
-	_, err = io.WriteString(connection, "tidegate-session-v1 the-ticket\n")
+	_, err = io.WriteString(connection, "phemera-session-v1 the-ticket\n")
 	require.NoError(t, err)
 
 	clientConn, channels, requests, err := ssh.NewClientConn(connection, s.address, s.clientConfig(key))

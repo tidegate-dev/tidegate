@@ -1,4 +1,4 @@
-// Package logging builds tidegate's loggers and passes them to request
+// Package logging builds phemera's loggers and passes them to request
 // handlers through a context.
 package logging
 

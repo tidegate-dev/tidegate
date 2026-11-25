@@ -35,13 +35,13 @@ func checkOnlyOwnerHasAccess(path string, wantDirectory bool) error {
 
 	switch {
 	case isSymbolicLink:
-		return fmt.Errorf("%s is a symbolic link. tidegate keeps session tokens there and only uses a real %s", path, kind)
+		return fmt.Errorf("%s is a symbolic link. phemera keeps session tokens there and only uses a real %s", path, kind)
 	case !isWantedKind:
 		return fmt.Errorf("%s isn't a %s", path, kind)
 	case ownerKnown && int(owner.Uid) != os.Geteuid():
-		return fmt.Errorf("%s belongs to another user. tidegate keeps session tokens there and only uses a %s of your own", path, kind)
+		return fmt.Errorf("%s belongs to another user. phemera keeps session tokens there and only uses a %s of your own", path, kind)
 	case othersHaveAccess:
-		return fmt.Errorf("other users can use %s, where tidegate keeps session tokens. Run `chmod %s %s`", path, chmodMode, path)
+		return fmt.Errorf("other users can use %s, where phemera keeps session tokens. Run `chmod %s %s`", path, chmodMode, path)
 	default:
 		return nil
 	}

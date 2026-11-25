@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tidegate-dev/tidegate/internal/terminal"
+	"github.com/phemera-dev/phemera/internal/terminal"
 )
 
 func TestReadPasswordReturnsMatchingEntries(t *testing.T) {

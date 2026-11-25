@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/text/unicode/norm"
 
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 func TestHashMatchesTheReferenceImplementation(t *testing.T) {
@@ -262,7 +262,7 @@ func TestVerifyRefusesAPasswordOver1024Bytes(t *testing.T) {
 func TestVerifyFailsOnAMalformedHash(t *testing.T) {
 	t.Parallel()
 
-	// The library rejects unreadable hashes. These cases cover tidegate's rules.
+	// The library rejects unreadable hashes. These cases cover phemera's rules.
 	for name, hash := range map[string]string{
 		"unreadable":                 "",
 		"not argon2id":               "$argon2i$v=19$m=65536,t=3,p=4$dGlkZWdhdGUtc2FsdC0xNg$mrgC3ZmyavYNNovAISOuUH1wM5aiU+4CgC7QVRPqpCY",

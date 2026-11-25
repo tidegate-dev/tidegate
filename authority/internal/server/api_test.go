@@ -17,10 +17,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
-	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
-	"github.com/tidegate-dev/tidegate/internal/logging"
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/authority/internal/model"
+	"github.com/phemera-dev/phemera/gen/phemera/authority/v1/authorityv1connect"
+	"github.com/phemera-dev/phemera/internal/logging"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 func TestRequestLogShowsTheCodeTheClientGets(t *testing.T) {
@@ -29,7 +29,7 @@ func TestRequestLogShowsTheCodeTheClientGets(t *testing.T) {
 	// arrange
 	var out bytes.Buffer
 
-	const procedure = "/tidegate.test.v1.TestService/Fail"
+	const procedure = "/phemera.test.v1.TestService/Fail"
 
 	mux := http.NewServeMux()
 	mux.Handle(procedure, connect.NewUnaryHandler(procedure,
@@ -66,7 +66,7 @@ func TestInterceptorsRefuseACallWithoutASessionToken(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	client := clientOfSucceedingHandler(t, "/tidegate.test.v1.TestService/Succeed")
+	client := clientOfSucceedingHandler(t, "/phemera.test.v1.TestService/Succeed")
 
 	// act
 	_, err := client.CallUnary(t.Context(), connect.NewRequest(&emptypb.Empty{}))

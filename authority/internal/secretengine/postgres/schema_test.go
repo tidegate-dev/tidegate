@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/secretengine/postgres"
+	"github.com/phemera-dev/phemera/authority/internal/secretengine/postgres"
 )
 
 var _ = Describe("CreateSchema", func() {

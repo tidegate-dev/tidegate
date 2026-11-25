@@ -2,7 +2,7 @@
 # write their coverage to coverage/ at the root of the repository.
 test:
     mkdir -p ../coverage
-    go test -race -coverpkg=github.com/tidegate-dev/tidegate/... -coverprofile=../coverage/internal.out ./...
+    go test -race -coverpkg=github.com/phemera-dev/phemera/... -coverprofile=../coverage/internal.out ./...
 
 # Lint the shared packages.
 lint:

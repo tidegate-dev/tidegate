@@ -6,22 +6,22 @@ Note that the ssh-proxy is a prototype. It doesn't call the authority yet. It co
 
 ## Open a session
 
-First, start tidegate with `just dev`. Then create a key and open a session with it:
+First, start phemera with `just dev`. Then create a key and open a session with it:
 
 ```sh
-ssh-keygen -q -t ed25519 -N '' -f /tmp/tidegate-session-key
-ticket=$(ssh-keygen -lf /tmp/tidegate-session-key.pub | cut -d ' ' -f 2)
+ssh-keygen -q -t ed25519 -N '' -f /tmp/phemera-session-key
+ticket=$(ssh-keygen -lf /tmp/phemera-session-key.pub | cut -d ' ' -f 2)
 
-ssh -i /tmp/tidegate-session-key -o IdentitiesOnly=yes \
+ssh -i /tmp/phemera-session-key -o IdentitiesOnly=yes \
     -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     -o ConnectTimeout=5 -o ServerAliveInterval=5 \
-    -o ProxyCommand="sh -c '{ echo \"tidegate-session-v1 $ticket\"; cat; } | nc 127.0.0.1 2022'" \
+    -o ProxyCommand="sh -c '{ echo \"phemera-session-v1 $ticket\"; cat; } | nc 127.0.0.1 2022'" \
     session@ssh-proxy
 ```
 
-This opens a shell on the test SSH host as its user `tidegate`. To run a command instead, add it at the end, like with any `ssh` call.
+This opens a shell on the test SSH host as its user `phemera`. To run a command instead, add it at the end, like with any `ssh` call.
 
-A connection to the ssh-proxy starts with one line that names a ticket: `tidegate-session-v1`, a space, the ticket and a line break. The SSH connection follows on the same connection. In the example, `ProxyCommand` sends that line. A ticket belongs to one SSH key, and the ssh-proxy refuses a client that doesn't hold this key. For now, a ticket is the SHA256 fingerprint of its key, as `ssh-keygen -lf` prints it.
+A connection to the ssh-proxy starts with one line that names a ticket: `phemera-session-v1`, a space, the ticket and a line break. The SSH connection follows on the same connection. In the example, `ProxyCommand` sends that line. A ticket belongs to one SSH key, and the ssh-proxy refuses a client that doesn't hold this key. For now, a ticket is the SHA256 fingerprint of its key, as `ssh-keygen -lf` prints it.
 
 The ssh-proxy ignores the user name that the client sends, which is `session` in the example. It creates a new host key every time it starts, so the example turns off the host key check of `ssh`.
 
@@ -33,24 +33,24 @@ The ssh-proxy relays shells and commands, with a terminal, changes of the termin
 
 If the ssh-proxy can't open the session, for example because the host doesn't answer, `ssh` reports that the channel failed to open. The reason is in the ssh-proxy's log.
 
-[TEP-0005](https://github.com/tidegate-dev/enhancements/tree/main/teps/0005-gateway-sessions) describes the whole path of a session. It calls the ssh-proxy the SSH worker.
+[TEP-0005](https://github.com/phemera-dev/enhancements/tree/main/teps/0005-gateway-sessions) describes the whole path of a session. It calls the ssh-proxy the SSH worker.
 
 ## Settings
 
 You configure the ssh-proxy with environment variables:
 
 ```sh
-TIDEGATE_SSH_PROXY__LISTEN_ADDRESS=127.0.0.1:2200 \
-TIDEGATE_SSH_PROXY__LOG__FORMAT=text \
+PHEMERA_SSH_PROXY__LISTEN_ADDRESS=127.0.0.1:2200 \
+PHEMERA_SSH_PROXY__LOG__FORMAT=text \
 ssh-proxy
 ```
 
 This makes the ssh-proxy listen on port 2200 of the local machine and write logs that are easy to read.
 
-Every variable starts with `TIDEGATE_SSH_PROXY__`. Two underscores separate the parts of a name. After the prefix, upper and lower case don't matter in names, or in values like `debug`. A setting keeps its default when its variable isn't set or is empty. If a value is invalid, or a variable starts with `TIDEGATE_SSH_PROXY__` but isn't a setting, the ssh-proxy stops and lists each problem.
+Every variable starts with `PHEMERA_SSH_PROXY__`. Two underscores separate the parts of a name. After the prefix, upper and lower case don't matter in names, or in values like `debug`. A setting keeps its default when its variable isn't set or is empty. If a value is invalid, or a variable starts with `PHEMERA_SSH_PROXY__` but isn't a setting, the ssh-proxy stops and lists each problem.
 
 | Variable | Default | Values |
 |---|---|---|
-| `TIDEGATE_SSH_PROXY__LISTEN_ADDRESS` | `127.0.0.1:2022` | A host and port, like `:2022` or `[::1]:2022` |
-| `TIDEGATE_SSH_PROXY__LOG__LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
-| `TIDEGATE_SSH_PROXY__LOG__FORMAT` | `json` | `json` for log collectors, or `text`, which is easier to read locally |
+| `PHEMERA_SSH_PROXY__LISTEN_ADDRESS` | `127.0.0.1:2022` | A host and port, like `:2022` or `[::1]:2022` |
+| `PHEMERA_SSH_PROXY__LOG__LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
+| `PHEMERA_SSH_PROXY__LOG__FORMAT` | `json` | `json` for log collectors, or `text`, which is easier to read locally |

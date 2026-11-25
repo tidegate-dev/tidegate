@@ -10,7 +10,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/The127/go-clock"
 
-	"github.com/tidegate-dev/tidegate/internal/logging"
+	"github.com/phemera-dev/phemera/internal/logging"
 )
 
 // Interceptor returns an interceptor that logs one line at info level for

@@ -11,7 +11,7 @@ teardown() {
 }
 
 user_names() {
-    "${psql[@]}" --tuples-only --no-align "$TIDEGATE_AUTHORITY__DATABASE__URL" --command "SELECT name FROM users"
+    "${psql[@]}" --tuples-only --no-align "$PHEMERA_AUTHORITY__DATABASE__URL" --command "SELECT name FROM users"
 }
 
 @test "create-initial-admin creates the user with the password from stdin" {

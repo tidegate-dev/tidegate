@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: authority
   labels:
-    app.kubernetes.io/part-of: tidegate
+    app.kubernetes.io/part-of: phemera
 spec:
   selector:
     matchLabels:
@@ -18,22 +18,22 @@ spec:
         fsGroup: 65532
       containers:
         - name: authority
-          image: localhost/tidegate-authority:latest
+          image: localhost/phemera-authority:latest
           # just kind loads the image into the cluster, there's no registry.
           imagePullPolicy: Never
           env:
-            - name: TIDEGATE_AUTHORITY__LOG__FORMAT
+            - name: PHEMERA_AUTHORITY__LOG__FORMAT
               value: text
-            - name: TIDEGATE_AUTHORITY__DATABASE__URL
-              value: postgres://tidegate:tidegate@postgres:5432/tidegate?sslmode=disable
-            - name: TIDEGATE_AUTHORITY__DATABASE__MIGRATE_ON_START
+            - name: PHEMERA_AUTHORITY__DATABASE__URL
+              value: postgres://phemera:phemera@postgres:5432/phemera?sslmode=disable
+            - name: PHEMERA_AUTHORITY__DATABASE__MIGRATE_ON_START
               value: "true"
           volumeMounts:
             - name: external-api-tls
-              mountPath: /etc/tidegate/authority/external-api-tls
+              mountPath: /etc/phemera/authority/external-api-tls
               readOnly: true
             - name: internal-api-tls
-              mountPath: /etc/tidegate/authority/internal-api-tls
+              mountPath: /etc/phemera/authority/internal-api-tls
               readOnly: true
           ports:
             - name: http

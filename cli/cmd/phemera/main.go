@@ -1,4 +1,4 @@
-// Command tidegate is the command line interface for a tidegate installation.
+// Command phemera is the command line interface for a phemera installation.
 package main
 
 import (
@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/tidegate-dev/tidegate/cli/internal/command"
-	"github.com/tidegate-dev/tidegate/cli/internal/connections"
+	"github.com/phemera-dev/phemera/cli/internal/command"
+	"github.com/phemera-dev/phemera/cli/internal/connections"
 )
 
 func main() {

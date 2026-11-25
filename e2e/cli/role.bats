@@ -8,20 +8,20 @@ setup() {
 }
 
 @test "role create prints the ID and the name of the new role" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY"
-    tidegate project create "$project"
+    sign_in login "$PHEMERA_TEST_AUTHORITY"
+    phemera project create "$project"
 
-    run tidegate role create --project-name "$project" operator
+    run phemera role create --project-name "$project" operator
     [ "$status" -eq 0 ]
     [[ $output == ?*$'\t'operator ]]
 }
 
 @test "role create gives the role the permission of each flag and no other" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY"
-    tidegate project create "$project"
+    sign_in login "$PHEMERA_TEST_AUTHORITY"
+    phemera project create "$project"
 
     while read -r flag field; do
-        run tidegate -o json role create --project-name "$project" "$flag" "role$flag"
+        run phemera -o json role create --project-name "$project" "$flag" "role$flag"
         [ "$status" -eq 0 ]
         [ "$(jq -c '.permissions | map_values(select(.)) | keys' <<<"$output")" = "[\"$field\"]" ]
     done <<'FLAGS'
@@ -33,11 +33,11 @@ FLAGS
 }
 
 @test "role create without a permission flag creates a role without permissions" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY"
-    tidegate project create "$project"
-    project_id=$(tidegate -o json project list | jq -r --arg name "$project" '.projects[] | select(.name == $name) | .id')
+    sign_in login "$PHEMERA_TEST_AUTHORITY"
+    phemera project create "$project"
+    project_id=$(phemera -o json project list | jq -r --arg name "$project" '.projects[] | select(.name == $name) | .id')
 
-    run tidegate -o json role create --project-name "$project" operator
+    run phemera -o json role create --project-name "$project" operator
     [ "$status" -eq 0 ]
     [ "$(jq -r .name <<<"$output")" = operator ]
     [ "$(jq -r .projectId <<<"$output")" = "$project_id" ]
@@ -45,37 +45,37 @@ FLAGS
 }
 
 @test "role create fails for a name that another role of the project has" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY"
-    tidegate project create "$project"
-    tidegate role create --project-name "$project" operator
+    sign_in login "$PHEMERA_TEST_AUTHORITY"
+    phemera project create "$project"
+    phemera role create --project-name "$project" operator
 
-    run --separate-stderr tidegate role create --project-name "$project" operator
+    run --separate-stderr phemera role create --project-name "$project" operator
     [ "$status" -eq 1 ]
     [ -z "$output" ]
     [[ $stderr == *"the role name is taken"* ]]
 }
 
 @test "role create fails for a project that doesn't exist" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY"
+    sign_in login "$PHEMERA_TEST_AUTHORITY"
 
-    run --separate-stderr tidegate role create --project-name "$project" operator
+    run --separate-stderr phemera role create --project-name "$project" operator
     [ "$status" -eq 1 ]
     [ -z "$output" ]
     [[ $stderr == *"project not found"* ]]
 }
 
 @test "role create wants exactly one name" {
-    run --separate-stderr tidegate role create --project-name "$project"
+    run --separate-stderr phemera role create --project-name "$project"
     [ "$status" -eq 1 ]
     [[ $stderr == *"want exactly one name"* ]]
 
-    run --separate-stderr tidegate role create --project-name "$project" first second
+    run --separate-stderr phemera role create --project-name "$project" first second
     [ "$status" -eq 1 ]
     [[ $stderr == *"want exactly one name"* ]]
 }
 
 @test "role create wants a project" {
-    run --separate-stderr tidegate role create operator
+    run --separate-stderr phemera role create operator
     [ "$status" -eq 1 ]
     [[ $stderr == *'Required flag "project-name" not set'* ]]
 }

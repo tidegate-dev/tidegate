@@ -6,8 +6,8 @@ import (
 	"connectrpc.com/connect"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
-	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
+	"github.com/phemera-dev/phemera/authority/internal/model"
+	authorityv1 "github.com/phemera-dev/phemera/gen/phemera/authority/v1"
 )
 
 func TestCreateBindingRequestAcceptsTheNamesOfAProjectARoleAndAUser(t *testing.T) {

@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tidegate-dev/tidegate/internal/handlererrors"
-	"github.com/tidegate-dev/tidegate/internal/logging"
+	"github.com/phemera-dev/phemera/internal/handlererrors"
+	"github.com/phemera-dev/phemera/internal/logging"
 )
 
 func TestUnexpectedErrorReachesTheClientAsInternal(t *testing.T) {
@@ -230,5 +230,5 @@ type stream struct {
 }
 
 func (stream) Spec() connect.Spec {
-	return connect.Spec{Procedure: "/tidegate.authority.v1.SessionService/Watch"}
+	return connect.Spec{Procedure: "/phemera.authority.v1.SessionService/Watch"}
 }

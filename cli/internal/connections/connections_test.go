@@ -12,13 +12,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tidegate-dev/tidegate/cli/internal/connections"
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/cli/internal/connections"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 const (
-	productionServer = "https://tidegate.example"
-	stagingServer    = "https://staging.example/tidegate/"
+	productionServer = "https://phemera.example"
+	stagingServer    = "https://staging.example/phemera/"
 	scriptServer     = "https://script.example"
 	newServer        = "https://new.example"
 
@@ -26,15 +26,15 @@ const (
 
 	onlyProductionFile = `{
 		"connections": {
-			"production": {"server": "https://tidegate.example", "token": "production token"}
+			"production": {"server": "https://phemera.example", "token": "production token"}
 		}
 	}`
 
 	threeConnectionsFile = `{
 		"connections": {
-			"production": {"server": "https://tidegate.example", "token": "production token"},
-			"staging": {"server": "https://staging.example/tidegate/", "token": "staging token"},
-			"admin": {"server": "https://tidegate.example", "token": "admin token"}
+			"production": {"server": "https://phemera.example", "token": "production token"},
+			"staging": {"server": "https://staging.example/phemera/", "token": "staging token"},
+			"admin": {"server": "https://phemera.example", "token": "admin token"}
 		}
 	}`
 )
@@ -46,11 +46,11 @@ func savedConnectionsPath(t *testing.T) string {
 	configDirectory, err := os.UserConfigDir()
 	require.NoError(t, err)
 
-	return filepath.Join(configDirectory, "tidegate", "connections.json")
+	return filepath.Join(configDirectory, "phemera", "connections.json")
 }
 
 // newStore returns a store whose file is in a new, empty configuration
-// directory and holds fileText. With noFile, there is no file. The TIDEGATE_
+// directory and holds fileText. With noFile, there is no file. The PHEMERA_
 // variables that the store reads are empty.
 func newStore(t *testing.T, fileText string) connections.Store {
 	t.Helper()
@@ -59,9 +59,9 @@ func newStore(t *testing.T, fileText string) connections.Store {
 	t.Setenv("XDG_CONFIG_HOME", configDirectory)
 	// macOS takes the configuration directory from HOME.
 	t.Setenv("HOME", configDirectory)
-	t.Setenv("TIDEGATE_CONNECTION", "")
-	t.Setenv("TIDEGATE_SERVER", "")
-	t.Setenv("TIDEGATE_TOKEN", "")
+	t.Setenv("PHEMERA_CONNECTION", "")
+	t.Setenv("PHEMERA_SERVER", "")
+	t.Setenv("PHEMERA_TOKEN", "")
 
 	if fileText != noFile {
 		path := savedConnectionsPath(t)
@@ -89,7 +89,7 @@ func TestCurrentIsTheConnectionNamedByTheFlag(t *testing.T) {
 func TestCurrentIsTheConnectionNamedByTheVariableWhenThereIsNoFlag(t *testing.T) {
 	// arrange
 	store := newStore(t, threeConnectionsFile)
-	t.Setenv("TIDEGATE_CONNECTION", "staging")
+	t.Setenv("PHEMERA_CONNECTION", "staging")
 
 	// act
 	current, err := store.Current("")
@@ -104,7 +104,7 @@ func TestCurrentIsTheConnectionNamedByTheVariableWhenThereIsNoFlag(t *testing.T)
 func TestCurrentPrefersTheFlagOverTheVariable(t *testing.T) {
 	// arrange
 	store := newStore(t, threeConnectionsFile)
-	t.Setenv("TIDEGATE_CONNECTION", "staging")
+	t.Setenv("PHEMERA_CONNECTION", "staging")
 
 	// act
 	current, err := store.Current("admin")
@@ -130,7 +130,7 @@ func TestCurrentIsTheOnlySavedConnectionWhenNoNameIsGiven(t *testing.T) {
 
 func TestCurrentHasNoTokenForAConnectionThatIsSignedOut(t *testing.T) {
 	// arrange
-	store := newStore(t, `{"connections": {"production": {"server": "https://tidegate.example"}}}`)
+	store := newStore(t, `{"connections": {"production": {"server": "https://phemera.example"}}}`)
 
 	// act
 	current, err := store.Current("")
@@ -152,7 +152,7 @@ func TestCurrentFailsWhenSeveralAreSavedAndNoNameIsGiven(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), `"admin", "production", "staging"`)
 	assert.Contains(t, err.Error(), "--connection")
-	assert.Contains(t, err.Error(), "TIDEGATE_CONNECTION")
+	assert.Contains(t, err.Error(), "PHEMERA_CONNECTION")
 }
 
 func TestCurrentSaysToRunLoginWhenNothingIsSaved(t *testing.T) {
@@ -164,7 +164,7 @@ func TestCurrentSaysToRunLoginWhenNothingIsSaved(t *testing.T) {
 
 	// assert
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "Run `tidegate login <url>`")
+	assert.Contains(t, err.Error(), "Run `phemera login <url>`")
 }
 
 func TestCurrentFailsForANameThatIsNotSavedAndListsTheSavedNames(t *testing.T) {
@@ -190,12 +190,12 @@ func TestCurrentSaysHowToSaveANameWhenNothingIsSaved(t *testing.T) {
 	// assert
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), `no saved connection named "testing"`)
-	assert.Contains(t, err.Error(), `tidegate login <url> --connection "testing"`)
+	assert.Contains(t, err.Error(), `phemera login <url> --connection "testing"`)
 }
 
 func TestCurrentQuotesSavedNamesThatATerminalWouldInterpret(t *testing.T) {
 	// arrange
-	store := newStore(t, `{"connections": {"a\u001b[31m": {"server": "https://tidegate.example"}}}`)
+	store := newStore(t, `{"connections": {"a\u001b[31m": {"server": "https://phemera.example"}}}`)
 
 	// act
 	_, err := store.Current("testing")
@@ -220,8 +220,8 @@ func TestCurrentNamesTheFileThatIsNotValid(t *testing.T) {
 func TestCurrentIsMadeFromTheServerAndTheTokenVariables(t *testing.T) {
 	// arrange
 	store := newStore(t, onlyProductionFile)
-	t.Setenv("TIDEGATE_SERVER", scriptServer)
-	t.Setenv("TIDEGATE_TOKEN", "script token")
+	t.Setenv("PHEMERA_SERVER", scriptServer)
+	t.Setenv("PHEMERA_TOKEN", "script token")
 
 	// act
 	current, err := store.Current("")
@@ -236,7 +236,7 @@ func TestCurrentIsMadeFromTheServerAndTheTokenVariables(t *testing.T) {
 func TestCurrentFromTheServerVariableAloneHasNoToken(t *testing.T) {
 	// arrange
 	store := newStore(t, onlyProductionFile)
-	t.Setenv("TIDEGATE_SERVER", productionServer)
+	t.Setenv("PHEMERA_SERVER", productionServer)
 
 	// act
 	current, err := store.Current("")
@@ -251,9 +251,9 @@ func TestCurrentFromTheServerVariableAloneHasNoToken(t *testing.T) {
 func TestCurrentFromTheVariablesIgnoresTheConnectionVariable(t *testing.T) {
 	// arrange
 	store := newStore(t, threeConnectionsFile)
-	t.Setenv("TIDEGATE_CONNECTION", "staging")
-	t.Setenv("TIDEGATE_SERVER", scriptServer)
-	t.Setenv("TIDEGATE_TOKEN", "script token")
+	t.Setenv("PHEMERA_CONNECTION", "staging")
+	t.Setenv("PHEMERA_SERVER", scriptServer)
+	t.Setenv("PHEMERA_TOKEN", "script token")
 
 	// act
 	current, err := store.Current("")
@@ -267,8 +267,8 @@ func TestCurrentFromTheVariablesIgnoresTheConnectionVariable(t *testing.T) {
 func TestCurrentFromTheVariablesDoesNotReadTheFile(t *testing.T) {
 	// arrange
 	store := newStore(t, "not json")
-	t.Setenv("TIDEGATE_SERVER", scriptServer)
-	t.Setenv("TIDEGATE_TOKEN", "script token")
+	t.Setenv("PHEMERA_SERVER", scriptServer)
+	t.Setenv("PHEMERA_TOKEN", "script token")
 
 	// act
 	current, err := store.Current("")
@@ -281,18 +281,18 @@ func TestCurrentFromTheVariablesDoesNotReadTheFile(t *testing.T) {
 func TestCurrentFailsForATokenVariableWithoutAServerVariable(t *testing.T) {
 	// arrange
 	store := newStore(t, onlyProductionFile)
-	t.Setenv("TIDEGATE_TOKEN", "script token")
+	t.Setenv("PHEMERA_TOKEN", "script token")
 
 	// act
 	_, err := store.Current("")
 
 	// assert
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "TIDEGATE_SERVER isn't")
+	assert.Contains(t, err.Error(), "PHEMERA_SERVER isn't")
 }
 
 func TestCurrentFailsForTheFlagNextToTheServerOrTheTokenVariable(t *testing.T) {
-	for _, variable := range []string{"TIDEGATE_SERVER", "TIDEGATE_TOKEN"} {
+	for _, variable := range []string{"PHEMERA_SERVER", "PHEMERA_TOKEN"} {
 		t.Run(variable, func(t *testing.T) {
 			// arrange
 			store := newStore(t, threeConnectionsFile)
@@ -338,7 +338,7 @@ func TestForLoginWithAURLAndNoFlagIsSavedUnderTheURL(t *testing.T) {
 func TestForLoginWithAURLDoesNotTakeTheNameFromTheConnectionVariable(t *testing.T) {
 	// arrange
 	store := newStore(t, threeConnectionsFile)
-	t.Setenv("TIDEGATE_CONNECTION", "production")
+	t.Setenv("PHEMERA_CONNECTION", "production")
 
 	// act
 	forLogin, err := store.ForLogin(newServer, "")
@@ -388,7 +388,7 @@ func TestForLoginFailsForAFlagNameThatIsSavedForAnotherURL(t *testing.T) {
 			// assert
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), productionServer)
-			assert.Contains(t, err.Error(), "tidegate connections remove")
+			assert.Contains(t, err.Error(), "phemera connections remove")
 		})
 	}
 }
@@ -434,20 +434,20 @@ func TestForLoginFailsForAURLThatSeveralConnectionsHave(t *testing.T) {
 
 func TestForLoginFailsForAURLThatIsTheNameOfAConnectionToAnotherServer(t *testing.T) {
 	// arrange
-	store := newStore(t, `{"connections": {"https://new.example": {"server": "https://tidegate.example"}}}`)
+	store := newStore(t, `{"connections": {"https://new.example": {"server": "https://phemera.example"}}}`)
 
 	// act
 	_, err := store.ForLogin(newServer, "")
 
 	// assert
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "tidegate connections remove")
+	assert.Contains(t, err.Error(), "phemera connections remove")
 }
 
 func TestForLoginWithoutAURLIsTheConnectionNamedByTheFlagWithoutItsToken(t *testing.T) {
 	// arrange
 	store := newStore(t, threeConnectionsFile)
-	t.Setenv("TIDEGATE_CONNECTION", "admin")
+	t.Setenv("PHEMERA_CONNECTION", "admin")
 
 	// act
 	forLogin, err := store.ForLogin("", "staging")
@@ -462,7 +462,7 @@ func TestForLoginWithoutAURLIsTheConnectionNamedByTheFlagWithoutItsToken(t *test
 func TestForLoginWithoutAURLIsTheConnectionNamedByTheVariable(t *testing.T) {
 	// arrange
 	store := newStore(t, threeConnectionsFile)
-	t.Setenv("TIDEGATE_CONNECTION", "staging")
+	t.Setenv("PHEMERA_CONNECTION", "staging")
 
 	// act
 	forLogin, err := store.ForLogin("", "")
@@ -490,8 +490,8 @@ func TestForLoginWithoutAURLIsTheOnlySavedConnection(t *testing.T) {
 func TestForLoginWithoutAURLDoesNotUseTheServerAndTheTokenVariables(t *testing.T) {
 	// arrange
 	store := newStore(t, onlyProductionFile)
-	t.Setenv("TIDEGATE_SERVER", scriptServer)
-	t.Setenv("TIDEGATE_TOKEN", "script token")
+	t.Setenv("PHEMERA_SERVER", scriptServer)
+	t.Setenv("PHEMERA_TOKEN", "script token")
 
 	// act
 	forLogin, err := store.ForLogin("", "")
@@ -523,7 +523,7 @@ func TestForLoginWithoutAURLSaysToGiveOneWhenNothingIsSaved(t *testing.T) {
 
 	// assert
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "tidegate login <url>")
+	assert.Contains(t, err.Error(), "phemera login <url>")
 }
 
 func TestForLoginWithoutAURLFailsForANameThatIsNotSaved(t *testing.T) {
@@ -657,7 +657,7 @@ func TestSaveWritesTheFileWithTheConnectionsByName(t *testing.T) {
 	assert.JSONEq(t, `{
 		"connections": {
 			"new": {"server": "https://new.example", "token": "new token"},
-			"production": {"server": "https://tidegate.example", "token": "production token"}
+			"production": {"server": "https://phemera.example", "token": "production token"}
 		}
 	}`, string(fileText))
 }
@@ -711,7 +711,7 @@ func TestSignOutLeavesNoTokenFieldInTheFile(t *testing.T) {
 
 	fileText, err := os.ReadFile(savedConnectionsPath(t))
 	require.NoError(t, err)
-	assert.JSONEq(t, `{"connections": {"production": {"server": "https://tidegate.example"}}}`, string(fileText))
+	assert.JSONEq(t, `{"connections": {"production": {"server": "https://phemera.example"}}}`, string(fileText))
 }
 
 func TestSignOutKeepsATokenThatIsNotTheGivenOne(t *testing.T) {
@@ -858,7 +858,7 @@ func TestRemoveDoesNotSayToRunLoginWhenNothingIsSaved(t *testing.T) {
 	// assert
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), `no saved connection named "testing"`)
-	assert.NotContains(t, err.Error(), "tidegate login")
+	assert.NotContains(t, err.Error(), "phemera login")
 }
 
 func TestListNeverSeesAHalfWrittenFile(t *testing.T) {
