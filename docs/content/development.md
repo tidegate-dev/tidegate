@@ -64,7 +64,7 @@ TIDEGATE_AUTHORITY__DATABASE__URL='postgres://tidegate:tidegate@127.0.0.1:5432/t
 With `just kind`, run:
 
 ```sh
-kubectl exec -it -n tidegate deploy/authority -- /authority create-initial-admin alice
+kubectl --context kind-tidegate exec -it -n tidegate deploy/authority -- /authority create-initial-admin alice
 ```
 
 Then sign in with the CLI and call the authority:
