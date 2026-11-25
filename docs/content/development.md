@@ -144,7 +144,7 @@ The authority's SQL queries are in `authority/internal/db/queries/`, and sqlc ge
 
 To change the database schema, add a migration to `authority/internal/db/migrations/`, numbered after the last one. A migration only goes forward and only adds to the schema. To remove a table or a column, wait a release after the code stops using it, so an old and a new authority can share the database during an update. `just dev` and `just kind` migrate when the authority starts.
 
-The table with the passwords and private keys of SSH assets is the exception. It lives in a schema of its own, `secret_engine`, and has no migrations. `authority/internal/secretengine/postgres/schema.go` creates the schema and the table if they don't exist, each time the authority migrates. Note that this never changes a table that already exists, so the first change to that table needs migrations for it.
+The secret engine is the exception. It's the part of the authority that stores secrets, and it keeps them in a schema of its own, `secret_engine`, which has no migrations. `authority/internal/secretengine/postgres/schema.go` creates the schema and its table if they don't exist, each time the authority migrates. Note that this never changes a table that already exists, so the first change to that table needs migrations for it.
 
 ## Tests
 
