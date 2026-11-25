@@ -21,7 +21,7 @@ import (
 
 var _ = Describe("TicketService", func() {
 	It("issues a fresh ticket per request while the binding and role permission check assumes access", func(ctx SpecContext) {
-		_, data := storetest.New(ctx)
+		pool, data := storetest.New(ctx)
 		projects := service.NewProjects(data.Projects(), data)
 		assets := service.NewAssets(data.Projects(), data.Assets(), data)
 		sessions := newSessions(data)
@@ -64,5 +64,10 @@ var _ = Describe("TicketService", func() {
 		again, err := create(asset.ID.String(), aliceToken)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(again.Msg.GetId()).NotTo(Equal(response.Msg.GetId()))
+
+		_, err = pool.Exec(ctx, "DELETE FROM assets WHERE id = $1", asset.ID.String())
+		Expect(err).NotTo(HaveOccurred())
+		_, err = create(asset.ID.String(), aliceToken)
+		Expect(connect.CodeOf(err)).To(Equal(connect.CodeNotFound))
 	}, SpecTimeout(30*time.Second))
 })

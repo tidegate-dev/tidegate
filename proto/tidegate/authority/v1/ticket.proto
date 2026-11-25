@@ -10,7 +10,8 @@ option go_package = "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;
 service TicketService {
   // CreateTicket issues a ticket for the signed-in user and the requested
   // asset. For now, the authority assumes the user has a project binding
-  // whose role permits access to the asset.
+  // whose role permits access to the asset. If the asset does not exist,
+  // the call fails with not_found.
   rpc CreateTicket(CreateTicketRequest) returns (CreateTicketResponse);
 }
 

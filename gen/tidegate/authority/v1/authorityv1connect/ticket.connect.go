@@ -42,7 +42,8 @@ const (
 type TicketServiceClient interface {
 	// CreateTicket issues a ticket for the signed-in user and the requested
 	// asset. For now, the authority assumes the user has a project binding
-	// whose role permits access to the asset.
+	// whose role permits access to the asset. If the asset does not exist,
+	// the call fails with not_found.
 	CreateTicket(context.Context, *connect.Request[v1.CreateTicketRequest]) (*connect.Response[v1.CreateTicketResponse], error)
 }
 
@@ -80,7 +81,8 @@ func (c *ticketServiceClient) CreateTicket(ctx context.Context, req *connect.Req
 type TicketServiceHandler interface {
 	// CreateTicket issues a ticket for the signed-in user and the requested
 	// asset. For now, the authority assumes the user has a project binding
-	// whose role permits access to the asset.
+	// whose role permits access to the asset. If the asset does not exist,
+	// the call fails with not_found.
 	CreateTicket(context.Context, *connect.Request[v1.CreateTicketRequest]) (*connect.Response[v1.CreateTicketResponse], error)
 }
 

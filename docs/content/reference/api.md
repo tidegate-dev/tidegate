@@ -56,7 +56,7 @@ TicketService records asset access requests.
 
 | Method | Request | Response | Description |
 | ------ | ------- | -------- | ----------- |
-| `CreateTicket` | [tidegate.authority.v1.CreateTicketRequest](#tidegate.authority.v1.CreateTicketRequest) | [tidegate.authority.v1.CreateTicketResponse](#tidegate.authority.v1.CreateTicketResponse) | CreateTicket issues a ticket for the signed-in user and the requested asset. For now, the authority assumes the user has a project binding whose role permits access to the asset. |
+| `CreateTicket` | [tidegate.authority.v1.CreateTicketRequest](#tidegate.authority.v1.CreateTicketRequest) | [tidegate.authority.v1.CreateTicketResponse](#tidegate.authority.v1.CreateTicketResponse) | CreateTicket issues a ticket for the signed-in user and the requested asset. For now, the authority assumes the user has a project binding whose role permits access to the asset. If the asset does not exist, the call fails with not_found. |
 
 ## Types
 
