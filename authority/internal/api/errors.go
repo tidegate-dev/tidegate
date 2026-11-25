@@ -22,6 +22,8 @@ func clientError(err error) error {
 		return connect.NewError(connect.CodeUnauthenticated, service.ErrNotSignedIn)
 	case errors.Is(err, password.ErrTooLong):
 		return connect.NewError(connect.CodeInvalidArgument, password.ErrTooLong)
+	case errors.Is(err, service.ErrAssetAccessDenied):
+		return connect.NewError(connect.CodePermissionDenied, service.ErrAssetAccessDenied)
 	case errors.Is(err, service.ErrBusy):
 		return connect.NewError(connect.CodeUnavailable, service.ErrBusy)
 	case errors.Is(err, model.ErrProjectNameTaken):
@@ -34,6 +36,8 @@ func clientError(err error) error {
 		return connect.NewError(connect.CodeNotFound, model.ErrRoleNotFound)
 	case errors.Is(err, model.ErrUserNotFound):
 		return connect.NewError(connect.CodeNotFound, model.ErrUserNotFound)
+	case errors.Is(err, model.ErrAssetNotFound):
+		return connect.NewError(connect.CodeNotFound, model.ErrAssetNotFound)
 	case errors.Is(err, model.ErrAssetNameTaken):
 		return connect.NewError(connect.CodeAlreadyExists, model.ErrAssetNameTaken)
 	case errors.Is(err, model.ErrBindingExists):

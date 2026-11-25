@@ -7,9 +7,13 @@ import (
 	"github.com/google/uuid"
 )
 
-// ErrAssetNameTaken means another asset of the project already has the name.
-// Nothing was written.
-var ErrAssetNameTaken = errors.New("the asset name is taken")
+var (
+	// ErrAssetNotFound means no asset has the given ID.
+	ErrAssetNotFound = errors.New("asset not found")
+	// ErrAssetNameTaken means another asset of the project already has the name.
+	// Nothing was written.
+	ErrAssetNameTaken = errors.New("the asset name is taken")
+)
 
 // AssetID identifies an asset.
 type AssetID uuid.UUID

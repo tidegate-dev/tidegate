@@ -21,6 +21,7 @@ Global flags work before or after the command. A command that fails prints `Erro
 | `tidegate role create --project-name <project> <name>` | Creates a role in the project and prints its ID and name |
 | `tidegate asset create ssh --project-name <project> --address <address> --host-key <key> --user-name <user> (--password \| --private-key-file <file>) <name>` | Adds an SSH host to the project as an asset and prints the asset's ID and name |
 | `tidegate asset list --project-name <project>` | Prints the ID, the name, the address and the labels of every asset of the project |
+| `tidegate connect <asset-id>` | Requests a ticket for the asset and prints the ticket, asset and user IDs. Issuance currently assumes the user has a binding whose role permits access. |
 | `tidegate binding create --project-name <project> --role-name <role> --user-name <user>` | Gives the role of the project to the user and prints the binding's ID, the role and the user |
 | `tidegate binding list --project-name <project>` | Prints the ID, the role and the user of every binding of the project |
 

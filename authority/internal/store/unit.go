@@ -61,6 +61,11 @@ func (u *Unit) Bindings() model.BindingReadWriter {
 	return &BindingReadWriter{unit: u}
 }
 
+// Tickets returns the tickets table for this unit. Its writes run at Commit.
+func (u *Unit) Tickets() model.TicketReadWriter {
+	return &TicketReadWriter{unit: u}
+}
+
 // Commit runs the pending writes in the order they were added, in one
 // transaction. If one fails, none is kept. It returns
 // model.ErrChangedSinceRead if a row changed after it was read. If it fails,
