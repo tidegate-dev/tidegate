@@ -35,33 +35,42 @@ func TestConnectDoesntFollowRedirects(t *testing.T) {
 	require.NoError(t, err)
 
 	// act
-	_, err = clients.Ping().Ping(t.Context(), connect.NewRequest(&authorityv1.PingRequest{}))
+	_, err = clients.Project().ListProjects(t.Context(), connect.NewRequest(&authorityv1.ListProjectsRequest{}))
 
 	// assert
 	require.Error(t, err)
 	assert.False(t, reached.Load())
 }
 
-func TestConnectSendsNoTokenWithAPing(t *testing.T) {
+func TestConnectSendsTheToken(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	var authorization atomic.Pointer[string]
+	server, authorization := recordAuthorization(t)
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		received := r.Header.Get("Authorization")
-		authorization.Store(&received)
-
-		// An empty body of this type is an empty message in the Connect protocol.
-		w.Header().Set("Content-Type", "application/proto")
-	}))
-	defer server.Close()
-
-	clients, err := Connect(server.URL, secret.New("token"))
+	clients, err := Connect(server, secret.New("token"))
 	require.NoError(t, err)
 
 	// act
-	_, err = clients.Ping().Ping(t.Context(), connect.NewRequest(&authorityv1.PingRequest{}))
+	_, err = clients.Project().ListProjects(t.Context(), connect.NewRequest(&authorityv1.ListProjectsRequest{}))
+
+	// assert
+	require.NoError(t, err)
+	require.NotNil(t, authorization.Load())
+	assert.Equal(t, "Bearer token", *authorization.Load())
+}
+
+func TestConnectSendsNoTokenWithoutOne(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	server, authorization := recordAuthorization(t)
+
+	clients, err := Connect(server, secret.String{})
+	require.NoError(t, err)
+
+	// act
+	_, err = clients.Project().ListProjects(t.Context(), connect.NewRequest(&authorityv1.ListProjectsRequest{}))
 
 	// assert
 	require.NoError(t, err)
@@ -173,4 +182,23 @@ func TestCheckServerRefusesCredentialsWithoutASchemeWithoutShowingThem(t *testin
 	// assert
 	require.Error(t, err)
 	assert.NotContains(t, err.Error(), "hunter2")
+}
+
+// recordAuthorization starts a server that answers every call with an empty
+// message, and returns its URL and the Authorization header of the last call.
+func recordAuthorization(t *testing.T) (string, *atomic.Pointer[string]) {
+	t.Helper()
+
+	var authorization atomic.Pointer[string]
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		received := r.Header.Get("Authorization")
+		authorization.Store(&received)
+
+		// An empty body of this type is an empty message in the Connect protocol.
+		w.Header().Set("Content-Type", "application/proto")
+	}))
+	t.Cleanup(server.Close)
+
+	return server.URL, &authorization
 }

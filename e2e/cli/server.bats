@@ -33,7 +33,7 @@ setup() {
 }
 
 @test "an authority in TIDEGATE_SERVER that can't be reached is named in the error" {
-    TIDEGATE_SERVER=https://127.0.0.1:9 run --separate-stderr tidegate ping
+    TIDEGATE_SERVER=https://127.0.0.1:9 run --separate-stderr tidegate project list
     [ "$status" -eq 1 ]
     [[ $stderr == *"can't reach the authority at https://127.0.0.1:9"* ]]
 }
@@ -41,7 +41,7 @@ setup() {
 @test "an authority from a saved connection that can't be reached is named in the error" {
     save_unreachable
 
-    run --separate-stderr tidegate ping
+    run --separate-stderr tidegate project list
     [ "$status" -eq 1 ]
     [[ $stderr == *"can't reach the authority at https://127.0.0.1:9"* ]]
 }
@@ -49,7 +49,7 @@ setup() {
 @test "saved connections that can't be read are named in the error" {
     save_broken
 
-    run --separate-stderr tidegate ping
+    run --separate-stderr tidegate project list
     [ "$status" -eq 1 ]
     [[ $stderr == *"$saved"* ]]
 }
@@ -57,13 +57,13 @@ setup() {
 @test "saved connections that can't be read are ignored when TIDEGATE_SERVER is set" {
     save_broken
 
-    TIDEGATE_SERVER=https://127.0.0.1:9 TIDEGATE_TOKEN=secret run --separate-stderr tidegate ping
+    TIDEGATE_SERVER=https://127.0.0.1:9 TIDEGATE_TOKEN=secret run --separate-stderr tidegate project list
     [ "$status" -eq 1 ]
     [[ $stderr == *"can't reach the authority at https://127.0.0.1:9"* ]]
 }
 
 @test "a missing configuration directory is ignored when TIDEGATE_SERVER is set" {
-    run --separate-stderr env -u HOME -u XDG_CONFIG_HOME TIDEGATE_SERVER=https://127.0.0.1:9 tidegate ping
+    run --separate-stderr env -u HOME -u XDG_CONFIG_HOME TIDEGATE_SERVER=https://127.0.0.1:9 tidegate project list
     [ "$status" -eq 1 ]
     [[ $stderr == *"can't reach the authority at https://127.0.0.1:9"* ]]
 }
@@ -82,7 +82,7 @@ setup() {
 }
 
 @test "a command that reads the saved connections fails without a configuration directory" {
-    run --separate-stderr env -u HOME -u XDG_CONFIG_HOME tidegate --connection first ping
+    run --separate-stderr env -u HOME -u XDG_CONFIG_HOME tidegate --connection first project list
     [ "$status" -eq 1 ]
     [[ $stderr == *"finding the directory for the saved connections"* ]]
 }
@@ -91,7 +91,7 @@ setup() {
     save_unreachable
     chmod 644 "$saved"
 
-    run --separate-stderr tidegate ping
+    run --separate-stderr tidegate project list
     [ "$status" -eq 1 ]
     [[ $stderr == *"chmod 600 $saved"* ]]
 }

@@ -70,7 +70,7 @@ var _ = Describe("run", func() {
 			client := clientTrusting(authority.internalCertFile)
 			procedures := []string{
 				authorityv1connect.LoginServiceLoginProcedure,
-				authorityv1connect.PingServicePingProcedure,
+				authorityv1connect.ProjectServiceListProjectsProcedure,
 			}
 
 			for _, procedure := range procedures {

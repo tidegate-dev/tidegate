@@ -23,10 +23,7 @@ func interceptors(clk clock.Service, sessions api.SessionLookup) []connect.Inter
 	return []connect.Interceptor{
 		requestlog.Interceptor(clk),
 		handlererrors.Interceptor(),
-		api.NewSessionInterceptor(sessions,
-			authorityv1connect.LoginServiceLoginProcedure,
-			authorityv1connect.PingServicePingProcedure,
-		),
+		api.NewSessionInterceptor(sessions, authorityv1connect.LoginServiceLoginProcedure),
 		validate.NewInterceptor(),
 	}
 }
@@ -47,7 +44,6 @@ func externalAPIServer(
 	options := connect.WithInterceptors(interceptors(clk, sessions)...)
 
 	mux := http.NewServeMux()
-	mux.Handle(authorityv1connect.NewPingServiceHandler(api.PingService{}, options))
 	mux.Handle(authorityv1connect.NewDummyServiceHandler(api.NewDummyService(dummies), options))
 	mux.Handle(api.NewLoginServiceHandler(logins, options))
 	mux.Handle(authorityv1connect.NewProjectServiceHandler(api.NewProjectService(projects), options))
