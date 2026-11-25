@@ -15,7 +15,7 @@ import (
 )
 
 // goose takes a different advisory lock ID for migrations.
-const usersEmptyLockID int64 = 0x7469646567617465 // "phemera" in ASCII
+const usersEmptyLockID int64 = 0x7068656d657261 // "phemera" in ASCII
 
 // UserReader queries the users table on the connection pool.
 type UserReader struct {

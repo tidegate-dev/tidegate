@@ -8,7 +8,7 @@ phemera is an open source privileged access management tool. It decides who may 
 
 ## Where decisions are made
 
-Significant changes are decided in a Phemera Enhancement Proposal (TEP), a design document in the separate repository [phemera-dev/enhancements](https://github.com/phemera-dev/enhancements). That covers new user-facing features and components, changes to how phemera authenticates, authorizes or handles credentials, breaking changes to an API or a format, and new dependencies that phemera's security relies on. If an issue says a decision belongs in a TEP, or a change fits this list and no TEP covers it, don't make the decision in code. Point it out and ask.
+Significant changes are decided in an enhancement proposal (TEP), a design document in the separate repository [phemera-dev/enhancements](https://github.com/phemera-dev/enhancements). That covers new user-facing features and components, changes to how phemera authenticates, authorizes or handles credentials, breaking changes to an API or a format, and new dependencies that phemera's security relies on. If an issue says a decision belongs in a TEP, or a change fits this list and no TEP covers it, don't make the decision in code. Point it out and ask.
 
 ## Checking your work
 
