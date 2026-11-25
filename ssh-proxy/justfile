@@ -1,3 +1,7 @@
+# Build the ssh-proxy into bin/ at the root of the repository.
+build:
+    go build -o ../bin/ssh-proxy ./cmd/ssh-proxy
+
 # Run the ssh-proxy's unit tests with the race detector, and write their
 # coverage to coverage/ at the root of the repository.
 test:
@@ -17,4 +21,4 @@ vuln:
     govulncheck ./...
 
 # Run every check that CI runs on the ssh-proxy.
-ci: test lint vuln
+ci: build test lint vuln

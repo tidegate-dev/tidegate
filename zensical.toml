@@ -19,6 +19,7 @@ nav = [
     { "Signing in and out" = "cli/sign-in.md" },
     { "Reference" = "cli/reference.md" },
   ] },
+  { "ssh-proxy" = "ssh-proxy/index.md" },
   { "API reference" = "reference/api.md" },
   { "Development" = "development.md" },
 ]

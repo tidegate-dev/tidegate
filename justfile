@@ -12,7 +12,7 @@ default:
     @{{just_executable()}} --list --list-submodules
 
 # Build every component into bin/.
-build: authority::build cli::build
+build: authority::build cli::build ssh-proxy::build
 
 # Remove build and test output: bin/, coverage/ and site/.
 clean:

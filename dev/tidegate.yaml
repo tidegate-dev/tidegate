@@ -14,3 +14,8 @@ processes:
     depends_on:
       postgres:
         condition: process_healthy
+
+  ssh-proxy:
+    command: go build -o bin/ssh-proxy ./ssh-proxy/cmd/ssh-proxy && exec bin/ssh-proxy
+    environment:
+      - TIDEGATE_SSH_PROXY__LOG__FORMAT=text
