@@ -37,7 +37,9 @@ func (s *AssetService) CreateAsset(
 	case *authorityv1.CreateAssetRequest_Ssh:
 		sshAsset := target.Ssh
 
-		secretInput, inputErr := newSSHSecretInput(sshAsset)
+		sshLogin := sshAsset.GetLogin()
+
+		secretInput, inputErr := newSSHSecretInput(sshLogin)
 		if inputErr != nil {
 			return nil, inputErr
 		}
@@ -48,7 +50,7 @@ func (s *AssetService) CreateAsset(
 			Host:     sshTarget.GetHost(),
 			Port:     uint16(sshTarget.GetPort()), //nolint:gosec // The API definition allows 1 to 65535.
 			HostKey:  sshTarget.GetHostKey(),
-			UserName: sshTarget.GetUserName(),
+			UserName: sshLogin.GetUserName(),
 		}, secretInput)
 	default:
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("the asset needs a target of a known kind"))
@@ -89,7 +91,7 @@ func (s *AssetService) ListAssets(
 }
 
 func newCreateAssetResponse(asset *model.Asset) (*authorityv1.CreateAssetResponse, error) {
-	ssh, err := newSSHTarget(asset)
+	sshTarget, err := newSSHTarget(asset)
 	if err != nil {
 		return nil, err
 	}
@@ -99,12 +101,15 @@ func newCreateAssetResponse(asset *model.Asset) (*authorityv1.CreateAssetRespons
 		ProjectId: asset.ProjectID.String(),
 		Name:      asset.Name,
 		Labels:    asset.Labels,
-		Target:    &authorityv1.CreateAssetResponse_Ssh{Ssh: ssh},
+		Target: &authorityv1.CreateAssetResponse_Ssh{Ssh: &authorityv1.CreateAssetResponse_SSHAsset{
+			Target:   sshTarget,
+			UserName: asset.SSH.UserName,
+		}},
 	}, nil
 }
 
 func newListedAsset(asset *model.Asset) (*authorityv1.ListAssetsResponse_Asset, error) {
-	ssh, err := newSSHTarget(asset)
+	sshTarget, err := newSSHTarget(asset)
 	if err != nil {
 		return nil, err
 	}
@@ -114,18 +119,21 @@ func newListedAsset(asset *model.Asset) (*authorityv1.ListAssetsResponse_Asset, 
 		ProjectId: asset.ProjectID.String(),
 		Name:      asset.Name,
 		Labels:    asset.Labels,
-		Target:    &authorityv1.ListAssetsResponse_Asset_Ssh{Ssh: ssh},
+		Target: &authorityv1.ListAssetsResponse_Asset_Ssh{Ssh: &authorityv1.ListAssetsResponse_SSHAsset{
+			Target:   sshTarget,
+			UserName: asset.SSH.UserName,
+		}},
 	}, nil
 }
 
-func newSSHSecretInput(msg *authorityv1.CreateAssetRequest_SSHAsset) (service.SSHSecretInput, error) {
-	switch value := msg.GetSecret().(type) {
-	case *authorityv1.CreateAssetRequest_SSHAsset_Password:
+func newSSHSecretInput(sshLogin *authorityv1.CreateAssetRequest_SSHLogin) (service.SSHSecretInput, error) {
+	switch value := sshLogin.GetSecret().(type) {
+	case *authorityv1.CreateAssetRequest_SSHLogin_Password:
 		return service.SSHSecretInput{
 			Kind:  model.SSHSecretKindPassword,
 			Value: secret.NewBytes([]byte(value.Password)),
 		}, nil
-	case *authorityv1.CreateAssetRequest_SSHAsset_PrivateKey:
+	case *authorityv1.CreateAssetRequest_SSHLogin_PrivateKey:
 		return service.SSHSecretInput{
 			Kind:  model.SSHSecretKindPrivateKey,
 			Value: secret.NewBytes([]byte(value.PrivateKey)),
@@ -142,9 +150,8 @@ func newSSHTarget(asset *model.Asset) (*authorityv1.SSHTarget, error) {
 	}
 
 	return &authorityv1.SSHTarget{
-		Host:     asset.SSH.Host,
-		Port:     uint32(asset.SSH.Port),
-		HostKey:  asset.SSH.HostKey,
-		UserName: asset.SSH.UserName,
+		Host:    asset.SSH.Host,
+		Port:    uint32(asset.SSH.Port),
+		HostKey: asset.SSH.HostKey,
 	}, nil
 }

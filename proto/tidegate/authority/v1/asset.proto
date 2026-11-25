@@ -48,29 +48,25 @@ message SSHTarget {
     message: "must be the key type ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521 or ssh-rsa, one space and the key in base64, and have at most 8192 characters"
     expression: "this.size() <= 8192 && this.matches('^(ssh-ed25519|ecdsa-sha2-nistp(256|384|521)|ssh-rsa) ([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$')"
   }];
-  // UserName is the user that tidegate logs in as on the host, like "deploy",
-  // "deploy@example.com" or "EXAMPLE\deploy".
-  //
-  // Rules: Uppercase and lowercase letters from A to Z, digits, underscores,
-  // dots, dashes and at signs. It doesn't start with a dash. A Windows domain
-  // and one backslash may come first, and the domain follows the same rule.
-  // At most 64 characters. These are the characters that useradd(8) allows,
-  // plus the at sign of a name with a domain.
-  string user_name = 4 [(buf.validate.field).string = {
-    max_len: 64
-    pattern: "^([A-Za-z0-9_.@][A-Za-z0-9_.@-]*\\\\)?[A-Za-z0-9_.@][A-Za-z0-9_.@-]*$"
-  }];
 }
 
 // CreateAssetRequest is the input of AssetService.CreateAsset.
 message CreateAssetRequest {
-  // SSHAsset is an SSH host and what tidegate logs in to it with.
-  message SSHAsset {
-    // Target is the host's address, its host key and the user that tidegate
-    // logs in as.
+  // SSHLogin is the user that tidegate logs in as on an SSH host and what the
+  // user logs in with.
+  message SSHLogin {
+    // UserName is the user that tidegate logs in as on the host, like
+    // "deploy", "deploy@example.com" or "EXAMPLE\deploy".
     //
-    // Rules: Required.
-    SSHTarget target = 1 [(buf.validate.field).required = true];
+    // Rules: Uppercase and lowercase letters from A to Z, digits,
+    // underscores, dots, dashes and at signs. It doesn't start with a dash. A
+    // Windows domain and one backslash may come first, and the domain follows
+    // the same rule. At most 64 characters. These are the characters that
+    // useradd(8) allows, plus the at sign of a name with a domain.
+    string user_name = 1 [(buf.validate.field).string = {
+      max_len: 64
+      pattern: "^([A-Za-z0-9_.@][A-Za-z0-9_.@-]*\\\\)?[A-Za-z0-9_.@][A-Za-z0-9_.@-]*$"
+    }];
     // Secret is what the user logs in with. tidegate stores it and never
     // returns it.
     oneof secret {
@@ -93,6 +89,19 @@ message CreateAssetRequest {
         max_bytes: 16384
       }];
     }
+  }
+
+  // SSHAsset is an SSH host and what tidegate logs in to it with.
+  message SSHAsset {
+    // Target is the host's address and its host key.
+    //
+    // Rules: Required.
+    SSHTarget target = 1 [(buf.validate.field).required = true];
+    // Login is the user that tidegate logs in as and what the user logs in
+    // with.
+    //
+    // Rules: Required.
+    SSHLogin login = 2 [(buf.validate.field).required = true];
   }
 
   // ProjectName is the name of the project that gets the asset.
@@ -145,6 +154,14 @@ message CreateAssetRequest {
 
 // CreateAssetResponse is the result of AssetService.CreateAsset.
 message CreateAssetResponse {
+  // SSHAsset is an SSH host and the user that tidegate logs in as.
+  message SSHAsset {
+    // Target is the host's address and its host key.
+    SSHTarget target = 1;
+    // UserName is the user that tidegate logs in as on the host.
+    string user_name = 2;
+  }
+
   // ID identifies the new asset. It is a UUID.
   string id = 1;
   // ProjectID identifies the project that the new asset belongs to. It is a
@@ -157,7 +174,7 @@ message CreateAssetResponse {
   // Target says what kind of target the new asset is and how to reach it.
   oneof target {
     // SSH is set for a host that tidegate reaches over SSH.
-    SSHTarget ssh = 5;
+    SSHAsset ssh = 5;
   }
 }
 
@@ -176,6 +193,14 @@ message ListAssetsRequest {
 
 // ListAssetsResponse is the result of AssetService.ListAssets.
 message ListAssetsResponse {
+  // SSHAsset is an SSH host and the user that tidegate logs in as.
+  message SSHAsset {
+    // Target is the host's address and its host key.
+    SSHTarget target = 1;
+    // UserName is the user that tidegate logs in as on the host.
+    string user_name = 2;
+  }
+
   // Asset is one asset in the list.
   message Asset {
     // ID identifies the asset. It is a UUID.
@@ -190,7 +215,7 @@ message ListAssetsResponse {
     // Target says what kind of target the asset is and how to reach it.
     oneof target {
       // SSH is set for a host that tidegate reaches over SSH.
-      SSHTarget ssh = 5;
+      SSHAsset ssh = 5;
     }
   }
 

@@ -173,7 +173,9 @@ func TestAssetsResultTextShowsTheAddressAndTheLabelsInTheOrderOfTheirKeys(t *tes
 		Id:     "1",
 		Name:   "bastion",
 		Labels: map[string]string{"team": "payments", "env": "prod"},
-		Target: &authorityv1.ListAssetsResponse_Asset_Ssh{Ssh: &authorityv1.SSHTarget{Host: "2001:db8::7", Port: 2222}},
+		Target: &authorityv1.ListAssetsResponse_Asset_Ssh{Ssh: &authorityv1.ListAssetsResponse_SSHAsset{
+			Target: &authorityv1.SSHTarget{Host: "2001:db8::7", Port: 2222},
+		}},
 	}})
 
 	// act
@@ -202,7 +204,9 @@ func TestAssetsResultTextQuotesWhatATerminalWouldInterpret(t *testing.T) {
 		Id:     "1",
 		Name:   "a\x1b[2Jb",
 		Labels: map[string]string{"env": "c\x1b[2Jd"},
-		Target: &authorityv1.ListAssetsResponse_Asset_Ssh{Ssh: &authorityv1.SSHTarget{Host: "e\x1b[2Jf", Port: 22}},
+		Target: &authorityv1.ListAssetsResponse_Asset_Ssh{Ssh: &authorityv1.ListAssetsResponse_SSHAsset{
+			Target: &authorityv1.SSHTarget{Host: "e\x1b[2Jf", Port: 22},
+		}},
 	}})
 
 	// act
@@ -242,7 +246,7 @@ func TestNewSSHTargetResultHoldsTheUserName(t *testing.T) {
 	t.Parallel()
 
 	// act
-	result := newSSHTargetResult(&authorityv1.SSHTarget{Host: "bastion.example", Port: 22, UserName: "deploy"})
+	result := newSSHTargetResult(&authorityv1.SSHTarget{Host: "bastion.example", Port: 22}, "deploy")
 
 	// assert
 	assert.Equal(t, "deploy", result.UserName)
@@ -300,14 +304,14 @@ func TestSetSSHSecretPutsTheContentOfThePrivateKeyFileIntoTheRequest(t *testing.
 	privateKeyFile := filepath.Join(t.TempDir(), "key")
 	require.NoError(t, os.WriteFile(privateKeyFile, []byte("a private key\n"), 0o600))
 
-	asset := &authorityv1.CreateAssetRequest_SSHAsset{}
+	sshLogin := &authorityv1.CreateAssetRequest_SSHLogin{}
 
 	// act
-	err := setSSHSecret(t.Context(), asset, privateKeyFile, strings.NewReader("a password\n"), io.Discard)
+	err := setSSHSecret(t.Context(), sshLogin, privateKeyFile, strings.NewReader("a password\n"), io.Discard)
 
 	// assert
 	require.NoError(t, err)
-	assert.Equal(t, "a private key\n", asset.GetPrivateKey())
+	assert.Equal(t, "a private key\n", sshLogin.GetPrivateKey())
 }
 
 func TestSetSSHSecretTakesAPrivateKeyFileOfTheMaximumSize(t *testing.T) {
@@ -317,14 +321,14 @@ func TestSetSSHSecretTakesAPrivateKeyFileOfTheMaximumSize(t *testing.T) {
 	privateKeyFile := filepath.Join(t.TempDir(), "key")
 	require.NoError(t, os.WriteFile(privateKeyFile, []byte(strings.Repeat("k", maxPrivateKeyBytes)), 0o600))
 
-	asset := &authorityv1.CreateAssetRequest_SSHAsset{}
+	sshLogin := &authorityv1.CreateAssetRequest_SSHLogin{}
 
 	// act
-	err := setSSHSecret(t.Context(), asset, privateKeyFile, strings.NewReader(""), io.Discard)
+	err := setSSHSecret(t.Context(), sshLogin, privateKeyFile, strings.NewReader(""), io.Discard)
 
 	// assert
 	require.NoError(t, err)
-	assert.Len(t, asset.GetPrivateKey(), maxPrivateKeyBytes)
+	assert.Len(t, sshLogin.GetPrivateKey(), maxPrivateKeyBytes)
 }
 
 func TestSetSSHSecretRefusesAPrivateKeyFileOverTheMaximumSize(t *testing.T) {
@@ -334,14 +338,14 @@ func TestSetSSHSecretRefusesAPrivateKeyFileOverTheMaximumSize(t *testing.T) {
 	privateKeyFile := filepath.Join(t.TempDir(), "key")
 	require.NoError(t, os.WriteFile(privateKeyFile, []byte(strings.Repeat("k", maxPrivateKeyBytes+1)), 0o600))
 
-	asset := &authorityv1.CreateAssetRequest_SSHAsset{}
+	sshLogin := &authorityv1.CreateAssetRequest_SSHLogin{}
 
 	// act
-	err := setSSHSecret(t.Context(), asset, privateKeyFile, strings.NewReader(""), io.Discard)
+	err := setSSHSecret(t.Context(), sshLogin, privateKeyFile, strings.NewReader(""), io.Discard)
 
 	// assert
 	require.ErrorContains(t, err, "--private-key-file: the file has more than 16384 bytes")
-	assert.Nil(t, asset.GetSecret())
+	assert.Nil(t, sshLogin.GetSecret())
 }
 
 func TestSetSSHSecretFailsForAPrivateKeyFileThatDoesNotExist(t *testing.T) {
@@ -351,7 +355,7 @@ func TestSetSSHSecretFailsForAPrivateKeyFileThatDoesNotExist(t *testing.T) {
 	privateKeyFile := filepath.Join(t.TempDir(), "missing")
 
 	// act
-	err := setSSHSecret(t.Context(), &authorityv1.CreateAssetRequest_SSHAsset{}, privateKeyFile, strings.NewReader(""), io.Discard)
+	err := setSSHSecret(t.Context(), &authorityv1.CreateAssetRequest_SSHLogin{}, privateKeyFile, strings.NewReader(""), io.Discard)
 
 	// assert
 	assert.ErrorContains(t, err, "--private-key-file")
@@ -362,21 +366,21 @@ func TestSetSSHSecretReadsThePasswordFromTheInputWithoutAPrivateKeyFile(t *testi
 	t.Parallel()
 
 	// arrange
-	asset := &authorityv1.CreateAssetRequest_SSHAsset{}
+	sshLogin := &authorityv1.CreateAssetRequest_SSHLogin{}
 
 	// act
-	err := setSSHSecret(t.Context(), asset, "", strings.NewReader("a password\n"), io.Discard)
+	err := setSSHSecret(t.Context(), sshLogin, "", strings.NewReader("a password\n"), io.Discard)
 
 	// assert
 	require.NoError(t, err)
-	assert.Equal(t, "a password", asset.GetPassword())
+	assert.Equal(t, "a password", sshLogin.GetPassword())
 }
 
 func TestSetSSHSecretFailsWithoutAPasswordOnTheInput(t *testing.T) {
 	t.Parallel()
 
 	// act
-	err := setSSHSecret(t.Context(), &authorityv1.CreateAssetRequest_SSHAsset{}, "", strings.NewReader(""), io.Discard)
+	err := setSSHSecret(t.Context(), &authorityv1.CreateAssetRequest_SSHLogin{}, "", strings.NewReader(""), io.Discard)
 
 	// assert
 	assert.ErrorContains(t, err, "no password on stdin")

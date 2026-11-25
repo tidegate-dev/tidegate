@@ -44,7 +44,7 @@ type assetResult struct {
 	SSH       *sshTargetResult  `json:"ssh,omitempty" yaml:"ssh,omitempty"`
 }
 
-func newSSHTargetResult(target *authorityv1.SSHTarget) *sshTargetResult {
+func newSSHTargetResult(target *authorityv1.SSHTarget, userName string) *sshTargetResult {
 	if target == nil {
 		return nil
 	}
@@ -53,7 +53,7 @@ func newSSHTargetResult(target *authorityv1.SSHTarget) *sshTargetResult {
 		Host:     target.GetHost(),
 		Port:     target.GetPort(),
 		HostKey:  target.GetHostKey(),
-		UserName: target.GetUserName(),
+		UserName: userName,
 	}
 }
 
@@ -63,7 +63,7 @@ func newAssetResult(response *authorityv1.CreateAssetResponse) assetResult {
 		ProjectID: response.GetProjectId(),
 		Name:      response.GetName(),
 		Labels:    map[string]string{},
-		SSH:       newSSHTargetResult(response.GetSsh()),
+		SSH:       newSSHTargetResult(response.GetSsh().GetTarget(), response.GetSsh().GetUserName()),
 	}
 
 	maps.Copy(result.Labels, response.GetLabels())
@@ -114,7 +114,7 @@ func newAssetsResult(assets []*authorityv1.ListAssetsResponse_Asset) assetsResul
 			ProjectID: asset.GetProjectId(),
 			Name:      asset.GetName(),
 			Labels:    map[string]string{},
-			SSH:       newSSHTargetResult(asset.GetSsh()),
+			SSH:       newSSHTargetResult(asset.GetSsh().GetTarget(), asset.GetSsh().GetUserName()),
 		}
 
 		maps.Copy(listed.Labels, asset.GetLabels())
@@ -245,14 +245,9 @@ func assetCreateSSH(ctx context.Context, cmd *cli.Command, store connections.Sto
 		return err
 	}
 
-	asset := &authorityv1.CreateAssetRequest_SSHAsset{Target: &authorityv1.SSHTarget{
-		Host:     host,
-		Port:     port,
-		HostKey:  hostKey,
-		UserName: cmd.String("user-name"),
-	}}
+	sshLogin := &authorityv1.CreateAssetRequest_SSHLogin{UserName: cmd.String("user-name")}
 
-	err = setSSHSecret(ctx, asset, privateKeyFile, cmd.Root().Reader, cmd.Root().ErrWriter)
+	err = setSSHSecret(ctx, sshLogin, privateKeyFile, cmd.Root().Reader, cmd.Root().ErrWriter)
 	if err != nil {
 		return err
 	}
@@ -261,7 +256,14 @@ func assetCreateSSH(ctx context.Context, cmd *cli.Command, store connections.Sto
 		ProjectName: cmd.String("project-name"),
 		Name:        cmd.Args().First(),
 		Labels:      labels,
-		Target:      &authorityv1.CreateAssetRequest_Ssh{Ssh: asset},
+		Target: &authorityv1.CreateAssetRequest_Ssh{Ssh: &authorityv1.CreateAssetRequest_SSHAsset{
+			Target: &authorityv1.SSHTarget{
+				Host:    host,
+				Port:    port,
+				HostKey: hostKey,
+			},
+			Login: sshLogin,
+		}},
 	}))
 	if err != nil {
 		return callFailed("creating the asset", connection, err)
@@ -283,7 +285,7 @@ func checkSSHSecretFlags(askForPassword bool, privateKeyFile string) error {
 
 func setSSHSecret(
 	ctx context.Context,
-	asset *authorityv1.CreateAssetRequest_SSHAsset,
+	sshLogin *authorityv1.CreateAssetRequest_SSHLogin,
 	privateKeyFile string,
 	in io.Reader,
 	prompts io.Writer,
@@ -294,19 +296,19 @@ func setSSHSecret(
 			return fmt.Errorf("--private-key-file: %w", err)
 		}
 
-		asset.Secret = &authorityv1.CreateAssetRequest_SSHAsset_PrivateKey{PrivateKey: privateKey}
+		sshLogin.Secret = &authorityv1.CreateAssetRequest_SSHLogin_PrivateKey{PrivateKey: privateKey}
 
 		return nil
 	}
 
-	prompt := "Password of " + quoteIfUnprintable(asset.GetTarget().GetUserName()) + " on the host: "
+	prompt := "Password of " + quoteIfUnprintable(sshLogin.GetUserName()) + " on the host: "
 
 	password, err := readPassword(ctx, terminal.New(in, prompts), prompt)
 	if err != nil {
 		return err
 	}
 
-	asset.Secret = &authorityv1.CreateAssetRequest_SSHAsset_Password{Password: password}
+	sshLogin.Secret = &authorityv1.CreateAssetRequest_SSHLogin_Password{Password: password}
 
 	return nil
 }

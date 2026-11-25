@@ -78,7 +78,17 @@ SSHAsset is an SSH host and what tidegate logs in to it with.
 
 | Field | Type | Description | Rules |
 | ----- | ---- | ----------- | ----- |
-| `target` | `tidegate.authority.v1.SSHTarget` | Target is the host's address, its host key and the user that tidegate logs in as. | Required. |
+| `target` | `tidegate.authority.v1.SSHTarget` | Target is the host's address and its host key. | Required. |
+| `login` | `tidegate.authority.v1.CreateAssetRequest.SSHLogin` | Login is the user that tidegate logs in as and what the user logs in with. | Required. |
+
+### tidegate.authority.v1.CreateAssetRequest.SSHLogin { #tidegate.authority.v1.CreateAssetRequest.SSHLogin }
+
+SSHLogin is the user that tidegate logs in as on an SSH host and what the
+user logs in with.
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `user_name` | `string` | UserName is the user that tidegate logs in as on the host, like "deploy", "deploy@example.com" or "EXAMPLE\deploy". | Uppercase and lowercase letters from A to Z, digits, underscores, dots, dashes and at signs. It doesn't start with a dash. A Windows domain and one backslash may come first, and the domain follows the same rule. At most 64 characters. These are the characters that useradd(8) allows, plus the at sign of a name with a domain. |
 | `password` | `string` | Password is the user's password on the host. | Not empty, at most 1024 bytes. |
 | `private_key` | `string` | PrivateKey is a private key of the user in PEM, without a passphrase. A key that tidegate can't read or that has a passphrase fails with invalid_argument. | Not empty, at most 16384 bytes. |
 
@@ -92,7 +102,7 @@ CreateAssetResponse is the result of AssetService.CreateAsset.
 | `project_id` | `string` | ProjectID identifies the project that the new asset belongs to. It is a UUID. |  |
 | `name` | `string` | Name is the new asset's name. |  |
 | `labels` | `repeated tidegate.authority.v1.CreateAssetResponse.LabelsEntry` | Labels are the keys and values that a role selects the new asset by. |  |
-| `ssh` | `tidegate.authority.v1.SSHTarget` | SSH is set for a host that tidegate reaches over SSH. |  |
+| `ssh` | `tidegate.authority.v1.CreateAssetResponse.SSHAsset` | SSH is set for a host that tidegate reaches over SSH. |  |
 
 ### tidegate.authority.v1.CreateAssetResponse.LabelsEntry { #tidegate.authority.v1.CreateAssetResponse.LabelsEntry }
 
@@ -102,6 +112,15 @@ CreateAssetResponse is the result of AssetService.CreateAsset.
 | ----- | ---- | ----------- | ----- |
 | `key` | `string` |  |  |
 | `value` | `string` |  |  |
+
+### tidegate.authority.v1.CreateAssetResponse.SSHAsset { #tidegate.authority.v1.CreateAssetResponse.SSHAsset }
+
+SSHAsset is an SSH host and the user that tidegate logs in as.
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `target` | `tidegate.authority.v1.SSHTarget` | Target is the host's address and its host key. |  |
+| `user_name` | `string` | UserName is the user that tidegate logs in as on the host. |  |
 
 ### tidegate.authority.v1.ListAssetsRequest { #tidegate.authority.v1.ListAssetsRequest }
 
@@ -129,7 +148,7 @@ Asset is one asset in the list.
 | `project_id` | `string` | ProjectID identifies the project that the asset belongs to. It is a UUID. |  |
 | `name` | `string` | Name is the asset's name. |  |
 | `labels` | `repeated tidegate.authority.v1.ListAssetsResponse.Asset.LabelsEntry` | Labels are the keys and values that a role selects the asset by. |  |
-| `ssh` | `tidegate.authority.v1.SSHTarget` | SSH is set for a host that tidegate reaches over SSH. |  |
+| `ssh` | `tidegate.authority.v1.ListAssetsResponse.SSHAsset` | SSH is set for a host that tidegate reaches over SSH. |  |
 
 ### tidegate.authority.v1.ListAssetsResponse.Asset.LabelsEntry { #tidegate.authority.v1.ListAssetsResponse.Asset.LabelsEntry }
 
@@ -139,6 +158,15 @@ Asset is one asset in the list.
 | ----- | ---- | ----------- | ----- |
 | `key` | `string` |  |  |
 | `value` | `string` |  |  |
+
+### tidegate.authority.v1.ListAssetsResponse.SSHAsset { #tidegate.authority.v1.ListAssetsResponse.SSHAsset }
+
+SSHAsset is an SSH host and the user that tidegate logs in as.
+
+| Field | Type | Description | Rules |
+| ----- | ---- | ----------- | ----- |
+| `target` | `tidegate.authority.v1.SSHTarget` | Target is the host's address and its host key. |  |
+| `user_name` | `string` | UserName is the user that tidegate logs in as on the host. |  |
 
 ### tidegate.authority.v1.SSHTarget { #tidegate.authority.v1.SSHTarget }
 
@@ -150,7 +178,6 @@ its identity with.
 | `host` | `string` | Host is the host's DNS name or IP address. | A DNS name of at most 253 characters, or an IPv4 or IPv6 address without brackets and without a zone. |
 | `port` | `uint32` | Port is the TCP port that the host's SSH server listens on. | 1 to 65535. |
 | `host_key` | `string` | HostKey is the host's public key as the key type and the key in base64, like "ssh-ed25519 AAAAC3...". | The key type, one space and the key in base64 with its padding. The key type is ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521 or ssh-rsa. At most 8192 characters. |
-| `user_name` | `string` | UserName is the user that tidegate logs in as on the host, like "deploy", "deploy@example.com" or "EXAMPLE\deploy". | Uppercase and lowercase letters from A to Z, digits, underscores, dots, dashes and at signs. It doesn't start with a dash. A Windows domain and one backslash may come first, and the domain follows the same rule. At most 64 characters. These are the characters that useradd(8) allows, plus the at sign of a name with a domain. |
 
 ### tidegate.authority.v1.CreateBindingRequest { #tidegate.authority.v1.CreateBindingRequest }
 
