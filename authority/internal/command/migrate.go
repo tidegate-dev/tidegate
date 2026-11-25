@@ -5,7 +5,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/db"
+	"github.com/tidegate-dev/tidegate/authority/internal/server"
 )
 
 func migrateCommand() *cli.Command {
@@ -18,7 +18,7 @@ func migrateCommand() *cli.Command {
 				return err
 			}
 
-			return db.MigrateAt(ctx, cfg.Database.URL)
+			return server.MigrateDatabase(ctx, cfg.Database.URL)
 		},
 	}
 }

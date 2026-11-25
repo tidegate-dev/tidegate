@@ -8,6 +8,7 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/authority/internal/password"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
+	"github.com/tidegate-dev/tidegate/authority/internal/sshkey"
 )
 
 // clientError gives a service error the code and the fixed message that a
@@ -37,6 +38,12 @@ func clientError(err error) error {
 		return connect.NewError(connect.CodeAlreadyExists, model.ErrAssetNameTaken)
 	case errors.Is(err, model.ErrBindingExists):
 		return connect.NewError(connect.CodeAlreadyExists, model.ErrBindingExists)
+	case errors.Is(err, service.ErrSSHPasswordEmpty):
+		return connect.NewError(connect.CodeInvalidArgument, service.ErrSSHPasswordEmpty)
+	case errors.Is(err, sshkey.ErrPrivateKeyInvalid):
+		return connect.NewError(connect.CodeInvalidArgument, sshkey.ErrPrivateKeyInvalid)
+	case errors.Is(err, sshkey.ErrPrivateKeyEncrypted):
+		return connect.NewError(connect.CodeInvalidArgument, sshkey.ErrPrivateKeyEncrypted)
 	default:
 		return err
 	}

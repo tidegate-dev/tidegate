@@ -47,14 +47,38 @@ type Asset struct {
 	SSH *SSHTarget
 }
 
-// SSHTarget is the address of an SSH host and the key that the host proves
-// its identity with.
+// SSHTarget is the address of an SSH host, the key that the host proves its
+// identity with, and the user that tidegate logs in as.
 type SSHTarget struct {
 	Host string
 	Port uint16
 	// HostKey is the host's public key as the key type and the key in
 	// base64, like "ssh-ed25519 AAAAC3...".
 	HostKey string
+	// UserName is the user that tidegate logs in as on the host.
+	UserName string
+	// Secret says where the user's password or private key is stored.
+	Secret StoredSSHSecret
+}
+
+// SSHSecretKind says what a user logs in to an SSH host with.
+type SSHSecretKind string
+
+const (
+	// SSHSecretKindPassword is the user's password.
+	SSHSecretKindPassword SSHSecretKind = "password"
+	// SSHSecretKindPrivateKey is a private key of the user.
+	SSHSecretKindPrivateKey SSHSecretKind = "private_key"
+)
+
+// StoredSSHSecret says where a secret engine keeps the password or private
+// key of an SSH target's user. It doesn't hold the password or the key.
+type StoredSSHSecret struct {
+	// EngineName names the secret engine.
+	EngineName string
+	// Reference names the password or private key within that engine.
+	Reference string
+	Kind      SSHSecretKind
 }
 
 // AssetReadWriter belongs to a Unit. It records writes, which the unit runs

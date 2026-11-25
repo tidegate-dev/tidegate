@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"maps"
 	"net"
 	"net/netip"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -16,17 +18,22 @@ import (
 
 	"github.com/tidegate-dev/tidegate/cli/internal/connections"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
+	"github.com/tidegate-dev/tidegate/internal/terminal"
 )
 
 // IANA assigns port 22 to SSH.
 const defaultSSHPort = 22
 
+// The authority accepts a private key of at most this many bytes.
+const maxPrivateKeyBytes = 16384
+
 var errAddress = errors.New("want an address like host or host:port")
 
 type sshTargetResult struct {
-	Host    string `json:"host"    yaml:"host"`
-	Port    uint32 `json:"port"    yaml:"port"`
-	HostKey string `json:"hostKey" yaml:"hostKey"`
+	Host     string `json:"host"     yaml:"host"`
+	Port     uint32 `json:"port"     yaml:"port"`
+	HostKey  string `json:"hostKey"  yaml:"hostKey"`
+	UserName string `json:"userName" yaml:"userName"`
 }
 
 type assetResult struct {
@@ -37,12 +44,17 @@ type assetResult struct {
 	SSH       *sshTargetResult  `json:"ssh,omitempty" yaml:"ssh,omitempty"`
 }
 
-func newSSHTargetResult(target *authorityv1.SSHTarget) *sshTargetResult {
+func newSSHTargetResult(target *authorityv1.SSHTarget, userName string) *sshTargetResult {
 	if target == nil {
 		return nil
 	}
 
-	return &sshTargetResult{Host: target.GetHost(), Port: target.GetPort(), HostKey: target.GetHostKey()}
+	return &sshTargetResult{
+		Host:     target.GetHost(),
+		Port:     target.GetPort(),
+		HostKey:  target.GetHostKey(),
+		UserName: userName,
+	}
 }
 
 func newAssetResult(response *authorityv1.CreateAssetResponse) assetResult {
@@ -51,7 +63,7 @@ func newAssetResult(response *authorityv1.CreateAssetResponse) assetResult {
 		ProjectID: response.GetProjectId(),
 		Name:      response.GetName(),
 		Labels:    map[string]string{},
-		SSH:       newSSHTargetResult(response.GetSsh()),
+		SSH:       newSSHTargetResult(response.GetSsh().GetTarget(), response.GetSsh().GetUserName()),
 	}
 
 	maps.Copy(result.Labels, response.GetLabels())
@@ -102,7 +114,7 @@ func newAssetsResult(assets []*authorityv1.ListAssetsResponse_Asset) assetsResul
 			ProjectID: asset.GetProjectId(),
 			Name:      asset.GetName(),
 			Labels:    map[string]string{},
-			SSH:       newSSHTargetResult(asset.GetSsh()),
+			SSH:       newSSHTargetResult(asset.GetSsh().GetTarget(), asset.GetSsh().GetUserName()),
 		}
 
 		maps.Copy(listed.Labels, asset.GetLabels())
@@ -161,6 +173,21 @@ func assetCommand(store connections.Store) *cli.Command {
 								Name:  "label",
 								Usage: "a label as key=value that roles select the asset by, can be given several times",
 							},
+							&cli.StringFlag{
+								Name:     "user-name",
+								Usage:    "the user that tidegate logs in as on the host",
+								Required: true,
+							},
+							&cli.BoolFlag{
+								Name: "password",
+								Usage: "the user logs in with a password. The command asks for it on a terminal, " +
+									"or reads it from the first line of stdin. The command needs this flag or --private-key-file",
+							},
+							&cli.StringFlag{
+								Name: "private-key-file",
+								Usage: "the user logs in with the private key in this file, which has no passphrase. " +
+									"The command needs this flag or --password",
+							},
 						},
 						Action: func(ctx context.Context, cmd *cli.Command) error {
 							return assetCreateSSH(ctx, cmd, store)
@@ -206,7 +233,21 @@ func assetCreateSSH(ctx context.Context, cmd *cli.Command, store connections.Sto
 		return fmt.Errorf("--label: %w", err)
 	}
 
+	privateKeyFile := cmd.String("private-key-file")
+
+	err = checkSSHSecretFlags(cmd.Bool("password"), privateKeyFile)
+	if err != nil {
+		return err
+	}
+
 	clients, connection, err := connectToCurrent(cmd, store)
+	if err != nil {
+		return err
+	}
+
+	sshLogin := &authorityv1.CreateAssetRequest_SSHLogin{UserName: cmd.String("user-name")}
+
+	err = setSSHSecret(ctx, sshLogin, privateKeyFile, cmd.Root().Reader, cmd.Root().ErrWriter)
 	if err != nil {
 		return err
 	}
@@ -215,13 +256,84 @@ func assetCreateSSH(ctx context.Context, cmd *cli.Command, store connections.Sto
 		ProjectName: cmd.String("project-name"),
 		Name:        cmd.Args().First(),
 		Labels:      labels,
-		Target:      &authorityv1.CreateAssetRequest_Ssh{Ssh: &authorityv1.SSHTarget{Host: host, Port: port, HostKey: hostKey}},
+		Target: &authorityv1.CreateAssetRequest_Ssh{Ssh: &authorityv1.CreateAssetRequest_SSHAsset{
+			Target: &authorityv1.SSHTarget{
+				Host:    host,
+				Port:    port,
+				HostKey: hostKey,
+			},
+			Login: sshLogin,
+		}},
 	}))
 	if err != nil {
 		return callFailed("creating the asset", connection, err)
 	}
 
 	return printResult(cmd, newAssetResult(response.Msg))
+}
+
+func checkSSHSecretFlags(askForPassword bool, privateKeyFile string) error {
+	switch {
+	case askForPassword && privateKeyFile != "":
+		return errors.New("--password and --private-key-file can't be combined")
+	case !askForPassword && privateKeyFile == "":
+		return errors.New("want --password or --private-key-file")
+	default:
+		return nil
+	}
+}
+
+func setSSHSecret(
+	ctx context.Context,
+	sshLogin *authorityv1.CreateAssetRequest_SSHLogin,
+	privateKeyFile string,
+	in io.Reader,
+	prompts io.Writer,
+) error {
+	if privateKeyFile != "" {
+		privateKey, err := readPrivateKeyFile(privateKeyFile)
+		if err != nil {
+			return fmt.Errorf("--private-key-file: %w", err)
+		}
+
+		sshLogin.Secret = &authorityv1.CreateAssetRequest_SSHLogin_PrivateKey{PrivateKey: privateKey}
+
+		return nil
+	}
+
+	prompt := "Password of " + quoteIfUnprintable(sshLogin.GetUserName()) + " on the host: "
+
+	password, err := readPassword(ctx, terminal.New(in, prompts), prompt)
+	if err != nil {
+		return err
+	}
+
+	sshLogin.Secret = &authorityv1.CreateAssetRequest_SSHLogin_Password{Password: password}
+
+	return nil
+}
+
+func readPrivateKeyFile(path string) (string, error) {
+	file, err := os.Open(path) //nolint:gosec // The path is the file that the user names.
+	if err != nil {
+		return "", err
+	}
+
+	defer func() {
+		_ = file.Close()
+	}()
+
+	// A path like /dev/zero never ends.
+	privateKey, err := io.ReadAll(io.LimitReader(file, maxPrivateKeyBytes+1))
+	if err != nil {
+		return "", err
+	}
+
+	if len(privateKey) > maxPrivateKeyBytes {
+		return "", fmt.Errorf("the file has more than %d bytes, which is too big for a private key", maxPrivateKeyBytes)
+	}
+
+	return string(privateKey), nil
 }
 
 func assetList(ctx context.Context, cmd *cli.Command, store connections.Store) error {

@@ -36,7 +36,7 @@ var _ = Describe("run", func() {
 
 		BeforeEach(func(ctx SpecContext) {
 			url := dbtest.NewDatabase()
-			Expect(db.MigrateAt(ctx, url)).To(Succeed())
+			Expect(MigrateDatabase(ctx, url)).To(Succeed())
 			authority = serveAuthority(ctx, url)
 			token := signIn(ctx, url)
 
@@ -62,7 +62,7 @@ var _ = Describe("run", func() {
 
 		BeforeEach(func(ctx SpecContext) {
 			url := dbtest.NewDatabase()
-			Expect(db.MigrateAt(ctx, url)).To(Succeed())
+			Expect(MigrateDatabase(ctx, url)).To(Succeed())
 			authority = serveAuthority(ctx, url)
 		}, NodeTimeout(30*time.Second))
 
@@ -89,6 +89,51 @@ var _ = Describe("run", func() {
 		}, SpecTimeout(30*time.Second))
 	})
 })
+
+var _ = Describe("openDatabase", func() {
+	When("the authority migrates on start", func() {
+		It("creates the table of the Postgres secret engine", func(ctx SpecContext) {
+			url := dbtest.NewDatabase()
+
+			pool, err := openDatabase(ctx, config.Database{URL: url, MigrateOnStart: true})
+
+			Expect(err).NotTo(HaveOccurred())
+			pool.Close()
+			Expect(secretsTableExists(ctx, url)).To(BeTrue())
+		})
+	})
+})
+
+var _ = Describe("MigrateDatabase", func() {
+	It("applies the authority's migrations", func(ctx SpecContext) {
+		url := dbtest.NewDatabase()
+
+		Expect(MigrateDatabase(ctx, url)).To(Succeed())
+
+		pool, err := db.OpenMigrated(ctx, url)
+		Expect(err).NotTo(HaveOccurred())
+		pool.Close()
+	})
+
+	It("creates the table of the Postgres secret engine", func(ctx SpecContext) {
+		url := dbtest.NewDatabase()
+
+		Expect(MigrateDatabase(ctx, url)).To(Succeed())
+
+		Expect(secretsTableExists(ctx, url)).To(BeTrue())
+	})
+})
+
+func secretsTableExists(ctx context.Context, url string) bool {
+	GinkgoHelper()
+
+	var exists bool
+
+	err := dbtest.Connect(ctx, url).QueryRow(ctx, "SELECT to_regclass('secret_engine.secrets') IS NOT NULL").Scan(&exists)
+	Expect(err).NotTo(HaveOccurred())
+
+	return exists
+}
 
 // runningAuthority is an authority that serves in the background.
 type runningAuthority struct {

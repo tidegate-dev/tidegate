@@ -52,6 +52,58 @@ message SSHTarget {
 
 // CreateAssetRequest is the input of AssetService.CreateAsset.
 message CreateAssetRequest {
+  // SSHLogin is the user that tidegate logs in as on an SSH host and what the
+  // user logs in with.
+  message SSHLogin {
+    // UserName is the user that tidegate logs in as on the host, like
+    // "deploy", "deploy@example.com" or "EXAMPLE\deploy".
+    //
+    // Rules: Uppercase and lowercase letters from A to Z, digits,
+    // underscores, dots, dashes and at signs. It doesn't start with a dash. A
+    // Windows domain and one backslash may come first, and the domain follows
+    // the same rule. At most 64 characters. These are the characters that
+    // useradd(8) allows, plus the at sign of a name with a domain.
+    string user_name = 1 [(buf.validate.field).string = {
+      max_len: 64
+      pattern: "^([A-Za-z0-9_.@][A-Za-z0-9_.@-]*\\\\)?[A-Za-z0-9_.@][A-Za-z0-9_.@-]*$"
+    }];
+    // Secret is what the user logs in with. tidegate stores it and never
+    // returns it.
+    oneof secret {
+      option (buf.validate.oneof).required = true;
+
+      // Password is the user's password on the host.
+      //
+      // Rules: Not empty, at most 1024 bytes.
+      string password = 2 [(buf.validate.field).string = {
+        min_len: 1
+        max_bytes: 1024
+      }];
+      // PrivateKey is a private key of the user in PEM, without a
+      // passphrase. A key that tidegate can't read or that has a passphrase
+      // fails with invalid_argument.
+      //
+      // Rules: Not empty, at most 16384 bytes.
+      string private_key = 3 [(buf.validate.field).string = {
+        min_len: 1
+        max_bytes: 16384
+      }];
+    }
+  }
+
+  // SSHAsset is an SSH host and what tidegate logs in to it with.
+  message SSHAsset {
+    // Target is the host's address and its host key.
+    //
+    // Rules: Required.
+    SSHTarget target = 1 [(buf.validate.field).required = true];
+    // Login is the user that tidegate logs in as and what the user logs in
+    // with.
+    //
+    // Rules: Required.
+    SSHLogin login = 2 [(buf.validate.field).required = true];
+  }
+
   // ProjectName is the name of the project that gets the asset.
   //
   // Rules: Starts with a lowercase letter, goes on with lowercase letters,
@@ -96,12 +148,20 @@ message CreateAssetRequest {
     option (buf.validate.oneof).required = true;
 
     // SSH makes the asset a host that tidegate reaches over SSH.
-    SSHTarget ssh = 4;
+    SSHAsset ssh = 4;
   }
 }
 
 // CreateAssetResponse is the result of AssetService.CreateAsset.
 message CreateAssetResponse {
+  // SSHAsset is an SSH host and the user that tidegate logs in as.
+  message SSHAsset {
+    // Target is the host's address and its host key.
+    SSHTarget target = 1;
+    // UserName is the user that tidegate logs in as on the host.
+    string user_name = 2;
+  }
+
   // ID identifies the new asset. It is a UUID.
   string id = 1;
   // ProjectID identifies the project that the new asset belongs to. It is a
@@ -114,7 +174,7 @@ message CreateAssetResponse {
   // Target says what kind of target the new asset is and how to reach it.
   oneof target {
     // SSH is set for a host that tidegate reaches over SSH.
-    SSHTarget ssh = 5;
+    SSHAsset ssh = 5;
   }
 }
 
@@ -133,6 +193,14 @@ message ListAssetsRequest {
 
 // ListAssetsResponse is the result of AssetService.ListAssets.
 message ListAssetsResponse {
+  // SSHAsset is an SSH host and the user that tidegate logs in as.
+  message SSHAsset {
+    // Target is the host's address and its host key.
+    SSHTarget target = 1;
+    // UserName is the user that tidegate logs in as on the host.
+    string user_name = 2;
+  }
+
   // Asset is one asset in the list.
   message Asset {
     // ID identifies the asset. It is a UUID.
@@ -147,7 +215,7 @@ message ListAssetsResponse {
     // Target says what kind of target the asset is and how to reach it.
     oneof target {
       // SSH is set for a host that tidegate reaches over SSH.
-      SSHTarget ssh = 5;
+      SSHAsset ssh = 5;
     }
   }
 

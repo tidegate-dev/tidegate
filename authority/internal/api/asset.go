@@ -10,6 +10,7 @@ import (
 	"github.com/tidegate-dev/tidegate/authority/internal/model"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
+	"github.com/tidegate-dev/tidegate/internal/secret"
 )
 
 // AssetService creates and lists assets.
@@ -34,11 +35,23 @@ func (s *AssetService) CreateAsset(
 
 	switch target := req.Msg.GetTarget().(type) {
 	case *authorityv1.CreateAssetRequest_Ssh:
+		sshAsset := target.Ssh
+
+		sshLogin := sshAsset.GetLogin()
+
+		secretInput, inputErr := newSSHSecretInput(sshLogin)
+		if inputErr != nil {
+			return nil, inputErr
+		}
+
+		sshTarget := sshAsset.GetTarget()
+
 		asset, err = s.assets.CreateSSH(ctx, req.Msg.GetProjectName(), req.Msg.GetName(), req.Msg.GetLabels(), model.SSHTarget{
-			Host:    target.Ssh.GetHost(),
-			Port:    uint16(target.Ssh.GetPort()), //nolint:gosec // The API definition allows 1 to 65535.
-			HostKey: target.Ssh.GetHostKey(),
-		})
+			Host:     sshTarget.GetHost(),
+			Port:     uint16(sshTarget.GetPort()), //nolint:gosec // The API definition allows 1 to 65535.
+			HostKey:  sshTarget.GetHostKey(),
+			UserName: sshLogin.GetUserName(),
+		}, secretInput)
 	default:
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("the asset needs a target of a known kind"))
 	}
@@ -78,7 +91,7 @@ func (s *AssetService) ListAssets(
 }
 
 func newCreateAssetResponse(asset *model.Asset) (*authorityv1.CreateAssetResponse, error) {
-	ssh, err := sshTarget(asset)
+	sshTarget, err := newSSHTarget(asset)
 	if err != nil {
 		return nil, err
 	}
@@ -88,12 +101,15 @@ func newCreateAssetResponse(asset *model.Asset) (*authorityv1.CreateAssetRespons
 		ProjectId: asset.ProjectID.String(),
 		Name:      asset.Name,
 		Labels:    asset.Labels,
-		Target:    &authorityv1.CreateAssetResponse_Ssh{Ssh: ssh},
+		Target: &authorityv1.CreateAssetResponse_Ssh{Ssh: &authorityv1.CreateAssetResponse_SSHAsset{
+			Target:   sshTarget,
+			UserName: asset.SSH.UserName,
+		}},
 	}, nil
 }
 
 func newListedAsset(asset *model.Asset) (*authorityv1.ListAssetsResponse_Asset, error) {
-	ssh, err := sshTarget(asset)
+	sshTarget, err := newSSHTarget(asset)
 	if err != nil {
 		return nil, err
 	}
@@ -103,11 +119,32 @@ func newListedAsset(asset *model.Asset) (*authorityv1.ListAssetsResponse_Asset, 
 		ProjectId: asset.ProjectID.String(),
 		Name:      asset.Name,
 		Labels:    asset.Labels,
-		Target:    &authorityv1.ListAssetsResponse_Asset_Ssh{Ssh: ssh},
+		Target: &authorityv1.ListAssetsResponse_Asset_Ssh{Ssh: &authorityv1.ListAssetsResponse_SSHAsset{
+			Target:   sshTarget,
+			UserName: asset.SSH.UserName,
+		}},
 	}, nil
 }
 
-func sshTarget(asset *model.Asset) (*authorityv1.SSHTarget, error) {
+func newSSHSecretInput(sshLogin *authorityv1.CreateAssetRequest_SSHLogin) (service.SSHSecretInput, error) {
+	switch value := sshLogin.GetSecret().(type) {
+	case *authorityv1.CreateAssetRequest_SSHLogin_Password:
+		return service.SSHSecretInput{
+			Kind:  model.SSHSecretKindPassword,
+			Value: secret.NewBytes([]byte(value.Password)),
+		}, nil
+	case *authorityv1.CreateAssetRequest_SSHLogin_PrivateKey:
+		return service.SSHSecretInput{
+			Kind:  model.SSHSecretKindPrivateKey,
+			Value: secret.NewBytes([]byte(value.PrivateKey)),
+		}, nil
+	default:
+		return service.SSHSecretInput{}, connect.NewError(connect.CodeInvalidArgument,
+			errors.New("an SSH asset needs a password or a private key"))
+	}
+}
+
+func newSSHTarget(asset *model.Asset) (*authorityv1.SSHTarget, error) {
 	if asset.SSH == nil {
 		return nil, fmt.Errorf("asset %s has no target", asset.ID)
 	}

@@ -43,7 +43,13 @@ var _ = Describe("AssetReadWriter", func() {
 
 		Expect(pool.QueryRow(ctx, "SELECT kind, details FROM assets").Scan(&kind, &details)).To(Succeed())
 		Expect(kind).To(Equal("ssh"))
-		Expect(details).To(MatchJSON(`{"host": "bastion.example", "port": 2222, "host_key": "ssh-ed25519 AAAA"}`))
+		Expect(details).To(MatchJSON(`{
+			"host": "bastion.example",
+			"port": 2222,
+			"host_key": "ssh-ed25519 AAAA",
+			"user_name": "deploy",
+			"secret": {"engine_name": "tidegate", "reference": "reference-1", "kind": "private_key"}
+		}`))
 	})
 
 	It("returns an asset that was stored without labels with no labels", func(ctx SpecContext) {
@@ -96,20 +102,32 @@ var _ = Describe("AssetReadWriter", func() {
 	})
 
 	DescribeTable("stores nothing at Commit for an SSH asset",
-		func(ctx SpecContext, change func(asset *model.Asset)) {
+		func(ctx SpecContext, change func(asset *model.Asset), message string) {
 			asset := newSSHAsset(model.AssetID{2}, model.ProjectID{1}, "bastion")
 			change(asset)
 
 			unit := data.NewUnit()
 			unit.Assets().Add(asset)
 
-			Expect(unit.Commit(ctx)).To(MatchError(ContainSubstring("an SSH asset needs a host, a port and a host key")))
+			Expect(unit.Commit(ctx)).To(MatchError(ContainSubstring(message)))
 			Expect(count(ctx, pool, "assets")).To(Equal(0))
 		},
-		Entry("without a target", func(asset *model.Asset) { asset.SSH = nil }),
-		Entry("without a host", func(asset *model.Asset) { asset.SSH.Host = "" }),
-		Entry("without a port", func(asset *model.Asset) { asset.SSH.Port = 0 }),
-		Entry("without a host key", func(asset *model.Asset) { asset.SSH.HostKey = "" }),
+		Entry("without a target", func(asset *model.Asset) { asset.SSH = nil },
+			"an SSH asset needs a host, a port, a host key and a user name"),
+		Entry("without a host", func(asset *model.Asset) { asset.SSH.Host = "" },
+			"an SSH asset needs a host, a port, a host key and a user name"),
+		Entry("without a port", func(asset *model.Asset) { asset.SSH.Port = 0 },
+			"an SSH asset needs a host, a port, a host key and a user name"),
+		Entry("without a host key", func(asset *model.Asset) { asset.SSH.HostKey = "" },
+			"an SSH asset needs a host, a port, a host key and a user name"),
+		Entry("without a user name", func(asset *model.Asset) { asset.SSH.UserName = "" },
+			"an SSH asset needs a host, a port, a host key and a user name"),
+		Entry("without the engine name of its stored secret", func(asset *model.Asset) { asset.SSH.Secret.EngineName = "" },
+			"an SSH asset needs the engine name and the reference of its stored secret"),
+		Entry("without the reference of its stored secret", func(asset *model.Asset) { asset.SSH.Secret.Reference = "" },
+			"an SSH asset needs the engine name and the reference of its stored secret"),
+		Entry("with a stored secret of an unknown kind", func(asset *model.Asset) { asset.SSH.Secret.Kind = "certificate" },
+			`unknown SSH secret kind "certificate"`),
 	)
 
 	It("stores nothing at Commit for an asset of an unknown kind", func(ctx SpecContext) {
@@ -150,7 +168,36 @@ var _ = Describe("AssetReadWriter", func() {
 
 		_, err = data.Assets().ListForProjectID(ctx, model.ProjectID{1})
 
-		Expect(err).To(MatchError(ContainSubstring("an SSH asset needs a host, a port and a host key")))
+		Expect(err).To(MatchError(ContainSubstring("an SSH asset needs a host, a port, a host key and a user name")))
+	})
+
+	It("fails to read an SSH asset whose details lack the user name and the stored secret", func(ctx SpecContext) {
+		_, err := pool.Exec(ctx,
+			`INSERT INTO assets (id, project_id, name, kind, labels, details)
+			 VALUES ($1, $2, 'bastion', 'ssh', '{}', '{"host": "bastion.example", "port": 22, "host_key": "ssh-ed25519 AAAA"}')`,
+			databaseID(model.AssetID{2}), databaseID(model.ProjectID{1}),
+		)
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = data.Assets().ListForProjectID(ctx, model.ProjectID{1})
+
+		Expect(err).To(MatchError(ContainSubstring("an SSH asset needs a host, a port, a host key and a user name")))
+	})
+
+	It("fails to read an SSH asset whose stored secret lacks the reference", func(ctx SpecContext) {
+		_, err := pool.Exec(ctx,
+			`INSERT INTO assets (id, project_id, name, kind, labels, details)
+			 VALUES ($1, $2, 'bastion', 'ssh', '{}', '{
+			     "host": "bastion.example", "port": 22, "host_key": "ssh-ed25519 AAAA",
+			     "user_name": "deploy", "secret": {"engine_name": "tidegate", "kind": "password"}
+			 }')`,
+			databaseID(model.AssetID{2}), databaseID(model.ProjectID{1}),
+		)
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = data.Assets().ListForProjectID(ctx, model.ProjectID{1})
+
+		Expect(err).To(MatchError(ContainSubstring("an SSH asset needs the engine name and the reference of its stored secret")))
 	})
 })
 
@@ -161,7 +208,17 @@ func newSSHAsset(id model.AssetID, projectID model.ProjectID, name string) *mode
 		Name:      name,
 		Kind:      model.AssetKindSSH,
 		Labels:    map[string]string{},
-		SSH:       &model.SSHTarget{Host: "bastion.example", Port: 2222, HostKey: "ssh-ed25519 AAAA"},
+		SSH: &model.SSHTarget{
+			Host:     "bastion.example",
+			Port:     2222,
+			HostKey:  "ssh-ed25519 AAAA",
+			UserName: "deploy",
+			Secret: model.StoredSSHSecret{
+				EngineName: "tidegate",
+				Reference:  "reference-1",
+				Kind:       model.SSHSecretKindPrivateKey,
+			},
+		},
 	}
 }
 
