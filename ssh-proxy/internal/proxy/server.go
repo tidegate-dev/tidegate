@@ -21,7 +21,18 @@ import (
 	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/ticket"
 )
 
-const handshakeTimeout = 30 * time.Second
+const (
+	handshakeTimeout = 30 * time.Second
+	prepareTimeout   = 10 * time.Second
+	refusalTimeout   = 5 * time.Second
+
+	minAcceptRetryDelay = 5 * time.Millisecond
+	maxAcceptRetryDelay = time.Second
+
+	maxLoggedErrorBytes = 256
+)
+
+var errHandshakeTimeout = errors.New("the client took too long to open its SSH connection")
 
 // Server accepts connections that start with a preamble naming a ticket,
 // followed by an SSH connection.
@@ -52,9 +63,10 @@ func GenerateHostKey(rnd random.Service) (ssh.Signer, error) {
 	return hostKey, nil
 }
 
-// Serve accepts connections from listener until ctx ends or accepting fails.
-// Then it closes listener and every connection, and waits for them to end.
-// It returns nil if ctx ended.
+// Serve accepts connections from listener until ctx ends or accepting fails
+// for good. Then it closes listener and every connection, and waits for them
+// to end. It returns nil if ctx ended. After a temporary failure, like too
+// many open files, it waits and accepts again.
 func (s *Server) Serve(ctx context.Context, listener net.Listener) error {
 	var connections sync.WaitGroup
 	defer connections.Wait()
@@ -62,10 +74,16 @@ func (s *Server) Serve(ctx context.Context, listener net.Listener) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	stopClosing := context.AfterFunc(ctx, func() {
+	defer func() {
+		_ = listener.Close()
+	}()
+
+	// Accept takes no context.
+	context.AfterFunc(ctx, func() {
 		_ = listener.Close()
 	})
-	defer stopClosing()
+
+	var retryDelay time.Duration
 
 	for {
 		connection, err := listener.Accept()
@@ -74,8 +92,24 @@ func (s *Server) Serve(ctx context.Context, listener net.Listener) error {
 				return nil
 			}
 
-			return fmt.Errorf("accepting a connection: %w", err)
+			var temporary interface{ Temporary() bool }
+			if !errors.As(err, &temporary) || !temporary.Temporary() {
+				return fmt.Errorf("accepting a connection: %w", err)
+			}
+
+			retryDelay = min(max(2*retryDelay, minAcceptRetryDelay), maxAcceptRetryDelay)
+			slog.Warn("accepting a connection failed, trying again", "error", err, "retry_after", retryDelay)
+
+			select {
+			case <-time.After(retryDelay):
+			case <-ctx.Done():
+				return nil
+			}
+
+			continue
 		}
+
+		retryDelay = 0
 
 		connections.Go(func() {
 			s.handle(ctx, connection)
@@ -87,8 +121,7 @@ func (s *Server) handle(ctx context.Context, connection net.Conn) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	// The SSH library takes no context, so closing the connection is what
-	// ends a session when the server stops or the host goes away.
+	// The SSH library takes no context.
 	context.AfterFunc(ctx, func() {
 		_ = connection.Close()
 	})
@@ -97,23 +130,30 @@ func (s *Server) handle(ctx context.Context, connection net.Conn) {
 
 	client, channels, admissionTicket, err := s.admit(ctx, connection)
 	if err != nil {
-		logger.Warn("refused a connection", "error", err)
+		logger.Warn("refused a connection", "error", logText(err))
 
 		return
 	}
 
-	session, err := s.sessions.PrepareSession(ctx, admissionTicket)
+	// The SSH library's goroutines for a connection only end once its channels are read to the end.
+	defer func() {
+		_ = client.Close()
+
+		for newChannel := range channels {
+			_ = newChannel.Reject(ssh.ConnectionFailed, "the session has ended")
+		}
+	}()
+
+	go func() {
+		_ = client.Wait()
+
+		cancel()
+	}()
+
+	host, session, err := s.openHost(ctx, admissionTicket)
 	if err != nil {
-		logger.Warn("the authority prepared no session", "error", err)
-
-		return
-	}
-
-	logger = logger.With("session_id", string(session.SessionID))
-
-	host, err := target.Connect(ctx, s.sessions, session)
-	if err != nil {
-		logger.Warn("no SSH connection to the host", "error", err)
+		logger.Warn("opened no session", "error", logText(err))
+		refuseSession(ctx, channels)
 
 		return
 	}
@@ -124,6 +164,7 @@ func (s *Server) handle(ctx context.Context, connection net.Conn) {
 		cancel()
 	}()
 
+	logger = logger.With("session_id", string(session.SessionID))
 	logger.Info("session opened", "user_name", session.UserName)
 
 	var relays sync.WaitGroup
@@ -141,7 +182,6 @@ func (s *Server) handle(ctx context.Context, connection net.Conn) {
 	}
 
 	_ = host.Close()
-	_ = client.Close()
 
 	relays.Wait()
 
@@ -150,18 +190,30 @@ func (s *Server) handle(ctx context.Context, connection net.Conn) {
 
 // admit reads the preamble, checks its ticket and runs the SSH handshake
 // with the client. It only succeeds for a client that holds the key that the
-// ticket names.
+// ticket names, and it gives up after handshakeTimeout.
 func (s *Server) admit(ctx context.Context, connection net.Conn) (*ssh.ServerConn, <-chan ssh.NewChannel, secret.String, error) {
-	ctx, cancel := context.WithTimeoutCause(ctx, handshakeTimeout, errors.New("the client took too long to open its SSH connection"))
+	ctx, cancel := context.WithTimeoutCause(ctx, handshakeTimeout, errHandshakeTimeout)
 	defer cancel()
 
 	stopClosing := context.AfterFunc(ctx, func() {
 		_ = connection.Close()
 	})
 
-	reader := newPreambleReader(connection)
+	client, channels, admissionTicket, err := s.handshake(connection)
 
-	admissionTicket, err := readPreamble(reader)
+	if !stopClosing() {
+		if client != nil {
+			_ = client.Close()
+		}
+
+		return nil, nil, secret.String{}, context.Cause(ctx)
+	}
+
+	return client, channels, admissionTicket, err
+}
+
+func (s *Server) handshake(connection net.Conn) (*ssh.ServerConn, <-chan ssh.NewChannel, secret.String, error) {
+	admissionTicket, reader, err := readPreamble(connection)
 	if err != nil {
 		return nil, nil, secret.String{}, err
 	}
@@ -171,7 +223,12 @@ func (s *Server) admit(ctx context.Context, connection net.Conn) (*ssh.ServerCon
 		return nil, nil, secret.String{}, fmt.Errorf("checking the ticket: %w", err)
 	}
 
+	// The library's defaults still accept SHA-1 in key exchanges and in RSA signatures, for old clients.
+	algorithms := ssh.SupportedAlgorithms()
+
 	config := &ssh.ServerConfig{
+		Config:                  ssh.Config{KeyExchanges: algorithms.KeyExchanges},
+		PublicKeyAuthAlgorithms: algorithms.PublicKeyAuths,
 		PublicKeyCallback: func(_ ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
 			if ssh.FingerprintSHA256(key) != claims.ClientKeyFingerprint {
 				return nil, errors.New("the client's key isn't the key that the ticket names")
@@ -187,15 +244,48 @@ func (s *Server) admit(ctx context.Context, connection net.Conn) (*ssh.ServerCon
 		return nil, nil, secret.String{}, fmt.Errorf("opening the client's SSH connection: %w", err)
 	}
 
-	if !stopClosing() {
-		_ = client.Close()
-
-		return nil, nil, secret.String{}, context.Cause(ctx)
-	}
-
 	go ssh.DiscardRequests(requests)
 
 	return client, channels, admissionTicket, nil
+}
+
+// openHost asks the authority for the session of the ticket and logs in to
+// the session's host.
+func (s *Server) openHost(ctx context.Context, admissionTicket secret.String) (*ssh.Client, authority.PreparedSession, error) {
+	prepareCtx, cancel := context.WithTimeout(ctx, prepareTimeout)
+	defer cancel()
+
+	session, err := s.sessions.PrepareSession(prepareCtx, admissionTicket)
+	if err != nil {
+		return nil, authority.PreparedSession{}, fmt.Errorf("preparing the session: %w", err)
+	}
+
+	host, err := target.Connect(ctx, target.Host{
+		Address:  session.Host,
+		Port:     session.Port,
+		UserName: session.UserName,
+		HostKey:  session.HostKey,
+	}, func(ctx context.Context, observedHostKey string) (secret.String, error) {
+		return s.sessions.IssueSessionCredential(ctx, session.SessionID, observedHostKey)
+	})
+	if err != nil {
+		return nil, authority.PreparedSession{}, fmt.Errorf("session %s: %w", session.SessionID, err)
+	}
+
+	return host, session, nil
+}
+
+// refuseSession answers the client's next channel with a failure, so the
+// client learns that no session opens. It gives up after refusalTimeout.
+func refuseSession(ctx context.Context, channels <-chan ssh.NewChannel) {
+	select {
+	case newChannel, open := <-channels:
+		if open {
+			_ = newChannel.Reject(ssh.ConnectionFailed, "tidegate opened no session")
+		}
+	case <-time.After(refusalTimeout):
+	case <-ctx.Done():
+	}
 }
 
 // relayChannel opens a session on the host for the client's channel and
@@ -203,7 +293,7 @@ func (s *Server) admit(ctx context.Context, connection net.Conn) (*ssh.ServerCon
 func relayChannel(logger *slog.Logger, newChannel ssh.NewChannel, host *ssh.Client) {
 	hostChannel, hostRequests, err := host.OpenChannel("session", nil)
 	if err != nil {
-		logger.Warn("the host opened no session", "error", err)
+		logger.Warn("the host opened no session", "error", logText(err))
 
 		_ = newChannel.Reject(ssh.ConnectionFailed, "the host opened no session")
 
@@ -218,4 +308,15 @@ func relayChannel(logger *slog.Logger, newChannel ssh.NewChannel, host *ssh.Clie
 	}
 
 	relay(clientChannel, clientRequests, hostChannel, hostRequests)
+}
+
+// logText returns the text of err, cut to maxLoggedErrorBytes. The SSH
+// library puts what the peer sent into its errors.
+func logText(err error) string {
+	text := err.Error()
+	if len(text) > maxLoggedErrorBytes {
+		return text[:maxLoggedErrorBytes] + "..."
+	}
+
+	return text
 }

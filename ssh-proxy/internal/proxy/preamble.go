@@ -20,28 +20,25 @@ const (
 
 var errInvalidPreamble = errors.New("the connection doesn't start with a preamble that names a ticket")
 
-// newPreambleReader returns a reader for readPreamble. Its buffer is as long
-// as the longest preamble.
-func newPreambleReader(connection io.Reader) *bufio.Reader {
-	return bufio.NewReaderSize(connection, maxPreambleBytes)
-}
-
 // readPreamble reads the line that comes before the client's SSH connection,
 // which is the version, a space, the ticket and a line break. It returns the
-// ticket. What follows the line stays in reader. A line that is no preamble
-// fails with an error that wraps errInvalidPreamble and never holds the line.
-func readPreamble(reader *bufio.Reader) (secret.String, error) {
+// ticket and a reader that holds what follows the line. A line that is no
+// preamble or is longer than maxPreambleBytes fails with an error that wraps
+// errInvalidPreamble and never holds the line.
+func readPreamble(connection io.Reader) (secret.String, *bufio.Reader, error) {
+	reader := bufio.NewReaderSize(connection, maxPreambleBytes)
+
 	line, err := reader.ReadSlice('\n')
 	if err != nil {
-		return secret.String{}, fmt.Errorf("%w: %w", errInvalidPreamble, err)
+		return secret.String{}, nil, fmt.Errorf("%w: %w", errInvalidPreamble, err)
 	}
 
 	version, ticket, found := strings.Cut(string(line[:len(line)-1]), " ")
 	if !found || version != preambleVersion || !isTicket(ticket) {
-		return secret.String{}, errInvalidPreamble
+		return secret.String{}, nil, errInvalidPreamble
 	}
 
-	return secret.New(ticket), nil
+	return secret.New(ticket), reader, nil
 }
 
 func isTicket(text string) bool {

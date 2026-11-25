@@ -1,4 +1,4 @@
-// Package target connects the ssh-proxy to the SSH host of a session.
+// Package target connects the ssh-proxy to an SSH host.
 package target
 
 import (
@@ -14,30 +14,38 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"github.com/tidegate-dev/tidegate/internal/secret"
-	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/authority"
 )
 
 const connectTimeout = 10 * time.Second
 
-// ErrHostKeyMismatch means that the host presented another key than the one
-// the authority expects. The ssh-proxy sent the host nothing to log in with.
+// ErrHostKeyMismatch means that the host presented another key than the
+// expected one. The ssh-proxy sent the host nothing to log in with.
 var ErrHostKeyMismatch = errors.New("the host presented another key than the expected host key")
 
-// CredentialIssuer is the call to the authority that returns what the
-// ssh-proxy logs in to a host with.
-type CredentialIssuer interface {
-	// IssueSessionCredential returns the password to log in to the session's
-	// host with. observedHostKey is the public key that the host presented,
-	// as the key type and the key in base64.
-	IssueSessionCredential(ctx context.Context, sessionID authority.SessionID, observedHostKey string) (secret.String, error)
+var errNoHostKey = errors.New("the host asked for the password before it presented a key")
+
+// Host is an SSH host and what the ssh-proxy needs to log in to it, except
+// the password.
+type Host struct {
+	// Address is the host's DNS name or IP address, without the port.
+	Address string
+	Port    uint16
+	// UserName is the user that the ssh-proxy logs in as.
+	UserName string
+	// HostKey is the public key that the host has to present, as the key
+	// type and the key in base64, like "ssh-ed25519 AAAAC3...".
+	HostKey string
 }
 
-// Connect opens an SSH connection to the host of session and logs in. It
-// asks credentials for the password only after the host presented the
-// expected host key. If the host presented another key, the error wraps
-// ErrHostKeyMismatch.
-func Connect(ctx context.Context, credentials CredentialIssuer, session authority.PreparedSession) (*ssh.Client, error) {
-	expected, _, _, _, err := ssh.ParseAuthorizedKey([]byte(session.HostKey))
+// IssuePassword returns the password of a host's user. observedHostKey is the
+// public key that the host presented, in the form of Host.HostKey.
+type IssuePassword func(ctx context.Context, observedHostKey string) (secret.String, error)
+
+// Connect opens an SSH connection to host and logs in. It calls
+// issuePassword only after the host presented the expected host key. If the
+// host presented another key, the error wraps ErrHostKeyMismatch.
+func Connect(ctx context.Context, host Host, issuePassword IssuePassword) (*ssh.Client, error) {
+	expectedHostKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(host.HostKey))
 	if err != nil {
 		return nil, fmt.Errorf("reading the expected host key: %w", err)
 	}
@@ -48,32 +56,37 @@ func Connect(ctx context.Context, credentials CredentialIssuer, session authorit
 	var observedHostKey string
 
 	config := &ssh.ClientConfig{
-		User:              session.UserName,
-		HostKeyAlgorithms: algorithmsOf(expected),
+		// The library's defaults still accept SHA-1 in key exchanges, for old hosts.
+		Config:            ssh.Config{KeyExchanges: ssh.SupportedAlgorithms().KeyExchanges},
+		User:              host.UserName,
+		HostKeyAlgorithms: algorithmsOf(expectedHostKey),
 		HostKeyCallback: func(_ string, _ net.Addr, presented ssh.PublicKey) error {
-			if !bytes.Equal(presented.Marshal(), expected.Marshal()) {
+			if !bytes.Equal(presented.Marshal(), expectedHostKey.Marshal()) {
 				return ErrHostKeyMismatch
 			}
 
-			observedHostKey = strings.TrimSpace(string(ssh.MarshalAuthorizedKey(presented)))
+			// A host can start another key exchange while the login reads the variable.
+			if observedHostKey == "" {
+				observedHostKey = strings.TrimSpace(string(ssh.MarshalAuthorizedKey(presented)))
+			}
 
 			return nil
 		},
 		Auth: []ssh.AuthMethod{ssh.PasswordCallback(func() (string, error) {
 			if observedHostKey == "" {
-				return "", ErrHostKeyMismatch
+				return "", errNoHostKey
 			}
 
-			password, err := credentials.IssueSessionCredential(ctx, session.SessionID, observedHostKey)
+			password, err := issuePassword(ctx, observedHostKey)
 			if err != nil {
-				return "", fmt.Errorf("asking the authority for the password: %w", err)
+				return "", fmt.Errorf("getting the password: %w", err)
 			}
 
 			return password.Reveal(), nil
 		})},
 	}
 
-	address := net.JoinHostPort(session.Host, strconv.Itoa(int(session.Port)))
+	address := net.JoinHostPort(host.Address, strconv.Itoa(int(host.Port)))
 
 	var dialer net.Dialer
 
@@ -82,23 +95,23 @@ func Connect(ctx context.Context, credentials CredentialIssuer, session authorit
 		return nil, fmt.Errorf("connecting to the host: %w", err)
 	}
 
-	// The SSH library takes no context, so closing the connection is what
-	// ends a handshake with a host that stops answering.
+	// The SSH library takes no context.
 	stopClosing := context.AfterFunc(ctx, func() {
 		_ = connection.Close()
 	})
 
 	clientConn, channels, requests, err := ssh.NewClientConn(connection, address, config)
+
+	if !stopClosing() {
+		_ = connection.Close()
+
+		return nil, fmt.Errorf("logging in to the host: %w", context.Cause(ctx))
+	}
+
 	if err != nil {
 		_ = connection.Close()
 
 		return nil, fmt.Errorf("logging in to the host: %w", err)
-	}
-
-	if !stopClosing() {
-		_ = clientConn.Close()
-
-		return nil, fmt.Errorf("logging in to the host: %w", context.Cause(ctx))
 	}
 
 	return ssh.NewClient(clientConn, channels, requests), nil

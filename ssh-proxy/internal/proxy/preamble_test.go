@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"bufio"
 	"bytes"
 	"io"
 	"strings"
@@ -14,25 +13,19 @@ import (
 func TestReadPreambleReturnsTheTicket(t *testing.T) {
 	t.Parallel()
 
-	// arrange
-	reader := newPreambleReader(strings.NewReader("tidegate-session-v1 the-ticket\n"))
-
 	// act
-	ticket, err := readPreamble(reader)
+	ticket, _, err := readPreamble(strings.NewReader("tidegate-session-v1 the-ticket\n"))
 
 	// assert
 	require.NoError(t, err)
 	assert.Equal(t, "the-ticket", ticket.Reveal())
 }
 
-func TestReadPreambleLeavesWhatFollowsTheLineInTheReader(t *testing.T) {
+func TestReadPreambleReturnsAReaderWithWhatFollowsTheLine(t *testing.T) {
 	t.Parallel()
 
-	// arrange
-	reader := newPreambleReader(strings.NewReader("tidegate-session-v1 the-ticket\nSSH-2.0-client\r\n"))
-
 	// act
-	_, err := readPreamble(reader)
+	_, reader, err := readPreamble(strings.NewReader("tidegate-session-v1 the-ticket\nSSH-2.0-client\r\n"))
 
 	// assert
 	require.NoError(t, err)
@@ -63,11 +56,8 @@ func TestReadPreambleRefusesALineThatIsNoPreamble(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			// arrange
-			reader := newPreambleReader(strings.NewReader(input))
-
 			// act
-			_, err := readPreamble(reader)
+			_, _, err := readPreamble(strings.NewReader(input))
 
 			// assert
 			require.ErrorIs(t, err, errInvalidPreamble)
@@ -81,10 +71,9 @@ func TestReadPreambleAcceptsALineOfExactlyTheLimit(t *testing.T) {
 	// arrange
 	start := "tidegate-session-v1 "
 	ticket := strings.Repeat("a", maxPreambleBytes-len(start)-1)
-	reader := newPreambleReader(strings.NewReader(start + ticket + "\n"))
 
 	// act
-	read, err := readPreamble(reader)
+	read, _, err := readPreamble(strings.NewReader(start + ticket + "\n"))
 
 	// assert
 	require.NoError(t, err)
@@ -98,9 +87,7 @@ func FuzzReadPreambleTakesOnlyTheLineItAccepts(f *testing.F) {
 	f.Add([]byte{})
 
 	f.Fuzz(func(t *testing.T, input []byte) {
-		reader := bufio.NewReaderSize(bytes.NewReader(input), maxPreambleBytes)
-
-		ticket, err := readPreamble(reader)
+		ticket, reader, err := readPreamble(bytes.NewReader(input))
 		if err != nil {
 			return
 		}

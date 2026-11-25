@@ -14,7 +14,7 @@ ticket=$(ssh-keygen -lf /tmp/tidegate-session-key.pub | cut -d ' ' -f 2)
 
 ssh -i /tmp/tidegate-session-key -o IdentitiesOnly=yes \
     -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-    -o ConnectTimeout=5 \
+    -o ConnectTimeout=5 -o ServerAliveInterval=5 \
     -o ProxyCommand="sh -c '{ echo \"tidegate-session-v1 $ticket\"; cat; } | nc 127.0.0.1 2022'" \
     session@ssh-proxy
 ```
@@ -29,7 +29,9 @@ The ssh-proxy ignores the user name that the client sends, which is `session` in
 
 First, the ssh-proxy reads the ticket and checks that the client holds the ticket's key. Then it connects to the host and compares the key that the host presents with the host key it expects. Only if the two match, it fetches the password and logs in. A host with another key never gets the password. Finally, it relays the session between the client and the host.
 
-The ssh-proxy relays shells and commands, with a terminal, changes of the terminal's size, and the variables `LANG` and `LC_*`. It refuses port forwarding in both directions, agent forwarding, X11 forwarding, subsystems like SFTP, and every other variable.
+The ssh-proxy relays shells and commands, with a terminal, changes of the terminal's size, and the variables `LANG` and `LC_*`. It refuses everything else: port forwarding in both directions, agent forwarding, X11 forwarding, subsystems like SFTP, every other variable and every other request.
+
+If the ssh-proxy can't open the session, for example because the host doesn't answer, `ssh` reports that the channel failed to open. The reason is in the ssh-proxy's log.
 
 [TEP-0005](https://github.com/tidegate-dev/enhancements/tree/main/teps/0005-gateway-sessions) describes the whole path of a session. It calls the ssh-proxy the SSH worker.
 

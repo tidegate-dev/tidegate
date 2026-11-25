@@ -3,15 +3,15 @@ package target_test
 import (
 	"context"
 	"errors"
-	"sync"
+	"net"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
 
 	"github.com/tidegate-dev/tidegate/internal/secret"
-	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/authority"
 	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/sshtest"
 	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/target"
 )
@@ -26,10 +26,9 @@ func TestConnectLogsInToAHostThatPresentsTheExpectedKey(t *testing.T) {
 
 	// arrange
 	host := sshtest.Start(t, userName, secret.New(password))
-	credentials := &credentials{password: password}
 
 	// act
-	client, err := target.Connect(context.Background(), credentials, prepared(host))
+	client, err := target.Connect(context.Background(), expected(host), issue(password))
 
 	// assert
 	require.NoError(t, err)
@@ -40,21 +39,28 @@ func TestConnectLogsInToAHostThatPresentsTheExpectedKey(t *testing.T) {
 	assert.Equal(t, "hello\n", output)
 }
 
-func TestConnectNamesTheSessionAndTheObservedHostKeyWhenItAsksForThePassword(t *testing.T) {
+func TestConnectNamesTheObservedHostKeyWhenItAsksForThePassword(t *testing.T) {
 	t.Parallel()
 
 	// arrange
 	host := sshtest.Start(t, userName, secret.New(password))
-	credentials := &credentials{password: password}
+
+	var observedHostKeys []string
+
+	issuePassword := func(_ context.Context, observedHostKey string) (secret.String, error) {
+		observedHostKeys = append(observedHostKeys, observedHostKey)
+
+		return secret.New(password), nil
+	}
 
 	// act
-	client, err := target.Connect(context.Background(), credentials, prepared(host))
+	client, err := target.Connect(context.Background(), expected(host), issuePassword)
 
 	// assert
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = client.Close() })
 
-	assert.Equal(t, []issue{{sessionID: "session-1", observedHostKey: host.HostKey}}, credentials.issues())
+	assert.Equal(t, []string{host.HostKey}, observedHostKeys)
 }
 
 func TestConnectRefusesAHostWithAnotherKeyBeforeItAsksForThePassword(t *testing.T) {
@@ -62,28 +68,29 @@ func TestConnectRefusesAHostWithAnotherKeyBeforeItAsksForThePassword(t *testing.
 
 	// arrange
 	host := sshtest.Start(t, userName, secret.New(password))
-	credentials := &credentials{password: password}
 
-	session := prepared(host)
-	session.HostKey = sshtest.AuthorizedKey(sshtest.NewSigner(t).PublicKey())
+	withAnotherKey := expected(host)
+	withAnotherKey.HostKey = sshtest.AuthorizedKey(sshtest.NewSigner(t).PublicKey())
 
 	// act
-	_, err := target.Connect(context.Background(), credentials, session)
+	_, err := target.Connect(context.Background(), withAnotherKey, neverIssue(t))
 
 	// assert
 	require.ErrorIs(t, err, target.ErrHostKeyMismatch)
-	assert.Empty(t, credentials.issues())
 }
 
-func TestConnectFailsWhenTheAuthorityIssuesNoPassword(t *testing.T) {
+func TestConnectFailsWhenNoPasswordIsIssued(t *testing.T) {
 	t.Parallel()
 
 	// arrange
 	host := sshtest.Start(t, userName, secret.New(password))
-	credentials := &credentials{err: errors.New("the session is no longer authorized")}
+
+	issuePassword := func(context.Context, string) (secret.String, error) {
+		return secret.String{}, errors.New("the session is no longer authorized")
+	}
 
 	// act
-	_, err := target.Connect(context.Background(), credentials, prepared(host))
+	_, err := target.Connect(context.Background(), expected(host), issuePassword)
 
 	// assert
 	require.Error(t, err)
@@ -94,10 +101,9 @@ func TestConnectFailsWhenTheHostRefusesThePassword(t *testing.T) {
 
 	// arrange
 	host := sshtest.Start(t, userName, secret.New(password))
-	credentials := &credentials{password: "another password"}
 
 	// act
-	_, err := target.Connect(context.Background(), credentials, prepared(host))
+	_, err := target.Connect(context.Background(), expected(host), issue("another password"))
 
 	// assert
 	require.Error(t, err)
@@ -108,17 +114,15 @@ func TestConnectFailsForAnExpectedHostKeyThatIsNoPublicKey(t *testing.T) {
 
 	// arrange
 	host := sshtest.Start(t, userName, secret.New(password))
-	credentials := &credentials{password: password}
 
-	session := prepared(host)
-	session.HostKey = "ssh-ed25519 not-a-key"
+	withoutAKey := expected(host)
+	withoutAKey.HostKey = "ssh-ed25519 not-a-key"
 
 	// act
-	_, err := target.Connect(context.Background(), credentials, session)
+	_, err := target.Connect(context.Background(), withoutAKey, neverIssue(t))
 
 	// assert
 	require.Error(t, err)
-	assert.Empty(t, credentials.issues())
 }
 
 func TestConnectStopsWhenTheContextEnds(t *testing.T) {
@@ -126,26 +130,67 @@ func TestConnectStopsWhenTheContextEnds(t *testing.T) {
 
 	// arrange
 	host := sshtest.Start(t, userName, secret.New(password))
-	credentials := &credentials{password: password}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
 	// act
-	_, err := target.Connect(ctx, credentials, prepared(host))
+	_, err := target.Connect(ctx, expected(host), neverIssue(t))
 
 	// assert
 	require.Error(t, err)
-	assert.Empty(t, credentials.issues())
 }
 
-func prepared(host *sshtest.Host) authority.PreparedSession {
-	return authority.PreparedSession{
-		SessionID: "session-1",
-		Host:      host.Host,
-		Port:      host.Port,
-		UserName:  userName,
-		HostKey:   host.HostKey,
+func TestConnectGivesUpOnAHostThatNeverAnswersWhenTheContextEnds(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = listener.Close() })
+
+	address := listener.Addr().(*net.TCPAddr).AddrPort()
+	silent := target.Host{
+		Address:  address.Addr().String(),
+		Port:     address.Port(),
+		UserName: userName,
+		HostKey:  sshtest.AuthorizedKey(sshtest.NewSigner(t).PublicKey()),
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+
+	// act
+	_, err = target.Connect(ctx, silent, neverIssue(t))
+
+	// assert
+	require.ErrorIs(t, err, context.DeadlineExceeded)
+}
+
+// expected returns what a caller knows about host before it connects.
+func expected(host *sshtest.Host) target.Host {
+	return target.Host{
+		Address:  host.Address,
+		Port:     host.Port,
+		UserName: userName,
+		HostKey:  host.HostKey,
+	}
+}
+
+func issue(password string) target.IssuePassword {
+	return func(context.Context, string) (secret.String, error) {
+		return secret.New(password), nil
+	}
+}
+
+// neverIssue fails the test if Connect asks for the password.
+func neverIssue(t *testing.T) target.IssuePassword {
+	t.Helper()
+
+	return func(context.Context, string) (secret.String, error) {
+		t.Error("Connect asked for the password")
+
+		return secret.String{}, errors.New("no password")
 	}
 }
 
@@ -162,38 +207,4 @@ func run(client *ssh.Client, command string) (string, error) {
 	output, err := session.Output(command)
 
 	return string(output), err
-}
-
-type issue struct {
-	sessionID       authority.SessionID
-	observedHostKey string
-}
-
-// credentials stands in for the authority and keeps what it was asked.
-type credentials struct {
-	password string
-	err      error
-
-	mu     sync.Mutex
-	issued []issue
-}
-
-func (c *credentials) IssueSessionCredential(_ context.Context, sessionID authority.SessionID, observedHostKey string) (secret.String, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	c.issued = append(c.issued, issue{sessionID: sessionID, observedHostKey: observedHostKey})
-
-	if c.err != nil {
-		return secret.String{}, c.err
-	}
-
-	return secret.New(c.password), nil
-}
-
-func (c *credentials) issues() []issue {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	return append([]issue(nil), c.issued...)
 }

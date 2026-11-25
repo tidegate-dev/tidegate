@@ -44,6 +44,9 @@ func Run(ctx context.Context, cfg config.Config) error {
 
 	slog.Warn("the ssh-proxy takes tickets that nobody signed and connects every session to the SSH host of the development environment. " +
 		"Only run it for development")
+
+	sshServer := proxy.NewServer(hostKey, ticket.Unsigned{}, authority.DevSSHHost{})
+
 	slog.Info("ssh-proxy listening",
 		"address", listener.Addr().String(),
 		"host_key_fingerprint", ssh.FingerprintSHA256(hostKey.PublicKey()))
@@ -54,7 +57,7 @@ func Run(ctx context.Context, cfg config.Config) error {
 	served := make(chan error, 1)
 
 	go func() {
-		served <- proxy.NewServer(hostKey, ticket.Unsigned{}, authority.DevSSHHost{}).Serve(serving, listener)
+		served <- sshServer.Serve(serving, listener)
 
 		stopServing()
 	}()

@@ -26,7 +26,8 @@ type PreparedSession struct {
 }
 
 // Sessions has the authority's calls for one session, in the order that the
-// ssh-proxy makes them.
+// ssh-proxy makes them. The ssh-proxy logs their errors, so an error must
+// hold neither the ticket nor the password.
 type Sessions interface {
 	// PrepareSession redeems the ticket and returns the session and the SSH
 	// host to connect to.

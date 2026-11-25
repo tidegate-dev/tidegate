@@ -3,7 +3,9 @@
 package sshtest
 
 import (
+	"crypto/ecdsa"
 	"crypto/ed25519"
+	"crypto/elliptic"
 	"errors"
 	"io"
 	"net"
@@ -20,18 +22,28 @@ import (
 )
 
 // Host is an SSH server on a local port. One user logs in to it with a
-// password. A command that is "false" ends with exit status 1. A command
-// like "request signal" sends the client a channel request of that type and
-// writes the client's answer, "true" or "false". Every other command is
-// written back. A line break follows what a command writes. A shell writes
-// back what it reads.
+// password. It has an ECDSA and an Ed25519 host key, like a host with
+// several host keys.
+//
+// A shell writes back what it reads. A command does this:
+//
+//   - "false" ends with exit status 1.
+//   - "stderr TEXT" writes TEXT and a line break to standard error.
+//   - "signal" ends like a process that the signal TERM killed.
+//   - "request TYPE" sends the client a channel request of that type and
+//     writes the client's answer, "true" or "false", and a line break.
+//   - "wait" runs until the client closes the channel.
+//   - "hang up" closes the whole connection.
+//   - Every other command is written back, followed by a line break.
 type Host struct {
-	// Host is the IP address that the server listens on.
-	Host string
-	Port uint16
-	// HostKey is the server's public key as the key type and the key in
-	// base64, like "ssh-ed25519 AAAAC3...".
+	// Address is the IP address that the server listens on.
+	Address string
+	Port    uint16
+	// HostKey is the server's Ed25519 public key as the key type and the key
+	// in base64, like "ssh-ed25519 AAAAC3...".
 	HostKey string
+	// SessionEnded gets a value each time a session on the server ends.
+	SessionEnded chan struct{}
 
 	mu          sync.Mutex
 	requests    []string
@@ -43,7 +55,13 @@ type Host struct {
 func Start(t testing.TB, userName string, password secret.String) *Host {
 	t.Helper()
 
-	signer := NewSigner(t)
+	ecdsaKey, err := ecdsa.GenerateKey(elliptic.P256(), random.NewCryptoRandom().Reader())
+	require.NoError(t, err)
+
+	ecdsaSigner, err := ssh.NewSignerFromKey(ecdsaKey)
+	require.NoError(t, err)
+
+	ed25519Signer := NewSigner(t)
 
 	config := &ssh.ServerConfig{
 		PasswordCallback: func(meta ssh.ConnMetadata, given []byte) (*ssh.Permissions, error) {
@@ -54,16 +72,18 @@ func Start(t testing.TB, userName string, password secret.String) *Host {
 			return &ssh.Permissions{}, nil
 		},
 	}
-	config.AddHostKey(signer)
+	config.AddHostKey(ecdsaSigner)
+	config.AddHostKey(ed25519Signer)
 
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 
 	address := listener.Addr().(*net.TCPAddr).AddrPort()
 	host := &Host{
-		Host:    address.Addr().String(),
-		Port:    address.Port(),
-		HostKey: AuthorizedKey(signer.PublicKey()),
+		Address:      address.Addr().String(),
+		Port:         address.Port(),
+		HostKey:      AuthorizedKey(ed25519Signer.PublicKey()),
+		SessionEnded: make(chan struct{}, 16),
 	}
 
 	t.Cleanup(func() {
@@ -151,13 +171,18 @@ func (h *Host) serve(connection net.Conn, config *ssh.ServerConfig) {
 			continue
 		}
 
-		go h.session(channel, channelRequests)
+		go h.session(channel, channelRequests, func() { _ = serverConn.Close() })
 	}
 }
 
-func (h *Host) session(channel ssh.Channel, requests <-chan *ssh.Request) {
+func (h *Host) session(channel ssh.Channel, requests <-chan *ssh.Request, hangUp func()) {
 	defer func() {
 		_ = channel.Close()
+
+		select {
+		case h.SessionEnded <- struct{}{}:
+		default:
+		}
 	}()
 
 	for request := range requests {
@@ -180,20 +205,11 @@ func (h *Host) session(channel ssh.Channel, requests <-chan *ssh.Request) {
 			h.record(request.Type)
 			reply(request, true)
 
-			if exec.Command == "false" {
-				exit(channel, 1)
-
-				return
+			if exec.Command == "wait" {
+				continue
 			}
 
-			if requestType, found := strings.CutPrefix(exec.Command, "request "); found {
-				answer, _ := channel.SendRequest(requestType, true, nil)
-				exec.Command = strconv.FormatBool(answer)
-			}
-
-			_, _ = io.WriteString(channel, exec.Command+"\n")
-
-			exit(channel, 0)
+			run(channel, exec.Command, hangUp)
 
 			return
 		case "shell":
@@ -209,6 +225,36 @@ func (h *Host) session(channel ssh.Channel, requests <-chan *ssh.Request) {
 			h.record(request.Type)
 			reply(request, false)
 		}
+	}
+}
+
+func run(channel ssh.Channel, command string, hangUp func()) {
+	switch {
+	case command == "false":
+		exit(channel, 1)
+	case command == "signal":
+		_, _ = channel.SendRequest("exit-signal", false, ssh.Marshal(struct {
+			Signal     string
+			CoreDumped bool
+			Error      string
+			Lang       string
+		}{Signal: "TERM"}))
+	case command == "hang up":
+		hangUp()
+	case strings.HasPrefix(command, "stderr "):
+		_, _ = io.WriteString(channel.Stderr(), strings.TrimPrefix(command, "stderr ")+"\n")
+
+		exit(channel, 0)
+	case strings.HasPrefix(command, "request "):
+		answer, _ := channel.SendRequest(strings.TrimPrefix(command, "request "), true, nil)
+
+		_, _ = io.WriteString(channel, strconv.FormatBool(answer)+"\n")
+
+		exit(channel, 0)
+	default:
+		_, _ = io.WriteString(channel, command+"\n")
+
+		exit(channel, 0)
 	}
 }
 

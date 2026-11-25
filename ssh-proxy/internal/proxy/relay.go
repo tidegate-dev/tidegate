@@ -8,7 +8,10 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-const maxVariableValueBytes = 1024
+const (
+	maxVariableNameBytes  = 64
+	maxVariableValueBytes = 1024
+)
 
 // relay joins the client's session channel to the host's until the host's
 // side ends or the client closes its channel. It passes data both ways and
@@ -16,11 +19,12 @@ const maxVariableValueBytes = 1024
 // answers every other request with a failure.
 func relay(client ssh.Channel, clientRequests <-chan *ssh.Request, host ssh.Channel, hostRequests <-chan *ssh.Request) {
 	var (
-		hostDone  sync.WaitGroup
-		answering sync.Mutex
+		clientDone sync.WaitGroup
+		hostDone   sync.WaitGroup
+		answering  sync.Mutex
 	)
 
-	go func() {
+	clientDone.Go(func() {
 		for request := range clientRequests {
 			answering.Lock()
 			forward(request, host, allowedFromClient(request))
@@ -28,12 +32,12 @@ func relay(client ssh.Channel, clientRequests <-chan *ssh.Request, host ssh.Chan
 		}
 
 		_ = host.Close()
-	}()
+	})
 
-	go func() {
+	clientDone.Go(func() {
 		_, _ = io.Copy(host, client)
 		_ = host.CloseWrite()
-	}()
+	})
 
 	hostDone.Go(func() {
 		for request := range hostRequests {
@@ -57,6 +61,8 @@ func relay(client ssh.Channel, clientRequests <-chan *ssh.Request, host ssh.Chan
 	answering.Unlock()
 
 	_ = host.Close()
+
+	clientDone.Wait()
 }
 
 // forward sends an allowed request to the other side and answers it with the
@@ -89,13 +95,34 @@ func allowedFromHost(request *ssh.Request) bool {
 	return request.Type == "exit-status" || request.Type == "exit-signal"
 }
 
+// allowedVariable reports if the payload of an env request sets LANG or a
+// variable like LC_ALL, with a value of at most maxVariableValueBytes.
 func allowedVariable(payload []byte) bool {
 	var variable struct{ Name, Value string }
 
 	err := ssh.Unmarshal(payload, &variable)
-	if err != nil || len(variable.Value) > maxVariableValueBytes {
+	if err != nil || len(variable.Name) > maxVariableNameBytes || len(variable.Value) > maxVariableValueBytes {
 		return false
 	}
 
-	return variable.Name == "LANG" || strings.HasPrefix(variable.Name, "LC_")
+	category, isLocale := strings.CutPrefix(variable.Name, "LC_")
+
+	return variable.Name == "LANG" || isLocale && isLocaleCategory(category)
+}
+
+func isLocaleCategory(text string) bool {
+	if text == "" {
+		return false
+	}
+
+	for _, character := range []byte(text) {
+		isLetter := character >= 'A' && character <= 'Z'
+		isDigit := character >= '0' && character <= '9'
+
+		if !isLetter && !isDigit && character != '_' {
+			return false
+		}
+	}
+
+	return true
 }

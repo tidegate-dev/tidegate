@@ -1,10 +1,15 @@
 package proxy_test
 
 import (
+	"bytes"
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"io"
 	"net"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -40,6 +45,25 @@ func TestClientRunsACommandOnTheHost(t *testing.T) {
 	assert.Equal(t, "hello\n", string(output))
 }
 
+func TestClientGetsTheStandardErrorOfACommand(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	setup := start(t)
+	session := setup.session(t)
+
+	var standardError bytes.Buffer
+
+	session.Stderr = &standardError
+
+	// act
+	err := session.Run("stderr oops")
+
+	// assert
+	require.NoError(t, err)
+	assert.Equal(t, "oops\n", standardError.String())
+}
+
 func TestClientGetsTheExitStatusOfACommand(t *testing.T) {
 	t.Parallel()
 
@@ -57,6 +81,23 @@ func TestClientGetsTheExitStatusOfACommand(t *testing.T) {
 	assert.Equal(t, 1, exit.ExitStatus())
 }
 
+func TestClientGetsTheSignalThatEndedACommand(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	setup := start(t)
+	session := setup.session(t)
+
+	// act
+	err := session.Run("signal")
+
+	// assert
+	var exit *ssh.ExitError
+
+	require.ErrorAs(t, err, &exit)
+	assert.Equal(t, "TERM", exit.Signal())
+}
+
 func TestClientShellGetsBackWhatItSends(t *testing.T) {
 	t.Parallel()
 
@@ -70,7 +111,6 @@ func TestClientShellGetsBackWhatItSends(t *testing.T) {
 	output, err := session.StdoutPipe()
 	require.NoError(t, err)
 
-	require.NoError(t, session.RequestPty("xterm", 24, 80, ssh.TerminalModes{}))
 	require.NoError(t, session.Shell())
 
 	// act
@@ -82,43 +122,72 @@ func TestClientShellGetsBackWhatItSends(t *testing.T) {
 	echoed, err := io.ReadAll(output)
 	require.NoError(t, err)
 	assert.Equal(t, "ping\n", string(echoed))
-	require.NoError(t, session.Wait())
-	assert.Equal(t, []string{"pty-req", "shell"}, setup.host.Requests())
 }
 
-func TestLocaleVariableReachesTheHost(t *testing.T) {
+func TestRequestThatIsAllowedReachesTheHost(t *testing.T) {
 	t.Parallel()
 
-	// arrange
-	setup := start(t)
-	session := setup.session(t)
+	tests := map[string]struct {
+		requestType string
+		payload     []byte
+		reached     string
+	}{
+		"terminal": {
+			requestType: "pty-req",
+			payload: ssh.Marshal(struct {
+				Term                         string
+				Columns, Rows, Width, Height uint32
+				Modes                        string
+			}{Term: "xterm", Columns: 80, Rows: 24}),
+			reached: "pty-req",
+		},
+		"terminal size": {
+			requestType: "window-change",
+			payload:     ssh.Marshal(struct{ Columns, Rows, Width, Height uint32 }{Columns: 100, Rows: 40}),
+			reached:     "window-change",
+		},
+		"LANG":            {requestType: "env", payload: variable("LANG", "C"), reached: "env LANG"},
+		"locale category": {requestType: "env", payload: variable("LC_ALL", "C"), reached: "env LC_ALL"},
+	}
 
-	// act
-	err := session.Setenv("LC_ALL", "C")
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 
-	// assert
-	require.NoError(t, err)
-	assert.Equal(t, []string{"env LC_ALL"}, setup.host.Requests())
+			// arrange
+			setup := start(t)
+			session := setup.session(t)
+
+			// act
+			ok, err := session.SendRequest(test.requestType, true, test.payload)
+
+			// assert
+			require.NoError(t, err)
+			assert.True(t, ok)
+			assert.Equal(t, []string{test.reached}, setup.host.Requests())
+		})
+	}
 }
 
 func TestRequestThatIsNotAllowedFailsAndNeverReachesTheHost(t *testing.T) {
 	t.Parallel()
 
-	variable := func(name string, value string) []byte {
-		return ssh.Marshal(struct{ Name, Value string }{name, value})
-	}
-
 	tests := map[string]struct {
 		requestType string
 		payload     []byte
 	}{
-		"agent forwarding":            {requestType: "auth-agent-req@openssh.com"},
-		"X11 forwarding":              {requestType: "x11-req"},
-		"subsystem":                   {requestType: "subsystem", payload: ssh.Marshal(struct{ Name string }{"sftp"})},
-		"signal":                      {requestType: "signal", payload: ssh.Marshal(struct{ Name string }{"KILL"})},
-		"variable outside the locale": {requestType: "env", payload: variable("LD_PRELOAD", "/tmp/x.so")},
-		"locale variable too long":    {requestType: "env", payload: variable("LANG", string(make([]byte, 1025)))},
-		"variable that can't be read": {requestType: "env", payload: []byte{0, 0}},
+		"agent forwarding":                    {requestType: "auth-agent-req@openssh.com"},
+		"X11 forwarding":                      {requestType: "x11-req"},
+		"subsystem":                           {requestType: "subsystem", payload: ssh.Marshal(struct{ Name string }{"sftp"})},
+		"signal":                              {requestType: "signal", payload: ssh.Marshal(struct{ Name string }{"KILL"})},
+		"variable outside the locale":         {requestType: "env", payload: variable("LD_PRELOAD", "/tmp/x.so")},
+		"locale variable too long":            {requestType: "env", payload: variable("LANG", strings.Repeat("a", 1025))},
+		"locale variable without a category":  {requestType: "env", payload: variable("LC_", "C")},
+		"locale variable with a line break":   {requestType: "env", payload: variable("LC_X=1\nLD_PRELOAD", "C")},
+		"locale variable with a long name":    {requestType: "env", payload: variable("LC_"+strings.Repeat("A", 62), "C")},
+		"locale variable in lower case":       {requestType: "env", payload: variable("LC_all", "C")},
+		"variable that only starts with LANG": {requestType: "env", payload: variable("LANGUAGE", "C")},
+		"variable that can't be read":         {requestType: "env", payload: []byte{0, 0}},
 	}
 
 	for name, test := range tests {
@@ -217,27 +286,50 @@ func TestClientWithAnotherKeyThanTheTicketNamesIsRefused(t *testing.T) {
 	anotherKey := sshtest.NewSigner(t)
 
 	// act
-	_, err := setup.connect(t, setup.ticket, anotherKey)
+	_, err := setup.connect(t, anotherKey)
 
 	// assert
 	require.Error(t, err)
-	assert.Zero(t, setup.sessions.prepared())
+	assert.Zero(t, setup.sessions.prepared.Load())
+}
+
+func TestClientThatSignsWithSHA1IsRefused(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	rsaKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+
+	signer, err := ssh.NewSignerFromKey(rsaKey)
+	require.NoError(t, err)
+
+	withSHA1, err := ssh.NewSignerWithAlgorithms(signer.(ssh.AlgorithmSigner), []string{ssh.KeyAlgoRSA})
+	require.NoError(t, err)
+
+	setup := start(t, func(s *setup) {
+		s.verifier.claims.ClientKeyFingerprint = ssh.FingerprintSHA256(signer.PublicKey())
+	})
+
+	// act
+	_, err = setup.connect(t, withSHA1)
+
+	// assert
+	require.Error(t, err)
+	assert.Zero(t, setup.sessions.prepared.Load())
 }
 
 func TestTicketThatTheVerifierRefusesGetsNoSSHConnection(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	verifier := &refusingVerifier{}
-	setup := startWith(t, verifier)
-	verifier.claims = ticket.Claims{ClientKeyFingerprint: setup.ticket}
+	setup := start(t, func(s *setup) { s.verifier.err = assert.AnError })
 
 	// act
-	_, err := setup.connect(t, setup.ticket, setup.clientKey)
+	_, err := setup.connect(t, setup.clientKey)
 
 	// assert
 	require.Error(t, err)
-	assert.Zero(t, setup.sessions.prepared())
+	assert.Zero(t, setup.sessions.prepared.Load())
 }
 
 func TestConnectionWithoutAPreambleIsClosed(t *testing.T) {
@@ -255,39 +347,126 @@ func TestConnectionWithoutAPreambleIsClosed(t *testing.T) {
 
 	// assert
 	require.Error(t, err)
-	assert.Zero(t, setup.sessions.prepared())
+	assert.Zero(t, setup.sessions.prepared.Load())
 }
 
-func TestHostWithAnotherKeyThanExpectedEndsTheConnectionWithoutAPassword(t *testing.T) {
+func TestHostWithAnotherKeyThanExpectedGetsNoPassword(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	setup := start(t)
-	setup.sessions.session.HostKey = sshtest.AuthorizedKey(sshtest.NewSigner(t).PublicKey())
+	anotherKey := sshtest.AuthorizedKey(sshtest.NewSigner(t).PublicKey())
+	setup := start(t, func(s *setup) { s.sessions.session.HostKey = anotherKey })
+	client := setup.client(t)
 
 	// act
-	client, err := setup.connect(t, setup.ticket, setup.clientKey)
-	require.NoError(t, err)
+	_, err := client.NewSession()
 
 	// assert
+	require.Error(t, err)
 	waitUntilClosed(t, client)
-	assert.Zero(t, setup.sessions.issued())
+	assert.Zero(t, setup.sessions.issued.Load())
+}
+
+func TestClientIsToldWhenTheAuthorityRefusesItsTicket(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	setup := start(t, func(s *setup) { s.sessions.prepareErr = assert.AnError })
+	client := setup.client(t)
+
+	// act
+	_, err := client.NewSession()
+
+	// assert
+	var refused *ssh.OpenChannelError
+
+	require.ErrorAs(t, err, &refused)
+	assert.Equal(t, ssh.ConnectionFailed, refused.Reason)
 }
 
 func TestTicketThatTheAuthorityRefusesEndsTheConnection(t *testing.T) {
 	t.Parallel()
 
 	// arrange
-	setup := start(t)
-	setup.sessions.prepareErr = assert.AnError
+	setup := start(t, func(s *setup) { s.sessions.prepareErr = assert.AnError })
+	client := setup.client(t)
 
 	// act
-	client, err := setup.connect(t, setup.ticket, setup.clientKey)
+	_, err := client.NewSession()
+
+	// assert
+	require.Error(t, err)
+	waitUntilClosed(t, client)
+}
+
+func TestClientThatLeavesWhileItsSessionIsPreparedEndsThePreparation(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	canceled := make(chan struct{})
+	setup := start(t, func(s *setup) { s.sessions.canceled = canceled })
+	client := setup.client(t)
+
+	// act
+	require.NoError(t, client.Close())
+
+	// assert
+	select {
+	case <-canceled:
+	case <-time.After(waitTime):
+		t.Fatal("the authority is still preparing the session")
+	}
+}
+
+func TestClientThatClosesItsChannelEndsTheSessionOnTheHost(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	setup := start(t)
+	session := setup.session(t)
+	require.NoError(t, session.Start("wait"))
+
+	// act
+	require.NoError(t, session.Close())
+
+	// assert
+	select {
+	case <-setup.host.SessionEnded:
+	case <-time.After(waitTime):
+		t.Fatal("the session on the host is still open")
+	}
+}
+
+func TestHostThatHangsUpEndsTheClientConnection(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	setup := start(t)
+	client := setup.client(t)
+
+	session, err := client.NewSession()
 	require.NoError(t, err)
+
+	// act
+	_ = session.Start("hang up")
 
 	// assert
 	waitUntilClosed(t, client)
-	assert.Zero(t, setup.sessions.issued())
+}
+
+func TestServeAcceptsAgainAfterATemporaryFailure(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	setup := start(t, func(s *setup) { s.listener = &failingOnceListener{Listener: s.listener} })
+	session := setup.session(t)
+
+	// act
+	output, err := session.Output("hello")
+
+	// assert
+	require.NoError(t, err)
+	assert.Equal(t, "hello\n", string(output))
 }
 
 func TestServeClosesItsConnectionsWhenTheContextEnds(t *testing.T) {
@@ -295,90 +474,125 @@ func TestServeClosesItsConnectionsWhenTheContextEnds(t *testing.T) {
 
 	// arrange
 	setup := start(t)
-	session := setup.session(t)
+	client := setup.client(t)
+
+	session, err := client.NewSession()
+	require.NoError(t, err)
 	require.NoError(t, session.Shell())
 
 	// act
 	setup.stop()
 
 	// assert
-	waitUntilClosed(t, setup.client(t))
-	require.NoError(t, <-setup.served)
+	waitUntilClosed(t, client)
+	require.NoError(t, setup.waitForServe(t))
+}
+
+func TestServeClosesTheListenerWhenAcceptingFailsForGood(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	listener := &failingListener{closed: make(chan struct{})}
+	server := proxy.NewServer(sshtest.NewSigner(t), &verifier{}, &sessions{})
+
+	// act
+	err := server.Serve(context.Background(), listener)
+
+	// assert
+	require.ErrorIs(t, err, assert.AnError)
+
+	select {
+	case <-listener.closed:
+	default:
+		t.Fatal("the listener is still open")
+	}
+}
+
+func variable(name string, value string) []byte {
+	return ssh.Marshal(struct{ Name, Value string }{name, value})
 }
 
 type setup struct {
 	address   string
+	listener  net.Listener
 	proxyKey  ssh.PublicKey
 	clientKey ssh.Signer
-	// ticket is the fingerprint of clientKey, which ticket.Unsigned accepts.
-	ticket   string
-	host     *sshtest.Host
-	sessions *sessions
-	stop     context.CancelFunc
-	served   chan error
+	host      *sshtest.Host
+	verifier  *verifier
+	sessions  *sessions
+	stop      context.CancelFunc
 
-	connectOnce sync.Once
-	connected   *ssh.Client
-}
-
-// refusingVerifier refuses every ticket, and returns claims that would let
-// the client in if the server used them anyway.
-type refusingVerifier struct {
-	claims ticket.Claims
-}
-
-func (v *refusingVerifier) Verify(secret.String) (ticket.Claims, error) {
-	return v.claims, ticket.ErrInvalid
+	served   chan struct{}
+	serveErr error
 }
 
 // start runs an SSH host and an ssh-proxy in front of it until the test
-// ends. The ssh-proxy takes the fingerprint of the client's key as the
-// ticket.
-func start(t *testing.T) *setup {
-	t.Helper()
-
-	return startWith(t, ticket.Unsigned{})
-}
-
-func startWith(t *testing.T, tickets ticket.Verifier) *setup {
+// ends. Every ticket is bound to clientKey. A configure function can change
+// the listener and the stand-ins for the ticket check and the authority
+// before the ssh-proxy starts.
+func start(t *testing.T, configure ...func(*setup)) *setup {
 	t.Helper()
 
 	host := sshtest.Start(t, userName, secret.New(password))
 	proxyKey := sshtest.NewSigner(t)
 	clientKey := sshtest.NewSigner(t)
 
-	authorityCalls := &sessions{
-		session: authority.PreparedSession{
-			SessionID: "session-1",
-			Host:      host.Host,
-			Port:      host.Port,
-			UserName:  userName,
-			HostKey:   host.HostKey,
-		},
-	}
-
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 
 	ctx, stop := context.WithCancel(context.Background())
-	served := make(chan error, 1)
 
-	go func() {
-		served <- proxy.NewServer(proxyKey, tickets, authorityCalls).Serve(ctx, listener)
-	}()
-
-	t.Cleanup(stop)
-
-	return &setup{
+	s := &setup{
 		address:   listener.Addr().String(),
+		listener:  listener,
 		proxyKey:  proxyKey.PublicKey(),
 		clientKey: clientKey,
-		ticket:    ssh.FingerprintSHA256(clientKey.PublicKey()),
 		host:      host,
-		sessions:  authorityCalls,
-		stop:      stop,
-		served:    served,
+		verifier:  &verifier{claims: ticket.Claims{ClientKeyFingerprint: ssh.FingerprintSHA256(clientKey.PublicKey())}},
+		sessions: &sessions{
+			session: authority.PreparedSession{
+				SessionID: "session-1",
+				Host:      host.Address,
+				Port:      host.Port,
+				UserName:  userName,
+				HostKey:   host.HostKey,
+			},
+		},
+		stop:   stop,
+		served: make(chan struct{}),
 	}
+
+	for _, change := range configure {
+		change(s)
+	}
+
+	go func() {
+		s.serveErr = proxy.NewServer(proxyKey, s.verifier, s.sessions).Serve(ctx, s.listener)
+
+		close(s.served)
+	}()
+
+	t.Cleanup(func() {
+		stop()
+
+		_ = s.waitForServe(t)
+	})
+
+	return s
+}
+
+// waitForServe returns what Serve returned, and fails the test if Serve is
+// still running after waitTime.
+func (s *setup) waitForServe(t *testing.T) error {
+	t.Helper()
+
+	select {
+	case <-s.served:
+	case <-time.After(waitTime):
+		t.Error("the ssh-proxy is still serving")
+	}
+
+	return s.serveErr
 }
 
 func (s *setup) clientConfig(key ssh.Signer) *ssh.ClientConfig {
@@ -390,16 +604,24 @@ func (s *setup) clientConfig(key ssh.Signer) *ssh.ClientConfig {
 	}
 }
 
-// connect sends the preamble with ticket and then opens an SSH connection
-// with key.
-func (s *setup) connect(t *testing.T, ticket string, key ssh.Signer) (*ssh.Client, error) {
+// connect sends a preamble and then opens an SSH connection with key. It
+// closes the connection after twice waitTime, so a test that would wait for
+// good fails.
+func (s *setup) connect(t *testing.T, key ssh.Signer) (*ssh.Client, error) {
 	t.Helper()
 
 	connection, err := net.Dial("tcp", s.address)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = connection.Close() })
 
-	_, err = io.WriteString(connection, "tidegate-session-v1 "+ticket+"\n")
+	closeLate := time.AfterFunc(2*waitTime, func() { _ = connection.Close() })
+
+	t.Cleanup(func() {
+		closeLate.Stop()
+
+		_ = connection.Close()
+	})
+
+	_, err = io.WriteString(connection, "tidegate-session-v1 the-ticket\n")
 	require.NoError(t, err)
 
 	clientConn, channels, requests, err := ssh.NewClientConn(connection, s.address, s.clientConfig(key))
@@ -410,20 +632,14 @@ func (s *setup) connect(t *testing.T, ticket string, key ssh.Signer) (*ssh.Clien
 	return ssh.NewClient(clientConn, channels, requests), nil
 }
 
-// client returns the test's one connection with the right ticket and key.
+// client opens an SSH connection with the key that the ticket is bound to.
 func (s *setup) client(t *testing.T) *ssh.Client {
 	t.Helper()
 
-	s.connectOnce.Do(func() {
-		client, err := s.connect(t, s.ticket, s.clientKey)
-		require.NoError(t, err)
+	client, err := s.connect(t, s.clientKey)
+	require.NoError(t, err)
 
-		s.connected = client
-	})
-
-	require.NotNil(t, s.connected)
-
-	return s.connected
+	return client
 }
 
 func (s *setup) session(t *testing.T) *ssh.Session {
@@ -454,44 +670,86 @@ func waitUntilClosed(t *testing.T, client *ssh.Client) {
 	}
 }
 
+// verifier stands in for the ticket check. It answers every ticket with the
+// claims and the error that it holds.
+type verifier struct {
+	claims ticket.Claims
+	err    error
+}
+
+func (v *verifier) Verify(secret.String) (ticket.Claims, error) {
+	return v.claims, v.err
+}
+
 // sessions stands in for the authority and counts its calls.
 type sessions struct {
 	session    authority.PreparedSession
 	prepareErr error
+	// canceled makes PrepareSession wait until its context ends and then
+	// close the channel.
+	canceled chan struct{}
 
-	mu           sync.Mutex
-	prepareCalls int
-	issueCalls   int
+	prepared atomic.Int32
+	issued   atomic.Int32
 }
 
-func (s *sessions) PrepareSession(_ context.Context, _ secret.String) (authority.PreparedSession, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *sessions) PrepareSession(ctx context.Context, _ secret.String) (authority.PreparedSession, error) {
+	s.prepared.Add(1)
 
-	s.prepareCalls++
+	if s.canceled != nil {
+		<-ctx.Done()
+		close(s.canceled)
+
+		return authority.PreparedSession{}, ctx.Err()
+	}
 
 	return s.session, s.prepareErr
 }
 
-func (s *sessions) IssueSessionCredential(_ context.Context, _ authority.SessionID, _ string) (secret.String, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	s.issueCalls++
+func (s *sessions) IssueSessionCredential(context.Context, authority.SessionID, string) (secret.String, error) {
+	s.issued.Add(1)
 
 	return secret.New(password), nil
 }
 
-func (s *sessions) prepared() int {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	return s.prepareCalls
+// failingListener fails every Accept for good and reports when it is closed.
+type failingListener struct {
+	closed    chan struct{}
+	closeOnce sync.Once
 }
 
-func (s *sessions) issued() int {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	return s.issueCalls
+func (l *failingListener) Accept() (net.Conn, error) {
+	return nil, assert.AnError
 }
+
+func (l *failingListener) Close() error {
+	l.closeOnce.Do(func() { close(l.closed) })
+
+	return nil
+}
+
+func (l *failingListener) Addr() net.Addr {
+	return &net.TCPAddr{}
+}
+
+// failingOnceListener fails its first Accept the way a system does that has
+// too many open files.
+type failingOnceListener struct {
+	net.Listener
+
+	failed atomic.Bool
+}
+
+func (l *failingOnceListener) Accept() (net.Conn, error) {
+	if l.failed.CompareAndSwap(false, true) {
+		return nil, temporaryError{}
+	}
+
+	return l.Listener.Accept()
+}
+
+type temporaryError struct{}
+
+func (temporaryError) Error() string { return "too many open files" }
+
+func (temporaryError) Temporary() bool { return true }
