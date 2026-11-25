@@ -1,0 +1,16 @@
+FROM docker.io/library/golang:1.27.4@sha256:08bcb99a38f85a265f9a93d1d3323e2440eec333380f3ea26ee0dec9264bb41c AS build
+
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+# In a git worktree, .git points outside the build context, and stamping
+# VCS information into the binary fails.
+RUN CGO_ENABLED=0 go build -trimpath -buildvcs=false -o /ssh-proxy ./ssh-proxy/cmd/ssh-proxy
+
+FROM gcr.io/distroless/static:nonroot@sha256:aafe993665bf6200db38a02c11a9351e782a84b6a45e7f33b6695638c88e3931
+
+COPY --from=build /ssh-proxy /ssh-proxy
+ENV PHEMERA_SSH_PROXY__LISTEN_ADDRESS=:2022
+EXPOSE 2022
+ENTRYPOINT ["/ssh-proxy"]

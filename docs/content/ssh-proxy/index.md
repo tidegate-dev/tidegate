@@ -6,7 +6,7 @@ Note that the ssh-proxy is a prototype. It doesn't call the authority yet. It co
 
 ## Open a session
 
-First, start phemera with `just dev`. Then create a key and open a session with it:
+First, start phemera with `just dev` or `just kind`. Then create a key and open a session with it:
 
 ```sh
 ssh-keygen -q -t ed25519 -N '' -f /tmp/phemera-session-key

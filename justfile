@@ -152,10 +152,10 @@ dev-reset:
     }
     "$runtime" volume rm --force phemera-postgres
 
-images := "localhost/phemera-authority"
+images := "localhost/phemera-authority localhost/phemera-ssh-proxy"
 
 # Build the container images of every component.
-image: authority::image
+image: authority::image ssh-proxy::image
 
 # Run phemera's components and the services they need in a local Kubernetes cluster.
 kind: image _dev-tls
@@ -173,6 +173,8 @@ kind: image _dev-tls
     archive=$(mktemp)
     trap 'rm -f "$archive"' EXIT
     for image in {{images}}; do
+        # podman refuses to save into an archive that already holds an image.
+        : > "$archive"
         "$runtime" save --output "$archive" "$image"
         kind load image-archive "$archive" --name phemera
     done
@@ -182,6 +184,10 @@ kind: image _dev-tls
     kubectl --context kind-phemera apply --filename dev/kind/namespace.yaml
     kubectl --context kind-phemera --namespace phemera create secret tls dev-ca \
         --cert dev/tls/ca.pem --key dev/tls/ca-key.pem --dry-run=client --output yaml \
+        | kubectl --context kind-phemera apply --filename -
+    kubectl --context kind-phemera --namespace phemera create secret generic ssh-host-keys \
+        --from-file dev/ssh-host/ssh_host_ed25519_key --from-file dev/ssh-host/ssh_host_ed25519_key.pub \
+        --dry-run=client --output yaml \
         | kubectl --context kind-phemera apply --filename -
     kubectl --context kind-phemera apply --kustomize dev/kind
     # The image tags stay the same, so the components only pick up new images
