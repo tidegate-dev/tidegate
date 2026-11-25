@@ -21,7 +21,7 @@ Global flags work before or after the command. A command that fails prints `Erro
 | `phemera role create --project-name <project> <name>` | Creates a role in the project and prints its ID and name |
 | `phemera asset create ssh --project-name <project> --address <address> --host-key <key> --user-name <user> (--password \| --private-key-file <file>) <name>` | Adds an SSH host to the project as an asset and prints the asset's ID and name |
 | `phemera asset list --project-name <project>` | Prints the ID, the name, the address and the labels of every asset of the project |
-| `phemera connect <asset-id>` | Requests a ticket for the asset and prints the ticket, asset and user IDs. Issuance currently assumes the user has a binding whose role permits access. |
+| `phemera connect <asset-id>` | Requests a ticket for the asset and opens a shell through the ssh-proxy on `127.0.0.1:2022`. Issuance currently assumes the user has a binding whose role permits access. The ssh-proxy is a prototype that connects every session to the test SSH host of the development environment, whatever the asset is. |
 | `phemera binding create --project-name <project> --role-name <role> --user-name <user>` | Gives the role of the project to the user and prints the binding's ID, the role and the user |
 | `phemera binding list --project-name <project>` | Prints the ID, the role and the user of every binding of the project |
 
