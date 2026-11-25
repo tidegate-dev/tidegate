@@ -21,6 +21,7 @@ func relay(client ssh.Channel, clientRequests <-chan *ssh.Request, host ssh.Chan
 	var (
 		clientDone sync.WaitGroup
 		hostDone   sync.WaitGroup
+		hostOutput sync.WaitGroup
 		answering  sync.Mutex
 	)
 
@@ -45,12 +46,19 @@ func relay(client ssh.Channel, clientRequests <-chan *ssh.Request, host ssh.Chan
 		}
 	})
 
-	hostDone.Go(func() {
+	hostOutput.Go(func() {
 		_, _ = io.Copy(client, host)
 	})
 
-	hostDone.Go(func() {
+	hostOutput.Go(func() {
 		_, _ = io.Copy(client.Stderr(), host.Stderr())
+	})
+
+	// An SSH channel has one end of output for both streams.
+	hostDone.Go(func() {
+		hostOutput.Wait()
+
+		_ = client.CloseWrite()
 	})
 
 	hostDone.Wait()

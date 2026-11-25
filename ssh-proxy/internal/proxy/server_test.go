@@ -418,6 +418,35 @@ func TestClientThatLeavesWhileItsSessionIsPreparedEndsThePreparation(t *testing.
 	}
 }
 
+func TestClientGetsTheEndOfTheOutputWhileTheCommandStillRuns(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	setup := start(t)
+	session := setup.session(t)
+
+	output, err := session.StdoutPipe()
+	require.NoError(t, err)
+
+	ended := make(chan error, 1)
+
+	// act
+	require.NoError(t, session.Start("eof"))
+
+	go func() {
+		_, err := io.ReadAll(output)
+		ended <- err
+	}()
+
+	// assert
+	select {
+	case err := <-ended:
+		require.NoError(t, err)
+	case <-time.After(waitTime):
+		t.Fatal("the client got no end of the output")
+	}
+}
+
 func TestClientThatClosesItsChannelEndsTheSessionOnTheHost(t *testing.T) {
 	t.Parallel()
 
@@ -486,6 +515,39 @@ func TestServeClosesItsConnectionsWhenTheContextEnds(t *testing.T) {
 	// assert
 	waitUntilClosed(t, client)
 	require.NoError(t, setup.waitForServe(t))
+}
+
+func TestServeStopsWhileAHostLeavesARequestUnanswered(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	setup := start(t)
+	session := setup.session(t)
+	require.NoError(t, session.Start("stall"))
+
+	terminalSize := ssh.Marshal(struct{ Columns, Rows, Width, Height uint32 }{Columns: 100, Rows: 40})
+
+	go func() {
+		_, _ = session.SendRequest("window-change", true, terminalSize)
+	}()
+
+	// The SSH library holds 16 requests of a channel before it stops reading the connection.
+	for range 32 {
+		_, err := session.SendRequest("window-change", false, terminalSize)
+		require.NoError(t, err)
+	}
+
+	time.Sleep(200 * time.Millisecond)
+
+	// act
+	setup.stop()
+
+	// assert
+	select {
+	case <-setup.served:
+	case <-time.After(waitTime):
+		t.Fatal("the ssh-proxy is still serving")
+	}
 }
 
 func TestServeClosesTheListenerWhenAcceptingFailsForGood(t *testing.T) {

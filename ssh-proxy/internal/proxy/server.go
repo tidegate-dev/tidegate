@@ -164,6 +164,11 @@ func (s *Server) handle(ctx context.Context, connection net.Conn) {
 		cancel()
 	}()
 
+	// While the host leaves a request unanswered, the SSH library can stop reading the client's connection.
+	context.AfterFunc(ctx, func() {
+		_ = host.Close()
+	})
+
 	logger = logger.With("session_id", string(session.SessionID))
 	logger.Info("session opened", "user_name", session.UserName)
 

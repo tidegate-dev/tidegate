@@ -33,6 +33,9 @@ import (
 //   - "request TYPE" sends the client a channel request of that type and
 //     writes the client's answer, "true" or "false", and a line break.
 //   - "wait" runs until the client closes the channel.
+//   - "eof" ends its output and then runs until the client closes the
+//     channel.
+//   - "stall" runs until the test ends and reads no further request.
 //   - "hang up" closes the whole connection.
 //   - Every other command is written back, followed by a line break.
 type Host struct {
@@ -44,6 +47,8 @@ type Host struct {
 	HostKey string
 	// SessionEnded gets a value each time a session on the server ends.
 	SessionEnded chan struct{}
+
+	stopped chan struct{}
 
 	mu          sync.Mutex
 	requests    []string
@@ -84,9 +89,12 @@ func Start(t testing.TB, userName string, password secret.String) *Host {
 		Port:         address.Port(),
 		HostKey:      AuthorizedKey(ed25519Signer.PublicKey()),
 		SessionEnded: make(chan struct{}, 16),
+		stopped:      make(chan struct{}),
 	}
 
 	t.Cleanup(func() {
+		close(host.stopped)
+
 		_ = listener.Close()
 
 		host.mu.Lock()
@@ -205,8 +213,17 @@ func (h *Host) session(channel ssh.Channel, requests <-chan *ssh.Request, hangUp
 			h.record(request.Type)
 			reply(request, true)
 
-			if exec.Command == "wait" {
+			switch exec.Command {
+			case "wait":
 				continue
+			case "eof":
+				_ = channel.CloseWrite()
+
+				continue
+			case "stall":
+				<-h.stopped
+
+				return
 			}
 
 			run(channel, exec.Command, hangUp)
