@@ -13,11 +13,13 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/tidegate-dev/tidegate/authority/internal/model"
+	"github.com/tidegate-dev/tidegate/authority/internal/secretengine/postgres"
 	"github.com/tidegate-dev/tidegate/authority/internal/service"
 	"github.com/tidegate-dev/tidegate/authority/internal/storetest"
 	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
 	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
 	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/tidegate-dev/tidegate/internal/secretengine"
 )
 
 var _ = Describe("TicketService", func() {
@@ -35,16 +37,27 @@ var _ = Describe("TicketService", func() {
 		dbPool, data := storetest.New(ctx)
 		pool = dbPool
 		projects := service.NewProjects(data.Projects(), data)
-		assets := service.NewAssets(data.Projects(), data.Assets(), data)
+
+		Expect(postgres.CreateSchema(ctx, pool)).To(Succeed())
+
+		engines := secretengine.NewEngines(map[string]secretengine.Engine{"test-engine": postgres.New(pool)})
+		assets := service.NewAssets(data.Projects(), data.Assets(), data, engines, "test-engine")
 		sessions := newSessions(data)
 		alice = storetest.AddUser(ctx, data, "alice")
 		aliceToken, err = sessions.Issue(ctx, alice)
-		Expect(err).NotTo(HaveOccurred())
-		_, err = projects.Create(ctx, "payments")
+
 		Expect(err).NotTo(HaveOccurred())
 
-		target := model.SSHTarget{Host: "host.example.com", Port: 22, HostKey: "ssh-ed25519 AAAA"}
-		asset, err = assets.CreateSSH(ctx, "payments", "host", nil, target)
+		_, err = projects.Create(ctx, "payments")
+
+		Expect(err).NotTo(HaveOccurred())
+
+		target := model.SSHTarget{Host: "host.example.com", Port: 22, HostKey: "ssh-ed25519 AAAA", UserName: "deploy"}
+		asset, err = assets.CreateSSH(ctx, "payments", "host", nil, target, service.SSHSecretInput{
+			Kind:  model.SSHSecretKindPassword,
+			Value: secret.NewBytes([]byte("test-password")),
+		})
+
 		Expect(err).NotTo(HaveOccurred())
 
 		tickets := service.NewTickets(data)
@@ -66,22 +79,26 @@ var _ = Describe("TicketService", func() {
 
 	It("requires a signed-in user", func(ctx SpecContext) {
 		_, err := create(ctx, asset.ID.String(), secret.String{})
+
 		Expect(connect.CodeOf(err)).To(Equal(connect.CodeUnauthenticated))
 	}, SpecTimeout(30*time.Second))
 
 	It("rejects a malformed asset ID", func(ctx SpecContext) {
 		_, err := create(ctx, "invalid", aliceToken)
+
 		Expect(connect.CodeOf(err)).To(Equal(connect.CodeInvalidArgument))
 	}, SpecTimeout(30*time.Second))
 
 	It("issues a fresh ticket for the session user and requested asset on every call", func(ctx SpecContext) {
 		first, err := create(ctx, asset.ID.String(), aliceToken)
+
 		Expect(err).NotTo(HaveOccurred())
 		Expect(first.Msg.GetAssetId()).To(Equal(asset.ID.String()))
 		Expect(first.Msg.GetUserId()).To(Equal(alice.String()))
 		Expect(first.Msg.GetId()).NotTo(BeEmpty())
 
 		second, err := create(ctx, asset.ID.String(), aliceToken)
+
 		Expect(err).NotTo(HaveOccurred())
 		Expect(second.Msg.GetId()).NotTo(BeEmpty())
 		Expect(second.Msg.GetId()).NotTo(Equal(first.Msg.GetId()))
@@ -92,6 +109,7 @@ var _ = Describe("TicketService", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		_, err = create(ctx, asset.ID.String(), aliceToken)
+
 		Expect(connect.CodeOf(err)).To(Equal(connect.CodeNotFound))
 	}, SpecTimeout(30*time.Second))
 })

@@ -51,12 +51,12 @@ func Connect(server string, token secret.String) (*Clients, error) {
 	options := connect.WithInterceptors(interceptors...)
 
 	return &Clients{
-		login:   authorityv1connect.NewLoginServiceClient(httpClient, server, withToken),
-		project: authorityv1connect.NewProjectServiceClient(httpClient, server, withToken),
-		role:    authorityv1connect.NewRoleServiceClient(httpClient, server, withToken),
-		asset:   authorityv1connect.NewAssetServiceClient(httpClient, server, withToken),
-		binding: authorityv1connect.NewBindingServiceClient(httpClient, server, withToken),
-		ticket:  authorityv1connect.NewTicketServiceClient(httpClient, server, withToken),
+		login:   authorityv1connect.NewLoginServiceClient(httpClient, server, options),
+		project: authorityv1connect.NewProjectServiceClient(httpClient, server, options),
+		role:    authorityv1connect.NewRoleServiceClient(httpClient, server, options),
+		asset:   authorityv1connect.NewAssetServiceClient(httpClient, server, options),
+		binding: authorityv1connect.NewBindingServiceClient(httpClient, server, options),
+		ticket:  authorityv1connect.NewTicketServiceClient(httpClient, server, options),
 	}, nil
 }
 

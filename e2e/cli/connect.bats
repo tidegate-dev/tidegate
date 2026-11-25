@@ -10,7 +10,8 @@ setup() {
     project=connect-$BATS_TEST_NUMBER
     tidegate project create "$project"
     host_key=$(cat "$BATS_TEST_DIRNAME/../../dev/ssh-host/ssh_host_ed25519_key.pub")
-    run tidegate -o json asset create ssh --project-name "$project" --address bastion.example --host-key "$host_key" bastion
+    run tidegate -o json asset create ssh --project-name "$project" --address bastion.example --host-key "$host_key" \
+        --user-name deploy --password bastion <<<test-password
     [ "$status" -eq 0 ]
     asset=$(jq -er .id <<<"$output")
 
