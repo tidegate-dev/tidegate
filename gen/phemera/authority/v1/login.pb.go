@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.12
 // 	protoc        (unknown)
-// source: tidegate/authority/v1/login.proto
+// source: phemera/authority/v1/login.proto
 
 package authorityv1
 
@@ -39,7 +39,7 @@ type LoginRequest struct {
 
 func (x *LoginRequest) Reset() {
 	*x = LoginRequest{}
-	mi := &file_tidegate_authority_v1_login_proto_msgTypes[0]
+	mi := &file_phemera_authority_v1_login_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -51,7 +51,7 @@ func (x *LoginRequest) String() string {
 func (*LoginRequest) ProtoMessage() {}
 
 func (x *LoginRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_login_proto_msgTypes[0]
+	mi := &file_phemera_authority_v1_login_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -64,7 +64,7 @@ func (x *LoginRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginRequest.ProtoReflect.Descriptor instead.
 func (*LoginRequest) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_login_proto_rawDescGZIP(), []int{0}
+	return file_phemera_authority_v1_login_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *LoginRequest) GetUserName() string {
@@ -92,7 +92,7 @@ type LoginResponse struct {
 
 func (x *LoginResponse) Reset() {
 	*x = LoginResponse{}
-	mi := &file_tidegate_authority_v1_login_proto_msgTypes[1]
+	mi := &file_phemera_authority_v1_login_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -104,7 +104,7 @@ func (x *LoginResponse) String() string {
 func (*LoginResponse) ProtoMessage() {}
 
 func (x *LoginResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_login_proto_msgTypes[1]
+	mi := &file_phemera_authority_v1_login_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -117,7 +117,7 @@ func (x *LoginResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginResponse.ProtoReflect.Descriptor instead.
 func (*LoginResponse) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_login_proto_rawDescGZIP(), []int{1}
+	return file_phemera_authority_v1_login_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *LoginResponse) GetToken() string {
@@ -139,7 +139,7 @@ type LogoutRequest struct {
 
 func (x *LogoutRequest) Reset() {
 	*x = LogoutRequest{}
-	mi := &file_tidegate_authority_v1_login_proto_msgTypes[2]
+	mi := &file_phemera_authority_v1_login_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -151,7 +151,7 @@ func (x *LogoutRequest) String() string {
 func (*LogoutRequest) ProtoMessage() {}
 
 func (x *LogoutRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_login_proto_msgTypes[2]
+	mi := &file_phemera_authority_v1_login_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -164,7 +164,7 @@ func (x *LogoutRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogoutRequest.ProtoReflect.Descriptor instead.
 func (*LogoutRequest) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_login_proto_rawDescGZIP(), []int{2}
+	return file_phemera_authority_v1_login_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *LogoutRequest) GetAllSessions() bool {
@@ -183,7 +183,7 @@ type LogoutResponse struct {
 
 func (x *LogoutResponse) Reset() {
 	*x = LogoutResponse{}
-	mi := &file_tidegate_authority_v1_login_proto_msgTypes[3]
+	mi := &file_phemera_authority_v1_login_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -195,7 +195,7 @@ func (x *LogoutResponse) String() string {
 func (*LogoutResponse) ProtoMessage() {}
 
 func (x *LogoutResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_login_proto_msgTypes[3]
+	mi := &file_phemera_authority_v1_login_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -208,14 +208,14 @@ func (x *LogoutResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogoutResponse.ProtoReflect.Descriptor instead.
 func (*LogoutResponse) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_login_proto_rawDescGZIP(), []int{3}
+	return file_phemera_authority_v1_login_proto_rawDescGZIP(), []int{3}
 }
 
-var File_tidegate_authority_v1_login_proto protoreflect.FileDescriptor
+var File_phemera_authority_v1_login_proto protoreflect.FileDescriptor
 
-const file_tidegate_authority_v1_login_proto_rawDesc = "" +
+const file_phemera_authority_v1_login_proto_rawDesc = "" +
 	"\n" +
-	"!tidegate/authority/v1/login.proto\x12\x15tidegate.authority.v1\x1a\x1bbuf/validate/validate.proto\"\\\n" +
+	" phemera/authority/v1/login.proto\x12\x14phemera.authority.v1\x1a\x1bbuf/validate/validate.proto\"\\\n" +
 	"\fLoginRequest\x12$\n" +
 	"\tuser_name\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x10\x01R\buserName\x12&\n" +
 	"\bpassword\x18\x02 \x01(\tB\n" +
@@ -224,35 +224,35 @@ const file_tidegate_authority_v1_login_proto_rawDesc = "" +
 	"\x05token\x18\x01 \x01(\tR\x05token\"2\n" +
 	"\rLogoutRequest\x12!\n" +
 	"\fall_sessions\x18\x01 \x01(\bR\vallSessions\"\x10\n" +
-	"\x0eLogoutResponse2\xb9\x01\n" +
-	"\fLoginService\x12R\n" +
-	"\x05Login\x12#.tidegate.authority.v1.LoginRequest\x1a$.tidegate.authority.v1.LoginResponse\x12U\n" +
-	"\x06Logout\x12$.tidegate.authority.v1.LogoutRequest\x1a%.tidegate.authority.v1.LogoutResponseBHZFgithub.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;authorityv1b\x06proto3"
+	"\x0eLogoutResponse2\xb5\x01\n" +
+	"\fLoginService\x12P\n" +
+	"\x05Login\x12\".phemera.authority.v1.LoginRequest\x1a#.phemera.authority.v1.LoginResponse\x12S\n" +
+	"\x06Logout\x12#.phemera.authority.v1.LogoutRequest\x1a$.phemera.authority.v1.LogoutResponseBEZCgithub.com/phemera-dev/phemera/gen/phemera/authority/v1;authorityv1b\x06proto3"
 
 var (
-	file_tidegate_authority_v1_login_proto_rawDescOnce sync.Once
-	file_tidegate_authority_v1_login_proto_rawDescData []byte
+	file_phemera_authority_v1_login_proto_rawDescOnce sync.Once
+	file_phemera_authority_v1_login_proto_rawDescData []byte
 )
 
-func file_tidegate_authority_v1_login_proto_rawDescGZIP() []byte {
-	file_tidegate_authority_v1_login_proto_rawDescOnce.Do(func() {
-		file_tidegate_authority_v1_login_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_tidegate_authority_v1_login_proto_rawDesc), len(file_tidegate_authority_v1_login_proto_rawDesc)))
+func file_phemera_authority_v1_login_proto_rawDescGZIP() []byte {
+	file_phemera_authority_v1_login_proto_rawDescOnce.Do(func() {
+		file_phemera_authority_v1_login_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_phemera_authority_v1_login_proto_rawDesc), len(file_phemera_authority_v1_login_proto_rawDesc)))
 	})
-	return file_tidegate_authority_v1_login_proto_rawDescData
+	return file_phemera_authority_v1_login_proto_rawDescData
 }
 
-var file_tidegate_authority_v1_login_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
-var file_tidegate_authority_v1_login_proto_goTypes = []any{
-	(*LoginRequest)(nil),   // 0: tidegate.authority.v1.LoginRequest
-	(*LoginResponse)(nil),  // 1: tidegate.authority.v1.LoginResponse
-	(*LogoutRequest)(nil),  // 2: tidegate.authority.v1.LogoutRequest
-	(*LogoutResponse)(nil), // 3: tidegate.authority.v1.LogoutResponse
+var file_phemera_authority_v1_login_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_phemera_authority_v1_login_proto_goTypes = []any{
+	(*LoginRequest)(nil),   // 0: phemera.authority.v1.LoginRequest
+	(*LoginResponse)(nil),  // 1: phemera.authority.v1.LoginResponse
+	(*LogoutRequest)(nil),  // 2: phemera.authority.v1.LogoutRequest
+	(*LogoutResponse)(nil), // 3: phemera.authority.v1.LogoutResponse
 }
-var file_tidegate_authority_v1_login_proto_depIdxs = []int32{
-	0, // 0: tidegate.authority.v1.LoginService.Login:input_type -> tidegate.authority.v1.LoginRequest
-	2, // 1: tidegate.authority.v1.LoginService.Logout:input_type -> tidegate.authority.v1.LogoutRequest
-	1, // 2: tidegate.authority.v1.LoginService.Login:output_type -> tidegate.authority.v1.LoginResponse
-	3, // 3: tidegate.authority.v1.LoginService.Logout:output_type -> tidegate.authority.v1.LogoutResponse
+var file_phemera_authority_v1_login_proto_depIdxs = []int32{
+	0, // 0: phemera.authority.v1.LoginService.Login:input_type -> phemera.authority.v1.LoginRequest
+	2, // 1: phemera.authority.v1.LoginService.Logout:input_type -> phemera.authority.v1.LogoutRequest
+	1, // 2: phemera.authority.v1.LoginService.Login:output_type -> phemera.authority.v1.LoginResponse
+	3, // 3: phemera.authority.v1.LoginService.Logout:output_type -> phemera.authority.v1.LogoutResponse
 	2, // [2:4] is the sub-list for method output_type
 	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -260,26 +260,26 @@ var file_tidegate_authority_v1_login_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_tidegate_authority_v1_login_proto_init() }
-func file_tidegate_authority_v1_login_proto_init() {
-	if File_tidegate_authority_v1_login_proto != nil {
+func init() { file_phemera_authority_v1_login_proto_init() }
+func file_phemera_authority_v1_login_proto_init() {
+	if File_phemera_authority_v1_login_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_tidegate_authority_v1_login_proto_rawDesc), len(file_tidegate_authority_v1_login_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_phemera_authority_v1_login_proto_rawDesc), len(file_phemera_authority_v1_login_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_tidegate_authority_v1_login_proto_goTypes,
-		DependencyIndexes: file_tidegate_authority_v1_login_proto_depIdxs,
-		MessageInfos:      file_tidegate_authority_v1_login_proto_msgTypes,
+		GoTypes:           file_phemera_authority_v1_login_proto_goTypes,
+		DependencyIndexes: file_phemera_authority_v1_login_proto_depIdxs,
+		MessageInfos:      file_phemera_authority_v1_login_proto_msgTypes,
 	}.Build()
-	File_tidegate_authority_v1_login_proto = out.File
-	file_tidegate_authority_v1_login_proto_goTypes = nil
-	file_tidegate_authority_v1_login_proto_depIdxs = nil
+	File_phemera_authority_v1_login_proto = out.File
+	file_phemera_authority_v1_login_proto_goTypes = nil
+	file_phemera_authority_v1_login_proto_depIdxs = nil
 }

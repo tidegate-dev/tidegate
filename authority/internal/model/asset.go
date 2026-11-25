@@ -36,10 +36,10 @@ func (id AssetID) String() string {
 // AssetKind names the kind of target that an asset is.
 type AssetKind string
 
-// AssetKindSSH is a host that tidegate reaches over SSH.
+// AssetKindSSH is a host that phemera reaches over SSH.
 const AssetKindSSH AssetKind = "ssh"
 
-// Asset is a target in one project that tidegate gives access to.
+// Asset is a target in one project that phemera gives access to.
 type Asset struct {
 	ID        AssetID
 	ProjectID ProjectID
@@ -52,14 +52,14 @@ type Asset struct {
 }
 
 // SSHTarget is the address of an SSH host, the key that the host proves its
-// identity with, and the user that tidegate logs in as.
+// identity with, and the user that phemera logs in as.
 type SSHTarget struct {
 	Host string
 	Port uint16
 	// HostKey is the host's public key as the key type and the key in
 	// base64, like "ssh-ed25519 AAAAC3...".
 	HostKey string
-	// UserName is the user that tidegate logs in as on the host.
+	// UserName is the user that phemera logs in as on the host.
 	UserName string
 	// Secret says where the user's password or private key is stored.
 	Secret StoredSSHSecret

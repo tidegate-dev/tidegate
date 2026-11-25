@@ -10,7 +10,7 @@ import (
 	"github.com/matthewhartstonge/argon2"
 	"golang.org/x/text/unicode/norm"
 
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 // MinLength is the minimum number of characters in a password. NIST

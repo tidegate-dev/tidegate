@@ -7,7 +7,7 @@ mkdir -p "$directory"
 
 if [ ! -f "$directory/ca.pem" ]; then
     openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -days 3650 \
-        -subj "/CN=tidegate development CA" \
+        -subj "/CN=phemera development CA" \
         -addext "basicConstraints=critical,CA:TRUE" -addext "keyUsage=critical,keyCertSign" \
         -keyout "$directory/ca-key.pem" -out "$directory/ca.pem" 2>/dev/null
 fi

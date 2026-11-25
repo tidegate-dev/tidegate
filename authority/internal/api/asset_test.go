@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
-	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
+	"github.com/phemera-dev/phemera/authority/internal/model"
+	authorityv1 "github.com/phemera-dev/phemera/gen/phemera/authority/v1"
 )
 
 func TestCreateAssetRequestAcceptsAnSSHHostWithLabels(t *testing.T) {

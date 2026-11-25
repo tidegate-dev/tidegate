@@ -1,4 +1,4 @@
-# Contributing to tidegate
+# Contributing to phemera
 
 Thanks for your interest in contributing. This guide explains how to propose a change and what we look for in a pull request.
 
@@ -18,7 +18,7 @@ For bug fixes and small changes, open a pull request directly. For larger change
 
 Every pull request needs one approval from a maintainer other than its author before it can be merged. If someone pushes to the pull request after the approval, it needs a new approval from someone other than that person. CodeRabbit reviews every pull request first, but its review doesn't count as an approval. Dependabot's updates need an approval too.
 
-Before you open a pull request, run `just ci`. It runs the linters, the tests and every other check that CI runs, except fuzzing and `just mutate`. The [development docs](https://tidegate-dev.github.io/tidegate/development/) explain how to run those two locally. A pull request can only be merged when these checks pass and its branch is up to date with `main`.
+Before you open a pull request, run `just ci`. It runs the linters, the tests and every other check that CI runs, except fuzzing and `just mutate`. The [development docs](https://phemera-dev.github.io/phemera/development/) explain how to run those two locally. A pull request can only be merged when these checks pass and its branch is up to date with `main`.
 
 ## Naming
 
@@ -71,7 +71,7 @@ git push --force-with-lease
 
 ## Using AI tools
 
-You may use AI tools to write code and text for tidegate. A change made with an AI tool follows the same rules as any other change.
+You may use AI tools to write code and text for phemera. A change made with an AI tool follows the same rules as any other change.
 
 An AI tool can't certify the [Developer Certificate of Origin](#developer-certificate-of-origin), so it must not add a `Signed-off-by` line. Before you sign off, review the change, make sure its license fits the project and take full responsibility for it.
 
@@ -93,7 +93,7 @@ The squash merge keeps the commit messages from your branch, so this line ends u
 
 By contributing, you agree that your contributions are licensed under the [Apache License 2.0](LICENSE).
 
-tidegate's binaries may only use dependencies under these licenses:
+phemera's binaries may only use dependencies under these licenses:
 
 - Apache-2.0
 - BSD-2-Clause

@@ -10,10 +10,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/db"
-	"github.com/tidegate-dev/tidegate/authority/internal/dbtest"
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/authority/internal/db"
+	"github.com/phemera-dev/phemera/authority/internal/dbtest"
+	"github.com/phemera-dev/phemera/authority/internal/model"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 func TestIntegration(t *testing.T) {

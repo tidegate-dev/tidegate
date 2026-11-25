@@ -7,10 +7,10 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
-	"github.com/tidegate-dev/tidegate/authority/internal/service"
-	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/authority/internal/model"
+	"github.com/phemera-dev/phemera/authority/internal/service"
+	authorityv1 "github.com/phemera-dev/phemera/gen/phemera/authority/v1"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 // AssetService creates and lists assets.

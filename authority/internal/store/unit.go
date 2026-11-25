@@ -9,8 +9,8 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
+	"github.com/phemera-dev/phemera/authority/internal/db/sqlc"
+	"github.com/phemera-dev/phemera/authority/internal/model"
 )
 
 var errUnitCommitted = errors.New("the unit of work was already committed")

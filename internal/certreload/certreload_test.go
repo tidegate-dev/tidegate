@@ -26,7 +26,7 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 
-	"github.com/tidegate-dev/tidegate/internal/logging"
+	"github.com/phemera-dev/phemera/internal/logging"
 )
 
 func TestLoadRejectsAKeyOfAnotherCertificate(t *testing.T) {
@@ -300,7 +300,7 @@ func TestReportExpiryReportsWhenTheCertificateInUseExpires(t *testing.T) {
 	require.Len(t, metrics.ScopeMetrics[0].Metrics, 1)
 
 	expiry := metrics.ScopeMetrics[0].Metrics[0]
-	assert.Equal(t, "tidegate.tls.certificate.expiry", expiry.Name)
+	assert.Equal(t, "phemera.tls.certificate.expiry", expiry.Name)
 	assert.Equal(t, "s", expiry.Unit)
 
 	points := expiry.Data.(metricdata.Gauge[int64]).DataPoints

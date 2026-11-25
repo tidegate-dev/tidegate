@@ -1,10 +1,10 @@
 [project]
-site_name = "tidegate"
-site_url = "https://tidegate-dev.github.io/tidegate/"
-repo_url = "https://github.com/tidegate-dev/tidegate"
+site_name = "phemera"
+site_url = "https://phemera-dev.github.io/phemera/"
+repo_url = "https://github.com/phemera-dev/phemera"
 docs_dir = "docs/content"
 nav = [
-  { "What is tidegate" = "index.md" },
+  { "What is phemera" = "index.md" },
   { "Authority" = [
     { "Configuration" = "authority/config.md" },
     { "Database" = "authority/database.md" },

@@ -1,22 +1,22 @@
 # Development
 
-This page is for people who work on tidegate. It explains how to run tidegate from your working copy, which rules the code follows and how to test a change.
+This page is for people who work on phemera. It explains how to run phemera from your working copy, which rules the code follows and how to test a change.
 
 ## Set up
 
-The [README](https://github.com/tidegate-dev/tidegate#development) lists the tools you need and how to get them with Nix. Once you have them, run `just` in the repository to see the recipes.
+The [README](https://github.com/phemera-dev/phemera#development) lists the tools you need and how to get them with Nix. Once you have them, run `just` in the repository to see the recipes.
 
 Before you open a pull request, run `just ci`. It runs every check that CI runs, except fuzzing and mutation testing, which are described under [Tests](#tests). Its tests need Postgres, so start it first with `just dev-deps`.
 
 To work on this site, run `just docs::serve` and open the address it prints. The page reloads when you change a file in `docs/content/`.
 
-## Run tidegate locally
+## Run phemera locally
 
 ```sh
 just dev
 ```
 
-This starts tidegate's components and the services they need, like Postgres, with [process-compose](https://f1bonacc1.github.io/process-compose/). The components run from your working copy. After you change one, restart it in process-compose, and it builds again.
+This starts phemera's components and the services they need, like Postgres, with [process-compose](https://f1bonacc1.github.io/process-compose/). The components run from your working copy. After you change one, restart it in process-compose, and it builds again.
 
 To debug a component, stop it in process-compose and start it in your editor's debugger. To start only the services and run the components yourself, use:
 
@@ -24,21 +24,21 @@ To debug a component, stop it in process-compose and start it in your editor's d
 just dev-deps
 ```
 
-The services keep their data between runs. To start with empty data, stop `just dev` or `just dev-deps` and run `just dev-reset`. `dev/tidegate.yaml` defines the components, and `dev/deps.yaml` defines the services with their ports and logins.
+The services keep their data between runs. To start with empty data, stop `just dev` or `just dev-deps` and run `just dev-reset`. `dev/phemera.yaml` defines the components, and `dev/deps.yaml` defines the services with their ports and logins.
 
-One of the services is an SSH host to try tidegate against. Connect to it with the password `tidegate`:
+One of the services is an SSH host to try phemera against. Connect to it with the password `phemera`:
 
 ```sh
-ssh -p 2222 tidegate@127.0.0.1
+ssh -p 2222 phemera@127.0.0.1
 ```
 
 Its host key is committed in `dev/ssh-host/`, so the host has the same fingerprint for everyone.
 
 `just dev` also starts the ssh-proxy on `127.0.0.1:2022`. The page on the [ssh-proxy](ssh-proxy/index.md) shows how to open a session on the SSH host through it.
 
-## Run tidegate in Kubernetes
+## Run phemera in Kubernetes
 
-To run tidegate in a local Kubernetes cluster with [kind](https://kind.sigs.k8s.io/), use:
+To run phemera in a local Kubernetes cluster with [kind](https://kind.sigs.k8s.io/), use:
 
 ```sh
 just kind
@@ -59,21 +59,21 @@ export SSL_CERT_FILE=dev/tls/ca.pem
 A new database has no user, so first create the [first admin](authority/initial-admin.md). With `just dev`, run:
 
 ```sh
-TIDEGATE_AUTHORITY__DATABASE__URL='postgres://tidegate:tidegate@127.0.0.1:5432/tidegate?sslmode=disable' \
+PHEMERA_AUTHORITY__DATABASE__URL='postgres://phemera:phemera@127.0.0.1:5432/phemera?sslmode=disable' \
     go run ./authority/cmd/authority create-initial-admin alice
 ```
 
 With `just kind`, run:
 
 ```sh
-kubectl --context kind-tidegate exec -it -n tidegate deploy/authority -- /authority create-initial-admin alice
+kubectl --context kind-phemera exec -it -n phemera deploy/authority -- /authority create-initial-admin alice
 ```
 
 Then sign in with the CLI and call the authority:
 
 ```sh
-tidegate login https://127.0.0.1:8080
-tidegate project list
+phemera login https://127.0.0.1:8080
+phemera project list
 ```
 
 Other tools take the CA file as a flag, like `buf curl --cacert dev/tls/ca.pem`. Your system's trust store stays unchanged.
@@ -96,7 +96,7 @@ Keep passwords, tokens and other secrets in a `secret.String` from `internal/sec
 
 ### Time and randomness
 
-Outside tests, don't call `crypto/rand`, `time.Now`, `time.Since` or `time.Until` directly. Take a `random.Service` from [go-random](https://github.com/The127/go-random) or a `clock.Service` from [go-clock](https://github.com/The127/go-clock) as a dependency instead, so a test can pass a mock like `randomtest.NewMock()`. In production code, use `random.NewCryptoRandom()`. tidegate uses no pseudo-random source outside tests. `just lint` fails on a call that breaks these rules.
+Outside tests, don't call `crypto/rand`, `time.Now`, `time.Since` or `time.Until` directly. Take a `random.Service` from [go-random](https://github.com/The127/go-random) or a `clock.Service` from [go-clock](https://github.com/The127/go-clock) as a dependency instead, so a test can pass a mock like `randomtest.NewMock()`. In production code, use `random.NewCryptoRandom()`. phemera uses no pseudo-random source outside tests. `just lint` fails on a call that breaks these rules.
 
 ### API
 
@@ -150,7 +150,7 @@ The secret engine is the exception. It's the part of the authority that stores s
 
 ## Tests
 
-tidegate has unit tests, integration tests, API tests and end-to-end tests, and CI runs all four. CI also measures their coverage, lists the changes that no test catches and fuzzes the code.
+phemera has unit tests, integration tests, API tests and end-to-end tests, and CI runs all four. CI also measures their coverage, lists the changes that no test catches and fuzzes the code.
 
 ### Unit and integration tests
 
@@ -163,7 +163,7 @@ just dev-deps
 just test-integration
 ```
 
-Each test creates its own database and drops it at the end. If you stop a run before it finishes, its databases stay behind, and `just dev-reset` deletes them. To use another Postgres server, set `TIDEGATE_TEST_DATABASE_URL` to its URL. Its user needs the `CREATEDB` privilege.
+Each test creates its own database and drops it at the end. If you stop a run before it finishes, its databases stay behind, and `just dev-reset` deletes them. To use another Postgres server, set `PHEMERA_TEST_DATABASE_URL` to its URL. Its user needs the `CREATEDB` privilege.
 
 `just test` and `just test-integration` run the tests with Go's [race detector](https://go.dev/doc/articles/race_detector).
 
@@ -180,14 +180,14 @@ This creates a database of its own on the test Postgres server, starts the autho
 
 ### End-to-end tests
 
-End-to-end tests use tidegate the way a user does. They run its binaries with [Bats](https://bats-core.readthedocs.io/) and check what they print. The tests in `e2e/cli` run the `tidegate` CLI against a running authority. The tests in `e2e/authority` run the commands of the `authority` binary, like `authority create-initial-admin`. Start the services first, then run the tests:
+End-to-end tests use phemera the way a user does. They run its binaries with [Bats](https://bats-core.readthedocs.io/) and check what they print. The tests in `e2e/cli` run the `phemera` CLI against a running authority. The tests in `e2e/authority` run the commands of the `authority` binary, like `authority create-initial-admin`. Start the services first, then run the tests:
 
 ```sh
 just dev-deps
 just test-e2e
 ```
 
-Like `just test-api`, this starts the authority on a database of its own and creates the initial admin. A test finds the authority in `TIDEGATE_TEST_AUTHORITY` and the admin's user name and password in `TIDEGATE_TEST_USER` and `TIDEGATE_TEST_PASSWORD`. If a test needs an empty database, it creates one in `setup` and drops it in `teardown`. `e2e/authority/create-initial-admin.bats` shows how.
+Like `just test-api`, this starts the authority on a database of its own and creates the initial admin. A test finds the authority in `PHEMERA_TEST_AUTHORITY` and the admin's user name and password in `PHEMERA_TEST_USER` and `PHEMERA_TEST_PASSWORD`. If a test needs an empty database, it creates one in `setup` and drops it in `teardown`. `e2e/authority/create-initial-admin.bats` shows how.
 
 ### Coverage
 
@@ -197,7 +197,7 @@ Like `just test-api`, this starts the authority on a database of its own and cre
 go tool cover -html=coverage/authority-integration.out
 ```
 
-CI uploads the files to [Codecov](https://codecov.io/gh/tidegate-dev/tidegate). Codecov shows the coverage on each pull request, and low coverage doesn't fail CI.
+CI uploads the files to [Codecov](https://codecov.io/gh/phemera-dev/phemera). Codecov shows the coverage on each pull request, and low coverage doesn't fail CI.
 
 ### Mutation testing
 

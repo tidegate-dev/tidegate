@@ -1,11 +1,11 @@
-// Package authority has the calls that the ssh-proxy makes to a tidegate
+// Package authority has the calls that the ssh-proxy makes to a phemera
 // authority.
 package authority
 
 import (
 	"context"
 
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 // SessionID identifies a session at the authority.

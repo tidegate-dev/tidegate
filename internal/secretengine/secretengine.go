@@ -6,7 +6,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 // ErrNotFound means that an engine holds no value under a reference.

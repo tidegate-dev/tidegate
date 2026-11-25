@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
+	"github.com/phemera-dev/phemera/authority/internal/db/sqlc"
+	"github.com/phemera-dev/phemera/authority/internal/model"
 )
 
 // The details column stores these keys, so renaming one needs a migration.

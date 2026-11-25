@@ -8,67 +8,67 @@ setup() {
 }
 
 @test "project create prints the new project, and project list shows it" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY"
+    sign_in login "$PHEMERA_TEST_AUTHORITY"
 
-    run tidegate project create "$name"
+    run phemera project create "$name"
     [ "$status" -eq 0 ]
     [[ $output == ?*$'\t'"$name" ]]
     id=${output%%$'\t'*}
 
-    run tidegate project list
+    run phemera project list
     [ "$status" -eq 0 ]
     [[ ${lines[0]} == ID*NAME ]]
     grep -qE "^$id +$name\$" <<<"$output"
 }
 
 @test "project create and project list print json" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY"
+    sign_in login "$PHEMERA_TEST_AUTHORITY"
 
-    run tidegate -o json project create "$name"
+    run phemera -o json project create "$name"
     [ "$status" -eq 0 ]
     [ "$(jq -r .name <<<"$output")" = "$name" ]
     id=$(jq -r .id <<<"$output")
 
-    run tidegate -o json project list
+    run phemera -o json project list
     [ "$status" -eq 0 ]
     [ "$(jq -r --arg id "$id" '.projects[] | select(.id == $id) | .name' <<<"$output")" = "$name" ]
 }
 
 @test "project create fails for a name that another project has" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY"
-    tidegate project create "$name"
+    sign_in login "$PHEMERA_TEST_AUTHORITY"
+    phemera project create "$name"
 
-    run --separate-stderr tidegate project create "$name"
+    run --separate-stderr phemera project create "$name"
     [ "$status" -eq 1 ]
     [ -z "$output" ]
     [[ $stderr == *"the project name is taken"* ]]
 }
 
 @test "project create wants exactly one name" {
-    run --separate-stderr tidegate project create
+    run --separate-stderr phemera project create
     [ "$status" -eq 1 ]
     [[ $stderr == *"want exactly one name"* ]]
 
-    run --separate-stderr tidegate project create first second
+    run --separate-stderr phemera project create first second
     [ "$status" -eq 1 ]
     [[ $stderr == *"want exactly one name"* ]]
 }
 
 @test "project list wants no arguments" {
-    run --separate-stderr tidegate project list "$name"
+    run --separate-stderr phemera project list "$name"
     [ "$status" -eq 1 ]
     [ -z "$output" ]
     [[ $stderr == *"want no arguments"* ]]
 }
 
 @test "an unknown project subcommand fails and names a similar one" {
-    run --separate-stderr tidegate project lsit
+    run --separate-stderr phemera project lsit
     [ "$status" -eq 1 ]
     [[ $stderr == *'unknown command "lsit". Did you mean "list"?'* ]]
 }
 
 @test "project without a subcommand prints its subcommands" {
-    run tidegate project
+    run phemera project
     [ "$status" -eq 0 ]
     [[ $output == *create*list* ]]
 }

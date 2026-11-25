@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.12
 // 	protoc        (unknown)
-// source: tidegate/authority/v1/binding.proto
+// source: phemera/authority/v1/binding.proto
 
 package authorityv1
 
@@ -47,7 +47,7 @@ type CreateBindingRequest struct {
 
 func (x *CreateBindingRequest) Reset() {
 	*x = CreateBindingRequest{}
-	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[0]
+	mi := &file_phemera_authority_v1_binding_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -59,7 +59,7 @@ func (x *CreateBindingRequest) String() string {
 func (*CreateBindingRequest) ProtoMessage() {}
 
 func (x *CreateBindingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[0]
+	mi := &file_phemera_authority_v1_binding_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -72,7 +72,7 @@ func (x *CreateBindingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateBindingRequest.ProtoReflect.Descriptor instead.
 func (*CreateBindingRequest) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_binding_proto_rawDescGZIP(), []int{0}
+	return file_phemera_authority_v1_binding_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *CreateBindingRequest) GetProjectName() string {
@@ -115,7 +115,7 @@ type CreateBindingResponse struct {
 
 func (x *CreateBindingResponse) Reset() {
 	*x = CreateBindingResponse{}
-	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[1]
+	mi := &file_phemera_authority_v1_binding_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -127,7 +127,7 @@ func (x *CreateBindingResponse) String() string {
 func (*CreateBindingResponse) ProtoMessage() {}
 
 func (x *CreateBindingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[1]
+	mi := &file_phemera_authority_v1_binding_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -140,7 +140,7 @@ func (x *CreateBindingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateBindingResponse.ProtoReflect.Descriptor instead.
 func (*CreateBindingResponse) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_binding_proto_rawDescGZIP(), []int{1}
+	return file_phemera_authority_v1_binding_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *CreateBindingResponse) GetId() string {
@@ -185,7 +185,7 @@ type ListBindingsRequest struct {
 
 func (x *ListBindingsRequest) Reset() {
 	*x = ListBindingsRequest{}
-	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[2]
+	mi := &file_phemera_authority_v1_binding_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -197,7 +197,7 @@ func (x *ListBindingsRequest) String() string {
 func (*ListBindingsRequest) ProtoMessage() {}
 
 func (x *ListBindingsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[2]
+	mi := &file_phemera_authority_v1_binding_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -210,7 +210,7 @@ func (x *ListBindingsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBindingsRequest.ProtoReflect.Descriptor instead.
 func (*ListBindingsRequest) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_binding_proto_rawDescGZIP(), []int{2}
+	return file_phemera_authority_v1_binding_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ListBindingsRequest) GetProjectName() string {
@@ -232,7 +232,7 @@ type ListBindingsResponse struct {
 
 func (x *ListBindingsResponse) Reset() {
 	*x = ListBindingsResponse{}
-	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[3]
+	mi := &file_phemera_authority_v1_binding_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -244,7 +244,7 @@ func (x *ListBindingsResponse) String() string {
 func (*ListBindingsResponse) ProtoMessage() {}
 
 func (x *ListBindingsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[3]
+	mi := &file_phemera_authority_v1_binding_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -257,7 +257,7 @@ func (x *ListBindingsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBindingsResponse.ProtoReflect.Descriptor instead.
 func (*ListBindingsResponse) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_binding_proto_rawDescGZIP(), []int{3}
+	return file_phemera_authority_v1_binding_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ListBindingsResponse) GetBindings() []*ListBindingsResponse_Binding {
@@ -285,7 +285,7 @@ type ListBindingsResponse_Binding struct {
 
 func (x *ListBindingsResponse_Binding) Reset() {
 	*x = ListBindingsResponse_Binding{}
-	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[4]
+	mi := &file_phemera_authority_v1_binding_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -297,7 +297,7 @@ func (x *ListBindingsResponse_Binding) String() string {
 func (*ListBindingsResponse_Binding) ProtoMessage() {}
 
 func (x *ListBindingsResponse_Binding) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_binding_proto_msgTypes[4]
+	mi := &file_phemera_authority_v1_binding_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -310,7 +310,7 @@ func (x *ListBindingsResponse_Binding) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBindingsResponse_Binding.ProtoReflect.Descriptor instead.
 func (*ListBindingsResponse_Binding) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_binding_proto_rawDescGZIP(), []int{3, 0}
+	return file_phemera_authority_v1_binding_proto_rawDescGZIP(), []int{3, 0}
 }
 
 func (x *ListBindingsResponse_Binding) GetId() string {
@@ -341,11 +341,11 @@ func (x *ListBindingsResponse_Binding) GetUserName() string {
 	return ""
 }
 
-var File_tidegate_authority_v1_binding_proto protoreflect.FileDescriptor
+var File_phemera_authority_v1_binding_proto protoreflect.FileDescriptor
 
-const file_tidegate_authority_v1_binding_proto_rawDesc = "" +
+const file_phemera_authority_v1_binding_proto_rawDesc = "" +
 	"\n" +
-	"#tidegate/authority/v1/binding.proto\x12\x15tidegate.authority.v1\x1a\x1bbuf/validate/validate.proto\"\xc7\x04\n" +
+	"\"phemera/authority/v1/binding.proto\x12\x14phemera.authority.v1\x1a\x1bbuf/validate/validate.proto\"\xc7\x04\n" +
 	"\x14CreateBindingRequest\x12\x87\x02\n" +
 	"\fproject_name\x18\x01 \x01(\tB\xe3\x01\xbaH\xdf\x01\xba\x01\xdb\x01\n" +
 	"\x14binding.project_name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\vprojectName\x12\xfe\x01\n" +
@@ -360,45 +360,45 @@ const file_tidegate_authority_v1_binding_proto_rawDesc = "" +
 	"\tuser_name\x18\x04 \x01(\tR\buserName\"\x9f\x02\n" +
 	"\x13ListBindingsRequest\x12\x87\x02\n" +
 	"\fproject_name\x18\x01 \x01(\tB\xe3\x01\xbaH\xdf\x01\xba\x01\xdb\x01\n" +
-	"\x14binding.project_name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\vprojectName\"\xdb\x01\n" +
-	"\x14ListBindingsResponse\x12O\n" +
-	"\bbindings\x18\x01 \x03(\v23.tidegate.authority.v1.ListBindingsResponse.BindingR\bbindings\x1ar\n" +
+	"\x14binding.project_name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\vprojectName\"\xda\x01\n" +
+	"\x14ListBindingsResponse\x12N\n" +
+	"\bbindings\x18\x01 \x03(\v22.phemera.authority.v1.ListBindingsResponse.BindingR\bbindings\x1ar\n" +
 	"\aBinding\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x1b\n" +
 	"\trole_name\x18\x03 \x01(\tR\broleName\x12\x1b\n" +
-	"\tuser_name\x18\x04 \x01(\tR\buserName2\xe5\x01\n" +
-	"\x0eBindingService\x12j\n" +
-	"\rCreateBinding\x12+.tidegate.authority.v1.CreateBindingRequest\x1a,.tidegate.authority.v1.CreateBindingResponse\x12g\n" +
-	"\fListBindings\x12*.tidegate.authority.v1.ListBindingsRequest\x1a+.tidegate.authority.v1.ListBindingsResponseBHZFgithub.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;authorityv1b\x06proto3"
+	"\tuser_name\x18\x04 \x01(\tR\buserName2\xe1\x01\n" +
+	"\x0eBindingService\x12h\n" +
+	"\rCreateBinding\x12*.phemera.authority.v1.CreateBindingRequest\x1a+.phemera.authority.v1.CreateBindingResponse\x12e\n" +
+	"\fListBindings\x12).phemera.authority.v1.ListBindingsRequest\x1a*.phemera.authority.v1.ListBindingsResponseBEZCgithub.com/phemera-dev/phemera/gen/phemera/authority/v1;authorityv1b\x06proto3"
 
 var (
-	file_tidegate_authority_v1_binding_proto_rawDescOnce sync.Once
-	file_tidegate_authority_v1_binding_proto_rawDescData []byte
+	file_phemera_authority_v1_binding_proto_rawDescOnce sync.Once
+	file_phemera_authority_v1_binding_proto_rawDescData []byte
 )
 
-func file_tidegate_authority_v1_binding_proto_rawDescGZIP() []byte {
-	file_tidegate_authority_v1_binding_proto_rawDescOnce.Do(func() {
-		file_tidegate_authority_v1_binding_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_tidegate_authority_v1_binding_proto_rawDesc), len(file_tidegate_authority_v1_binding_proto_rawDesc)))
+func file_phemera_authority_v1_binding_proto_rawDescGZIP() []byte {
+	file_phemera_authority_v1_binding_proto_rawDescOnce.Do(func() {
+		file_phemera_authority_v1_binding_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_phemera_authority_v1_binding_proto_rawDesc), len(file_phemera_authority_v1_binding_proto_rawDesc)))
 	})
-	return file_tidegate_authority_v1_binding_proto_rawDescData
+	return file_phemera_authority_v1_binding_proto_rawDescData
 }
 
-var file_tidegate_authority_v1_binding_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
-var file_tidegate_authority_v1_binding_proto_goTypes = []any{
-	(*CreateBindingRequest)(nil),         // 0: tidegate.authority.v1.CreateBindingRequest
-	(*CreateBindingResponse)(nil),        // 1: tidegate.authority.v1.CreateBindingResponse
-	(*ListBindingsRequest)(nil),          // 2: tidegate.authority.v1.ListBindingsRequest
-	(*ListBindingsResponse)(nil),         // 3: tidegate.authority.v1.ListBindingsResponse
-	(*ListBindingsResponse_Binding)(nil), // 4: tidegate.authority.v1.ListBindingsResponse.Binding
+var file_phemera_authority_v1_binding_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_phemera_authority_v1_binding_proto_goTypes = []any{
+	(*CreateBindingRequest)(nil),         // 0: phemera.authority.v1.CreateBindingRequest
+	(*CreateBindingResponse)(nil),        // 1: phemera.authority.v1.CreateBindingResponse
+	(*ListBindingsRequest)(nil),          // 2: phemera.authority.v1.ListBindingsRequest
+	(*ListBindingsResponse)(nil),         // 3: phemera.authority.v1.ListBindingsResponse
+	(*ListBindingsResponse_Binding)(nil), // 4: phemera.authority.v1.ListBindingsResponse.Binding
 }
-var file_tidegate_authority_v1_binding_proto_depIdxs = []int32{
-	4, // 0: tidegate.authority.v1.ListBindingsResponse.bindings:type_name -> tidegate.authority.v1.ListBindingsResponse.Binding
-	0, // 1: tidegate.authority.v1.BindingService.CreateBinding:input_type -> tidegate.authority.v1.CreateBindingRequest
-	2, // 2: tidegate.authority.v1.BindingService.ListBindings:input_type -> tidegate.authority.v1.ListBindingsRequest
-	1, // 3: tidegate.authority.v1.BindingService.CreateBinding:output_type -> tidegate.authority.v1.CreateBindingResponse
-	3, // 4: tidegate.authority.v1.BindingService.ListBindings:output_type -> tidegate.authority.v1.ListBindingsResponse
+var file_phemera_authority_v1_binding_proto_depIdxs = []int32{
+	4, // 0: phemera.authority.v1.ListBindingsResponse.bindings:type_name -> phemera.authority.v1.ListBindingsResponse.Binding
+	0, // 1: phemera.authority.v1.BindingService.CreateBinding:input_type -> phemera.authority.v1.CreateBindingRequest
+	2, // 2: phemera.authority.v1.BindingService.ListBindings:input_type -> phemera.authority.v1.ListBindingsRequest
+	1, // 3: phemera.authority.v1.BindingService.CreateBinding:output_type -> phemera.authority.v1.CreateBindingResponse
+	3, // 4: phemera.authority.v1.BindingService.ListBindings:output_type -> phemera.authority.v1.ListBindingsResponse
 	3, // [3:5] is the sub-list for method output_type
 	1, // [1:3] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -406,26 +406,26 @@ var file_tidegate_authority_v1_binding_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_tidegate_authority_v1_binding_proto_init() }
-func file_tidegate_authority_v1_binding_proto_init() {
-	if File_tidegate_authority_v1_binding_proto != nil {
+func init() { file_phemera_authority_v1_binding_proto_init() }
+func file_phemera_authority_v1_binding_proto_init() {
+	if File_phemera_authority_v1_binding_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_tidegate_authority_v1_binding_proto_rawDesc), len(file_tidegate_authority_v1_binding_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_phemera_authority_v1_binding_proto_rawDesc), len(file_phemera_authority_v1_binding_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_tidegate_authority_v1_binding_proto_goTypes,
-		DependencyIndexes: file_tidegate_authority_v1_binding_proto_depIdxs,
-		MessageInfos:      file_tidegate_authority_v1_binding_proto_msgTypes,
+		GoTypes:           file_phemera_authority_v1_binding_proto_goTypes,
+		DependencyIndexes: file_phemera_authority_v1_binding_proto_depIdxs,
+		MessageInfos:      file_phemera_authority_v1_binding_proto_msgTypes,
 	}.Build()
-	File_tidegate_authority_v1_binding_proto = out.File
-	file_tidegate_authority_v1_binding_proto_goTypes = nil
-	file_tidegate_authority_v1_binding_proto_depIdxs = nil
+	File_phemera_authority_v1_binding_proto = out.File
+	file_phemera_authority_v1_binding_proto_goTypes = nil
+	file_phemera_authority_v1_binding_proto_depIdxs = nil
 }

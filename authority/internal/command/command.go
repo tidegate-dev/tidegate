@@ -10,10 +10,10 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/config"
-	"github.com/tidegate-dev/tidegate/authority/internal/db"
-	"github.com/tidegate-dev/tidegate/authority/internal/server"
-	"github.com/tidegate-dev/tidegate/internal/logging"
+	"github.com/phemera-dev/phemera/authority/internal/config"
+	"github.com/phemera-dev/phemera/authority/internal/db"
+	"github.com/phemera-dev/phemera/authority/internal/server"
+	"github.com/phemera-dev/phemera/internal/logging"
 )
 
 // ErrInvalidConfig means the config couldn't be loaded. No logger is set up
@@ -24,7 +24,7 @@ var ErrInvalidConfig = errors.New("invalid config")
 func New() *cli.Command {
 	return &cli.Command{
 		Name:  "authority",
-		Usage: "run the tidegate authority",
+		Usage: "run the phemera authority",
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			cfg, err := setUp(cmd)
 			if err != nil {

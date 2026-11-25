@@ -11,10 +11,10 @@ import (
 	. "github.com/onsi/gomega"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
-	"github.com/tidegate-dev/tidegate/authority/internal/password"
-	"github.com/tidegate-dev/tidegate/authority/internal/storetest"
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/authority/internal/model"
+	"github.com/phemera-dev/phemera/authority/internal/password"
+	"github.com/phemera-dev/phemera/authority/internal/storetest"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 var _ = Describe("Authenticate", func() {

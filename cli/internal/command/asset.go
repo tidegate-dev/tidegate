@@ -16,9 +16,9 @@ import (
 	"connectrpc.com/connect"
 	"github.com/urfave/cli/v3"
 
-	"github.com/tidegate-dev/tidegate/cli/internal/connections"
-	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
-	"github.com/tidegate-dev/tidegate/internal/terminal"
+	"github.com/phemera-dev/phemera/cli/internal/connections"
+	authorityv1 "github.com/phemera-dev/phemera/gen/phemera/authority/v1"
+	"github.com/phemera-dev/phemera/internal/terminal"
 )
 
 // IANA assigns port 22 to SSH.
@@ -127,7 +127,7 @@ func newAssetsResult(assets []*authorityv1.ListAssetsResponse_Asset) assetsResul
 
 func (result assetsResult) String() string {
 	if len(result.Assets) == 0 {
-		return "No assets in the project. Run `tidegate asset create ssh` to add an SSH host."
+		return "No assets in the project. Run `phemera asset create ssh` to add an SSH host."
 	}
 
 	rows := make([][]string, 0, len(result.Assets))
@@ -175,7 +175,7 @@ func assetCommand(store connections.Store) *cli.Command {
 							},
 							&cli.StringFlag{
 								Name:     "user-name",
-								Usage:    "the user that tidegate logs in as on the host",
+								Usage:    "the user that phemera logs in as on the host",
 								Required: true,
 							},
 							&cli.BoolFlag{

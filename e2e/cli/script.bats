@@ -8,113 +8,113 @@ setup() {
 }
 
 @test "login --print-token prints a token and saves nothing" {
-    run --separate-stderr sign_in login "$TIDEGATE_TEST_AUTHORITY" --print-token
+    run --separate-stderr sign_in login "$PHEMERA_TEST_AUTHORITY" --print-token
     [ "$status" -eq 0 ]
     [ -n "$output" ]
     [ ! -e "$saved" ]
 }
 
 @test "login --print-token without a URL fails" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY"
+    sign_in login "$PHEMERA_TEST_AUTHORITY"
 
-    run --separate-stderr tidegate login --print-token < /dev/null
+    run --separate-stderr phemera login --print-token < /dev/null
     [ "$status" -eq 1 ]
     [ -z "$output" ]
-    [[ $stderr == *"tidegate login <url> --print-token"* ]]
+    [[ $stderr == *"phemera login <url> --print-token"* ]]
 }
 
 @test "login with a URL, --connection and --print-token fails" {
-    run --separate-stderr tidegate login "$TIDEGATE_TEST_AUTHORITY" --connection production --print-token < /dev/null
+    run --separate-stderr phemera login "$PHEMERA_TEST_AUTHORITY" --connection production --print-token < /dev/null
     [ "$status" -eq 1 ]
     [[ $stderr == *"takes no --connection"* ]]
 }
 
-@test "a script with TIDEGATE_SERVER and TIDEGATE_TOKEN can create a project and list it" {
-    export TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY
-    TIDEGATE_TOKEN=$(print_token)
-    export TIDEGATE_TOKEN
+@test "a script with PHEMERA_SERVER and PHEMERA_TOKEN can create a project and list it" {
+    export PHEMERA_SERVER=$PHEMERA_TEST_AUTHORITY
+    PHEMERA_TOKEN=$(print_token)
+    export PHEMERA_TOKEN
 
-    run tidegate project create "$project"
+    run phemera project create "$project"
     [ "$status" -eq 0 ]
 
-    run tidegate project list
+    run phemera project list
     [ "$status" -eq 0 ]
     grep -qE " $project\$" <<<"$output"
     [ ! -e "$saved" ]
 }
 
-@test "a call with TIDEGATE_SERVER and no token says to set TIDEGATE_TOKEN" {
-    TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY run --separate-stderr tidegate project create "$project"
+@test "a call with PHEMERA_SERVER and no token says to set PHEMERA_TOKEN" {
+    PHEMERA_SERVER=$PHEMERA_TEST_AUTHORITY run --separate-stderr phemera project create "$project"
     [ "$status" -eq 1 ]
-    [[ $stderr == *"Set TIDEGATE_TOKEN"* ]]
+    [[ $stderr == *"Set PHEMERA_TOKEN"* ]]
 }
 
-@test "a saved session isn't sent to the server in TIDEGATE_SERVER" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY"
+@test "a saved session isn't sent to the server in PHEMERA_SERVER" {
+    sign_in login "$PHEMERA_TEST_AUTHORITY"
 
-    TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY run --separate-stderr tidegate project create "$project"
+    PHEMERA_SERVER=$PHEMERA_TEST_AUTHORITY run --separate-stderr phemera project create "$project"
     [ "$status" -eq 1 ]
-    [[ $stderr == *"Set TIDEGATE_TOKEN"* ]]
+    [[ $stderr == *"Set PHEMERA_TOKEN"* ]]
 }
 
-@test "TIDEGATE_SERVER and TIDEGATE_TOKEN are used instead of a saved connection" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY"
+@test "PHEMERA_SERVER and PHEMERA_TOKEN are used instead of a saved connection" {
+    sign_in login "$PHEMERA_TEST_AUTHORITY"
 
-    TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY TIDEGATE_TOKEN=not-a-token run --separate-stderr tidegate project create "$project"
+    PHEMERA_SERVER=$PHEMERA_TEST_AUTHORITY PHEMERA_TOKEN=not-a-token run --separate-stderr phemera project create "$project"
     [ "$status" -eq 1 ]
-    [[ $stderr == *"TIDEGATE_TOKEN"* ]]
+    [[ $stderr == *"PHEMERA_TOKEN"* ]]
     [[ $stderr == *"--print-token"* ]]
 }
 
-@test "TIDEGATE_TOKEN without TIDEGATE_SERVER fails" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY"
+@test "PHEMERA_TOKEN without PHEMERA_SERVER fails" {
+    sign_in login "$PHEMERA_TEST_AUTHORITY"
 
-    TIDEGATE_TOKEN=$(print_token) run --separate-stderr tidegate project create "$project"
+    PHEMERA_TOKEN=$(print_token) run --separate-stderr phemera project create "$project"
     [ "$status" -eq 1 ]
-    [[ $stderr == *"TIDEGATE_SERVER isn't"* ]]
+    [[ $stderr == *"PHEMERA_SERVER isn't"* ]]
 }
 
-@test "--connection next to TIDEGATE_TOKEN fails" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY" --connection first
+@test "--connection next to PHEMERA_TOKEN fails" {
+    sign_in login "$PHEMERA_TEST_AUTHORITY" --connection first
 
-    TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY TIDEGATE_TOKEN=$(print_token) \
-        run --separate-stderr tidegate --connection first project create "$project"
+    PHEMERA_SERVER=$PHEMERA_TEST_AUTHORITY PHEMERA_TOKEN=$(print_token) \
+        run --separate-stderr phemera --connection first project create "$project"
     [ "$status" -eq 1 ]
     [[ $stderr == *"not both"* ]]
 }
 
-@test "after logout the token in TIDEGATE_TOKEN no longer works" {
-    export TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY
-    TIDEGATE_TOKEN=$(print_token)
-    export TIDEGATE_TOKEN
+@test "after logout the token in PHEMERA_TOKEN no longer works" {
+    export PHEMERA_SERVER=$PHEMERA_TEST_AUTHORITY
+    PHEMERA_TOKEN=$(print_token)
+    export PHEMERA_TOKEN
 
-    run tidegate logout
+    run phemera logout
     [ "$status" -eq 0 ]
     [ -z "$output" ]
 
-    run --separate-stderr tidegate project create "$project"
+    run --separate-stderr phemera project create "$project"
     [ "$status" -eq 1 ]
-    [[ $stderr == *"TIDEGATE_TOKEN"* ]]
+    [[ $stderr == *"PHEMERA_TOKEN"* ]]
 }
 
 @test "logging out one token keeps the others" {
-    export TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY
+    export PHEMERA_SERVER=$PHEMERA_TEST_AUTHORITY
     first=$(print_token)
     second=$(print_token)
 
-    TIDEGATE_TOKEN=$first run tidegate logout
+    PHEMERA_TOKEN=$first run phemera logout
     [ "$status" -eq 0 ]
 
-    TIDEGATE_TOKEN=$second run tidegate project create "$project"
+    PHEMERA_TOKEN=$second run phemera project create "$project"
     [ "$status" -eq 0 ]
 }
 
 @test "logout with a token from the environment keeps the saved session" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY"
+    sign_in login "$PHEMERA_TEST_AUTHORITY"
 
-    TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY TIDEGATE_TOKEN=$(print_token) run tidegate logout
+    PHEMERA_SERVER=$PHEMERA_TEST_AUTHORITY PHEMERA_TOKEN=$(print_token) run phemera logout
     [ "$status" -eq 0 ]
 
-    run tidegate project create "$project"
+    run phemera project create "$project"
     [ "$status" -eq 0 ]
 }

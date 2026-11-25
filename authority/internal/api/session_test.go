@@ -16,10 +16,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
-	"github.com/tidegate-dev/tidegate/authority/internal/service"
-	"github.com/tidegate-dev/tidegate/internal/logging"
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/authority/internal/model"
+	"github.com/phemera-dev/phemera/authority/internal/service"
+	"github.com/phemera-dev/phemera/internal/logging"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 func TestSessionInterceptorPutsTheSessionIntoTheContext(t *testing.T) {
@@ -221,7 +221,7 @@ type streamWithoutToken struct {
 }
 
 func (streamWithoutToken) Spec() connect.Spec {
-	return connect.Spec{Procedure: "/tidegate.authority.v1.SomeService/Stream"}
+	return connect.Spec{Procedure: "/phemera.authority.v1.SomeService/Stream"}
 }
 
 func (streamWithoutToken) RequestHeader() http.Header {
@@ -230,7 +230,7 @@ func (streamWithoutToken) RequestHeader() http.Header {
 
 // testProcedure is a unary procedure that the tests serve themselves, so they
 // don't depend on a procedure of the API.
-const testProcedure = "/tidegate.authority.v1.TestService/Call"
+const testProcedure = "/phemera.authority.v1.TestService/Call"
 
 func testClient(t *testing.T, interceptors ...connect.Interceptor) *connect.Client[emptypb.Empty, emptypb.Empty] {
 	t.Helper()

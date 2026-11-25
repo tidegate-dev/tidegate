@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	authorityv1 "github.com/phemera-dev/phemera/gen/phemera/authority/v1"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 func TestConnectDoesntFollowRedirects(t *testing.T) {

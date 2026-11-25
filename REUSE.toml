@@ -1,7 +1,7 @@
 version = 1
-SPDX-PackageName = "tidegate"
+SPDX-PackageName = "phemera"
 
 [[annotations]]
 path = "**"
-SPDX-FileCopyrightText = "Copyright tidegate contributors"
+SPDX-FileCopyrightText = "Copyright phemera contributors"
 SPDX-License-Identifier = "Apache-2.0"

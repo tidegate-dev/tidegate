@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 // ErrSessionNotFound means no session that hasn't expired has the given token

@@ -5,7 +5,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/server"
+	"github.com/phemera-dev/phemera/authority/internal/server"
 )
 
 func migrateCommand() *cli.Command {

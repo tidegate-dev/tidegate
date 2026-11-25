@@ -1,4 +1,4 @@
-POST {{authority}}/tidegate.authority.v1.RoleService/CreateRole
+POST {{authority}}/phemera.authority.v1.RoleService/CreateRole
 Content-Type: application/json
 {"projectName": "api-tests-roles", "name": "operator"}
 HTTP 401
@@ -6,14 +6,14 @@ HTTP 401
 jsonpath "$.code" == "unauthenticated"
 jsonpath "$.message" == "not signed in"
 
-POST {{authority}}/tidegate.authority.v1.LoginService/Login
+POST {{authority}}/phemera.authority.v1.LoginService/Login
 Content-Type: application/json
 {"userName": "{{user}}", "password": "{{password}}"}
 HTTP 200
 [Captures]
 token: jsonpath "$.token"
 
-POST {{authority}}/tidegate.authority.v1.RoleService/CreateRole
+POST {{authority}}/phemera.authority.v1.RoleService/CreateRole
 Content-Type: application/json
 Authorization: Bearer {{token}}
 {"projectName": "api-tests-roles", "name": "operator"}
@@ -22,7 +22,7 @@ HTTP 404
 jsonpath "$.code" == "not_found"
 jsonpath "$.message" == "project not found"
 
-POST {{authority}}/tidegate.authority.v1.ProjectService/CreateProject
+POST {{authority}}/phemera.authority.v1.ProjectService/CreateProject
 Content-Type: application/json
 Authorization: Bearer {{token}}
 {"name": "api-tests-roles"}
@@ -30,7 +30,7 @@ HTTP 200
 [Captures]
 project_id: jsonpath "$.id"
 
-POST {{authority}}/tidegate.authority.v1.RoleService/CreateRole
+POST {{authority}}/phemera.authority.v1.RoleService/CreateRole
 Content-Type: application/json
 Authorization: Bearer {{token}}
 {"projectName": "api-tests-roles", "name": "Operator"}
@@ -39,7 +39,7 @@ HTTP 400
 jsonpath "$.code" == "invalid_argument"
 jsonpath "$.message" contains "must start with a lowercase letter"
 
-POST {{authority}}/tidegate.authority.v1.RoleService/CreateRole
+POST {{authority}}/phemera.authority.v1.RoleService/CreateRole
 Content-Type: application/json
 Authorization: Bearer {{token}}
 {"projectName": "api-tests-roles", "name": "operator", "permissions": {"createRoles": true, "bind": true}}
@@ -53,7 +53,7 @@ jsonpath "$.permissions.bind" == true
 jsonpath "$.permissions.escalate" not exists
 jsonpath "$.permissions.createBindings" not exists
 
-POST {{authority}}/tidegate.authority.v1.RoleService/CreateRole
+POST {{authority}}/phemera.authority.v1.RoleService/CreateRole
 Content-Type: application/json
 Authorization: Bearer {{token}}
 {"projectName": "api-tests-roles", "name": "operator"}

@@ -9,11 +9,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tidegate-dev/tidegate/internal/logging"
+	"github.com/phemera-dev/phemera/internal/logging"
 )
 
 const (
-	envPrefix = "TIDEGATE_SSH_PROXY__"
+	envPrefix = "PHEMERA_SSH_PROXY__"
 
 	listenAddress = "LISTEN_ADDRESS"
 	logLevel      = "LOG__LEVEL"

@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/storetest"
+	"github.com/phemera-dev/phemera/authority/internal/storetest"
 )
 
 var _ = Describe("Projects", func() {

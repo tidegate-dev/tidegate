@@ -10,10 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/config"
+	"github.com/phemera-dev/phemera/authority/internal/config"
 )
 
-const unreachableDatabaseURL = "postgres://tidegate@127.0.0.1:1/tidegate?sslmode=disable"
+const unreachableDatabaseURL = "postgres://phemera@127.0.0.1:1/phemera?sslmode=disable"
 
 func TestRunStopsAtAMissingExternalCertificateBeforeTheDatabase(t *testing.T) {
 	t.Parallel()

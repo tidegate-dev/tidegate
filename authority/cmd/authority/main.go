@@ -1,4 +1,4 @@
-// Command authority runs the tidegate authority.
+// Command authority runs the phemera authority.
 package main
 
 import (
@@ -10,7 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/command"
+	"github.com/phemera-dev/phemera/authority/internal/command"
 )
 
 func main() {

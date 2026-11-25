@@ -10,11 +10,11 @@ import (
 	"github.com/The127/go-random"
 	"golang.org/x/crypto/ssh"
 
-	"github.com/tidegate-dev/tidegate/internal/systemd"
-	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/authority"
-	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/config"
-	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/proxy"
-	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/ticket"
+	"github.com/phemera-dev/phemera/internal/systemd"
+	"github.com/phemera-dev/phemera/ssh-proxy/internal/authority"
+	"github.com/phemera-dev/phemera/ssh-proxy/internal/config"
+	"github.com/phemera-dev/phemera/ssh-proxy/internal/proxy"
+	"github.com/phemera-dev/phemera/ssh-proxy/internal/ticket"
 )
 
 // Run serves SSH clients on the listen address of cfg until ctx ends or

@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/tools/go/analysis/analysistest"
 
-	"github.com/tidegate-dev/tidegate/internal/secretcheck"
+	"github.com/phemera-dev/phemera/internal/secretcheck"
 )
 
 func TestAnalyzerReportsExportedSecretsWithoutSecretString(t *testing.T) {

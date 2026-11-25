@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/authority/internal/model"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 // ErrNotSignedIn means a call has no session token, or one that is unknown or

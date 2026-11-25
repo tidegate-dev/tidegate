@@ -8,7 +8,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/tidegate-dev/tidegate/cli/internal/connections"
+	"github.com/phemera-dev/phemera/cli/internal/connections"
 )
 
 type connectionResult struct {
@@ -53,7 +53,7 @@ func newConnectionsResult(saved []connections.Connection) connectionsResult {
 
 func (result connectionsResult) String() string {
 	if len(result.Connections) == 0 {
-		return "No saved connections. Run `tidegate login <url>` to save one."
+		return "No saved connections. Run `phemera login <url>` to save one."
 	}
 
 	rows := make([][]string, 0, len(result.Connections))
@@ -121,9 +121,9 @@ func connectionsCurrent(cmd *cli.Command, store connections.Store) error {
 		return err
 	}
 
-	// A connection from TIDEGATE_SERVER and TIDEGATE_TOKEN has no name and isn't saved.
+	// A connection from PHEMERA_SERVER and PHEMERA_TOKEN has no name and isn't saved.
 	if connection.Name == "" {
-		return errors.New("TIDEGATE_SERVER or TIDEGATE_TOKEN is set, so commands in this shell use no saved connection")
+		return errors.New("PHEMERA_SERVER or PHEMERA_TOKEN is set, so commands in this shell use no saved connection")
 	}
 
 	return printResult(cmd, newConnectionResult(connection))

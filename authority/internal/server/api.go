@@ -9,12 +9,12 @@ import (
 	"connectrpc.com/validate"
 	"github.com/The127/go-clock"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/api"
-	"github.com/tidegate-dev/tidegate/authority/internal/service"
-	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
-	"github.com/tidegate-dev/tidegate/internal/certreload"
-	"github.com/tidegate-dev/tidegate/internal/handlererrors"
-	"github.com/tidegate-dev/tidegate/internal/requestlog"
+	"github.com/phemera-dev/phemera/authority/internal/api"
+	"github.com/phemera-dev/phemera/authority/internal/service"
+	"github.com/phemera-dev/phemera/gen/phemera/authority/v1/authorityv1connect"
+	"github.com/phemera-dev/phemera/internal/certreload"
+	"github.com/phemera-dev/phemera/internal/handlererrors"
+	"github.com/phemera-dev/phemera/internal/requestlog"
 )
 
 // requestlog comes first, so it logs the code the client gets after

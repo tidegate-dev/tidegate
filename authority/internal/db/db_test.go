@@ -15,13 +15,13 @@ func TestFallsBackToPlaintext(t *testing.T) {
 		url  string
 		want bool
 	}{
-		{url: "postgres://tidegate@host/tidegate", want: true},
-		{url: "host=host user=tidegate", want: true},
-		{url: "postgres://tidegate@host/tidegate?sslmode=prefer", want: true},
-		{url: "postgres://tidegate@host/tidegate?sslmode=disable", want: false},
-		{url: "postgres://tidegate@host/tidegate?sslmode=require", want: false},
-		{url: "postgres://tidegate@host/tidegate?sslmode=verify-full", want: false},
-		{url: "postgres://tidegate@host1,host2/tidegate?sslmode=verify-full", want: false},
+		{url: "postgres://phemera@host/phemera", want: true},
+		{url: "host=host user=phemera", want: true},
+		{url: "postgres://phemera@host/phemera?sslmode=prefer", want: true},
+		{url: "postgres://phemera@host/phemera?sslmode=disable", want: false},
+		{url: "postgres://phemera@host/phemera?sslmode=require", want: false},
+		{url: "postgres://phemera@host/phemera?sslmode=verify-full", want: false},
+		{url: "postgres://phemera@host1,host2/phemera?sslmode=verify-full", want: false},
 	}
 
 	for _, test := range tests {
@@ -45,7 +45,7 @@ func TestFallsBackToPlaintextFollowsPGSSLMODE(t *testing.T) {
 	// arrange
 	t.Setenv("PGSSLMODE", "disable")
 
-	config, err := pgxpool.ParseConfig("postgres://tidegate@host/tidegate")
+	config, err := pgxpool.ParseConfig("postgres://phemera@host/phemera")
 	require.NoError(t, err)
 
 	// act
@@ -60,7 +60,7 @@ func TestOpenRejectsAnInvalidURLWithoutTheURL(t *testing.T) {
 
 	// act
 	// pgx can't find the password to mask in this URL, because the @ is missing.
-	_, err := Open(t.Context(), "postgres://tidegate:hunter2host:x/tidegate")
+	_, err := Open(t.Context(), "postgres://phemera:hunter2host:x/phemera")
 
 	// assert
 	assert.EqualError(t, err, "the database URL isn't a valid Postgres connection URL, or a PG variable like PGSSLMODE is invalid")

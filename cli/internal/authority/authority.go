@@ -1,4 +1,4 @@
-// Package authority connects the CLI to a tidegate authority.
+// Package authority connects the CLI to a phemera authority.
 package authority
 
 import (
@@ -11,9 +11,9 @@ import (
 
 	"connectrpc.com/connect"
 
-	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
-	"github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1/authorityv1connect"
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	authorityv1 "github.com/phemera-dev/phemera/gen/phemera/authority/v1"
+	"github.com/phemera-dev/phemera/gen/phemera/authority/v1/authorityv1connect"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 // Clients talks to one authority.
@@ -106,7 +106,7 @@ func SignOut(ctx context.Context, server string, token secret.String) error {
 	return err
 }
 
-// CheckServer returns an error unless server is a URL that tidegate sends a
+// CheckServer returns an error unless server is a URL that phemera sends a
 // password or a token to: https, or http to this machine.
 func CheckServer(server string) error {
 	parsed, err := url.Parse(server)

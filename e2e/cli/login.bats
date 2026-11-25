@@ -9,28 +9,28 @@ setup() {
 
 # Signing in
 
-@test "after login a command works without TIDEGATE_TOKEN" {
-    run --separate-stderr sign_in login "$TIDEGATE_TEST_AUTHORITY"
+@test "after login a command works without PHEMERA_TOKEN" {
+    run --separate-stderr sign_in login "$PHEMERA_TEST_AUTHORITY"
     [ "$status" -eq 0 ]
     [ -z "$output" ]
 
-    run tidegate project create "$project"
+    run phemera project create "$project"
     [ "$status" -eq 0 ]
 
-    run tidegate project list
+    run phemera project list
     [ "$status" -eq 0 ]
     grep -qE " $project\$" <<<"$output"
 }
 
 @test "login says which server it signs in to" {
-    run --separate-stderr sign_in login "$TIDEGATE_TEST_AUTHORITY"
+    run --separate-stderr sign_in login "$PHEMERA_TEST_AUTHORITY"
     [ "$status" -eq 0 ]
-    [[ $stderr == *"Signing in at $TIDEGATE_TEST_AUTHORITY"* ]]
+    [[ $stderr == *"Signing in at $PHEMERA_TEST_AUTHORITY"* ]]
 }
 
 @test "login with a wrong password fails and saves nothing" {
-    run --separate-stderr tidegate login "$TIDEGATE_TEST_AUTHORITY" \
-        < <(printf '%s\n%s\n' "$TIDEGATE_TEST_USER" 'not the password at all')
+    run --separate-stderr phemera login "$PHEMERA_TEST_AUTHORITY" \
+        < <(printf '%s\n%s\n' "$PHEMERA_TEST_USER" 'not the password at all')
     [ "$status" -eq 1 ]
     [ -z "$output" ]
     [[ $stderr == *"wrong user name or password"* ]]
@@ -38,47 +38,47 @@ setup() {
 }
 
 @test "login with an unknown user fails like a wrong password" {
-    run --separate-stderr tidegate login "$TIDEGATE_TEST_AUTHORITY" \
-        < <(printf '%s\n%s\n' nobody "$TIDEGATE_TEST_PASSWORD")
+    run --separate-stderr phemera login "$PHEMERA_TEST_AUTHORITY" \
+        < <(printf '%s\n%s\n' nobody "$PHEMERA_TEST_PASSWORD")
     [ "$status" -eq 1 ]
     [ -z "$output" ]
     [[ $stderr == *"wrong user name or password"* ]]
 }
 
 @test "a connection without a name is saved under the URL as given" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY/"
+    sign_in login "$PHEMERA_TEST_AUTHORITY/"
 
-    [ "$(jq -r '.connections | keys[]' "$saved")" = "$TIDEGATE_TEST_AUTHORITY/" ]
-    [ "$(jq -r '.connections[].server' "$saved")" = "$TIDEGATE_TEST_AUTHORITY/" ]
+    [ "$(jq -r '.connections | keys[]' "$saved")" = "$PHEMERA_TEST_AUTHORITY/" ]
+    [ "$(jq -r '.connections[].server' "$saved")" = "$PHEMERA_TEST_AUTHORITY/" ]
 }
 
 @test "login saves the connection under the name from --connection" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY" --connection production
-    sign_in --connection staging login "$TIDEGATE_TEST_AUTHORITY"
+    sign_in login "$PHEMERA_TEST_AUTHORITY" --connection production
+    sign_in --connection staging login "$PHEMERA_TEST_AUTHORITY"
 
     [ "$(jq -r '.connections | keys | join(",")' "$saved")" = production,staging ]
 }
 
-@test "login with a URL ignores TIDEGATE_CONNECTION" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY" --connection production
+@test "login with a URL ignores PHEMERA_CONNECTION" {
+    sign_in login "$PHEMERA_TEST_AUTHORITY" --connection production
 
-    TIDEGATE_CONNECTION=production run sign_in login "${TIDEGATE_TEST_AUTHORITY/127.0.0.1/localhost}"
+    PHEMERA_CONNECTION=production run sign_in login "${PHEMERA_TEST_AUTHORITY/127.0.0.1/localhost}"
     [ "$status" -eq 0 ]
-    [ "$(jq -r '.connections.production.server' "$saved")" = "$TIDEGATE_TEST_AUTHORITY" ]
+    [ "$(jq -r '.connections.production.server' "$saved")" = "$PHEMERA_TEST_AUTHORITY" ]
     [ "$(jq '.connections | length' "$saved")" -eq 2 ]
 }
 
 @test "login refuses a name that is saved for another server" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY" --connection production
+    sign_in login "$PHEMERA_TEST_AUTHORITY" --connection production
 
-    run --separate-stderr tidegate login https://127.0.0.1:9 --connection production < /dev/null
+    run --separate-stderr phemera login https://127.0.0.1:9 --connection production < /dev/null
     [ "$status" -eq 1 ]
-    [[ $stderr == *"tidegate connections remove"* ]]
-    [ "$(jq -r '.connections.production.server' "$saved")" = "$TIDEGATE_TEST_AUTHORITY" ]
+    [[ $stderr == *"phemera connections remove"* ]]
+    [ "$(jq -r '.connections.production.server' "$saved")" = "$PHEMERA_TEST_AUTHORITY" ]
 }
 
 @test "login with two URLs fails" {
-    run --separate-stderr tidegate login "$TIDEGATE_TEST_AUTHORITY" "$TIDEGATE_TEST_AUTHORITY" < /dev/null
+    run --separate-stderr phemera login "$PHEMERA_TEST_AUTHORITY" "$PHEMERA_TEST_AUTHORITY" < /dev/null
     [ "$status" -eq 1 ]
     [[ $stderr == *"at most one URL"* ]]
 }
@@ -86,20 +86,20 @@ setup() {
 # Signing in again
 
 @test "login without a URL signs in again to the only saved connection" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY" --connection production
-    tidegate logout
+    sign_in login "$PHEMERA_TEST_AUTHORITY" --connection production
+    phemera logout
 
     run sign_in login
     [ "$status" -eq 0 ]
-    [ "$(jq -r '.connections.production.server' "$saved")" = "$TIDEGATE_TEST_AUTHORITY" ]
+    [ "$(jq -r '.connections.production.server' "$saved")" = "$PHEMERA_TEST_AUTHORITY" ]
 
-    run tidegate project create "$project"
+    run phemera project create "$project"
     [ "$status" -eq 0 ]
 }
 
 @test "login with --connection signs in again to that connection" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY" --connection first
-    sign_in login "$TIDEGATE_TEST_AUTHORITY" --connection second
+    sign_in login "$PHEMERA_TEST_AUTHORITY" --connection first
+    sign_in login "$PHEMERA_TEST_AUTHORITY" --connection second
     before=$(jq -r '.connections.first.token' "$saved")
 
     run sign_in login --connection first
@@ -107,172 +107,172 @@ setup() {
     [ "$(jq '.connections | length' "$saved")" -eq 2 ]
     [ "$(jq -r '.connections.first.token' "$saved")" != "$before" ]
 
-    run tidegate --connection first project create "$project"
+    run phemera --connection first project create "$project"
     [ "$status" -eq 0 ]
 }
 
-@test "login without a URL follows TIDEGATE_CONNECTION" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY" --connection first
-    sign_in login "$TIDEGATE_TEST_AUTHORITY" --connection second
+@test "login without a URL follows PHEMERA_CONNECTION" {
+    sign_in login "$PHEMERA_TEST_AUTHORITY" --connection first
+    sign_in login "$PHEMERA_TEST_AUTHORITY" --connection second
     before=$(jq -r '.connections.second.token' "$saved")
 
-    TIDEGATE_CONNECTION=second run sign_in login
+    PHEMERA_CONNECTION=second run sign_in login
     [ "$status" -eq 0 ]
     [ "$(jq -r '.connections.second.token' "$saved")" != "$before" ]
 }
 
 @test "signing in again ends the session it replaces" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY"
+    sign_in login "$PHEMERA_TEST_AUTHORITY"
     replaced=$(jq -r '.connections[].token' "$saved")
 
     sign_in login
 
-    run tidegate project create "$project"
+    run phemera project create "$project"
     [ "$status" -eq 0 ]
 
-    TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY TIDEGATE_TOKEN=$replaced run --separate-stderr tidegate project create "$project"
+    PHEMERA_SERVER=$PHEMERA_TEST_AUTHORITY PHEMERA_TOKEN=$replaced run --separate-stderr phemera project create "$project"
     [ "$status" -eq 1 ]
-    [[ $stderr == *"doesn't accept the session token in TIDEGATE_TOKEN"* ]]
+    [[ $stderr == *"doesn't accept the session token in PHEMERA_TOKEN"* ]]
 }
 
 @test "login with the URL of a named connection signs in again to that connection" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY" --connection production
+    sign_in login "$PHEMERA_TEST_AUTHORITY" --connection production
 
-    run sign_in login "$TIDEGATE_TEST_AUTHORITY"
+    run sign_in login "$PHEMERA_TEST_AUTHORITY"
     [ "$status" -eq 0 ]
     [ "$(jq -r '.connections | keys[]' "$saved")" = production ]
 }
 
 @test "login with a URL that several connections use asks for --connection" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY" --connection first
-    sign_in login "$TIDEGATE_TEST_AUTHORITY" --connection second
+    sign_in login "$PHEMERA_TEST_AUTHORITY" --connection first
+    sign_in login "$PHEMERA_TEST_AUTHORITY" --connection second
 
-    run --separate-stderr tidegate login "$TIDEGATE_TEST_AUTHORITY" < /dev/null
+    run --separate-stderr phemera login "$PHEMERA_TEST_AUTHORITY" < /dev/null
     [ "$status" -eq 1 ]
     [[ $stderr == *'"first", "second"'* ]]
     [[ $stderr == *"--connection"* ]]
 }
 
 @test "login with a name that isn't saved and no URL fails" {
-    run --separate-stderr tidegate login --connection production < /dev/null
+    run --separate-stderr phemera login --connection production < /dev/null
     [ "$status" -eq 1 ]
     [[ $stderr == *'no saved connection named "production"'* ]]
-    [[ $stderr == *"tidegate login <url> --connection"* ]]
+    [[ $stderr == *"phemera login <url> --connection"* ]]
 }
 
 @test "login without a URL and with nothing saved says to give a URL" {
-    run --separate-stderr tidegate login < /dev/null
+    run --separate-stderr phemera login < /dev/null
     [ "$status" -eq 1 ]
-    [[ $stderr == *"tidegate login <url>"* ]]
+    [[ $stderr == *"phemera login <url>"* ]]
 }
 
 # Choosing a connection
 
-@test "a command with nothing saved says to run tidegate login" {
-    run --separate-stderr tidegate project create "$project"
+@test "a command with nothing saved says to run phemera login" {
+    run --separate-stderr phemera project create "$project"
     [ "$status" -eq 1 ]
-    [[ $stderr == *"Run \`tidegate login <url>\`"* ]]
+    [[ $stderr == *"Run \`phemera login <url>\`"* ]]
 }
 
 @test "with several saved connections a command says to choose one" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY" --connection first
-    sign_in login "$TIDEGATE_TEST_AUTHORITY" --connection second
+    sign_in login "$PHEMERA_TEST_AUTHORITY" --connection first
+    sign_in login "$PHEMERA_TEST_AUTHORITY" --connection second
 
-    run --separate-stderr tidegate project create "$project"
+    run --separate-stderr phemera project create "$project"
     [ "$status" -eq 1 ]
     [[ $stderr == *'"first", "second"'* ]]
 }
 
-@test "--connection and TIDEGATE_CONNECTION choose a connection, and the flag wins" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY" --connection first
-    sign_in login "$TIDEGATE_TEST_AUTHORITY" --connection second
-    tidegate --connection second logout
+@test "--connection and PHEMERA_CONNECTION choose a connection, and the flag wins" {
+    sign_in login "$PHEMERA_TEST_AUTHORITY" --connection first
+    sign_in login "$PHEMERA_TEST_AUTHORITY" --connection second
+    phemera --connection second logout
 
-    run tidegate --connection first project create "$project-1"
+    run phemera --connection first project create "$project-1"
     [ "$status" -eq 0 ]
 
-    run tidegate project create "$project-2" --connection first
+    run phemera project create "$project-2" --connection first
     [ "$status" -eq 0 ]
 
-    TIDEGATE_CONNECTION=first run tidegate project create "$project-3"
+    PHEMERA_CONNECTION=first run phemera project create "$project-3"
     [ "$status" -eq 0 ]
 
-    TIDEGATE_CONNECTION=second run tidegate project create "$project-4"
+    PHEMERA_CONNECTION=second run phemera project create "$project-4"
     [ "$status" -eq 1 ]
 
-    TIDEGATE_CONNECTION=second run tidegate --connection first project create "$project-5"
+    PHEMERA_CONNECTION=second run phemera --connection first project create "$project-5"
     [ "$status" -eq 0 ]
 }
 
 @test "a command with a name that isn't saved fails" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY" --connection first
+    sign_in login "$PHEMERA_TEST_AUTHORITY" --connection first
 
-    run --separate-stderr tidegate --connection second project create "$project"
+    run --separate-stderr phemera --connection second project create "$project"
     [ "$status" -eq 1 ]
     [[ $stderr == *'no saved connection named "second"'* ]]
 }
 
 # Signing out
 
-@test "after logout a command fails and says to run tidegate login" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY"
+@test "after logout a command fails and says to run phemera login" {
+    sign_in login "$PHEMERA_TEST_AUTHORITY"
     token=$(jq -r '.connections[].token' "$saved")
 
-    run tidegate logout
+    run phemera logout
     [ "$status" -eq 0 ]
     [ -z "$output" ]
     [ "$(jq -r '.connections[].token' "$saved")" = null ]
-    [ "$(jq -r '.connections[].server' "$saved")" = "$TIDEGATE_TEST_AUTHORITY" ]
+    [ "$(jq -r '.connections[].server' "$saved")" = "$PHEMERA_TEST_AUTHORITY" ]
 
-    run --separate-stderr tidegate project create "$project"
+    run --separate-stderr phemera project create "$project"
     [ "$status" -eq 1 ]
-    [[ $stderr == *"Run \`tidegate login --connection \"$TIDEGATE_TEST_AUTHORITY\"\`"* ]]
+    [[ $stderr == *"Run \`phemera login --connection \"$PHEMERA_TEST_AUTHORITY\"\`"* ]]
 
-    TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY TIDEGATE_TOKEN=$token run --separate-stderr tidegate project create "$project"
+    PHEMERA_SERVER=$PHEMERA_TEST_AUTHORITY PHEMERA_TOKEN=$token run --separate-stderr phemera project create "$project"
     [ "$status" -eq 1 ]
-    [[ $stderr == *"doesn't accept the session token in TIDEGATE_TOKEN"* ]]
+    [[ $stderr == *"doesn't accept the session token in PHEMERA_TOKEN"* ]]
 }
 
 @test "logout of a connection that is signed out says so and calls no authority" {
     save '{"connections": {"gone": {"server": "https://127.0.0.1:9"}}}'
 
-    run --separate-stderr tidegate logout
+    run --separate-stderr phemera logout
     [ "$status" -eq 0 ]
     [ -z "$output" ]
     [[ $stderr == *'"gone" is already signed out'* ]]
 }
 
 @test "logout removes a saved session that the authority no longer accepts" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY"
-    TIDEGATE_SERVER=$TIDEGATE_TEST_AUTHORITY TIDEGATE_TOKEN=$(jq -r '.connections[].token' "$saved") tidegate logout
+    sign_in login "$PHEMERA_TEST_AUTHORITY"
+    PHEMERA_SERVER=$PHEMERA_TEST_AUTHORITY PHEMERA_TOKEN=$(jq -r '.connections[].token' "$saved") phemera logout
 
-    run tidegate logout
+    run phemera logout
     [ "$status" -eq 0 ]
     [ "$(jq -r '.connections[].token' "$saved")" = null ]
 }
 
 @test "logging out of one connection keeps the session of the other" {
-    sign_in login "$TIDEGATE_TEST_AUTHORITY" --connection first
-    sign_in login "$TIDEGATE_TEST_AUTHORITY" --connection second
+    sign_in login "$PHEMERA_TEST_AUTHORITY" --connection first
+    sign_in login "$PHEMERA_TEST_AUTHORITY" --connection second
 
-    run tidegate --connection first logout
+    run phemera --connection first logout
     [ "$status" -eq 0 ]
 
-    run tidegate --connection second project create "$project"
+    run phemera --connection second project create "$project"
     [ "$status" -eq 0 ]
 
-    run --separate-stderr tidegate --connection first project create "$project"
+    run --separate-stderr phemera --connection first project create "$project"
     [ "$status" -eq 1 ]
-    [[ $stderr == *'Run `tidegate login --connection "first"`'* ]]
+    [[ $stderr == *'Run `phemera login --connection "first"`'* ]]
 }
 
 @test "logout keeps the session and says so when the authority can't be reached" {
     save_unreachable
 
-    run --separate-stderr tidegate logout
+    run --separate-stderr phemera logout
     [ "$status" -eq 1 ]
     [[ $stderr == *"can't reach the authority at https://127.0.0.1:9"* ]]
     [[ $stderr == *"still saved"* ]]
-    [[ $stderr == *'tidegate logout --connection "gone"'* ]]
+    [[ $stderr == *'phemera logout --connection "gone"'* ]]
     [ "$(jq -r '.connections.gone.token' "$saved")" = secret ]
 }

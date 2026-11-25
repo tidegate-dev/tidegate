@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
+	authorityv1 "github.com/phemera-dev/phemera/gen/phemera/authority/v1"
 )
 
 func TestBindingResultTextShowsTheIDTheRoleAndTheUser(t *testing.T) {
@@ -46,7 +46,7 @@ func TestBindingsResultTextNamesTheCreateCommandWhenThereAreNoBindings(t *testin
 	text := newBindingsResult(nil).String()
 
 	// assert
-	assert.Contains(t, text, "tidegate binding create")
+	assert.Contains(t, text, "phemera binding create")
 }
 
 func TestBindingsResultTextQuotesWhatATerminalWouldInterpret(t *testing.T) {

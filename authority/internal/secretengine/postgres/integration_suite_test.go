@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/dbtest"
+	"github.com/phemera-dev/phemera/authority/internal/dbtest"
 )
 
 func TestIntegration(t *testing.T) {

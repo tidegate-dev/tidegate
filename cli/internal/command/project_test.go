@@ -16,7 +16,7 @@ func TestProjectsResultTextNamesTheCreateCommandWhenThereAreNoProjects(t *testin
 	text := result.String()
 
 	// assert
-	assert.Contains(t, text, "tidegate project create <name>")
+	assert.Contains(t, text, "phemera project create <name>")
 }
 
 func TestProjectsResultTextQuotesANameThatATerminalWouldInterpret(t *testing.T) {

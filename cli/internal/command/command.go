@@ -1,4 +1,4 @@
-// Package command defines the tidegate command and its subcommands.
+// Package command defines the phemera command and its subcommands.
 package command
 
 import (
@@ -7,27 +7,27 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/tidegate-dev/tidegate/cli/internal/authority"
-	"github.com/tidegate-dev/tidegate/cli/internal/connections"
-	"github.com/tidegate-dev/tidegate/cli/internal/output"
+	"github.com/phemera-dev/phemera/cli/internal/authority"
+	"github.com/phemera-dev/phemera/cli/internal/connections"
+	"github.com/phemera-dev/phemera/cli/internal/output"
 )
 
-// New returns the tidegate command with all its subcommands. The subcommands
+// New returns the phemera command with all its subcommands. The subcommands
 // read and change the saved connections through store.
 func New(store connections.Store) *cli.Command {
 	root := &cli.Command{
-		Name:  "tidegate",
-		Usage: "command line interface for a tidegate installation",
-		Description: "tidegate login <url> signs in and saves the authority as a connection. With one\n" +
+		Name:  "phemera",
+		Usage: "command line interface for a phemera installation",
+		Description: "phemera login <url> signs in and saves the authority as a connection. With one\n" +
 			"saved connection, commands use it. With several, choose one with --connection.\n\n" +
-			"A script that brings its own session token sets TIDEGATE_SERVER and\n" +
-			"TIDEGATE_TOKEN. Commands then use these and no saved connection.",
+			"A script that brings its own session token sets PHEMERA_SERVER and\n" +
+			"PHEMERA_TOKEN. Commands then use these and no saved connection.",
 		Action: unknownCommand,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:    "connection",
 				Aliases: []string{"c"},
-				Usage:   "name of the saved connection to use, by default the one in TIDEGATE_CONNECTION",
+				Usage:   "name of the saved connection to use, by default the one in PHEMERA_CONNECTION",
 			},
 			&cli.StringFlag{
 				Name:    "output",

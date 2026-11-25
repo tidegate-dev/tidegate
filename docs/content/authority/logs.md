@@ -3,10 +3,10 @@
 The authority writes its log to standard error, one JSON object per line. It logs one line for each call to its API:
 
 ```json
-{"time":"2026-11-06T13:10:33.095136171+01:00","level":"INFO","msg":"handled a call","procedure":"/tidegate.authority.v1.LoginService/Login","code":"unauthenticated","duration":94319689,"peer":"127.0.0.1:46374"}
+{"time":"2026-11-06T13:10:33.095136171+01:00","level":"INFO","msg":"handled a call","procedure":"/phemera.authority.v1.LoginService/Login","code":"unauthenticated","duration":94319689,"peer":"127.0.0.1:46374"}
 ```
 
-If you read the log yourself instead of a log collector, set `TIDEGATE_AUTHORITY__LOG__FORMAT` to `text`. If you don't want a line for every call, set `TIDEGATE_AUTHORITY__LOG__LEVEL` to `warn`. This also leaves out the other lines at info level. The [configuration](config.md) page lists both settings.
+If you read the log yourself instead of a log collector, set `PHEMERA_AUTHORITY__LOG__FORMAT` to `text`. If you don't want a line for every call, set `PHEMERA_AUTHORITY__LOG__LEVEL` to `warn`. This also leaves out the other lines at info level. The [configuration](config.md) page lists both settings.
 
 A line for a call never has the body of the request or the response. A failed login also logs the user name it was given, but the authority never logs a password or a session token.
 

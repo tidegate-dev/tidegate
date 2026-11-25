@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/password"
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/authority/internal/password"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 var errPasswordsDiffer = errors.New("the passwords differ")

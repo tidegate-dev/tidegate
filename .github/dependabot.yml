@@ -52,7 +52,7 @@ updates:
       include: scope
     # just kind builds these images locally, they aren't in a registry.
     ignore:
-      - dependency-name: "*tidegate-*"
+      - dependency-name: "*phemera-*"
     groups:
       patch:
         update-types:

@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
-	"github.com/tidegate-dev/tidegate/authority/internal/sshkey"
-	"github.com/tidegate-dev/tidegate/internal/secret"
-	"github.com/tidegate-dev/tidegate/internal/secretengine"
+	"github.com/phemera-dev/phemera/authority/internal/model"
+	"github.com/phemera-dev/phemera/authority/internal/sshkey"
+	"github.com/phemera-dev/phemera/internal/secret"
+	"github.com/phemera-dev/phemera/internal/secretengine"
 )
 
 // ErrSSHPasswordEmpty means the password for an SSH target has no characters.
@@ -56,7 +56,7 @@ func NewAssets(
 // secret engine first. The value stays there if storing the asset fails.
 //
 // It returns ErrSSHPasswordEmpty, sshkey.ErrPrivateKeyInvalid or
-// sshkey.ErrPrivateKeyEncrypted for a password or private key that tidegate
+// sshkey.ErrPrivateKeyEncrypted for a password or private key that phemera
 // can't use, model.ErrProjectNotFound if no project has that name, and
 // model.ErrAssetNameTaken if another asset of the project has the name. The
 // API checks the form of every other value before it calls CreateSSH.

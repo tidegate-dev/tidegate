@@ -10,9 +10,9 @@ regex = '''(?i)\b[a-z][a-z0-9+.-]*://[^:/\s@]*:([^/\s]+)@'''
 secretGroup = 1
 keywords = ["://"]
 
-# The local development environment uses this password.
+# The local development environment uses phemera as its password, and commits before the rename use tidegate.
 [[rules.allowlists]]
-regexes = ['''^tidegate$''']
+regexes = ['''^(tidegate|phemera)$''']
 
 [[allowlists]]
 description = "Throwaway host key of the local test SSH host"

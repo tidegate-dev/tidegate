@@ -6,8 +6,8 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/tidegate-dev/tidegate/cli/internal/authority"
-	"github.com/tidegate-dev/tidegate/cli/internal/connections"
+	"github.com/phemera-dev/phemera/cli/internal/authority"
+	"github.com/phemera-dev/phemera/cli/internal/connections"
 )
 
 func logoutCommand(store connections.Store) *cli.Command {
@@ -15,8 +15,8 @@ func logoutCommand(store connections.Store) *cli.Command {
 		Name:  "logout",
 		Usage: "end the session and keep the connection",
 		Description: "Ends the session at the authority and removes it from the saved connection. The\n" +
-			"connection stays, so tidegate login --connection <name> signs in to it again\n" +
-			"without a URL. To remove the connection as well, run tidegate connections remove.",
+			"connection stays, so phemera login --connection <name> signs in to it again\n" +
+			"without a URL. To remove the connection as well, run phemera connections remove.",
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			return logout(ctx, cmd, store)
 		},
@@ -29,7 +29,7 @@ func logout(ctx context.Context, cmd *cli.Command, store connections.Store) erro
 		return err
 	}
 
-	// A connection from TIDEGATE_SERVER and TIDEGATE_TOKEN has no name and isn't saved.
+	// A connection from PHEMERA_SERVER and PHEMERA_TOKEN has no name and isn't saved.
 	isSaved := connection.Name != ""
 
 	if isSaved && connection.Token.Reveal() == "" {
@@ -49,7 +49,7 @@ func logout(ctx context.Context, cmd *cli.Command, store connections.Store) erro
 			connection: connection,
 			err:        err,
 			hint: fmt.Sprintf(
-				"The session of %q is still saved. Run `tidegate logout --connection %q` again later, or remove the connection with `tidegate connections remove %q`",
+				"The session of %q is still saved. Run `phemera logout --connection %q` again later, or remove the connection with `phemera connections remove %q`",
 				connection.Name, connection.Name, connection.Name,
 			),
 		}

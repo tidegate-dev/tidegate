@@ -1,19 +1,19 @@
 bats_require_minimum_version 1.7.0
 
 @test "authority --help works without a config" {
-    TIDEGATE_AUTHORITY__DATABASE__URL='' run authority --help
+    PHEMERA_AUTHORITY__DATABASE__URL='' run authority --help
     [ "$status" -eq 0 ]
     [[ $output == *USAGE* ]]
 }
 
 @test "authority migrate --help works without a config" {
-    TIDEGATE_AUTHORITY__DATABASE__URL='' run authority migrate --help
+    PHEMERA_AUTHORITY__DATABASE__URL='' run authority migrate --help
     [ "$status" -eq 0 ]
     [[ $output == *USAGE* ]]
 }
 
 @test "authority create-initial-admin --help works without a config" {
-    TIDEGATE_AUTHORITY__DATABASE__URL='' run authority create-initial-admin --help
+    PHEMERA_AUTHORITY__DATABASE__URL='' run authority create-initial-admin --help
     [ "$status" -eq 0 ]
     [[ $output == *USAGE* ]]
 }

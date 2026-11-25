@@ -8,8 +8,8 @@ import (
 	"connectrpc.com/connect"
 	"github.com/urfave/cli/v3"
 
-	"github.com/tidegate-dev/tidegate/cli/internal/connections"
-	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
+	"github.com/phemera-dev/phemera/cli/internal/connections"
+	authorityv1 "github.com/phemera-dev/phemera/gen/phemera/authority/v1"
 )
 
 type bindingResult struct {
@@ -60,7 +60,7 @@ func newBindingsResult(bindings []*authorityv1.ListBindingsResponse_Binding) bin
 
 func (result bindingsResult) String() string {
 	if len(result.Bindings) == 0 {
-		return "No bindings in the project. Run `tidegate binding create` to give a role to a user."
+		return "No bindings in the project. Run `phemera binding create` to give a role to a user."
 	}
 
 	rows := make([][]string, 0, len(result.Bindings))

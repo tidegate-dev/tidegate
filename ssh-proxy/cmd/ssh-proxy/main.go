@@ -1,4 +1,4 @@
-// Command ssh-proxy runs the tidegate ssh-proxy.
+// Command ssh-proxy runs the phemera ssh-proxy.
 package main
 
 import (
@@ -9,14 +9,14 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/tidegate-dev/tidegate/internal/logging"
-	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/config"
-	"github.com/tidegate-dev/tidegate/ssh-proxy/internal/server"
+	"github.com/phemera-dev/phemera/internal/logging"
+	"github.com/phemera-dev/phemera/ssh-proxy/internal/config"
+	"github.com/phemera-dev/phemera/ssh-proxy/internal/server"
 )
 
 func main() {
 	if len(os.Args) > 1 {
-		fmt.Fprintln(os.Stderr, "ssh-proxy takes no arguments. Its settings are environment variables that start with TIDEGATE_SSH_PROXY__")
+		fmt.Fprintln(os.Stderr, "ssh-proxy takes no arguments. Its settings are environment variables that start with PHEMERA_SSH_PROXY__")
 		os.Exit(1)
 	}
 

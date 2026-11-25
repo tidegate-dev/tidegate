@@ -12,11 +12,11 @@ import (
 	. "github.com/onsi/gomega"
 	"golang.org/x/crypto/ssh"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
-	"github.com/tidegate-dev/tidegate/authority/internal/sshkey"
-	"github.com/tidegate-dev/tidegate/authority/internal/storetest"
-	"github.com/tidegate-dev/tidegate/internal/secret"
-	"github.com/tidegate-dev/tidegate/internal/secretengine"
+	"github.com/phemera-dev/phemera/authority/internal/model"
+	"github.com/phemera-dev/phemera/authority/internal/sshkey"
+	"github.com/phemera-dev/phemera/authority/internal/storetest"
+	"github.com/phemera-dev/phemera/internal/secret"
+	"github.com/phemera-dev/phemera/internal/secretengine"
 )
 
 var _ = Describe("Assets", func() {

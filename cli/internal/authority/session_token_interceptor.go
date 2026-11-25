@@ -5,7 +5,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 type sessionTokenInterceptor struct {

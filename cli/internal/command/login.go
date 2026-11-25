@@ -9,10 +9,10 @@ import (
 	"connectrpc.com/connect"
 	"github.com/urfave/cli/v3"
 
-	"github.com/tidegate-dev/tidegate/cli/internal/authority"
-	"github.com/tidegate-dev/tidegate/cli/internal/connections"
-	"github.com/tidegate-dev/tidegate/internal/secret"
-	"github.com/tidegate-dev/tidegate/internal/terminal"
+	"github.com/phemera-dev/phemera/cli/internal/authority"
+	"github.com/phemera-dev/phemera/cli/internal/connections"
+	"github.com/phemera-dev/phemera/internal/secret"
+	"github.com/phemera-dev/phemera/internal/terminal"
 )
 
 type loginResult struct {
@@ -28,10 +28,10 @@ func loginCommand(store connections.Store) *cli.Command {
 		ArgsUsage: "[<url>]",
 		Description: "With a URL, signs in to the authority there and saves it as a connection. The\n" +
 			"connection gets the name from --connection, or the URL if you give no name.\n" +
-			"TIDEGATE_CONNECTION doesn't name a new connection. If you give no name and one\n" +
+			"PHEMERA_CONNECTION doesn't name a new connection. If you give no name and one\n" +
 			"saved connection already has this URL, login signs in to that connection again.\n\n" +
 			"Without a URL, signs in again to a saved connection: the one from --connection\n" +
-			"or TIDEGATE_CONNECTION, or the only one that is saved.",
+			"or PHEMERA_CONNECTION, or the only one that is saved.",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  "print-token",
@@ -88,7 +88,7 @@ func login(ctx context.Context, cmd *cli.Command, store connections.Store) error
 
 func loginAndPrintToken(ctx context.Context, cmd *cli.Command, url, connectionFlag string) error {
 	if url == "" {
-		return errors.New("--print-token needs a URL: tidegate login <url> --print-token")
+		return errors.New("--print-token needs a URL: phemera login <url> --print-token")
 	}
 
 	if connectionFlag != "" {

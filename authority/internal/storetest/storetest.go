@@ -11,10 +11,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/db"
-	"github.com/tidegate-dev/tidegate/authority/internal/dbtest"
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
-	"github.com/tidegate-dev/tidegate/authority/internal/store"
+	"github.com/phemera-dev/phemera/authority/internal/db"
+	"github.com/phemera-dev/phemera/authority/internal/dbtest"
+	"github.com/phemera-dev/phemera/authority/internal/model"
+	"github.com/phemera-dev/phemera/authority/internal/store"
 )
 
 // New returns a store on an empty, migrated database, and the pool the store

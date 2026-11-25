@@ -9,13 +9,13 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/authority/internal/db/sqlc"
+	"github.com/phemera-dev/phemera/authority/internal/model"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 // goose takes a different advisory lock ID for migrations.
-const usersEmptyLockID int64 = 0x7469646567617465 // "tidegate" in ASCII
+const usersEmptyLockID int64 = 0x7068656d657261 // "phemera" in ASCII
 
 // UserReader queries the users table on the connection pool.
 type UserReader struct {

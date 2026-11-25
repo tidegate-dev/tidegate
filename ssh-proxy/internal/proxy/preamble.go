@@ -8,11 +8,11 @@ import (
 	"net"
 	"strings"
 
-	"github.com/tidegate-dev/tidegate/internal/secret"
+	"github.com/phemera-dev/phemera/internal/secret"
 )
 
 const (
-	preambleVersion = "tidegate-session-v1"
+	preambleVersion = "phemera-session-v1"
 
 	// A ticket has to fit in a cookie, which browsers limit to 4096 bytes.
 	maxPreambleBytes = 4096

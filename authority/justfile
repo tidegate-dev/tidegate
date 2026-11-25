@@ -12,19 +12,19 @@ image:
         echo "Install podman or Docker to build the image." >&2
         exit 1
     }
-    "$runtime" build --file Containerfile --tag localhost/tidegate-authority ..
+    "$runtime" build --file Containerfile --tag localhost/phemera-authority ..
 
 # Run the authority's unit tests with the race detector, and write their
 # coverage to coverage/ at the root of the repository.
 test:
     mkdir -p ../coverage
-    go test -race -coverpkg=github.com/tidegate-dev/tidegate/... -coverprofile=../coverage/authority.out ./...
+    go test -race -coverpkg=github.com/phemera-dev/phemera/... -coverprofile=../coverage/authority.out ./...
 
 # Run the authority's integration tests with the race detector, and write
 # their coverage to coverage/ at the root of the repository.
 test-integration:
     mkdir -p ../coverage
-    go test -race -tags integration -coverpkg=github.com/tidegate-dev/tidegate/... -coverprofile=../coverage/authority-integration.out ./...
+    go test -race -tags integration -coverpkg=github.com/phemera-dev/phemera/... -coverprofile=../coverage/authority-integration.out ./...
 
 # Create a database on the test Postgres server, start the authority against
 # it, run the API tests in api-tests/ against the authority, drop the database
@@ -32,7 +32,7 @@ test-integration:
 # repository. Like the integration tests, they need Postgres.
 test-api:
     ../dev/with-test-authority.sh ../coverage/authority-api.out \
-        sh -c 'hurl --test --cacert "$TIDEGATE_TEST_CA_FILE" --variable "authority=$TIDEGATE_TEST_AUTHORITY" --variable "user=$TIDEGATE_TEST_USER" --variable "password=$TIDEGATE_TEST_PASSWORD" api-tests/*.hurl'
+        sh -c 'hurl --test --cacert "$PHEMERA_TEST_CA_FILE" --variable "authority=$PHEMERA_TEST_AUTHORITY" --variable "user=$PHEMERA_TEST_USER" --variable "password=$PHEMERA_TEST_PASSWORD" api-tests/*.hurl'
 
 # Lint the authority.
 lint:

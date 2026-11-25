@@ -1,1 +1,1 @@
-export TIDEGATE_TEST_DATABASE_URL := env("TIDEGATE_TEST_DATABASE_URL", "postgres://tidegate:tidegate@127.0.0.1:5432/tidegate?sslmode=disable")
+export PHEMERA_TEST_DATABASE_URL := env("PHEMERA_TEST_DATABASE_URL", "postgres://phemera:phemera@127.0.0.1:5432/phemera?sslmode=disable")

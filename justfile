@@ -28,7 +28,7 @@ test-integration: authority::test-integration
 test-api: authority::test-api
 
 # Run the end-to-end tests in e2e/ with Bats. They start an authority on its
-# own database and use it through the tidegate CLI, and they run the authority
+# own database and use it through the phemera CLI, and they run the authority
 # binary's own commands. Like the API tests, they need Postgres.
 test-e2e:
     #!/usr/bin/env bash
@@ -36,7 +36,7 @@ test-e2e:
     work=$(mktemp -d)
     trap 'rm -rf "$work"' EXIT
     mkdir "$work/bin" "$work/coverage"
-    go build -cover -coverpkg=github.com/tidegate-dev/tidegate/... -o "$work/bin/tidegate" ./cli/cmd/tidegate
+    go build -cover -coverpkg=github.com/phemera-dev/phemera/... -o "$work/bin/phemera" ./cli/cmd/phemera
     PATH="$work/bin:$PATH" dev/with-test-authority.sh coverage/authority-e2e.out \
         env GOCOVERDIR="$work/coverage" bats --recursive e2e/
     go tool covdata textfmt -i="$work/coverage" -o coverage/cli-e2e.out
@@ -92,7 +92,7 @@ images:
     done
     [ -z "$names" ]
 
-# Check that every Go module in tidegate's binaries uses a license that
+# Check that every Go module in phemera's binaries uses a license that
 # .grant.yaml allows, and that every license file syft can't identify is in
 # .licenses-reviewed.
 licenses: build
@@ -116,10 +116,10 @@ licenses: build
 # Format the code of every component in place.
 fmt: authority::fmt cli::fmt ssh-proxy::fmt internal::fmt
 
-# Start tidegate's components and the services they need.
-dev: _dev-tls (_process-compose "dev/deps.yaml" "dev/tidegate.yaml")
+# Start phemera's components and the services they need.
+dev: _dev-tls (_process-compose "dev/deps.yaml" "dev/phemera.yaml")
 
-# Start only the services that tidegate's components need, like Postgres.
+# Start only the services that phemera's components need, like Postgres.
 dev-deps: (_process-compose "dev/deps.yaml")
 
 _dev-tls:
@@ -139,7 +139,7 @@ _process-compose +configs:
         shift
     done
     # process-compose's API server listens on port 8080 by default, which
-    # tidegate's components use, so it uses a Unix socket instead.
+    # phemera's components use, so it uses a Unix socket instead.
     exec process-compose up --use-uds "$@"
 
 # Delete the data that the services keep between runs, like the Postgres database.
@@ -150,14 +150,14 @@ dev-reset:
         echo "Install podman or Docker to run the development environment." >&2
         exit 1
     }
-    "$runtime" volume rm --force tidegate-postgres
+    "$runtime" volume rm --force phemera-postgres
 
-images := "localhost/tidegate-authority"
+images := "localhost/phemera-authority"
 
 # Build the container images of every component.
 image: authority::image
 
-# Run tidegate's components and the services they need in a local Kubernetes cluster.
+# Run phemera's components and the services they need in a local Kubernetes cluster.
 kind: image _dev-tls
     #!/usr/bin/env sh
     set -eu
@@ -167,27 +167,27 @@ kind: image _dev-tls
     }
     # kind uses Docker unless told otherwise.
     case "$runtime" in */podman) export KIND_EXPERIMENTAL_PROVIDER=podman ;; esac
-    if ! kind get clusters 2>/dev/null | grep -qx tidegate; then
-        kind create cluster --name tidegate --config dev/kind/cluster.yaml
+    if ! kind get clusters 2>/dev/null | grep -qx phemera; then
+        kind create cluster --name phemera --config dev/kind/cluster.yaml
     fi
     archive=$(mktemp)
     trap 'rm -f "$archive"' EXIT
     for image in {{images}}; do
         "$runtime" save --output "$archive" "$image"
-        kind load image-archive "$archive" --name tidegate
+        kind load image-archive "$archive" --name phemera
     done
     helm dependency build dev/kind/cert-manager
-    helm --kube-context kind-tidegate upgrade --install cert-manager dev/kind/cert-manager \
+    helm --kube-context kind-phemera upgrade --install cert-manager dev/kind/cert-manager \
         --namespace cert-manager --create-namespace --wait
-    kubectl --context kind-tidegate apply --filename dev/kind/namespace.yaml
-    kubectl --context kind-tidegate --namespace tidegate create secret tls dev-ca \
+    kubectl --context kind-phemera apply --filename dev/kind/namespace.yaml
+    kubectl --context kind-phemera --namespace phemera create secret tls dev-ca \
         --cert dev/tls/ca.pem --key dev/tls/ca-key.pem --dry-run=client --output yaml \
-        | kubectl --context kind-tidegate apply --filename -
-    kubectl --context kind-tidegate apply --kustomize dev/kind
+        | kubectl --context kind-phemera apply --filename -
+    kubectl --context kind-phemera apply --kustomize dev/kind
     # The image tags stay the same, so the components only pick up new images
     # when they restart. The services keep running, so Postgres keeps its data.
-    kubectl --context kind-tidegate --namespace tidegate rollout restart deployment --selector app.kubernetes.io/part-of=tidegate
-    kubectl --context kind-tidegate --namespace tidegate rollout status deployment --timeout 3m
+    kubectl --context kind-phemera --namespace phemera rollout restart deployment --selector app.kubernetes.io/part-of=phemera
+    kubectl --context kind-phemera --namespace phemera rollout status deployment --timeout 3m
 
 # Delete the cluster that just kind created.
 kind-down:
@@ -198,7 +198,7 @@ kind-down:
         exit 1
     }
     case "$runtime" in */podman) export KIND_EXPERIMENTAL_PROVIDER=podman ;; esac
-    kind delete cluster --name tidegate
+    kind delete cluster --name phemera
 
 # Run every check that CI runs, except fuzzing and mutate.
 ci: secrets arch images licenses workflows proto::ci authority::ci cli::ci ssh-proxy::ci test-e2e internal::ci docs::build

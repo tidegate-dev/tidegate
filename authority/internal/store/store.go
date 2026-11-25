@@ -5,8 +5,8 @@ package store
 import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
+	"github.com/phemera-dev/phemera/authority/internal/db/sqlc"
+	"github.com/phemera-dev/phemera/authority/internal/model"
 )
 
 // Store gives access to the authority's tables.

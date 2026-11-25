@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tidegate-dev/tidegate/internal/systemd"
+	"github.com/phemera-dev/phemera/internal/systemd"
 )
 
 func TestServeTellsSystemdWhenReadyAndStopping(t *testing.T) {

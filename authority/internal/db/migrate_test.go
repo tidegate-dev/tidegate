@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/pressly/goose/v3/lock"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/dbtest"
+	"github.com/phemera-dev/phemera/authority/internal/dbtest"
 )
 
 var _ = Describe("Migrate", func() {

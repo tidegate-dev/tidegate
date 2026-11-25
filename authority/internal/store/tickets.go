@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/tidegate-dev/tidegate/authority/internal/db/sqlc"
-	"github.com/tidegate-dev/tidegate/authority/internal/model"
+	"github.com/phemera-dev/phemera/authority/internal/db/sqlc"
+	"github.com/phemera-dev/phemera/authority/internal/model"
 )
 
 // TicketReadWriter records ticket writes, which the unit runs at Commit.

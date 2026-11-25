@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package tidegate.authority.v1;
+package phemera.authority.v1;
 
 import "buf/validate/validate.proto";
 
-option go_package = "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;authorityv1";
+option go_package = "github.com/phemera-dev/phemera/gen/phemera/authority/v1;authorityv1";
 
 // LoginService signs users in to the authority.
 service LoginService {

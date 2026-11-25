@@ -18,11 +18,11 @@ import (
 	"github.com/knadh/koanf/providers/structs"
 	"github.com/knadh/koanf/v2"
 
-	"github.com/tidegate-dev/tidegate/internal/logging"
+	"github.com/phemera-dev/phemera/internal/logging"
 )
 
 const (
-	envPrefix      = "TIDEGATE_AUTHORITY__"
+	envPrefix      = "PHEMERA_AUTHORITY__"
 	levelSeparator = "__"
 	structTag      = "koanf"
 )
@@ -83,15 +83,15 @@ var defaults = rawConfig{
 		ListenAddress: "127.0.0.1:8080",
 		TLS: rawExternalTLS{
 			Disabled: "false",
-			CertFile: "/etc/tidegate/authority/external-api-tls/tls.crt",
-			KeyFile:  "/etc/tidegate/authority/external-api-tls/tls.key",
+			CertFile: "/etc/phemera/authority/external-api-tls/tls.crt",
+			KeyFile:  "/etc/phemera/authority/external-api-tls/tls.key",
 		},
 	},
 	InternalAPI: rawInternalAPI{
 		ListenAddress: "127.0.0.1:8081",
 		TLS: rawInternalTLS{
-			CertFile: "/etc/tidegate/authority/internal-api-tls/tls.crt",
-			KeyFile:  "/etc/tidegate/authority/internal-api-tls/tls.key",
+			CertFile: "/etc/phemera/authority/internal-api-tls/tls.crt",
+			KeyFile:  "/etc/phemera/authority/internal-api-tls/tls.key",
 		},
 	},
 	Metrics: rawMetrics{

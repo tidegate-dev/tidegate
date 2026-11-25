@@ -9,118 +9,118 @@ threshold:
   coverage: 100
 dependenciesRules:
   # internal/ imports nothing from a component or from gen/.
-  - package: '^github.com/tidegate-dev/tidegate/internal.**'
+  - package: '^github.com/phemera-dev/phemera/internal.**'
     shouldOnlyDependsOn:
       internal:
-        - '^github.com/tidegate-dev/tidegate/internal.**'
+        - '^github.com/phemera-dev/phemera/internal.**'
 
   # gen/ imports only gen/.
-  - package: '^github.com/tidegate-dev/tidegate/gen.**'
+  - package: '^github.com/phemera-dev/phemera/gen.**'
     shouldOnlyDependsOn:
       internal:
-        - '^github.com/tidegate-dev/tidegate/gen.**'
+        - '^github.com/phemera-dev/phemera/gen.**'
 
   # A component imports only itself, internal/ and gen/, nothing from another
   # component.
-  - package: '^github.com/tidegate-dev/tidegate/authority.**'
+  - package: '^github.com/phemera-dev/phemera/authority.**'
     shouldOnlyDependsOn:
       internal:
-        - '^github.com/tidegate-dev/tidegate/authority.**'
-        - '^github.com/tidegate-dev/tidegate/internal.**'
-        - '^github.com/tidegate-dev/tidegate/gen.**'
+        - '^github.com/phemera-dev/phemera/authority.**'
+        - '^github.com/phemera-dev/phemera/internal.**'
+        - '^github.com/phemera-dev/phemera/gen.**'
 
-  - package: '^github.com/tidegate-dev/tidegate/cli.**'
+  - package: '^github.com/phemera-dev/phemera/cli.**'
     shouldOnlyDependsOn:
       internal:
-        - '^github.com/tidegate-dev/tidegate/cli.**'
-        - '^github.com/tidegate-dev/tidegate/internal.**'
-        - '^github.com/tidegate-dev/tidegate/gen.**'
+        - '^github.com/phemera-dev/phemera/cli.**'
+        - '^github.com/phemera-dev/phemera/internal.**'
+        - '^github.com/phemera-dev/phemera/gen.**'
 
-  - package: '^github.com/tidegate-dev/tidegate/ssh-proxy.**'
+  - package: '^github.com/phemera-dev/phemera/ssh-proxy.**'
     shouldOnlyDependsOn:
       internal:
-        - '^github.com/tidegate-dev/tidegate/ssh-proxy.**'
-        - '^github.com/tidegate-dev/tidegate/internal.**'
-        - '^github.com/tidegate-dev/tidegate/gen.**'
+        - '^github.com/phemera-dev/phemera/ssh-proxy.**'
+        - '^github.com/phemera-dev/phemera/internal.**'
+        - '^github.com/phemera-dev/phemera/gen.**'
 
   # The authority's layers: api calls service, service uses model, and store
   # implements the storage interfaces from model.
-  - package: '^github.com/tidegate-dev/tidegate/authority/internal/password$'
+  - package: '^github.com/phemera-dev/phemera/authority/internal/password$'
     shouldOnlyDependsOn:
       internal:
-        - '^github.com/tidegate-dev/tidegate/internal/secret$'
+        - '^github.com/phemera-dev/phemera/internal/secret$'
 
-  - package: '^github.com/tidegate-dev/tidegate/authority/internal/sshkey$'
+  - package: '^github.com/phemera-dev/phemera/authority/internal/sshkey$'
     shouldOnlyDependsOn:
       internal:
-        - '^github.com/tidegate-dev/tidegate/internal/secret$'
+        - '^github.com/phemera-dev/phemera/internal/secret$'
 
-  - package: '^github.com/tidegate-dev/tidegate/authority/internal/config$'
+  - package: '^github.com/phemera-dev/phemera/authority/internal/config$'
     shouldOnlyDependsOn:
       internal:
-        - '^github.com/tidegate-dev/tidegate/internal.**'
+        - '^github.com/phemera-dev/phemera/internal.**'
 
-  - package: '^github.com/tidegate-dev/tidegate/authority/internal/db.**'
+  - package: '^github.com/phemera-dev/phemera/authority/internal/db.**'
     shouldOnlyDependsOn:
       internal:
-        - '^github.com/tidegate-dev/tidegate/authority/internal/db.**'
+        - '^github.com/phemera-dev/phemera/authority/internal/db.**'
 
   # The Postgres secret engine imports nothing from the authority.
-  - package: '^github.com/tidegate-dev/tidegate/authority/internal/secretengine/postgres$'
+  - package: '^github.com/phemera-dev/phemera/authority/internal/secretengine/postgres$'
     shouldOnlyDependsOn:
       internal:
-        - '^github.com/tidegate-dev/tidegate/internal/secretengine$'
-        - '^github.com/tidegate-dev/tidegate/internal/secret$'
+        - '^github.com/phemera-dev/phemera/internal/secretengine$'
+        - '^github.com/phemera-dev/phemera/internal/secret$'
 
   # Only server imports the Postgres secret engine.
-  - package: '^github.com/tidegate-dev/tidegate/authority/cmd/authority$'
+  - package: '^github.com/phemera-dev/phemera/authority/cmd/authority$'
     shouldNotDependsOn:
       internal:
-        - '^github.com/tidegate-dev/tidegate/authority/internal/secretengine/postgres$'
+        - '^github.com/phemera-dev/phemera/authority/internal/secretengine/postgres$'
 
-  - package: '^github.com/tidegate-dev/tidegate/authority/internal/command$'
+  - package: '^github.com/phemera-dev/phemera/authority/internal/command$'
     shouldNotDependsOn:
       internal:
-        - '^github.com/tidegate-dev/tidegate/authority/internal/secretengine/postgres$'
+        - '^github.com/phemera-dev/phemera/authority/internal/secretengine/postgres$'
 
-  - package: '^github.com/tidegate-dev/tidegate/authority/internal/model$'
+  - package: '^github.com/phemera-dev/phemera/authority/internal/model$'
     shouldOnlyDependsOn:
       internal:
-        - '^github.com/tidegate-dev/tidegate/internal/secret$'
+        - '^github.com/phemera-dev/phemera/internal/secret$'
     shouldNotDependsOn:
       external:
         - github.com/jackc/pgx/v5.**
 
-  - package: '^github.com/tidegate-dev/tidegate/authority/internal/store$'
+  - package: '^github.com/phemera-dev/phemera/authority/internal/store$'
     shouldOnlyDependsOn:
       internal:
-        - '^github.com/tidegate-dev/tidegate/authority/internal/db/sqlc$'
-        - '^github.com/tidegate-dev/tidegate/authority/internal/model$'
-        - '^github.com/tidegate-dev/tidegate/internal/secret$'
+        - '^github.com/phemera-dev/phemera/authority/internal/db/sqlc$'
+        - '^github.com/phemera-dev/phemera/authority/internal/model$'
+        - '^github.com/phemera-dev/phemera/internal/secret$'
 
-  - package: '^github.com/tidegate-dev/tidegate/authority/internal/service$'
+  - package: '^github.com/phemera-dev/phemera/authority/internal/service$'
     shouldOnlyDependsOn:
       internal:
-        - '^github.com/tidegate-dev/tidegate/authority/internal/model$'
-        - '^github.com/tidegate-dev/tidegate/authority/internal/password$'
-        - '^github.com/tidegate-dev/tidegate/authority/internal/sshkey$'
-        - '^github.com/tidegate-dev/tidegate/internal/secret$'
-        - '^github.com/tidegate-dev/tidegate/internal/secretengine$'
+        - '^github.com/phemera-dev/phemera/authority/internal/model$'
+        - '^github.com/phemera-dev/phemera/authority/internal/password$'
+        - '^github.com/phemera-dev/phemera/authority/internal/sshkey$'
+        - '^github.com/phemera-dev/phemera/internal/secret$'
+        - '^github.com/phemera-dev/phemera/internal/secretengine$'
     shouldNotDependsOn:
       external:
         - connectrpc.com/connect
         - github.com/jackc/pgx/v5.**
 
-  - package: '^github.com/tidegate-dev/tidegate/authority/internal/api$'
+  - package: '^github.com/phemera-dev/phemera/authority/internal/api$'
     shouldOnlyDependsOn:
       internal:
-        - '^github.com/tidegate-dev/tidegate/authority/internal/service$'
-        - '^github.com/tidegate-dev/tidegate/authority/internal/model$'
-        - '^github.com/tidegate-dev/tidegate/authority/internal/password$'
-        - '^github.com/tidegate-dev/tidegate/authority/internal/sshkey$'
-        - '^github.com/tidegate-dev/tidegate/gen.**'
-        - '^github.com/tidegate-dev/tidegate/internal/logging$'
-        - '^github.com/tidegate-dev/tidegate/internal/secret$'
+        - '^github.com/phemera-dev/phemera/authority/internal/service$'
+        - '^github.com/phemera-dev/phemera/authority/internal/model$'
+        - '^github.com/phemera-dev/phemera/authority/internal/password$'
+        - '^github.com/phemera-dev/phemera/authority/internal/sshkey$'
+        - '^github.com/phemera-dev/phemera/gen.**'
+        - '^github.com/phemera-dev/phemera/internal/logging$'
+        - '^github.com/phemera-dev/phemera/internal/secret$'
     shouldNotDependsOn:
       external:
         - github.com/jackc/pgx/v5.**

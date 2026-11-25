@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/tidegate-dev/tidegate/internal/logging"
-	"github.com/tidegate-dev/tidegate/internal/systemd"
+	"github.com/phemera-dev/phemera/internal/logging"
+	"github.com/phemera-dev/phemera/internal/systemd"
 )
 
 // serve runs servers, keyed by a name for the logs, until ctx is done or

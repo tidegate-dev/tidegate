@@ -15,8 +15,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tidegate-dev/tidegate/internal/logging"
-	"github.com/tidegate-dev/tidegate/internal/requestlog"
+	"github.com/phemera-dev/phemera/internal/logging"
+	"github.com/phemera-dev/phemera/internal/requestlog"
 )
 
 var start = time.Date(2026, 11, 6, 12, 0, 0, 0, time.UTC)
@@ -41,7 +41,7 @@ func TestSuccessfulCallIsLogged(t *testing.T) {
 
 	line := decode(t, out)
 	assert.Equal(t, "INFO", line["level"])
-	assert.Equal(t, "/tidegate.authority.v1.LoginService/Login", line["procedure"])
+	assert.Equal(t, "/phemera.authority.v1.LoginService/Login", line["procedure"])
 	assert.Equal(t, "ok", line["code"])
 	assert.InDelta(t, float64(1500*time.Millisecond), line["duration"], 0)
 	assert.Equal(t, "192.0.2.7:51234", line["peer"])
@@ -160,7 +160,7 @@ func TestStreamingCallIsLogged(t *testing.T) {
 
 	// assert
 	line := decode(t, out)
-	assert.Equal(t, "/tidegate.authority.v1.SessionService/Watch", line["procedure"])
+	assert.Equal(t, "/phemera.authority.v1.SessionService/Watch", line["procedure"])
 	assert.Equal(t, "not_found", line["code"])
 	assert.InDelta(t, float64(2*time.Second), line["duration"], 0)
 	assert.Equal(t, "192.0.2.7:51234", line["peer"])
@@ -193,7 +193,7 @@ type request struct {
 }
 
 func (request) Spec() connect.Spec {
-	return connect.Spec{Procedure: "/tidegate.authority.v1.LoginService/Login"}
+	return connect.Spec{Procedure: "/phemera.authority.v1.LoginService/Login"}
 }
 
 func (request) Peer() connect.Peer {
@@ -207,7 +207,7 @@ type stream struct {
 }
 
 func (stream) Spec() connect.Spec {
-	return connect.Spec{Procedure: "/tidegate.authority.v1.SessionService/Watch"}
+	return connect.Spec{Procedure: "/phemera.authority.v1.SessionService/Watch"}
 }
 
 func (stream) Peer() connect.Peer {

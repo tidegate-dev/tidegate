@@ -8,8 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/urfave/cli/v3"
 
-	"github.com/tidegate-dev/tidegate/cli/internal/connections"
-	authorityv1 "github.com/tidegate-dev/tidegate/gen/tidegate/authority/v1"
+	"github.com/phemera-dev/phemera/cli/internal/connections"
+	authorityv1 "github.com/phemera-dev/phemera/gen/phemera/authority/v1"
 )
 
 type ticketResult struct {

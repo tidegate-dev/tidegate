@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.12
 // 	protoc        (unknown)
-// source: tidegate/authority/v1/role.proto
+// source: phemera/authority/v1/role.proto
 
 package authorityv1
 
@@ -42,7 +42,7 @@ type ProjectPermissions struct {
 
 func (x *ProjectPermissions) Reset() {
 	*x = ProjectPermissions{}
-	mi := &file_tidegate_authority_v1_role_proto_msgTypes[0]
+	mi := &file_phemera_authority_v1_role_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -54,7 +54,7 @@ func (x *ProjectPermissions) String() string {
 func (*ProjectPermissions) ProtoMessage() {}
 
 func (x *ProjectPermissions) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_role_proto_msgTypes[0]
+	mi := &file_phemera_authority_v1_role_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -67,7 +67,7 @@ func (x *ProjectPermissions) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectPermissions.ProtoReflect.Descriptor instead.
 func (*ProjectPermissions) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_role_proto_rawDescGZIP(), []int{0}
+	return file_phemera_authority_v1_role_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ProjectPermissions) GetCreateRoles() bool {
@@ -120,7 +120,7 @@ type CreateRoleRequest struct {
 
 func (x *CreateRoleRequest) Reset() {
 	*x = CreateRoleRequest{}
-	mi := &file_tidegate_authority_v1_role_proto_msgTypes[1]
+	mi := &file_phemera_authority_v1_role_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -132,7 +132,7 @@ func (x *CreateRoleRequest) String() string {
 func (*CreateRoleRequest) ProtoMessage() {}
 
 func (x *CreateRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_role_proto_msgTypes[1]
+	mi := &file_phemera_authority_v1_role_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -145,7 +145,7 @@ func (x *CreateRoleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRoleRequest.ProtoReflect.Descriptor instead.
 func (*CreateRoleRequest) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_role_proto_rawDescGZIP(), []int{1}
+	return file_phemera_authority_v1_role_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *CreateRoleRequest) GetProjectName() string {
@@ -187,7 +187,7 @@ type CreateRoleResponse struct {
 
 func (x *CreateRoleResponse) Reset() {
 	*x = CreateRoleResponse{}
-	mi := &file_tidegate_authority_v1_role_proto_msgTypes[2]
+	mi := &file_phemera_authority_v1_role_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -199,7 +199,7 @@ func (x *CreateRoleResponse) String() string {
 func (*CreateRoleResponse) ProtoMessage() {}
 
 func (x *CreateRoleResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_tidegate_authority_v1_role_proto_msgTypes[2]
+	mi := &file_phemera_authority_v1_role_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -212,7 +212,7 @@ func (x *CreateRoleResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRoleResponse.ProtoReflect.Descriptor instead.
 func (*CreateRoleResponse) Descriptor() ([]byte, []int) {
-	return file_tidegate_authority_v1_role_proto_rawDescGZIP(), []int{2}
+	return file_phemera_authority_v1_role_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CreateRoleResponse) GetId() string {
@@ -243,55 +243,55 @@ func (x *CreateRoleResponse) GetPermissions() *ProjectPermissions {
 	return nil
 }
 
-var File_tidegate_authority_v1_role_proto protoreflect.FileDescriptor
+var File_phemera_authority_v1_role_proto protoreflect.FileDescriptor
 
-const file_tidegate_authority_v1_role_proto_rawDesc = "" +
+const file_phemera_authority_v1_role_proto_rawDesc = "" +
 	"\n" +
-	" tidegate/authority/v1/role.proto\x12\x15tidegate.authority.v1\x1a\x1bbuf/validate/validate.proto\"\x90\x01\n" +
+	"\x1fphemera/authority/v1/role.proto\x12\x14phemera.authority.v1\x1a\x1bbuf/validate/validate.proto\"\x90\x01\n" +
 	"\x12ProjectPermissions\x12!\n" +
 	"\fcreate_roles\x18\x01 \x01(\bR\vcreateRoles\x12\x1a\n" +
 	"\bescalate\x18\x02 \x01(\bR\bescalate\x12'\n" +
 	"\x0fcreate_bindings\x18\x03 \x01(\bR\x0ecreateBindings\x12\x12\n" +
-	"\x04bind\x18\x04 \x01(\bR\x04bind\"\xd7\x04\n" +
+	"\x04bind\x18\x04 \x01(\bR\x04bind\"\xd6\x04\n" +
 	"\x11CreateRoleRequest\x12\x84\x02\n" +
 	"\fproject_name\x18\x01 \x01(\tB\xe0\x01\xbaH\xdc\x01\xba\x01\xd8\x01\n" +
 	"\x11role.project_name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\vprojectName\x12\xed\x01\n" +
 	"\x04name\x18\x02 \x01(\tB\xd8\x01\xbaH\xd4\x01\xba\x01\xd0\x01\n" +
-	"\trole.name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\x04name\x12K\n" +
-	"\vpermissions\x18\x03 \x01(\v2).tidegate.authority.v1.ProjectPermissionsR\vpermissions\"\xa4\x01\n" +
+	"\trole.name\x12\x8f\x01must start with a lowercase letter, go on with lowercase letters, digits and dashes, end with a letter or digit, and have at most 63 characters\x1a1this.matches('^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$')R\x04name\x12J\n" +
+	"\vpermissions\x18\x03 \x01(\v2(.phemera.authority.v1.ProjectPermissionsR\vpermissions\"\xa3\x01\n" +
 	"\x12CreateRoleResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name\x12K\n" +
-	"\vpermissions\x18\x04 \x01(\v2).tidegate.authority.v1.ProjectPermissionsR\vpermissions2p\n" +
-	"\vRoleService\x12a\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12J\n" +
+	"\vpermissions\x18\x04 \x01(\v2(.phemera.authority.v1.ProjectPermissionsR\vpermissions2n\n" +
+	"\vRoleService\x12_\n" +
 	"\n" +
-	"CreateRole\x12(.tidegate.authority.v1.CreateRoleRequest\x1a).tidegate.authority.v1.CreateRoleResponseBHZFgithub.com/tidegate-dev/tidegate/gen/tidegate/authority/v1;authorityv1b\x06proto3"
+	"CreateRole\x12'.phemera.authority.v1.CreateRoleRequest\x1a(.phemera.authority.v1.CreateRoleResponseBEZCgithub.com/phemera-dev/phemera/gen/phemera/authority/v1;authorityv1b\x06proto3"
 
 var (
-	file_tidegate_authority_v1_role_proto_rawDescOnce sync.Once
-	file_tidegate_authority_v1_role_proto_rawDescData []byte
+	file_phemera_authority_v1_role_proto_rawDescOnce sync.Once
+	file_phemera_authority_v1_role_proto_rawDescData []byte
 )
 
-func file_tidegate_authority_v1_role_proto_rawDescGZIP() []byte {
-	file_tidegate_authority_v1_role_proto_rawDescOnce.Do(func() {
-		file_tidegate_authority_v1_role_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_tidegate_authority_v1_role_proto_rawDesc), len(file_tidegate_authority_v1_role_proto_rawDesc)))
+func file_phemera_authority_v1_role_proto_rawDescGZIP() []byte {
+	file_phemera_authority_v1_role_proto_rawDescOnce.Do(func() {
+		file_phemera_authority_v1_role_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_phemera_authority_v1_role_proto_rawDesc), len(file_phemera_authority_v1_role_proto_rawDesc)))
 	})
-	return file_tidegate_authority_v1_role_proto_rawDescData
+	return file_phemera_authority_v1_role_proto_rawDescData
 }
 
-var file_tidegate_authority_v1_role_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
-var file_tidegate_authority_v1_role_proto_goTypes = []any{
-	(*ProjectPermissions)(nil), // 0: tidegate.authority.v1.ProjectPermissions
-	(*CreateRoleRequest)(nil),  // 1: tidegate.authority.v1.CreateRoleRequest
-	(*CreateRoleResponse)(nil), // 2: tidegate.authority.v1.CreateRoleResponse
+var file_phemera_authority_v1_role_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_phemera_authority_v1_role_proto_goTypes = []any{
+	(*ProjectPermissions)(nil), // 0: phemera.authority.v1.ProjectPermissions
+	(*CreateRoleRequest)(nil),  // 1: phemera.authority.v1.CreateRoleRequest
+	(*CreateRoleResponse)(nil), // 2: phemera.authority.v1.CreateRoleResponse
 }
-var file_tidegate_authority_v1_role_proto_depIdxs = []int32{
-	0, // 0: tidegate.authority.v1.CreateRoleRequest.permissions:type_name -> tidegate.authority.v1.ProjectPermissions
-	0, // 1: tidegate.authority.v1.CreateRoleResponse.permissions:type_name -> tidegate.authority.v1.ProjectPermissions
-	1, // 2: tidegate.authority.v1.RoleService.CreateRole:input_type -> tidegate.authority.v1.CreateRoleRequest
-	2, // 3: tidegate.authority.v1.RoleService.CreateRole:output_type -> tidegate.authority.v1.CreateRoleResponse
+var file_phemera_authority_v1_role_proto_depIdxs = []int32{
+	0, // 0: phemera.authority.v1.CreateRoleRequest.permissions:type_name -> phemera.authority.v1.ProjectPermissions
+	0, // 1: phemera.authority.v1.CreateRoleResponse.permissions:type_name -> phemera.authority.v1.ProjectPermissions
+	1, // 2: phemera.authority.v1.RoleService.CreateRole:input_type -> phemera.authority.v1.CreateRoleRequest
+	2, // 3: phemera.authority.v1.RoleService.CreateRole:output_type -> phemera.authority.v1.CreateRoleResponse
 	3, // [3:4] is the sub-list for method output_type
 	2, // [2:3] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
@@ -299,26 +299,26 @@ var file_tidegate_authority_v1_role_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_tidegate_authority_v1_role_proto_init() }
-func file_tidegate_authority_v1_role_proto_init() {
-	if File_tidegate_authority_v1_role_proto != nil {
+func init() { file_phemera_authority_v1_role_proto_init() }
+func file_phemera_authority_v1_role_proto_init() {
+	if File_phemera_authority_v1_role_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_tidegate_authority_v1_role_proto_rawDesc), len(file_tidegate_authority_v1_role_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_phemera_authority_v1_role_proto_rawDesc), len(file_phemera_authority_v1_role_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_tidegate_authority_v1_role_proto_goTypes,
-		DependencyIndexes: file_tidegate_authority_v1_role_proto_depIdxs,
-		MessageInfos:      file_tidegate_authority_v1_role_proto_msgTypes,
+		GoTypes:           file_phemera_authority_v1_role_proto_goTypes,
+		DependencyIndexes: file_phemera_authority_v1_role_proto_depIdxs,
+		MessageInfos:      file_phemera_authority_v1_role_proto_msgTypes,
 	}.Build()
-	File_tidegate_authority_v1_role_proto = out.File
-	file_tidegate_authority_v1_role_proto_goTypes = nil
-	file_tidegate_authority_v1_role_proto_depIdxs = nil
+	File_phemera_authority_v1_role_proto = out.File
+	file_phemera_authority_v1_role_proto_goTypes = nil
+	file_phemera_authority_v1_role_proto_depIdxs = nil
 }
