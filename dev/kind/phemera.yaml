@@ -88,7 +88,7 @@ spec:
               containerPort: 2022
         # The ssh-proxy prototype connects every session to 127.0.0.1:2222.
         - name: ssh-host
-          image: lscr.io/linuxserver/openssh-server:latest@sha256:b07414bb329b86a00525c9256711a7855fc3a369e9f62c36f1de8d1923197580
+          image: lscr.io/linuxserver/openssh-server:latest@sha256:c8431b8982e7eb3935ebf9c46607d19c6417e39c12ce884cc66945df2e9334e8
           env:
             - name: USER_NAME
               value: phemera
