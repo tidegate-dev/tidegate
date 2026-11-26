@@ -5,31 +5,6 @@ setup() {
     isolate
 }
 
-@test "connect requests a ticket with the saved session and prints JSON and text" {
-    sign_in login "$PHEMERA_TEST_AUTHORITY"
-    project=connect-$BATS_TEST_NUMBER
-    phemera project create "$project"
-    host_key=$(cat "$BATS_TEST_DIRNAME/../../dev/ssh-host/ssh_host_ed25519_key.pub")
-    run phemera -o json asset create ssh --project-name "$project" --address bastion.example --host-key "$host_key" \
-        --user-name deploy --password bastion <<<test-password
-    [ "$status" -eq 0 ]
-    asset=$(jq -er .id <<<"$output")
-
-    run phemera -o json connect "$asset"
-    [ "$status" -eq 0 ]
-    [ "$(jq -er .assetId <<<"$output")" = "$asset" ]
-    ticket=$(jq -er .id <<<"$output")
-    user=$(jq -er .userId <<<"$output")
-    uuid='^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
-    [[ $ticket =~ $uuid && $user =~ $uuid ]]
-
-    run phemera connect "$asset"
-    [ "$status" -eq 0 ]
-    next=${output%%$'\t'*}
-    [[ $next =~ $uuid && $next != "$ticket" ]]
-    [ "$output" = "$next"$'\t'"$asset"$'\t'"$user" ]
-}
-
 @test "connect requires exactly one asset ID in UUID format" {
     run --separate-stderr phemera connect
     [ "$status" -eq 1 ]

@@ -60,3 +60,67 @@ spec:
     - port: 8080
       targetPort: http
       nodePort: 30080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ssh-proxy
+  labels:
+    app.kubernetes.io/part-of: phemera
+spec:
+  selector:
+    matchLabels:
+      app: ssh-proxy
+  template:
+    metadata:
+      labels:
+        app: ssh-proxy
+    spec:
+      containers:
+        - name: ssh-proxy
+          image: localhost/phemera-ssh-proxy:latest
+          imagePullPolicy: Never
+          env:
+            - name: PHEMERA_SSH_PROXY__LOG__FORMAT
+              value: text
+          ports:
+            - name: ssh
+              containerPort: 2022
+        # The ssh-proxy prototype connects every session to 127.0.0.1:2222.
+        - name: ssh-host
+          image: lscr.io/linuxserver/openssh-server:latest@sha256:b07414bb329b86a00525c9256711a7855fc3a369e9f62c36f1de8d1923197580
+          env:
+            - name: USER_NAME
+              value: phemera
+            - name: USER_PASSWORD
+              value: phemera
+            - name: PASSWORD_ACCESS
+              value: "true"
+          ports:
+            - name: ssh-host
+              containerPort: 2222
+          readinessProbe:
+            tcpSocket:
+              port: ssh-host
+          volumeMounts:
+            - name: ssh-host-keys
+              mountPath: /config/ssh_host_keys
+              readOnly: true
+      volumes:
+        # just kind creates the Secret ssh-host-keys from dev/ssh-host/.
+        - name: ssh-host-keys
+          secret:
+            secretName: ssh-host-keys
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ssh-proxy
+spec:
+  type: NodePort
+  selector:
+    app: ssh-proxy
+  ports:
+    - port: 2022
+      targetPort: ssh
+      nodePort: 30022

@@ -7,3 +7,7 @@ nodes:
       - containerPort: 30080
         hostPort: 8080
         listenAddress: 127.0.0.1
+      # The ssh-proxy's NodePort in phemera.yaml.
+      - containerPort: 30022
+        hostPort: 2022
+        listenAddress: 127.0.0.1

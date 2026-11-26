@@ -2,6 +2,16 @@
 build:
     go build -o ../bin/ssh-proxy ./cmd/ssh-proxy
 
+# Build the ssh-proxy's container image with podman or Docker.
+image:
+    #!/usr/bin/env sh
+    set -eu
+    runtime=$(command -v podman || command -v docker) || {
+        echo "Install podman or Docker to build the image." >&2
+        exit 1
+    }
+    "$runtime" build --file Containerfile --tag localhost/phemera-ssh-proxy ..
+
 # Run the ssh-proxy's unit tests with the race detector, and write their
 # coverage to coverage/ at the root of the repository.
 test:

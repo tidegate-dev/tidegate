@@ -69,3 +69,29 @@ func TestReadLineStopsWhenTheContextEnds(t *testing.T) {
 	// assert
 	require.ErrorIs(t, err, context.Canceled)
 }
+
+func TestRawFailsWhenTheInputIsntATerminal(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	terminal := New(strings.NewReader(""), io.Discard)
+
+	// act
+	_, err := terminal.Raw()
+
+	// assert
+	assert.ErrorContains(t, err, "the input isn't a terminal")
+}
+
+func TestSizeFailsWhenTheInputIsntATerminal(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	terminal := New(strings.NewReader(""), io.Discard)
+
+	// act
+	_, _, err := terminal.Size()
+
+	// assert
+	assert.ErrorContains(t, err, "the input isn't a terminal")
+}

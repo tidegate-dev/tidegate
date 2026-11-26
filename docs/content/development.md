@@ -46,6 +46,8 @@ just kind
 
 This builds the components' container images, creates the cluster if it doesn't exist yet, installs cert-manager with Helm and deploys everything in `dev/kind/`. After a change, run it again. Note that kind also switches your kubectl context to the new cluster. To delete the cluster, run `just kind-down`.
 
+Like `just dev`, the cluster serves the ssh-proxy on `127.0.0.1:2022`. The test SSH host runs in the ssh-proxy's pod, so you reach it only through the ssh-proxy.
+
 ## Trust the local CA
 
 Both `just dev` and `just kind` serve the authority over HTTPS on port 8080, with a certificate from a local CA. They create the CA in `dev/tls/` the first time, and in `just kind`, cert-manager issues the authority's certificates from it. To trust the CA, point `SSL_CERT_FILE` to it:

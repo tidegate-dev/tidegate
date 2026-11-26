@@ -5,35 +5,30 @@ import (
 	"errors"
 
 	"connectrpc.com/connect"
+	"github.com/The127/go-random"
 	"github.com/google/uuid"
 	"github.com/urfave/cli/v3"
 
 	"github.com/phemera-dev/phemera/cli/internal/connections"
+	"github.com/phemera-dev/phemera/cli/internal/sshsession"
 	authorityv1 "github.com/phemera-dev/phemera/gen/phemera/authority/v1"
 )
 
-type ticketResult struct {
-	ID      string `json:"id" yaml:"id"`
-	AssetID string `json:"assetId" yaml:"assetId"`
-	UserID  string `json:"userId" yaml:"userId"`
-}
-
-func (t ticketResult) String() string {
-	return quoteIfUnprintable(t.ID) + "\t" + quoteIfUnprintable(t.AssetID) + "\t" + quoteIfUnprintable(t.UserID)
-}
+// just dev and just kind serve the ssh-proxy prototype on this address.
+const sshProxyAddress = "127.0.0.1:2022"
 
 func connectCommand(store connections.Store) *cli.Command {
 	return &cli.Command{
 		Name:      "connect",
-		Usage:     "request an access ticket for an asset",
+		Usage:     "open a shell on an SSH asset",
 		ArgsUsage: "<asset-id>",
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			return requestTicket(ctx, cmd, store)
+			return openSession(ctx, cmd, store)
 		},
 	}
 }
 
-func requestTicket(ctx context.Context, cmd *cli.Command, store connections.Store) error {
+func openSession(ctx context.Context, cmd *cli.Command, store connections.Store) error {
 	if cmd.Args().Len() != 1 {
 		return errors.New("want exactly one asset ID")
 	}
@@ -48,16 +43,16 @@ func requestTicket(ctx context.Context, cmd *cli.Command, store connections.Stor
 		return err
 	}
 
-	response, err := clients.Ticket().CreateTicket(ctx, connect.NewRequest(&authorityv1.CreateTicketRequest{
+	_, err = clients.Ticket().CreateTicket(ctx, connect.NewRequest(&authorityv1.CreateTicketRequest{
 		AssetId: id.String(),
 	}))
 	if err != nil {
 		return callFailed("creating the ticket", connection, err)
 	}
 
-	return printResult(cmd, ticketResult{
-		ID:      response.Msg.GetId(),
-		AssetID: response.Msg.GetAssetId(),
-		UserID:  response.Msg.GetUserId(),
+	return sshsession.Run(ctx, random.NewCryptoRandom(), sshProxyAddress, sshsession.Streams{
+		In:  cmd.Root().Reader,
+		Out: cmd.Root().Writer,
+		Err: cmd.Root().ErrWriter,
 	})
 }

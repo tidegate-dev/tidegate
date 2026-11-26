@@ -43,6 +43,7 @@ updates:
       - /authority
       - /dev
       - /dev/kind
+      - /ssh-proxy
     schedule:
       interval: weekly
     cooldown:

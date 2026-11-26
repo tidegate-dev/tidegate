@@ -39,6 +39,43 @@ func (t *Terminal) Interactive() bool {
 	return t.in != nil
 }
 
+var errNotInteractive = errors.New("the input isn't a terminal")
+
+// Raw makes the terminal pass on every key at once, without echoing it or
+// editing the line. The returned function puts the terminal back the way it
+// was. Raw fails if the input isn't a terminal.
+func (t *Terminal) Raw() (func(), error) {
+	if !t.Interactive() {
+		return nil, errNotInteractive
+	}
+
+	fd := int(t.in.Fd()) //nolint:gosec // A file descriptor fits in an int.
+
+	state, err := term.MakeRaw(fd)
+	if err != nil {
+		return nil, fmt.Errorf("changing the terminal's state: %w", err)
+	}
+
+	return func() {
+		_ = term.Restore(fd, state)
+	}, nil
+}
+
+// Size returns the terminal's width and height in characters. It fails if
+// the input isn't a terminal.
+func (t *Terminal) Size() (int, int, error) {
+	if !t.Interactive() {
+		return 0, 0, errNotInteractive
+	}
+
+	width, height, err := term.GetSize(int(t.in.Fd())) //nolint:gosec // A file descriptor fits in an int.
+	if err != nil {
+		return 0, 0, fmt.Errorf("reading the terminal's size: %w", err)
+	}
+
+	return width, height, nil
+}
+
 // ReadLine reads one line without its line ending. It returns io.EOF if
 // the input has ended. It stops waiting when ctx ends.
 func (t *Terminal) ReadLine(ctx context.Context) (string, error) {
