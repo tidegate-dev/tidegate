@@ -24,7 +24,7 @@ PHEMERA_AUTHORITY__LOG__LEVEL: unknown log level "loud", want debug, info, warn 
 
 A setting keeps its default when its variable isn't set or is empty. `PHEMERA_AUTHORITY__DATABASE__URL` is the only setting without a default. The pages on the [database](database.md), [TLS](tls.md) and [metrics](metrics.md) explain their settings.
 
-The authority serves two APIs, each on its own address and with its own certificate. Besides the external API, there is an internal API for phemera's other components, like gateways. It has no services yet. Don't make its address reachable for users.
+The authority serves two APIs, each on its own address and with its own certificate. Besides the external API, there is an internal API for phemera's other components, like gateways. It has no services yet, so a self-signed certificate is enough for it, as the page on [TLS](tls.md) explains. Don't make its address reachable for users.
 
 | Variable | Default | Values |
 |---|---|---|
