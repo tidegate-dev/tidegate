@@ -18,7 +18,8 @@ The authority runs on Linux servers. The tools that people run on their own mach
 | Component | Shipped as | Platforms | Status |
 |---|---|---|---|
 | Authority | Binary and container image | Linux on amd64 and arm64 | In development |
-| `phemera` CLI | Binary | Linux, macOS and Windows, each on amd64 and arm64 | In development |
+| phemera CLI | Binary | Linux, macOS and Windows, each on amd64 and arm64 | In development |
+| ssh-proxy | Binary and container image | Linux on amd64 and arm64 | Demo |
 
 ## Development
 
