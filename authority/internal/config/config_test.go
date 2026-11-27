@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"log/slog"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -389,6 +390,21 @@ func TestInvalidPGVariableIsReportedWithTheDatabaseURL(t *testing.T) {
 
 	// assert
 	assert.EqualError(t, err, "PHEMERA_AUTHORITY__DATABASE__URL: "+invalidDatabaseURL)
+}
+
+func TestMissingTLSFileOfTheDatabaseURLIsNamed(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	missing := filepath.Join(t.TempDir(), "ca.crt")
+	environ := []string{"PHEMERA_AUTHORITY__DATABASE__URL=" + databaseURL + "?sslmode=verify-full&sslrootcert=" + missing}
+
+	// act
+	_, err := config.Load(environ)
+
+	// assert
+	assert.EqualError(t, err, "PHEMERA_AUTHORITY__DATABASE__URL: can't be used, "+
+		"because sslrootcert or PGSSLROOTCERT names a file that can't be read: open "+missing+": no such file or directory")
 }
 
 const (
