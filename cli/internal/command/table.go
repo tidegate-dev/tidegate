@@ -1,22 +1,41 @@
 package command
 
 import (
-	"fmt"
-	"strings"
-	"text/tabwriter"
+	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jedib0t/go-pretty/v6/text"
 )
 
-func tableText(header []string, rows [][]string) string {
-	var text strings.Builder
+// tableStyle prints a table without borders or separators. Two spaces
+// separate the columns and the header keeps the case it is given in.
+var tableStyle = table.Style{
+	Name: "tidegate",
+	Box: table.BoxStyle{
+		PaddingRight: "  ",
+	},
+	Format: table.FormatOptions{
+		Header: text.FormatDefault,
+		Row:    text.FormatDefault,
+	},
+}
 
-	table := tabwriter.NewWriter(&text, 0, 0, 2, ' ', 0)
-	_, _ = fmt.Fprintln(table, strings.Join(header, "\t"))
+func tableText(header []string, rows [][]string) string {
+	writer := table.NewWriter()
+	writer.SetStyle(tableStyle)
+	writer.SuppressTrailingSpaces()
+	writer.AppendHeader(tableRow(header))
 
 	for _, row := range rows {
-		_, _ = fmt.Fprintln(table, strings.Join(row, "\t"))
+		writer.AppendRow(tableRow(row))
 	}
 
-	_ = table.Flush()
+	return writer.Render()
+}
 
-	return strings.TrimSuffix(text.String(), "\n")
+func tableRow(cells []string) table.Row {
+	row := make(table.Row, 0, len(cells))
+	for _, cell := range cells {
+		row = append(row, cell)
+	}
+
+	return row
 }
