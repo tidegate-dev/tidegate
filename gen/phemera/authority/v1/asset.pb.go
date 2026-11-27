@@ -36,7 +36,8 @@ type SSHTarget struct {
 	// Rules: 1 to 65535.
 	Port uint32 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
 	// HostKey is the host's public key as the key type and the key in base64,
-	// like "ssh-ed25519 AAAAC3...".
+	// like "ssh-ed25519 AAAAC3...". A key that phemera can't read fails with
+	// invalid_argument.
 	//
 	// Rules: The key type, one space and the key in base64 with its padding.
 	// The key type is ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384,

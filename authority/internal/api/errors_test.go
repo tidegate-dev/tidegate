@@ -45,6 +45,7 @@ func TestClientErrorGivesEachErrorItsCode(t *testing.T) {
 		"empty SSH password":        {service.ErrSSHPasswordEmpty, connect.CodeInvalidArgument},
 		"invalid SSH private key":   {sshkey.ErrPrivateKeyInvalid, connect.CodeInvalidArgument},
 		"encrypted SSH private key": {sshkey.ErrPrivateKeyEncrypted, connect.CodeInvalidArgument},
+		"invalid SSH host key":      {sshkey.ErrHostKeyInvalid, connect.CodeInvalidArgument},
 		"user not found":            {fmt.Errorf("reading: %w", model.ErrUserNotFound), connect.CodeNotFound},
 		"canceled":                  {context.Canceled, connect.CodeUnknown},
 		"anything else":             {errors.New("database down"), connect.CodeUnknown},

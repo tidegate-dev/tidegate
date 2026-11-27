@@ -91,3 +91,32 @@ func TestCheckPrivateKeyRefusesAnEncryptedPEMBlock(t *testing.T) {
 	// assert
 	assert.ErrorIs(t, err, ErrPrivateKeyEncrypted)
 }
+
+func TestCheckHostKeyAcceptsAPublicKey(t *testing.T) {
+	t.Parallel()
+
+	// act
+	err := CheckHostKey("ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBXe7le0QyMyXW1xMO1Sd7lgeKsvxe/ZFGc8Cp6+7DW0")
+
+	// assert
+	assert.NoError(t, err)
+}
+
+func TestCheckHostKeyRefusesWhatIsNoPublicKey(t *testing.T) {
+	t.Parallel()
+
+	for description, hostKey := range map[string]string{
+		"base64 that holds no key": "ssh-ed25519 AAAA",
+		"a key that is cut off":    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGVtcHR5",
+	} {
+		t.Run(description, func(t *testing.T) {
+			t.Parallel()
+
+			// act
+			err := CheckHostKey(hostKey)
+
+			// assert
+			assert.ErrorIs(t, err, ErrHostKeyInvalid)
+		})
+	}
+}

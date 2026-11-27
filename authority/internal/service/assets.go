@@ -57,7 +57,8 @@ func NewAssets(
 //
 // It returns ErrSSHPasswordEmpty, sshkey.ErrPrivateKeyInvalid or
 // sshkey.ErrPrivateKeyEncrypted for a password or private key that phemera
-// can't use, model.ErrProjectNotFound if no project has that name, and
+// can't use, sshkey.ErrHostKeyInvalid for a host key that isn't a public key,
+// model.ErrProjectNotFound if no project has that name, and
 // model.ErrAssetNameTaken if another asset of the project has the name. The
 // API checks the form of every other value before it calls CreateSSH.
 func (a *Assets) CreateSSH(
@@ -69,6 +70,11 @@ func (a *Assets) CreateSSH(
 	secretInput SSHSecretInput,
 ) (*model.Asset, error) {
 	err := checkSSHSecretInput(secretInput)
+	if err != nil {
+		return nil, err
+	}
+
+	err = sshkey.CheckHostKey(target.HostKey)
 	if err != nil {
 		return nil, err
 	}

@@ -20,6 +20,8 @@ import (
 )
 
 var _ = Describe("Assets", func() {
+	const hostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBXe7le0QyMyXW1xMO1Sd7lgeKsvxe/ZFGc8Cp6+7DW0"
+
 	var (
 		projects    *Projects
 		assets      *Assets
@@ -34,7 +36,7 @@ var _ = Describe("Assets", func() {
 		engine = &fakeEngine{values: map[secretengine.Reference][]byte{}}
 		engines := secretengine.NewEngines(map[string]secretengine.Engine{"test-engine": engine})
 		assets = NewAssets(data.Projects(), data.Assets(), data, engines, "test-engine")
-		target = model.SSHTarget{Host: "bastion.example", Port: 22, HostKey: "ssh-ed25519 AAAA", UserName: "deploy"}
+		target = model.SSHTarget{Host: "bastion.example", Port: 22, HostKey: hostKey, UserName: "deploy"}
 		secretInput = SSHSecretInput{
 			Kind:  model.SSHSecretKindPassword,
 			Value: secret.NewBytes([]byte("the value")),
@@ -57,7 +59,7 @@ var _ = Describe("Assets", func() {
 			Expect(asset.SSH).To(Equal(&model.SSHTarget{
 				Host:     "bastion.example",
 				Port:     22,
-				HostKey:  "ssh-ed25519 AAAA",
+				HostKey:  hostKey,
 				UserName: "deploy",
 				Secret: model.StoredSSHSecret{
 					EngineName: "test-engine",
@@ -140,6 +142,16 @@ var _ = Describe("Assets", func() {
 				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, secretInput)
 
 				Expect(err).To(MatchError(sshkey.ErrPrivateKeyInvalid))
+				Expect(engine.values).To(BeEmpty())
+				Expect(assets.List(ctx, "payments")).To(BeEmpty())
+			})
+
+			It("returns ErrHostKeyInvalid for a host key that isn't a public key and stores nothing", func(ctx SpecContext) {
+				target.HostKey = "ssh-ed25519 AAAA"
+
+				_, err := assets.CreateSSH(ctx, "payments", "bastion", nil, target, secretInput)
+
+				Expect(err).To(MatchError(sshkey.ErrHostKeyInvalid))
 				Expect(engine.values).To(BeEmpty())
 				Expect(assets.List(ctx, "payments")).To(BeEmpty())
 			})
