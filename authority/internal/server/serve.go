@@ -13,46 +13,58 @@ import (
 	"github.com/phemera-dev/phemera/internal/systemd"
 )
 
-// serve runs servers, keyed by a name for the logs, until ctx is done or
-// one of them fails, then shuts them all down. It sets each server's
-// BaseContext, waits up to timeout for running requests, then cancels their
-// context. It tells notifier when all servers listen and when the shutdown
-// begins.
-func serve(ctx context.Context, notifier *systemd.Notifier, servers map[string]*http.Server, timeout time.Duration) error {
-	requests, cancelRequests := context.WithCancel(logging.NewContext(context.Background(), slog.Default()))
-	defer cancelRequests()
+// listeningServer is a server with the open listener that it serves on.
+type listeningServer struct {
+	server   *http.Server
+	listener net.Listener
+}
 
-	for _, server := range servers {
-		server.BaseContext = func(net.Listener) context.Context { return requests }
-	}
-
+// listen opens a listener on the address of each of servers, keyed by a name
+// for the logs. If one address fails, it closes the listeners that are open.
+func listen(ctx context.Context, servers map[string]*http.Server) (map[string]listeningServer, error) {
 	var listenConfig net.ListenConfig
 
-	listeners := make(map[*http.Server]net.Listener, len(servers))
+	listening := make(map[string]listeningServer, len(servers))
 
 	for name, server := range servers {
 		listener, err := listenConfig.Listen(ctx, "tcp", server.Addr)
 		if err != nil {
-			for _, l := range listeners {
-				_ = l.Close()
+			for _, opened := range listening {
+				_ = opened.listener.Close()
 			}
 
-			return fmt.Errorf("listening for %s: %w", name, err)
+			return nil, fmt.Errorf("listening for %s: %w", name, err)
 		}
 
-		listeners[server] = listener
+		listening[name] = listeningServer{server: server, listener: listener}
 		slog.Info("authority listening", "server", name, "address", listener.Addr().String(), "tls", server.TLSConfig != nil)
+	}
+
+	return listening, nil
+}
+
+// serve runs servers, keyed by a name for the logs, until ctx is done or
+// one of them fails, then shuts them all down. It sets each server's
+// BaseContext, waits up to timeout for running requests, then cancels their
+// context. It tells notifier when it serves them and when the shutdown
+// begins.
+func serve(ctx context.Context, notifier *systemd.Notifier, servers map[string]listeningServer, timeout time.Duration) error {
+	requests, cancelRequests := context.WithCancel(logging.NewContext(context.Background(), slog.Default()))
+	defer cancelRequests()
+
+	for _, listening := range servers {
+		listening.server.BaseContext = func(net.Listener) context.Context { return requests }
 	}
 
 	serveErrorChan := make(chan error, len(servers))
 
-	for server, listener := range listeners {
+	for _, listening := range servers {
 		go func() {
-			if server.TLSConfig != nil {
+			if listening.server.TLSConfig != nil {
 				// ServeTLS uses TLSConfig's certificate when the file names are empty.
-				serveErrorChan <- server.ServeTLS(listener, "", "")
+				serveErrorChan <- listening.server.ServeTLS(listening.listener, "", "")
 			} else {
-				serveErrorChan <- server.Serve(listener)
+				serveErrorChan <- listening.server.Serve(listening.listener)
 			}
 		}()
 	}
@@ -81,8 +93,8 @@ func serve(ctx context.Context, notifier *systemd.Notifier, servers map[string]*
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	for name, server := range servers {
-		err := server.Shutdown(shutdownCtx)
+	for name, listening := range servers {
+		err := listening.server.Shutdown(shutdownCtx)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("shutting down %s: %w", name, err))
 		}

@@ -20,11 +20,13 @@ func TestServeTellsSystemdWhenReadyAndStopping(t *testing.T) {
 	socket := listenAsSystemd(t)
 	notifier := openNotifier(t)
 	ctx, cancel := context.WithCancel(context.Background())
+	server := &http.Server{ReadHeaderTimeout: time.Second}
+	servers := map[string]listeningServer{"api": {server: server, listener: listenOnAnyPort(t)}}
 	serveErrorChan := make(chan error, 1)
 
 	// act
 	go func() {
-		serveErrorChan <- serve(ctx, notifier, map[string]*http.Server{"api": {Addr: "127.0.0.1:0"}}, shutdownTimeout)
+		serveErrorChan <- serve(ctx, notifier, servers, shutdownTimeout)
 	}()
 
 	ready := receive(t, socket)
@@ -39,23 +41,15 @@ func TestServeTellsSystemdWhenReadyAndStopping(t *testing.T) {
 	require.NoError(t, <-serveErrorChan)
 }
 
-func TestServeDoesNotTellSystemdReadyWhenListeningFails(t *testing.T) {
+func TestListenFailsWhenAnAddressIsTaken(t *testing.T) {
 	// arrange
-	socket := listenAsSystemd(t)
-	notifier := openNotifier(t)
-
-	taken, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = taken.Close() })
+	taken := listenOnAnyPort(t)
 
 	// act
-	err = serve(context.Background(), notifier, map[string]*http.Server{"api": {Addr: taken.Addr().String()}}, shutdownTimeout)
+	_, err := listen(context.Background(), map[string]*http.Server{"api": {Addr: taken.Addr().String()}})
 
 	// assert
 	require.Error(t, err)
-	require.NoError(t, socket.SetReadDeadline(time.Now().Add(100*time.Millisecond)))
-	_, _, err = socket.ReadFrom(make([]byte, 64))
-	assert.ErrorIs(t, err, os.ErrDeadlineExceeded)
 }
 
 func TestServeCancelsRequestsThatOutlastTheShutdownTimeout(t *testing.T) {
@@ -63,7 +57,7 @@ func TestServeCancelsRequestsThatOutlastTheShutdownTimeout(t *testing.T) {
 	socket := listenAsSystemd(t)
 	notifier := openNotifier(t)
 	ctx, cancel := context.WithCancel(context.Background())
-	address := freeAddress(t)
+	listener := listenOnAnyPort(t)
 	started := make(chan struct{})
 	canceled := make(chan struct{})
 
@@ -75,14 +69,17 @@ func TestServeCancelsRequestsThatOutlastTheShutdownTimeout(t *testing.T) {
 
 	serveErrorChan := make(chan error, 1)
 
+	server := &http.Server{Handler: handler, ReadHeaderTimeout: time.Second}
+	servers := map[string]listeningServer{"api": {server: server, listener: listener}}
+
 	go func() {
-		serveErrorChan <- serve(ctx, notifier, map[string]*http.Server{"api": {Addr: address, Handler: handler}}, 100*time.Millisecond)
+		serveErrorChan <- serve(ctx, notifier, servers, 100*time.Millisecond)
 	}()
 
 	require.Equal(t, "READY=1", receive(t, socket))
 
 	go func() {
-		response, err := http.Get("http://" + address)
+		response, err := http.Get("http://" + listener.Addr().String())
 		if err == nil {
 			_ = response.Body.Close()
 		}
@@ -105,7 +102,7 @@ func TestServeCancelsRequestsThatOutlastTheShutdownTimeout(t *testing.T) {
 
 // listenAsSystemd opens a socket that stands in for systemd's and points
 // NOTIFY_SOCKET at it.
-func listenAsSystemd(t *testing.T) net.PacketConn {
+func listenAsSystemd(t testing.TB) net.PacketConn {
 	t.Helper()
 
 	// A path under t.TempDir contains the test's name and can exceed the
@@ -124,7 +121,7 @@ func listenAsSystemd(t *testing.T) net.PacketConn {
 	return socket
 }
 
-func openNotifier(t *testing.T) *systemd.Notifier {
+func openNotifier(t testing.TB) *systemd.Notifier {
 	t.Helper()
 
 	notifier, err := systemd.Open()
@@ -134,31 +131,14 @@ func openNotifier(t *testing.T) *systemd.Notifier {
 	return notifier
 }
 
-// freeAddress returns a local address that nothing listens on right now.
-func freeAddress(t testing.TB) string {
+func listenOnAnyPort(t testing.TB) net.Listener {
 	t.Helper()
 
-	return freeAddresses(t, 1)[0]
-}
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = listener.Close() })
 
-func freeAddresses(t testing.TB, count int) []string {
-	t.Helper()
-
-	addresses := make([]string, 0, count)
-
-	// The system can hand out a port again once its listener is closed.
-	for range count {
-		listener, err := net.Listen("tcp", "127.0.0.1:0")
-		require.NoError(t, err)
-
-		defer func() {
-			require.NoError(t, listener.Close())
-		}()
-
-		addresses = append(addresses, listener.Addr().String())
-	}
-
-	return addresses
+	return listener
 }
 
 func receive(t *testing.T, socket net.PacketConn) string {

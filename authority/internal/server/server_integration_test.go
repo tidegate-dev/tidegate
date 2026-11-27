@@ -6,10 +6,10 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"net"
 	"net/http"
 	"os"
 	"strings"
+	"syscall"
 	"time"
 
 	"connectrpc.com/connect"
@@ -27,10 +27,11 @@ import (
 	"github.com/phemera-dev/phemera/authority/internal/storetest"
 	authorityv1 "github.com/phemera-dev/phemera/gen/phemera/authority/v1"
 	"github.com/phemera-dev/phemera/gen/phemera/authority/v1/authorityv1connect"
+	"github.com/phemera-dev/phemera/internal/certreload"
 	"github.com/phemera-dev/phemera/internal/secret"
 )
 
-var _ = Describe("run", func() {
+var _ = Describe("the authority", func() {
 	When("a query hangs", func() {
 		var authority runningAuthority
 
@@ -53,7 +54,7 @@ var _ = Describe("run", func() {
 		It("stops", func(ctx SpecContext) {
 			authority.stop()
 
-			Eventually(ctx, authority.runErrorChan).WithTimeout(5*time.Second).Should(Receive(), "the authority didn't stop")
+			Eventually(ctx, authority.serveErrorChan).WithTimeout(5*time.Second).Should(Receive(), "the authority didn't stop")
 		}, SpecTimeout(30*time.Second))
 	})
 
@@ -111,6 +112,36 @@ var _ = Describe("run", func() {
 	})
 })
 
+var _ = Describe("run", func() {
+	When("a listen address is taken", func() {
+		It("fails and tells systemd nothing", func(ctx SpecContext) {
+			url := dbtest.NewDatabase()
+			Expect(MigrateDatabase(ctx, url)).To(Succeed())
+
+			socket := listenAsSystemd(GinkgoTB())
+			taken := listenOnAnyPort(GinkgoTB())
+
+			certFile, keyFile := writeKeyPair(GinkgoTB())
+			cfg := config.Config{
+				ExternalAPI: config.ExternalAPI{ListenAddress: "127.0.0.1:0", TLS: config.ExternalTLS{Disabled: true}},
+				InternalAPI: config.InternalAPI{
+					ListenAddress: "127.0.0.1:0",
+					TLS:           config.InternalTLS{CertFile: certFile, KeyFile: keyFile},
+				},
+				Metrics:  config.Metrics{ListenAddress: taken.Addr().String()},
+				Database: config.Database{URL: url},
+			}
+
+			err := run(ctx, cfg, shutdownTimeout)
+
+			Expect(err).To(MatchError(syscall.EADDRINUSE))
+			Expect(socket.SetReadDeadline(time.Now().Add(100 * time.Millisecond))).To(Succeed())
+			_, _, err = socket.ReadFrom(make([]byte, 64))
+			Expect(err).To(MatchError(os.ErrDeadlineExceeded), "run told systemd something")
+		}, SpecTimeout(30*time.Second))
+	})
+})
+
 var _ = Describe("openDatabase", func() {
 	When("the authority migrates on start", func() {
 		It("creates the table of the Postgres secret engine", func(ctx SpecContext) {
@@ -163,47 +194,62 @@ type runningAuthority struct {
 	metricsAddress   string
 	internalCertFile string
 	stop             context.CancelFunc
-	runErrorChan     chan error
+	serveErrorChan   chan error
 }
 
-// serveAuthority runs the authority on the database at url and returns once
-// both of its APIs and its metrics listen. The external API serves plain
-// HTTP. It waits only 100 milliseconds for running requests when it stops,
-// so the spec doesn't wait the full shutdown timeout.
+// serveAuthority builds the authority's servers on the database at url and
+// serves them on listeners that it opens itself. The external API serves
+// plain HTTP. It waits only 100 milliseconds for running requests when it
+// stops, so the spec doesn't wait the full shutdown timeout.
 func serveAuthority(ctx context.Context, url string) runningAuthority {
 	GinkgoHelper()
 
-	runCtx, stop := context.WithCancel(context.Background())
-	DeferCleanup(stop)
+	pool, err := db.Open(ctx, url)
+	Expect(err).NotTo(HaveOccurred())
+	DeferCleanup(pool.Close)
 
 	internalCertFile, internalKeyFile := writeKeyPair(GinkgoTB())
+	internalCertificate, err := certreload.Load(internalCertFile, internalKeyFile)
+	Expect(err).NotTo(HaveOccurred())
 
-	addresses := freeAddresses(GinkgoTB(), 3)
+	servers, err := newAuthorityServers(config.Config{}, pool, nil, internalCertificate, http.NotFoundHandler())
+	Expect(err).NotTo(HaveOccurred())
+
+	listening := map[string]listeningServer{
+		"external-api": {server: servers.externalAPI, listener: listenOnAnyPort(GinkgoTB())},
+		"internal-api": {server: servers.internalAPI, listener: listenOnAnyPort(GinkgoTB())},
+		"metrics":      {server: servers.metrics, listener: listenOnAnyPort(GinkgoTB())},
+	}
+	notifier := openNotifier(GinkgoTB())
+
+	serveCtx, stop := context.WithCancel(context.Background())
 
 	authority := runningAuthority{
-		externalAddress:  addresses[0],
-		internalAddress:  addresses[1],
-		metricsAddress:   addresses[2],
+		externalAddress:  listening["external-api"].listener.Addr().String(),
+		internalAddress:  listening["internal-api"].listener.Addr().String(),
+		metricsAddress:   listening["metrics"].listener.Addr().String(),
 		internalCertFile: internalCertFile,
 		stop:             stop,
-		runErrorChan:     make(chan error, 1),
+		serveErrorChan:   make(chan error, 1),
 	}
 
+	stopped := make(chan struct{})
+
 	go func() {
-		authority.runErrorChan <- run(runCtx, config.Config{
-			ExternalAPI: config.ExternalAPI{ListenAddress: authority.externalAddress, TLS: config.ExternalTLS{Disabled: true}},
-			InternalAPI: config.InternalAPI{
-				ListenAddress: authority.internalAddress,
-				TLS:           config.InternalTLS{CertFile: internalCertFile, KeyFile: internalKeyFile},
-			},
-			Metrics:  config.Metrics{ListenAddress: authority.metricsAddress},
-			Database: config.Database{URL: url},
-		}, 100*time.Millisecond)
+		defer close(stopped)
+
+		err := serve(serveCtx, notifier, listening, 100*time.Millisecond)
+
+		// run closes the pool after serve returns.
+		pool.Close()
+
+		authority.serveErrorChan <- err
 	}()
 
-	Eventually(ctx, listening).WithArguments(authority.externalAddress).Should(Succeed())
-	Eventually(ctx, listening).WithArguments(authority.internalAddress).Should(Succeed())
-	Eventually(ctx, listening).WithArguments(authority.metricsAddress).Should(Succeed())
+	DeferCleanup(func() {
+		stop()
+		Eventually(stopped).WithTimeout(10 * time.Second).Should(BeClosed())
+	})
 
 	return authority
 }
@@ -240,15 +286,6 @@ func clientTrusting(certFile string) *http.Client {
 	DeferCleanup(transport.CloseIdleConnections)
 
 	return &http.Client{Transport: transport}
-}
-
-func listening(address string) error {
-	conn, err := net.Dial("tcp", address)
-	if err != nil {
-		return err
-	}
-
-	return conn.Close()
 }
 
 // createProject sends a write that only ends with the authority. A request
