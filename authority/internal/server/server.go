@@ -1,4 +1,5 @@
-// Package server runs the authority's API servers and metrics server.
+// Package server runs the authority's API servers and the server for its
+// metrics and health checks.
 package server
 
 import (
@@ -27,8 +28,8 @@ const shutdownTimeout = 10 * time.Second
 // Assets store this name, so changing it needs a migration.
 const builtInEngineName = "phemera"
 
-// Run serves the authority's APIs and metrics until ctx ends or a server
-// fails.
+// Run serves the authority's APIs, metrics and health checks until ctx ends
+// or a server fails.
 func Run(ctx context.Context, cfg config.Config) error {
 	return run(ctx, cfg, shutdownTimeout)
 }
@@ -106,21 +107,39 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	err = serve(ctx, notifier, map[string]*http.Server{
 		"external-api": externalAPIServer(cfg.ExternalAPI.ListenAddress, externalCertificate, clk, logins, projects, roles, assets, bindings, tickets, sessions),
 		"internal-api": internalAPIServer(cfg.InternalAPI.ListenAddress, internalCertificate),
-		"metrics":      metricsServer(cfg.Metrics.ListenAddress, metricsHandler),
+		"metrics":      metricsServer(cfg.Metrics.ListenAddress, metricsHandler, pool),
 	}, timeout)
 
 	return errors.Join(err, shutdownMetrics(context.Background()))
 }
 
+// openDatabase waits until the database is available, migrates it if cfg
+// says so and checks its schema.
 func openDatabase(ctx context.Context, cfg config.Database) (*pgxpool.Pool, error) {
-	if cfg.MigrateOnStart {
-		err := MigrateDatabase(ctx, cfg.URL)
+	pool, err := db.OpenWhenAvailable(ctx, cfg.URL)
+	if err != nil {
+		return nil, err
+	}
+
+	err = prepareSchema(ctx, pool, cfg.MigrateOnStart)
+	if err != nil {
+		pool.Close()
+
+		return nil, err
+	}
+
+	return pool, nil
+}
+
+func prepareSchema(ctx context.Context, pool *pgxpool.Pool, migrate bool) error {
+	if migrate {
+		err := migrateDatabase(ctx, pool)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	return db.OpenMigrated(ctx, cfg.URL)
+	return db.CheckSchema(ctx, pool)
 }
 
 // MigrateDatabase applies the authority's migrations to the database at url.
@@ -132,7 +151,11 @@ func MigrateDatabase(ctx context.Context, url string) error {
 	}
 	defer pool.Close()
 
-	err = db.Migrate(ctx, pool)
+	return migrateDatabase(ctx, pool)
+}
+
+func migrateDatabase(ctx context.Context, pool *pgxpool.Pool) error {
+	err := db.Migrate(ctx, pool)
 	if err != nil {
 		return err
 	}

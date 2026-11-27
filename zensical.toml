@@ -11,8 +11,10 @@ nav = [
     { "First admin" = "authority/initial-admin.md" },
     { "TLS" = "authority/tls.md" },
     { "Metrics" = "authority/metrics.md" },
+    { "Health checks" = "authority/health.md" },
     { "Logs" = "authority/logs.md" },
     { "Running under systemd" = "authority/systemd.md" },
+    { "Running in Kubernetes" = "authority/kubernetes.md" },
   ] },
   { "CLI" = [
     { "Overview" = "cli/index.md" },

@@ -9,8 +9,11 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"net"
 	"path"
+	"time"
 
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
@@ -30,9 +33,51 @@ var ErrSchemaTooOld = errors.New("the database schema is older than the authorit
 // The SQLSTATE code for a table that doesn't exist.
 const undefinedTable = "42P01"
 
+const (
+	minConnectRetryDelay = time.Second
+	maxConnectRetryDelay = 10 * time.Second
+)
+
 // Open connects to the database at url. It warns if the connection may run
 // unencrypted.
 func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
+	pool, err := newPool(ctx, url)
+	if err != nil {
+		return nil, err
+	}
+
+	err = pool.Ping(ctx)
+	if err != nil {
+		pool.Close()
+
+		return nil, fmt.Errorf("connecting to the database: %w", err)
+	}
+
+	return pool, nil
+}
+
+// OpenWhenAvailable connects to the database at url like Open. While the
+// database can't be reached or doesn't accept connections yet, like while
+// Postgres starts, it logs a warning, waits and tries again, until ctx ends.
+// It returns any other error at once.
+func OpenWhenAvailable(ctx context.Context, url string) (*pgxpool.Pool, error) {
+	pool, err := newPool(ctx, url)
+	if err != nil {
+		return nil, err
+	}
+
+	err = waitUntilAvailable(ctx, pool.Ping)
+	if err != nil {
+		pool.Close()
+
+		return nil, err
+	}
+
+	return pool, nil
+}
+
+// newPool returns a pool for the database at url, without connecting to it.
+func newPool(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	config, err := dburl.Parse(url)
 	if err != nil {
 		return nil, fmt.Errorf("the database URL %w", err)
@@ -48,14 +93,57 @@ func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("connecting to the database: %w", err)
 	}
 
-	err = pool.Ping(ctx)
-	if err != nil {
-		pool.Close()
+	return pool, nil
+}
 
-		return nil, fmt.Errorf("connecting to the database: %w", err)
+// waitUntilAvailable calls ping until it succeeds, fails with an error that
+// waiting doesn't fix, or ctx ends. After each failure it waits twice as long
+// as before, from minConnectRetryDelay up to maxConnectRetryDelay.
+func waitUntilAvailable(ctx context.Context, ping func(context.Context) error) error {
+	var retryDelay time.Duration
+
+	for {
+		err := ping(ctx)
+		if err == nil {
+			return nil
+		}
+
+		if ctx.Err() != nil || !unavailable(err) {
+			return fmt.Errorf("connecting to the database: %w", err)
+		}
+
+		retryDelay = min(max(2*retryDelay, minConnectRetryDelay), maxConnectRetryDelay)
+		// pgx's error names the user, the database and the host, but never the
+		// password.
+		slog.Warn("connecting to the database failed, trying again", "error", err, "retry_after", retryDelay)
+
+		select {
+		case <-time.After(retryDelay):
+		case <-ctx.Done():
+			return fmt.Errorf("stopped waiting for the database: %w", ctx.Err())
+		}
+	}
+}
+
+// unavailable reports whether err says that the database can't be reached,
+// or that Postgres doesn't accept connections yet because it's starting or
+// shutting down. Waiting may help then. It doesn't help if the server refused
+// the connection for another reason, like a wrong password or a missing
+// database.
+func unavailable(err error) bool {
+	if pgErr, isPgError := errors.AsType[*pgconn.PgError](err); isPgError {
+		return pgErr.Code == pgerrcode.CannotConnectNow
 	}
 
-	return pool, nil
+	if _, isDNSError := errors.AsType[*net.DNSError](err); isDNSError {
+		return true
+	}
+
+	if opErr, isOpError := errors.AsType[*net.OpError](err); isOpError && opErr.Op == "dial" {
+		return true
+	}
+
+	return pgconn.Timeout(err)
 }
 
 // OpenMigrated connects to the database at url like Open. It returns
