@@ -4,7 +4,7 @@
 phemera [--connection <name>] [--output <format>] <command>
 ```
 
-Global flags work before or after the command. A command that fails prints `Error:` and a message to stderr and exits with status 1.
+Global flags work before or after the command.
 
 ## Commands
 
@@ -84,6 +84,28 @@ If several saved connections have this URL and no name is given, the command fai
 | `yaml` | A mapping with the result's fields, like `name: payments` |
 
 `phemera login` and `phemera logout` print nothing to stdout, unless `--print-token` is given. Prompts and warnings go to stderr.
+
+## Exit status
+
+```sh
+phemera connect <asset-id>
+echo $?
+```
+
+This prints the status that the shell on the host ended with, like it does after `ssh`.
+
+A command that fails prints `Error:` and a message to stderr and exits with status 1.
+
+`phemera connect` passes on the shell's status and prints no message for it. If `phemera connect` fails itself, it prints `Error:` and a message. So status 1 and status 255 can each have two causes, and only the message tells you that the cause is `phemera connect` and not the shell.
+
+| Command | What happened | Status |
+|---|---|---|
+| All | The command succeeded | 0 |
+| All except `connect` | The command failed | 1 |
+| `connect` | The shell ended with a status from 1 to 255 | The shell's status |
+| `connect` | The host reported a status above 255 | 255 |
+| `connect` | `phemera connect` failed, for example because it can't reach the ssh-proxy | 255 |
+| `connect` | A flag is wrong, like a flag that `phemera connect` doesn't know or a flag without its value | 1 |
 
 ## Saved connections
 

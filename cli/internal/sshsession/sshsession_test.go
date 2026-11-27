@@ -175,13 +175,16 @@ func TestRunRelaysTheInputToTheShellAndTheShellsOutputBack(t *testing.T) {
 	assert.Equal(t, "whoami\n", out)
 }
 
-func TestRunReturnsNoErrorWhenTheShellEndsWithAFailure(t *testing.T) {
+func TestRunReturnsTheExitStatusOfAShellThatEndsWithAFailure(t *testing.T) {
 	served := startProxy(t)
 	served.exitStatus = 3
 
 	_, err := run(t, served.address, "")
 
-	assert.NoError(t, err)
+	var exitErr *sshsession.ExitError
+
+	require.ErrorAs(t, err, &exitErr)
+	assert.Equal(t, 3, exitErr.Status)
 }
 
 func TestRunFailsWhenTheProxyRefusesTheSession(t *testing.T) {

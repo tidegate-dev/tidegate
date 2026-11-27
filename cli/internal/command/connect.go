@@ -23,7 +23,12 @@ func connectCommand(store connections.Store) *cli.Command {
 		Usage:     "open a shell on an SSH asset",
 		ArgsUsage: "<asset-id>",
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			return openSession(ctx, cmd, store)
+			err := openSession(ctx, cmd, store)
+			if err != nil {
+				return connectFailed(err)
+			}
+
+			return nil
 		},
 	}
 }

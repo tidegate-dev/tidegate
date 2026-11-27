@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/phemera-dev/phemera/cli/internal/connections"
+	"github.com/phemera-dev/phemera/cli/internal/sshsession"
 )
 
 func TestMessageQuotesAnAuthoritysErrorTextThatATerminalWouldInterpret(t *testing.T) {
@@ -32,4 +33,69 @@ func TestMessageQuotesAnAuthoritysErrorTextThatATerminalWouldInterpret(t *testin
 			assert.Contains(t, message, `taken\x1b[2J`)
 		})
 	}
+}
+
+func TestExitStatusIsTheStatusOfTheShellThatConnectOpened(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	err := connectFailed(&sshsession.ExitError{Status: 3})
+
+	// act
+	status := ExitStatus(err)
+
+	// assert
+	assert.Equal(t, 3, status)
+}
+
+func TestExitStatusIs255ForAnErrorOfConnectItself(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	err := connectFailed(errors.New("the ssh-proxy can't be reached"))
+
+	// act
+	status := ExitStatus(err)
+
+	// assert
+	assert.Equal(t, 255, status)
+}
+
+func TestExitStatusIs255WhenTheShellsStatusDoesNotFitInAByte(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	err := connectFailed(&sshsession.ExitError{Status: 256})
+
+	// act
+	status := ExitStatus(err)
+
+	// assert
+	assert.Equal(t, 255, status)
+}
+
+func TestExitStatusIs1ForAnErrorOfAnotherCommandThanConnect(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	err := errors.New("the disk is full")
+
+	// act
+	status := ExitStatus(err)
+
+	// assert
+	assert.Equal(t, 1, status)
+}
+
+func TestMessageIsEmptyWhenTheShellEndedWithAFailure(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	err := connectFailed(&sshsession.ExitError{Status: 3})
+
+	// act
+	message := Message(err)
+
+	// assert
+	assert.Empty(t, message)
 }
