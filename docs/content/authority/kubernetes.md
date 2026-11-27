@@ -60,7 +60,7 @@ The Deployment mounts only the file `ca.crt` of the Secret `phemera-db-ca`, with
 
 Note that the file in `sslrootcert` must exist when the authority starts. The authority checks the URL along with its other settings, and that reads the file. If it can't read the file, the authority stops and reports that `sslrootcert` or `PGSSLROOTCERT` names a file that can't be read.
 
-The authority also stops when it can't reach the database. On a first install, it may restart a few times until CloudNativePG has created the database.
+While the authority can't reach the database, it waits and tries again, as the page on the [database](database.md) explains. On a first install, it waits until Postgres accepts connections.
 
 The authority stores the passwords and private keys of SSH assets in this database without encrypting them, so limit who can read the database and its backups. The page on the [database](database.md) explains this.
 
