@@ -15,15 +15,15 @@ import (
 )
 
 // just dev and just kind serve the ssh-proxy prototype on this address.
-const devSSHProxyAddress = "127.0.0.1:2022"
+const sshProxyAddress = "127.0.0.1:2022"
 
-func connectCommand(store connections.Store, sshProxyAddress string) *cli.Command {
+func connectCommand(store connections.Store) *cli.Command {
 	return &cli.Command{
 		Name:      "connect",
 		Usage:     "open a shell on an SSH asset",
 		ArgsUsage: "<asset-id>",
 		Action: func(ctx context.Context, cmd *cli.Command) error {
-			err := openSession(ctx, cmd, store, sshProxyAddress)
+			err := openSession(ctx, cmd, store)
 			if err != nil {
 				return connectFailed(err)
 			}
@@ -33,7 +33,7 @@ func connectCommand(store connections.Store, sshProxyAddress string) *cli.Comman
 	}
 }
 
-func openSession(ctx context.Context, cmd *cli.Command, store connections.Store, sshProxyAddress string) error {
+func openSession(ctx context.Context, cmd *cli.Command, store connections.Store) error {
 	if cmd.Args().Len() != 1 {
 		return errors.New("want exactly one asset ID")
 	}

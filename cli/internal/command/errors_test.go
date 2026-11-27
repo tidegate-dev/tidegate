@@ -48,6 +48,32 @@ func TestExitStatusIsTheStatusOfTheShellThatConnectOpened(t *testing.T) {
 	assert.Equal(t, 3, status)
 }
 
+func TestExitStatusIs255ForAnErrorOfConnectItself(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	err := connectFailed(errors.New("the ssh-proxy can't be reached"))
+
+	// act
+	status := ExitStatus(err)
+
+	// assert
+	assert.Equal(t, 255, status)
+}
+
+func TestExitStatusIs255WhenTheShellsStatusDoesNotFitInAByte(t *testing.T) {
+	t.Parallel()
+
+	// arrange
+	err := connectFailed(&sshsession.ExitError{Status: 256})
+
+	// act
+	status := ExitStatus(err)
+
+	// assert
+	assert.Equal(t, 255, status)
+}
+
 func TestExitStatusIs1ForAnErrorOfAnotherCommandThanConnect(t *testing.T) {
 	t.Parallel()
 

@@ -4,9 +4,9 @@
 phemera [--connection <name>] [--output <format>] <command>
 ```
 
-Global flags work before or after the command. A command that fails prints `Error:` and a message to stderr and exits with status 1.
+Global flags work before or after the command. A command that fails prints `Error:` and a message to stderr and exits with status 1. `phemera connect` is the exception.
 
-`phemera connect` exits with the status that the shell ended with, like `ssh` does. If `phemera connect` itself fails, for example because it can't reach the ssh-proxy, it exits with status 255.
+`phemera connect` exits with the status that the shell ended with, like `ssh` does, and prints no message for it. If `phemera connect` itself fails, for example because it can't reach the ssh-proxy, it prints `Error:` and a message and exits with status 255. Only a flag that it doesn't know exits with status 1.
 
 ## Commands
 

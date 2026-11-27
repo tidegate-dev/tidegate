@@ -47,12 +47,19 @@ func (connectErr *connectError) Error() string { return connectErr.err.Error() }
 
 func (connectErr *connectError) Unwrap() error { return connectErr.err }
 
+// A process's exit status is one byte, and a host sends the shell's status as 32 bits.
+const maxExitStatus = 255
+
 // ExitStatus returns the status that phemera exits with when a command ends
-// with err. For phemera connect, that is the status of the shell if the shell
-// ended with a failure, and 255 for every other error.
+// with err. For phemera connect, that is the shell's status if the shell ended
+// with one from 1 to 255, and 255 for every other error.
 func ExitStatus(err error) int {
 	shellExit, shellExited := errors.AsType[*sshsession.ExitError](err)
 	if shellExited {
+		if shellExit.Status < 1 || shellExit.Status > maxExitStatus {
+			return connectFailedStatus
+		}
+
 		return shellExit.Status
 	}
 
@@ -65,7 +72,8 @@ func ExitStatus(err error) int {
 }
 
 // Message returns the text that phemera shows when a command ends with err.
-// It is empty when the shell of phemera connect ended with a failure.
+// It is empty when the shell that phemera connect opened ended with a status
+// other than 0.
 func Message(err error) string {
 	_, shellExited := errors.AsType[*sshsession.ExitError](err)
 	if shellExited {
