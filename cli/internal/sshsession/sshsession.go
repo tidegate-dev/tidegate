@@ -36,10 +36,20 @@ type Streams struct {
 	Err io.Writer
 }
 
+// ExitError means that the shell ended with a status other than 0.
+type ExitError struct {
+	// Status is the shell's exit status.
+	Status int
+}
+
+func (err *ExitError) Error() string {
+	return fmt.Sprintf("the shell ended with status %d", err.Status)
+}
+
 // Run opens a shell through the ssh-proxy at address and relays it to streams
-// until the shell ends or ctx ends. It returns nil when the shell ended,
-// whatever its exit status was. If the input is a terminal, the shell gets a
-// terminal of the same size.
+// until the shell ends or ctx ends. When the shell ended with a status other
+// than 0, it returns an *ExitError. If the input is a terminal, the shell gets
+// a terminal of the same size.
 //
 // Run logs in with a key that it generates, and names the key's fingerprint
 // as the ticket. It accepts every host key that the ssh-proxy presents.
@@ -157,8 +167,12 @@ func relay(ctx context.Context, session *ssh.Session, streams Streams) error {
 
 	err = session.Wait()
 
-	_, exited := errors.AsType[*ssh.ExitError](err)
-	if err != nil && !exited {
+	exitErr, exited := errors.AsType[*ssh.ExitError](err)
+	if exited {
+		return &ExitError{Status: exitErr.ExitStatus()}
+	}
+
+	if err != nil {
 		return fmt.Errorf("relaying the session: %w", err)
 	}
 

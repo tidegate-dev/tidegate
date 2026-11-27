@@ -14,7 +14,7 @@ phemera project list
 
 `phemera logout` revokes the session token and removes it from the connection. The URL stays saved, so `phemera login` without a URL signs in again.
 
-The URL must use `https`. `http` is accepted only for `localhost`, `127.0.0.1` and `::1`. If the session has expired or was revoked, a command exits with status 1 and prints the `phemera login` command to run.
+The URL must use `https`. `http` is accepted only for `localhost`, `127.0.0.1` and `::1`. If the session has expired or was revoked, a command fails and prints the `phemera login` command to run.
 
 ## Several installations
 

@@ -7,6 +7,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/phemera-dev/phemera/cli/internal/connections"
+	"github.com/phemera-dev/phemera/cli/internal/sshsession"
 )
 
 // callError is a call to an authority that failed.
@@ -30,8 +31,47 @@ func (callErr *callError) Error() string {
 
 func (callErr *callError) Unwrap() error { return callErr.err }
 
+// ssh exits with this status for its own errors.
+const connectFailedStatus = 255
+
+// connectError is an error that phemera connect ended with.
+type connectError struct {
+	err error
+}
+
+func connectFailed(err error) error {
+	return &connectError{err: err}
+}
+
+func (connectErr *connectError) Error() string { return connectErr.err.Error() }
+
+func (connectErr *connectError) Unwrap() error { return connectErr.err }
+
+// ExitStatus returns the status that phemera exits with when a command ends
+// with err. For phemera connect, that is the status of the shell if the shell
+// ended with a failure, and 255 for every other error.
+func ExitStatus(err error) int {
+	shellExit, shellExited := errors.AsType[*sshsession.ExitError](err)
+	if shellExited {
+		return shellExit.Status
+	}
+
+	_, isConnectError := errors.AsType[*connectError](err)
+	if isConnectError {
+		return connectFailedStatus
+	}
+
+	return 1
+}
+
 // Message returns the text that phemera shows when a command ends with err.
+// It is empty when the shell of phemera connect ended with a failure.
 func Message(err error) string {
+	_, shellExited := errors.AsType[*sshsession.ExitError](err)
+	if shellExited {
+		return ""
+	}
+
 	callErr, isCallError := errors.AsType[*callError](err)
 	if !isCallError {
 		return err.Error()
