@@ -21,7 +21,7 @@ func TestServeTellsSystemdWhenReadyAndStopping(t *testing.T) {
 	notifier := openNotifier(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	server := &http.Server{ReadHeaderTimeout: time.Second}
-	servers := map[string]listeningServer{"api": {Server: server, listener: listenOnAnyPort(t)}}
+	servers := map[string]listeningServer{"api": {server: server, listener: listenOnAnyPort(t)}}
 	serveErrorChan := make(chan error, 1)
 
 	// act
@@ -70,7 +70,7 @@ func TestServeCancelsRequestsThatOutlastTheShutdownTimeout(t *testing.T) {
 	serveErrorChan := make(chan error, 1)
 
 	server := &http.Server{Handler: handler, ReadHeaderTimeout: time.Second}
-	servers := map[string]listeningServer{"api": {Server: server, listener: listener}}
+	servers := map[string]listeningServer{"api": {server: server, listener: listener}}
 
 	go func() {
 		serveErrorChan <- serve(ctx, notifier, servers, 100*time.Millisecond)

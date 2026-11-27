@@ -105,6 +105,7 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	return errors.Join(err, shutdownMetrics(context.Background()))
 }
 
+// authorityServers are the three servers that the authority runs.
 type authorityServers struct {
 	externalAPI *http.Server
 	internalAPI *http.Server

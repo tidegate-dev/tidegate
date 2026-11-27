@@ -15,8 +15,7 @@ import (
 
 // listeningServer is a server with the open listener that it serves on.
 type listeningServer struct {
-	*http.Server
-
+	server   *http.Server
 	listener net.Listener
 }
 
@@ -37,7 +36,7 @@ func listen(ctx context.Context, servers map[string]*http.Server) (map[string]li
 			return nil, fmt.Errorf("listening for %s: %w", name, err)
 		}
 
-		listening[name] = listeningServer{Server: server, listener: listener}
+		listening[name] = listeningServer{server: server, listener: listener}
 		slog.Info("authority listening", "server", name, "address", listener.Addr().String(), "tls", server.TLSConfig != nil)
 	}
 
@@ -53,19 +52,19 @@ func serve(ctx context.Context, notifier *systemd.Notifier, servers map[string]l
 	requests, cancelRequests := context.WithCancel(logging.NewContext(context.Background(), slog.Default()))
 	defer cancelRequests()
 
-	for _, server := range servers {
-		server.BaseContext = func(net.Listener) context.Context { return requests }
+	for _, listening := range servers {
+		listening.server.BaseContext = func(net.Listener) context.Context { return requests }
 	}
 
 	serveErrorChan := make(chan error, len(servers))
 
-	for _, server := range servers {
+	for _, listening := range servers {
 		go func() {
-			if server.TLSConfig != nil {
+			if listening.server.TLSConfig != nil {
 				// ServeTLS uses TLSConfig's certificate when the file names are empty.
-				serveErrorChan <- server.ServeTLS(server.listener, "", "")
+				serveErrorChan <- listening.server.ServeTLS(listening.listener, "", "")
 			} else {
-				serveErrorChan <- server.Serve(server.listener)
+				serveErrorChan <- listening.server.Serve(listening.listener)
 			}
 		}()
 	}
@@ -94,8 +93,8 @@ func serve(ctx context.Context, notifier *systemd.Notifier, servers map[string]l
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	for name, server := range servers {
-		err := server.Shutdown(shutdownCtx)
+	for name, listening := range servers {
+		err := listening.server.Shutdown(shutdownCtx)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("shutting down %s: %w", name, err))
 		}

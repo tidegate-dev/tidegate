@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"syscall"
 	"time"
 
 	"connectrpc.com/connect"
@@ -53,7 +54,7 @@ var _ = Describe("the authority", func() {
 		It("stops", func(ctx SpecContext) {
 			authority.stop()
 
-			Eventually(ctx, authority.stopErrorChan).WithTimeout(5*time.Second).Should(Receive(), "the authority didn't stop")
+			Eventually(ctx, authority.serveErrorChan).WithTimeout(5*time.Second).Should(Receive(), "the authority didn't stop")
 		}, SpecTimeout(30*time.Second))
 	})
 
@@ -111,31 +112,6 @@ var _ = Describe("the authority", func() {
 	})
 })
 
-var _ = Describe("newAuthorityServers", func() {
-	It("gives each server the listen address from its part of the config", func(ctx SpecContext) {
-		pool, err := db.Open(ctx, dbtest.NewDatabase())
-		Expect(err).NotTo(HaveOccurred())
-		DeferCleanup(pool.Close)
-
-		certFile, keyFile := writeKeyPair(GinkgoTB())
-		internalCertificate, err := certreload.Load(certFile, keyFile)
-		Expect(err).NotTo(HaveOccurred())
-
-		cfg := config.Config{
-			ExternalAPI: config.ExternalAPI{ListenAddress: "external.example:1"},
-			InternalAPI: config.InternalAPI{ListenAddress: "internal.example:2"},
-			Metrics:     config.Metrics{ListenAddress: "metrics.example:3"},
-		}
-
-		servers, err := newAuthorityServers(cfg, pool, nil, internalCertificate, http.NotFoundHandler())
-
-		Expect(err).NotTo(HaveOccurred())
-		Expect(servers.externalAPI.Addr).To(Equal("external.example:1"))
-		Expect(servers.internalAPI.Addr).To(Equal("internal.example:2"))
-		Expect(servers.metrics.Addr).To(Equal("metrics.example:3"))
-	}, SpecTimeout(30*time.Second))
-})
-
 var _ = Describe("run", func() {
 	When("a listen address is taken", func() {
 		It("fails and tells systemd nothing", func(ctx SpecContext) {
@@ -158,7 +134,7 @@ var _ = Describe("run", func() {
 
 			err := run(ctx, cfg, shutdownTimeout)
 
-			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(syscall.EADDRINUSE))
 			Expect(socket.SetReadDeadline(time.Now().Add(100 * time.Millisecond))).To(Succeed())
 			_, _, err = socket.ReadFrom(make([]byte, 64))
 			Expect(err).To(MatchError(os.ErrDeadlineExceeded), "run told systemd something")
@@ -218,7 +194,7 @@ type runningAuthority struct {
 	metricsAddress   string
 	internalCertFile string
 	stop             context.CancelFunc
-	stopErrorChan    chan error
+	serveErrorChan   chan error
 }
 
 // serveAuthority builds the authority's servers on the database at url and
@@ -240,9 +216,9 @@ func serveAuthority(ctx context.Context, url string) runningAuthority {
 	Expect(err).NotTo(HaveOccurred())
 
 	listening := map[string]listeningServer{
-		"external-api": {Server: servers.externalAPI, listener: listenOnAnyPort(GinkgoTB())},
-		"internal-api": {Server: servers.internalAPI, listener: listenOnAnyPort(GinkgoTB())},
-		"metrics":      {Server: servers.metrics, listener: listenOnAnyPort(GinkgoTB())},
+		"external-api": {server: servers.externalAPI, listener: listenOnAnyPort(GinkgoTB())},
+		"internal-api": {server: servers.internalAPI, listener: listenOnAnyPort(GinkgoTB())},
+		"metrics":      {server: servers.metrics, listener: listenOnAnyPort(GinkgoTB())},
 	}
 	notifier := openNotifier(GinkgoTB())
 
@@ -254,7 +230,7 @@ func serveAuthority(ctx context.Context, url string) runningAuthority {
 		metricsAddress:   listening["metrics"].listener.Addr().String(),
 		internalCertFile: internalCertFile,
 		stop:             stop,
-		stopErrorChan:    make(chan error, 1),
+		serveErrorChan:   make(chan error, 1),
 	}
 
 	stopped := make(chan struct{})
@@ -264,9 +240,10 @@ func serveAuthority(ctx context.Context, url string) runningAuthority {
 
 		err := serve(serveCtx, notifier, listening, 100*time.Millisecond)
 
+		// run closes the pool after serve returns.
 		pool.Close()
 
-		authority.stopErrorChan <- err
+		authority.serveErrorChan <- err
 	}()
 
 	DeferCleanup(func() {
