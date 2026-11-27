@@ -96,11 +96,9 @@ func TestRunIsNotReadyWhileItWaitsForTheDatabase(t *testing.T) {
 	// arrange
 	socket := listenAsSystemd(t)
 	certFile, keyFile := writeKeyPair(t)
-	addresses := freeAddresses(t, 3)
 	cfg := config.Config{
-		ExternalAPI: config.ExternalAPI{ListenAddress: addresses[0], TLS: config.ExternalTLS{Disabled: true}},
-		InternalAPI: config.InternalAPI{ListenAddress: addresses[1], TLS: config.InternalTLS{CertFile: certFile, KeyFile: keyFile}},
-		Metrics:     config.Metrics{ListenAddress: addresses[2]},
+		ExternalAPI: config.ExternalAPI{TLS: config.ExternalTLS{Disabled: true}},
+		InternalAPI: config.InternalAPI{TLS: config.InternalTLS{CertFile: certFile, KeyFile: keyFile}},
 		Database:    config.Database{URL: unreachableDatabaseURL},
 	}
 

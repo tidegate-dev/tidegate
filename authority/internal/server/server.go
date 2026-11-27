@@ -18,6 +18,7 @@ import (
 	"github.com/phemera-dev/phemera/authority/internal/secretengine/postgres"
 	"github.com/phemera-dev/phemera/authority/internal/service"
 	"github.com/phemera-dev/phemera/authority/internal/store"
+	"github.com/phemera-dev/phemera/internal/certreload"
 	"github.com/phemera-dev/phemera/internal/metrics"
 	"github.com/phemera-dev/phemera/internal/secretengine"
 	"github.com/phemera-dev/phemera/internal/systemd"
@@ -56,25 +57,6 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	}
 	defer pool.Close()
 
-	rnd := random.NewCryptoRandom()
-	clk := clock.NewSystemClock()
-	data := store.New(pool)
-
-	authenticator, err := service.NewAuthenticator(data.Users(), rnd)
-	if err != nil {
-		return err
-	}
-
-	sessions := service.NewSessions(data.Sessions(), data, rnd, clk, cfg.Login.TokenLifetime)
-	logins := service.NewLogins(authenticator, sessions)
-	projects := service.NewProjects(data.Projects(), data)
-	roles := service.NewRoles(data.Projects(), data)
-	engines := secretengine.NewEngines(map[string]secretengine.Engine{builtInEngineName: postgres.New(pool)})
-	assets := service.NewAssets(data.Projects(), data.Assets(), data, engines, builtInEngineName)
-	bindings := service.NewBindings(data.Projects(), data.Roles(), data.Users(), data.Bindings(), data)
-
-	tickets := service.NewTickets(data)
-
 	notifier, err := systemd.Open()
 	if err != nil {
 		return err
@@ -104,13 +86,65 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	}
 	defer stopReportingInternal()
 
-	err = serve(ctx, notifier, map[string]*http.Server{
-		"external-api": externalAPIServer(cfg.ExternalAPI.ListenAddress, externalCertificate, clk, logins, projects, roles, assets, bindings, tickets, sessions),
-		"internal-api": internalAPIServer(cfg.InternalAPI.ListenAddress, internalCertificate),
-		"metrics":      metricsServer(cfg.Metrics.ListenAddress, metricsHandler, pool),
-	}, timeout)
+	servers, err := newAuthorityServers(cfg, pool, externalCertificate, internalCertificate, metricsHandler)
+	if err != nil {
+		return errors.Join(err, shutdownMetrics(context.Background()))
+	}
+
+	listening, err := listen(ctx, map[string]*http.Server{
+		"external-api": servers.externalAPI,
+		"internal-api": servers.internalAPI,
+		"metrics":      servers.metrics,
+	})
+	if err != nil {
+		return errors.Join(err, shutdownMetrics(context.Background()))
+	}
+
+	err = serve(ctx, notifier, listening, timeout)
 
 	return errors.Join(err, shutdownMetrics(context.Background()))
+}
+
+type authorityServers struct {
+	externalAPI *http.Server
+	internalAPI *http.Server
+	metrics     *http.Server
+}
+
+// newAuthorityServers builds the authority's servers on a pool and
+// certificates that are already open. The external API serves plain HTTP if
+// externalCertificate is nil.
+func newAuthorityServers(
+	cfg config.Config,
+	pool *pgxpool.Pool,
+	externalCertificate *certreload.Certificate,
+	internalCertificate *certreload.Certificate,
+	metricsHandler http.Handler,
+) (authorityServers, error) {
+	rnd := random.NewCryptoRandom()
+	clk := clock.NewSystemClock()
+	data := store.New(pool)
+
+	authenticator, err := service.NewAuthenticator(data.Users(), rnd)
+	if err != nil {
+		return authorityServers{}, err
+	}
+
+	sessions := service.NewSessions(data.Sessions(), data, rnd, clk, cfg.Login.TokenLifetime)
+	logins := service.NewLogins(authenticator, sessions)
+	projects := service.NewProjects(data.Projects(), data)
+	roles := service.NewRoles(data.Projects(), data)
+	engines := secretengine.NewEngines(map[string]secretengine.Engine{builtInEngineName: postgres.New(pool)})
+	assets := service.NewAssets(data.Projects(), data.Assets(), data, engines, builtInEngineName)
+	bindings := service.NewBindings(data.Projects(), data.Roles(), data.Users(), data.Bindings(), data)
+
+	tickets := service.NewTickets(data)
+
+	return authorityServers{
+		externalAPI: externalAPIServer(cfg.ExternalAPI.ListenAddress, externalCertificate, clk, logins, projects, roles, assets, bindings, tickets, sessions),
+		internalAPI: internalAPIServer(cfg.InternalAPI.ListenAddress, internalCertificate),
+		metrics:     metricsServer(cfg.Metrics.ListenAddress, metricsHandler, pool),
+	}, nil
 }
 
 // openDatabase waits until the database is available, migrates it if cfg

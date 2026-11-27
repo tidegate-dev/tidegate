@@ -13,12 +13,43 @@ import (
 	"github.com/phemera-dev/phemera/internal/systemd"
 )
 
+// listeningServer is a server with the open listener that it serves on.
+type listeningServer struct {
+	*http.Server
+
+	listener net.Listener
+}
+
+// listen opens a listener on the address of each of servers, keyed by a name
+// for the logs. If one address fails, it closes the listeners that are open.
+func listen(ctx context.Context, servers map[string]*http.Server) (map[string]listeningServer, error) {
+	var listenConfig net.ListenConfig
+
+	listening := make(map[string]listeningServer, len(servers))
+
+	for name, server := range servers {
+		listener, err := listenConfig.Listen(ctx, "tcp", server.Addr)
+		if err != nil {
+			for _, opened := range listening {
+				_ = opened.listener.Close()
+			}
+
+			return nil, fmt.Errorf("listening for %s: %w", name, err)
+		}
+
+		listening[name] = listeningServer{Server: server, listener: listener}
+		slog.Info("authority listening", "server", name, "address", listener.Addr().String(), "tls", server.TLSConfig != nil)
+	}
+
+	return listening, nil
+}
+
 // serve runs servers, keyed by a name for the logs, until ctx is done or
 // one of them fails, then shuts them all down. It sets each server's
 // BaseContext, waits up to timeout for running requests, then cancels their
-// context. It tells notifier when all servers listen and when the shutdown
+// context. It tells notifier when it serves them and when the shutdown
 // begins.
-func serve(ctx context.Context, notifier *systemd.Notifier, servers map[string]*http.Server, timeout time.Duration) error {
+func serve(ctx context.Context, notifier *systemd.Notifier, servers map[string]listeningServer, timeout time.Duration) error {
 	requests, cancelRequests := context.WithCancel(logging.NewContext(context.Background(), slog.Default()))
 	defer cancelRequests()
 
@@ -26,33 +57,15 @@ func serve(ctx context.Context, notifier *systemd.Notifier, servers map[string]*
 		server.BaseContext = func(net.Listener) context.Context { return requests }
 	}
 
-	var listenConfig net.ListenConfig
-
-	listeners := make(map[*http.Server]net.Listener, len(servers))
-
-	for name, server := range servers {
-		listener, err := listenConfig.Listen(ctx, "tcp", server.Addr)
-		if err != nil {
-			for _, l := range listeners {
-				_ = l.Close()
-			}
-
-			return fmt.Errorf("listening for %s: %w", name, err)
-		}
-
-		listeners[server] = listener
-		slog.Info("authority listening", "server", name, "address", listener.Addr().String(), "tls", server.TLSConfig != nil)
-	}
-
 	serveErrorChan := make(chan error, len(servers))
 
-	for server, listener := range listeners {
+	for _, server := range servers {
 		go func() {
 			if server.TLSConfig != nil {
 				// ServeTLS uses TLSConfig's certificate when the file names are empty.
-				serveErrorChan <- server.ServeTLS(listener, "", "")
+				serveErrorChan <- server.ServeTLS(server.listener, "", "")
 			} else {
-				serveErrorChan <- server.Serve(listener)
+				serveErrorChan <- server.Serve(server.listener)
 			}
 		}()
 	}
