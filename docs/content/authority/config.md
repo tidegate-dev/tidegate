@@ -38,6 +38,6 @@ The authority serves two APIs, each on its own address and with its own certific
 | `PHEMERA_AUTHORITY__DATABASE__URL` | None, required | A Postgres connection URL, like `postgres://phemera:phemera@host:5432/phemera?sslmode=verify-full` |
 | `PHEMERA_AUTHORITY__DATABASE__MIGRATE_ON_START` | `false` | `true` or `false` |
 | `PHEMERA_AUTHORITY__LOGIN__TOKEN_LIFETIME` | `12h` | A duration of at least `1s`, like `12h` or `30m` |
-| `PHEMERA_AUTHORITY__METRICS__LISTEN_ADDRESS` | `127.0.0.1:9464` | A host and port for `/metrics`, like `:9464` |
+| `PHEMERA_AUTHORITY__METRICS__LISTEN_ADDRESS` | `127.0.0.1:9464` | A host and port for `/metrics` and the [health checks](health.md), like `:9464` |
 | `PHEMERA_AUTHORITY__LOG__LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
 | `PHEMERA_AUTHORITY__LOG__FORMAT` | `json` | `json` for log collectors, or `text`, which is easier to read locally |

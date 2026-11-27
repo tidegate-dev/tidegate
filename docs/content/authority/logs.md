@@ -10,7 +10,7 @@ If you read the log yourself instead of a log collector, set `PHEMERA_AUTHORITY_
 
 A line for a call never has the body of the request or the response. A failed login also logs the user name it was given, but the authority never logs a password or a session token.
 
-Some requests get no line, because the authority refuses them before the call starts. That happens when a request is too large, goes to a path that isn't an API method, isn't valid Connect, gRPC or gRPC-Web, or has a message that can't be decoded.
+Some requests get no line, because the authority refuses them before the call starts. That happens when a request is too large, goes to a path that isn't an API method, isn't valid Connect, gRPC or gRPC-Web, or has a message that can't be decoded. Requests for the metrics and the [health checks](health.md) get no line either.
 
 Use these lines to find failing and slow calls. They don't record who did what, so they don't replace an audit log.
 
