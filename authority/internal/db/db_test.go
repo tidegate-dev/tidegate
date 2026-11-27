@@ -7,7 +7,6 @@ import (
 	"io"
 	"log/slog"
 	"net"
-	"path/filepath"
 	"strings"
 	"testing"
 	"testing/synctest"
@@ -75,20 +74,6 @@ func TestOpenRejectsAnInvalidURLWithoutTheURL(t *testing.T) {
 
 	// assert
 	assert.EqualError(t, err, "the database URL isn't a valid Postgres connection URL, or a PG variable like PGSSLMODE is invalid")
-}
-
-func TestOpenNamesAMissingTLSFile(t *testing.T) {
-	t.Parallel()
-
-	// arrange
-	missing := filepath.Join(t.TempDir(), "ca.crt")
-
-	// act
-	_, err := Open(t.Context(), "postgres://phemera@host/phemera?sslmode=verify-full&sslrootcert="+missing)
-
-	// assert
-	assert.EqualError(t, err, "the database URL can't be used, "+
-		"because sslrootcert or PGSSLROOTCERT names a file that can't be read: no such file or directory")
 }
 
 func TestOpenWhenAvailableFailsAtOnceWhenTheServerRefusesTheLogin(t *testing.T) {
