@@ -1,5 +1,5 @@
-// Package dburl parses the authority's database URL, with errors that are
-// safe to show.
+// Package dburl parses a Postgres connection URL, with errors that are safe
+// to show.
 package dburl
 
 import (
