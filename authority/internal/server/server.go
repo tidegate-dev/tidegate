@@ -112,15 +112,33 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	return errors.Join(err, shutdownMetrics(context.Background()))
 }
 
+// openDatabase waits until the database is available, migrates it if cfg
+// says so and checks its schema.
 func openDatabase(ctx context.Context, cfg config.Database) (*pgxpool.Pool, error) {
-	if cfg.MigrateOnStart {
-		err := MigrateDatabase(ctx, cfg.URL)
+	pool, err := db.OpenWhenAvailable(ctx, cfg.URL)
+	if err != nil {
+		return nil, err
+	}
+
+	err = prepareSchema(ctx, pool, cfg.MigrateOnStart)
+	if err != nil {
+		pool.Close()
+
+		return nil, err
+	}
+
+	return pool, nil
+}
+
+func prepareSchema(ctx context.Context, pool *pgxpool.Pool, migrate bool) error {
+	if migrate {
+		err := migrateDatabase(ctx, pool)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	return db.OpenMigrated(ctx, cfg.URL)
+	return db.CheckSchema(ctx, pool)
 }
 
 // MigrateDatabase applies the authority's migrations to the database at url.
@@ -132,7 +150,11 @@ func MigrateDatabase(ctx context.Context, url string) error {
 	}
 	defer pool.Close()
 
-	err = db.Migrate(ctx, pool)
+	return migrateDatabase(ctx, pool)
+}
+
+func migrateDatabase(ctx context.Context, pool *pgxpool.Pool) error {
+	err := db.Migrate(ctx, pool)
 	if err != nil {
 		return err
 	}
