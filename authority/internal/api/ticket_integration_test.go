@@ -52,7 +52,12 @@ var _ = Describe("TicketService", func() {
 
 		Expect(err).NotTo(HaveOccurred())
 
-		target := model.SSHTarget{Host: "host.example.com", Port: 22, HostKey: "ssh-ed25519 AAAA", UserName: "deploy"}
+		target := model.SSHTarget{
+			Host:     "host.example.com",
+			Port:     22,
+			HostKey:  "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBXe7le0QyMyXW1xMO1Sd7lgeKsvxe/ZFGc8Cp6+7DW0",
+			UserName: "deploy",
+		}
 		asset, err = assets.CreateSSH(ctx, "payments", "host", nil, target, service.SSHSecretInput{
 			Kind:  model.SSHSecretKindPassword,
 			Value: secret.NewBytes([]byte("test-password")),

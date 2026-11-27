@@ -48,6 +48,8 @@ func clientError(err error) error {
 		return connect.NewError(connect.CodeInvalidArgument, sshkey.ErrPrivateKeyInvalid)
 	case errors.Is(err, sshkey.ErrPrivateKeyEncrypted):
 		return connect.NewError(connect.CodeInvalidArgument, sshkey.ErrPrivateKeyEncrypted)
+	case errors.Is(err, sshkey.ErrHostKeyInvalid):
+		return connect.NewError(connect.CodeInvalidArgument, sshkey.ErrHostKeyInvalid)
 	default:
 		return err
 	}

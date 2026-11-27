@@ -185,7 +185,7 @@ its identity with.
 | ----- | ---- | ----------- | ----- |
 | `host` | `string` | Host is the host's DNS name or IP address. | A DNS name of at most 253 characters, or an IPv4 or IPv6 address without brackets and without a zone. |
 | `port` | `uint32` | Port is the TCP port that the host's SSH server listens on. | 1 to 65535. |
-| `host_key` | `string` | HostKey is the host's public key as the key type and the key in base64, like "ssh-ed25519 AAAAC3...". | The key type, one space and the key in base64 with its padding. The key type is ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521 or ssh-rsa. At most 8192 characters. |
+| `host_key` | `string` | HostKey is the host's public key as the key type and the key in base64, like "ssh-ed25519 AAAAC3...". A key that phemera can't read fails with invalid_argument. | The key type, one space and the key in base64 with its padding. The key type is ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521 or ssh-rsa. At most 8192 characters. |
 
 ### phemera.authority.v1.CreateBindingRequest { #phemera.authority.v1.CreateBindingRequest }
 
