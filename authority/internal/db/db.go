@@ -19,6 +19,8 @@ import (
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
 	"github.com/pressly/goose/v3/lock"
+
+	"github.com/phemera-dev/phemera/authority/internal/db/dburl"
 )
 
 //go:embed migrations/*.sql
@@ -76,11 +78,9 @@ func OpenWhenAvailable(ctx context.Context, url string) (*pgxpool.Pool, error) {
 
 // newPool returns a pool for the database at url, without connecting to it.
 func newPool(ctx context.Context, url string) (*pgxpool.Pool, error) {
-	config, err := pgxpool.ParseConfig(url)
+	config, err := dburl.Parse(url)
 	if err != nil {
-		// pgx masks the password only where it can find it, and a malformed URL
-		// can hide it. pgx also reads the PG variables.
-		return nil, errors.New("the database URL isn't a valid Postgres connection URL, or a PG variable like PGSSLMODE is invalid")
+		return nil, fmt.Errorf("the database URL %w", err)
 	}
 
 	if fallsBackToPlaintext(config) {
