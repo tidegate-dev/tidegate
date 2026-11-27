@@ -17,8 +17,15 @@ import (
 // one of them fails, then shuts them all down. It sets each server's
 // BaseContext, waits up to timeout for running requests, then cancels their
 // context. It tells notifier when all servers listen and when the shutdown
-// begins.
-func serve(ctx context.Context, notifier *systemd.Notifier, servers map[string]*http.Server, timeout time.Duration) error {
+// begins. Once all servers listen, it calls listening with the address of
+// each one, keyed like servers.
+func serve(
+	ctx context.Context,
+	notifier *systemd.Notifier,
+	servers map[string]*http.Server,
+	timeout time.Duration,
+	listening func(addresses map[string]string),
+) error {
 	requests, cancelRequests := context.WithCancel(logging.NewContext(context.Background(), slog.Default()))
 	defer cancelRequests()
 
@@ -29,6 +36,7 @@ func serve(ctx context.Context, notifier *systemd.Notifier, servers map[string]*
 	var listenConfig net.ListenConfig
 
 	listeners := make(map[*http.Server]net.Listener, len(servers))
+	addresses := make(map[string]string, len(servers))
 
 	for name, server := range servers {
 		listener, err := listenConfig.Listen(ctx, "tcp", server.Addr)
@@ -41,8 +49,11 @@ func serve(ctx context.Context, notifier *systemd.Notifier, servers map[string]*
 		}
 
 		listeners[server] = listener
-		slog.Info("authority listening", "server", name, "address", listener.Addr().String(), "tls", server.TLSConfig != nil)
+		addresses[name] = listener.Addr().String()
+		slog.Info("authority listening", "server", name, "address", addresses[name], "tls", server.TLSConfig != nil)
 	}
+
+	listening(addresses)
 
 	serveErrorChan := make(chan error, len(servers))
 

@@ -31,10 +31,10 @@ const builtInEngineName = "phemera"
 // Run serves the authority's APIs, metrics and health checks until ctx ends
 // or a server fails.
 func Run(ctx context.Context, cfg config.Config) error {
-	return run(ctx, cfg, shutdownTimeout)
+	return run(ctx, cfg, shutdownTimeout, func(map[string]string) {})
 }
 
-func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
+func run(ctx context.Context, cfg config.Config, timeout time.Duration, listening func(addresses map[string]string)) error {
 	externalCertificate, err := loadExternalCertificate(cfg.ExternalAPI.TLS)
 	if err != nil {
 		return err
@@ -108,7 +108,7 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 		"external-api": externalAPIServer(cfg.ExternalAPI.ListenAddress, externalCertificate, clk, logins, projects, roles, assets, bindings, tickets, sessions),
 		"internal-api": internalAPIServer(cfg.InternalAPI.ListenAddress, internalCertificate),
 		"metrics":      metricsServer(cfg.Metrics.ListenAddress, metricsHandler, pool),
-	}, timeout)
+	}, timeout, listening)
 
 	return errors.Join(err, shutdownMetrics(context.Background()))
 }

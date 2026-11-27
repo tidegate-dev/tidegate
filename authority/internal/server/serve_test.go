@@ -24,7 +24,7 @@ func TestServeTellsSystemdWhenReadyAndStopping(t *testing.T) {
 
 	// act
 	go func() {
-		serveErrorChan <- serve(ctx, notifier, map[string]*http.Server{"api": {Addr: "127.0.0.1:0"}}, shutdownTimeout)
+		serveErrorChan <- serve(ctx, notifier, map[string]*http.Server{"api": {Addr: addressWithAnyPort}}, shutdownTimeout, ignoreAddresses)
 	}()
 
 	ready := receive(t, socket)
@@ -49,7 +49,7 @@ func TestServeDoesNotTellSystemdReadyWhenListeningFails(t *testing.T) {
 	t.Cleanup(func() { _ = taken.Close() })
 
 	// act
-	err = serve(context.Background(), notifier, map[string]*http.Server{"api": {Addr: taken.Addr().String()}}, shutdownTimeout)
+	err = serve(context.Background(), notifier, map[string]*http.Server{"api": {Addr: taken.Addr().String()}}, shutdownTimeout, ignoreAddresses)
 
 	// assert
 	require.Error(t, err)
@@ -58,12 +58,40 @@ func TestServeDoesNotTellSystemdReadyWhenListeningFails(t *testing.T) {
 	assert.ErrorIs(t, err, os.ErrDeadlineExceeded)
 }
 
+func TestServeReportsTheAddressThatAServerListensOn(t *testing.T) {
+	// arrange
+	notifier := openNotifier(t)
+	addressesChan := make(chan map[string]string, 1)
+	serveErrorChan := make(chan error, 1)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// act
+	go func() {
+		serveErrorChan <- serve(ctx, notifier, map[string]*http.Server{"api": {Addr: addressWithAnyPort}}, shutdownTimeout, sendTo(addressesChan))
+	}()
+
+	// assert
+	select {
+	case addresses := <-addressesChan:
+		conn, err := net.Dial("tcp", addresses["api"])
+		require.NoError(t, err)
+		require.NoError(t, conn.Close())
+	case <-time.After(5 * time.Second):
+		t.Fatal("serve didn't report an address")
+	}
+
+	cancel()
+	require.NoError(t, <-serveErrorChan)
+}
+
 func TestServeCancelsRequestsThatOutlastTheShutdownTimeout(t *testing.T) {
 	// arrange
 	socket := listenAsSystemd(t)
 	notifier := openNotifier(t)
 	ctx, cancel := context.WithCancel(context.Background())
-	address := freeAddress(t)
+	addressesChan := make(chan map[string]string, 1)
 	started := make(chan struct{})
 	canceled := make(chan struct{})
 
@@ -76,10 +104,13 @@ func TestServeCancelsRequestsThatOutlastTheShutdownTimeout(t *testing.T) {
 	serveErrorChan := make(chan error, 1)
 
 	go func() {
-		serveErrorChan <- serve(ctx, notifier, map[string]*http.Server{"api": {Addr: address, Handler: handler}}, 100*time.Millisecond)
+		servers := map[string]*http.Server{"api": {Addr: addressWithAnyPort, Handler: handler}}
+		serveErrorChan <- serve(ctx, notifier, servers, 100*time.Millisecond, sendTo(addressesChan))
 	}()
 
 	require.Equal(t, "READY=1", receive(t, socket))
+
+	address := (<-addressesChan)["api"]
 
 	go func() {
 		response, err := http.Get("http://" + address)
@@ -134,31 +165,16 @@ func openNotifier(t *testing.T) *systemd.Notifier {
 	return notifier
 }
 
-// freeAddress returns a local address that nothing listens on right now.
-func freeAddress(t testing.TB) string {
-	t.Helper()
+// The system picks a free port for a listener on port 0.
+const addressWithAnyPort = "127.0.0.1:0"
 
-	return freeAddresses(t, 1)[0]
-}
+func ignoreAddresses(map[string]string) {}
 
-func freeAddresses(t testing.TB, count int) []string {
-	t.Helper()
-
-	addresses := make([]string, 0, count)
-
-	// The system can hand out a port again once its listener is closed.
-	for range count {
-		listener, err := net.Listen("tcp", "127.0.0.1:0")
-		require.NoError(t, err)
-
-		defer func() {
-			require.NoError(t, listener.Close())
-		}()
-
-		addresses = append(addresses, listener.Addr().String())
+// sendTo returns a function that sends the addresses it's called with to addressesChan.
+func sendTo(addressesChan chan<- map[string]string) func(map[string]string) {
+	return func(addresses map[string]string) {
+		addressesChan <- addresses
 	}
-
-	return addresses
 }
 
 func receive(t *testing.T, socket net.PacketConn) string {

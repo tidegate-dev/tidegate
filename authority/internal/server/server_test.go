@@ -29,7 +29,7 @@ func TestRunStopsAtAMissingExternalCertificateBeforeTheDatabase(t *testing.T) {
 	}
 
 	// act
-	err := run(t.Context(), cfg, time.Second)
+	err := run(t.Context(), cfg, time.Second, ignoreAddresses)
 
 	// assert
 	require.Error(t, err)
@@ -50,7 +50,7 @@ func TestRunStopsAtAMissingInternalCertificateBeforeTheDatabase(t *testing.T) {
 	}
 
 	// act
-	err := run(t.Context(), cfg, time.Second)
+	err := run(t.Context(), cfg, time.Second, ignoreAddresses)
 
 	// assert
 	require.Error(t, err)
@@ -83,7 +83,7 @@ func TestRunWarnsWhenTLSIsDisabledForTheExternalAPI(t *testing.T) {
 	cancel()
 
 	// act
-	_ = run(ctx, cfg, time.Second)
+	_ = run(ctx, cfg, time.Second, ignoreAddresses)
 
 	// assert
 	assert.Contains(t, logs.String(), "level=WARN")
@@ -96,11 +96,10 @@ func TestRunIsNotReadyWhileItWaitsForTheDatabase(t *testing.T) {
 	// arrange
 	socket := listenAsSystemd(t)
 	certFile, keyFile := writeKeyPair(t)
-	addresses := freeAddresses(t, 3)
 	cfg := config.Config{
-		ExternalAPI: config.ExternalAPI{ListenAddress: addresses[0], TLS: config.ExternalTLS{Disabled: true}},
-		InternalAPI: config.InternalAPI{ListenAddress: addresses[1], TLS: config.InternalTLS{CertFile: certFile, KeyFile: keyFile}},
-		Metrics:     config.Metrics{ListenAddress: addresses[2]},
+		ExternalAPI: config.ExternalAPI{ListenAddress: addressWithAnyPort, TLS: config.ExternalTLS{Disabled: true}},
+		InternalAPI: config.InternalAPI{ListenAddress: addressWithAnyPort, TLS: config.InternalTLS{CertFile: certFile, KeyFile: keyFile}},
+		Metrics:     config.Metrics{ListenAddress: addressWithAnyPort},
 		Database:    config.Database{URL: unreachableDatabaseURL},
 	}
 
@@ -108,7 +107,7 @@ func TestRunIsNotReadyWhileItWaitsForTheDatabase(t *testing.T) {
 	defer cancel()
 
 	// act
-	err := run(ctx, cfg, time.Second)
+	err := run(ctx, cfg, time.Second, ignoreAddresses)
 
 	// assert
 	require.ErrorIs(t, err, context.DeadlineExceeded)

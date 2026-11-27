@@ -6,7 +6,6 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -178,34 +177,33 @@ func serveAuthority(ctx context.Context, url string) runningAuthority {
 
 	internalCertFile, internalKeyFile := writeKeyPair(GinkgoTB())
 
-	addresses := freeAddresses(GinkgoTB(), 3)
-
-	authority := runningAuthority{
-		externalAddress:  addresses[0],
-		internalAddress:  addresses[1],
-		metricsAddress:   addresses[2],
-		internalCertFile: internalCertFile,
-		stop:             stop,
-		runErrorChan:     make(chan error, 1),
-	}
+	addressesChan := make(chan map[string]string, 1)
+	runErrorChan := make(chan error, 1)
 
 	go func() {
-		authority.runErrorChan <- run(runCtx, config.Config{
-			ExternalAPI: config.ExternalAPI{ListenAddress: authority.externalAddress, TLS: config.ExternalTLS{Disabled: true}},
+		runErrorChan <- run(runCtx, config.Config{
+			ExternalAPI: config.ExternalAPI{ListenAddress: addressWithAnyPort, TLS: config.ExternalTLS{Disabled: true}},
 			InternalAPI: config.InternalAPI{
-				ListenAddress: authority.internalAddress,
+				ListenAddress: addressWithAnyPort,
 				TLS:           config.InternalTLS{CertFile: internalCertFile, KeyFile: internalKeyFile},
 			},
-			Metrics:  config.Metrics{ListenAddress: authority.metricsAddress},
+			Metrics:  config.Metrics{ListenAddress: addressWithAnyPort},
 			Database: config.Database{URL: url},
-		}, 100*time.Millisecond)
+		}, 100*time.Millisecond, sendTo(addressesChan))
 	}()
 
-	Eventually(ctx, listening).WithArguments(authority.externalAddress).Should(Succeed())
-	Eventually(ctx, listening).WithArguments(authority.internalAddress).Should(Succeed())
-	Eventually(ctx, listening).WithArguments(authority.metricsAddress).Should(Succeed())
+	var addresses map[string]string
 
-	return authority
+	Eventually(ctx, addressesChan).Should(Receive(&addresses), "the authority never listened")
+
+	return runningAuthority{
+		externalAddress:  addresses["external-api"],
+		internalAddress:  addresses["internal-api"],
+		metricsAddress:   addresses["metrics"],
+		internalCertFile: internalCertFile,
+		stop:             stop,
+		runErrorChan:     runErrorChan,
+	}
 }
 
 // lockProjects locks the projects table in a transaction that stays open
@@ -240,15 +238,6 @@ func clientTrusting(certFile string) *http.Client {
 	DeferCleanup(transport.CloseIdleConnections)
 
 	return &http.Client{Transport: transport}
-}
-
-func listening(address string) error {
-	conn, err := net.Dial("tcp", address)
-	if err != nil {
-		return err
-	}
-
-	return conn.Close()
 }
 
 // createProject sends a write that only ends with the authority. A request
