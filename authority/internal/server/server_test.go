@@ -2,7 +2,9 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"log/slog"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -76,10 +78,42 @@ func TestRunWarnsWhenTLSIsDisabledForTheExternalAPI(t *testing.T) {
 		Database:    config.Database{URL: unreachableDatabaseURL},
 	}
 
+	// run would wait for the unreachable database.
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+
 	// act
-	_ = run(t.Context(), cfg, time.Second)
+	_ = run(ctx, cfg, time.Second)
 
 	// assert
 	assert.Contains(t, logs.String(), "level=WARN")
 	assert.Contains(t, logs.String(), "the external API serves plain HTTP")
+}
+
+func TestRunIsNotReadyWhileItWaitsForTheDatabase(t *testing.T) {
+	// listenAsSystemd sets NOTIFY_SOCKET, which is global.
+
+	// arrange
+	socket := listenAsSystemd(t)
+	certFile, keyFile := writeKeyPair(t)
+	addresses := freeAddresses(t, 3)
+	cfg := config.Config{
+		ExternalAPI: config.ExternalAPI{ListenAddress: addresses[0], TLS: config.ExternalTLS{Disabled: true}},
+		InternalAPI: config.InternalAPI{ListenAddress: addresses[1], TLS: config.InternalTLS{CertFile: certFile, KeyFile: keyFile}},
+		Metrics:     config.Metrics{ListenAddress: addresses[2]},
+		Database:    config.Database{URL: unreachableDatabaseURL},
+	}
+
+	ctx, cancel := context.WithTimeout(t.Context(), 200*time.Millisecond)
+	defer cancel()
+
+	// act
+	err := run(ctx, cfg, time.Second)
+
+	// assert
+	require.ErrorIs(t, err, context.DeadlineExceeded)
+	assert.Contains(t, err.Error(), "stopped waiting for the database")
+	require.NoError(t, socket.SetReadDeadline(time.Now().Add(100*time.Millisecond)))
+	_, _, err = socket.ReadFrom(make([]byte, 64))
+	assert.ErrorIs(t, err, os.ErrDeadlineExceeded, "run told systemd something")
 }
