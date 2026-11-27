@@ -13,6 +13,7 @@ nav = [
     { "Metrics" = "authority/metrics.md" },
     { "Logs" = "authority/logs.md" },
     { "Running under systemd" = "authority/systemd.md" },
+    { "Running in Kubernetes" = "authority/kubernetes.md" },
   ] },
   { "CLI" = [
     { "Overview" = "cli/index.md" },
