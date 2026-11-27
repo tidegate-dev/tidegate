@@ -88,6 +88,27 @@ var _ = Describe("run", func() {
 			}
 		}, SpecTimeout(30*time.Second))
 	})
+
+	When("the database answers", func() {
+		var authority runningAuthority
+
+		BeforeEach(func(ctx SpecContext) {
+			url := dbtest.NewDatabase()
+			Expect(MigrateDatabase(ctx, url)).To(Succeed())
+			authority = serveAuthority(ctx, url)
+		}, NodeTimeout(30*time.Second))
+
+		It("answers its readiness check with 200 OK", func(ctx SpecContext) {
+			request, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://"+authority.metricsAddress+"/readyz", nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			response, err := http.DefaultClient.Do(request)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(response.Body.Close()).To(Succeed())
+
+			Expect(response.StatusCode).To(Equal(http.StatusOK))
+		}, SpecTimeout(30*time.Second))
+	})
 })
 
 var _ = Describe("openDatabase", func() {
@@ -139,15 +160,16 @@ func secretsTableExists(ctx context.Context, url string) bool {
 type runningAuthority struct {
 	externalAddress  string
 	internalAddress  string
+	metricsAddress   string
 	internalCertFile string
 	stop             context.CancelFunc
 	runErrorChan     chan error
 }
 
 // serveAuthority runs the authority on the database at url and returns once
-// both of its APIs listen. The external API serves plain HTTP. It waits only
-// 100 milliseconds for running requests when it stops, so the spec doesn't
-// wait the full shutdown timeout.
+// both of its APIs and its metrics listen. The external API serves plain
+// HTTP. It waits only 100 milliseconds for running requests when it stops,
+// so the spec doesn't wait the full shutdown timeout.
 func serveAuthority(ctx context.Context, url string) runningAuthority {
 	GinkgoHelper()
 
@@ -156,11 +178,12 @@ func serveAuthority(ctx context.Context, url string) runningAuthority {
 
 	internalCertFile, internalKeyFile := writeKeyPair(GinkgoTB())
 
-	addresses := freeAddresses(GinkgoTB(), 2)
+	addresses := freeAddresses(GinkgoTB(), 3)
 
 	authority := runningAuthority{
 		externalAddress:  addresses[0],
 		internalAddress:  addresses[1],
+		metricsAddress:   addresses[2],
 		internalCertFile: internalCertFile,
 		stop:             stop,
 		runErrorChan:     make(chan error, 1),
@@ -173,13 +196,14 @@ func serveAuthority(ctx context.Context, url string) runningAuthority {
 				ListenAddress: authority.internalAddress,
 				TLS:           config.InternalTLS{CertFile: internalCertFile, KeyFile: internalKeyFile},
 			},
-			Metrics:  config.Metrics{ListenAddress: "127.0.0.1:0"},
+			Metrics:  config.Metrics{ListenAddress: authority.metricsAddress},
 			Database: config.Database{URL: url},
 		}, 100*time.Millisecond)
 	}()
 
 	Eventually(ctx, listening).WithArguments(authority.externalAddress).Should(Succeed())
 	Eventually(ctx, listening).WithArguments(authority.internalAddress).Should(Succeed())
+	Eventually(ctx, listening).WithArguments(authority.metricsAddress).Should(Succeed())
 
 	return authority
 }

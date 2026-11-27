@@ -1,4 +1,5 @@
-// Package server runs the authority's API servers and metrics server.
+// Package server runs the authority's API servers and the server for its
+// metrics and health checks.
 package server
 
 import (
@@ -27,8 +28,8 @@ const shutdownTimeout = 10 * time.Second
 // Assets store this name, so changing it needs a migration.
 const builtInEngineName = "phemera"
 
-// Run serves the authority's APIs and metrics until ctx ends or a server
-// fails.
+// Run serves the authority's APIs, metrics and health checks until ctx ends
+// or a server fails.
 func Run(ctx context.Context, cfg config.Config) error {
 	return run(ctx, cfg, shutdownTimeout)
 }
@@ -106,7 +107,7 @@ func run(ctx context.Context, cfg config.Config, timeout time.Duration) error {
 	err = serve(ctx, notifier, map[string]*http.Server{
 		"external-api": externalAPIServer(cfg.ExternalAPI.ListenAddress, externalCertificate, clk, logins, projects, roles, assets, bindings, tickets, sessions),
 		"internal-api": internalAPIServer(cfg.InternalAPI.ListenAddress, internalCertificate),
-		"metrics":      metricsServer(cfg.Metrics.ListenAddress, metricsHandler),
+		"metrics":      metricsServer(cfg.Metrics.ListenAddress, metricsHandler, pool),
 	}, timeout)
 
 	return errors.Join(err, shutdownMetrics(context.Background()))
