@@ -372,8 +372,6 @@ func variableFromKey(key string) string {
 	return envPrefix + strings.ToUpper(strings.ReplaceAll(key, ".", levelSeparator))
 }
 
-// checkDatabaseURL parses url like db.Open does, so an invalid URL stops the
-// authority with the other invalid settings.
 func checkDatabaseURL(url string) error {
 	if url == "" {
 		return errors.New("must be set")

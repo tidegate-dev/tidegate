@@ -25,8 +25,7 @@ const (
 	invalidURL = "isn't a valid Postgres connection URL, or a PG variable like PGSSLMODE is invalid"
 )
 
-// The PG variables make the subtests share the environment, so they can't run
-// in parallel.
+// The subtests set PG variables, so they can't run in parallel.
 func TestParse(t *testing.T) {
 	// arrange
 	certFile, keyFile := writeKeyPair(t)
@@ -70,14 +69,12 @@ func TestParse(t *testing.T) {
 			environ: map[string]string{"PGSSLCERT": certFile, "PGSSLKEY": missing},
 			want:    "can't be used, because sslkey or PGSSLKEY names a file that can't be read: no such file or directory",
 		},
-		// pgx takes the password as part of the path here, because the space
-		// before it is missing.
+		// Without the space before password, pgx takes it as part of the path.
 		"a missing sslrootcert that runs into the password": {
 			url:  "host=" + host + " user=phemera sslmode=verify-full sslrootcert=" + missing + "password=" + password,
 			want: "can't be used, because sslrootcert or PGSSLROOTCERT names a file that can't be read: no such file or directory",
 		},
-		// pgx can't find the password to mask in this URL, because the @ is
-		// missing.
+		// Without the @, pgx can't find the password to mask in this URL.
 		"an invalid URL": {
 			url:  "postgres://phemera:" + password + "host:x/phemera",
 			want: invalidURL,
@@ -137,8 +134,7 @@ func TestParseNamesATLSFileThatItMayNotRead(t *testing.T) {
 		"can't be used, because sslrootcert or PGSSLROOTCERT names a file that can't be read: permission denied")
 }
 
-// writeKeyPair writes a self-signed certificate, which also serves as a CA
-// file.
+// writeKeyPair writes a self-signed certificate, which also serves as a CA.
 func writeKeyPair(t testing.TB) (certFile, keyFile string) {
 	t.Helper()
 
