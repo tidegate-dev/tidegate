@@ -6,6 +6,8 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -108,6 +110,34 @@ var _ = Describe("run", func() {
 			Expect(response.StatusCode).To(Equal(http.StatusOK))
 		}, SpecTimeout(30*time.Second))
 	})
+
+	DescribeTable("names the server whose listen address is taken",
+		func(ctx SpecContext, serverName string, setListenAddress func(cfg *config.Config, address string)) {
+			url := dbtest.NewDatabase()
+			Expect(MigrateDatabase(ctx, url)).To(Succeed())
+
+			taken, err := net.Listen("tcp", addressWithAnyPort)
+			Expect(err).NotTo(HaveOccurred())
+			DeferCleanup(taken.Close)
+
+			internalCertFile, internalKeyFile := writeKeyPair(GinkgoTB())
+			cfg := authorityConfig(url, internalCertFile, internalKeyFile)
+			setListenAddress(&cfg, taken.Addr().String())
+
+			err = run(ctx, cfg, shutdownTimeout, ignoreAddresses)
+
+			Expect(err).To(MatchError(ContainSubstring("listening for " + serverName + ":")))
+		},
+		Entry("the external API", SpecTimeout(30*time.Second), "external-api", func(cfg *config.Config, address string) {
+			cfg.ExternalAPI.ListenAddress = address
+		}),
+		Entry("the internal API", SpecTimeout(30*time.Second), "internal-api", func(cfg *config.Config, address string) {
+			cfg.InternalAPI.ListenAddress = address
+		}),
+		Entry("the metrics", SpecTimeout(30*time.Second), "metrics", func(cfg *config.Config, address string) {
+			cfg.Metrics.ListenAddress = address
+		}),
+	)
 })
 
 var _ = Describe("openDatabase", func() {
@@ -181,20 +211,19 @@ func serveAuthority(ctx context.Context, url string) runningAuthority {
 	runErrorChan := make(chan error, 1)
 
 	go func() {
-		runErrorChan <- run(runCtx, config.Config{
-			ExternalAPI: config.ExternalAPI{ListenAddress: addressWithAnyPort, TLS: config.ExternalTLS{Disabled: true}},
-			InternalAPI: config.InternalAPI{
-				ListenAddress: addressWithAnyPort,
-				TLS:           config.InternalTLS{CertFile: internalCertFile, KeyFile: internalKeyFile},
-			},
-			Metrics:  config.Metrics{ListenAddress: addressWithAnyPort},
-			Database: config.Database{URL: url},
-		}, 100*time.Millisecond, sendTo(addressesChan))
+		cfg := authorityConfig(url, internalCertFile, internalKeyFile)
+		runErrorChan <- run(runCtx, cfg, 100*time.Millisecond, sendTo(addressesChan))
 	}()
 
 	var addresses map[string]string
 
-	Eventually(ctx, addressesChan).Should(Receive(&addresses), "the authority never listened")
+	select {
+	case addresses = <-addressesChan:
+	case err := <-runErrorChan:
+		Fail(fmt.Sprintf("the authority stopped before it listened: %v", err))
+	case <-ctx.Done():
+		Fail("the authority never listened")
+	}
 
 	return runningAuthority{
 		externalAddress:  addresses["external-api"],
@@ -203,6 +232,18 @@ func serveAuthority(ctx context.Context, url string) runningAuthority {
 		internalCertFile: internalCertFile,
 		stop:             stop,
 		runErrorChan:     runErrorChan,
+	}
+}
+
+func authorityConfig(url, internalCertFile, internalKeyFile string) config.Config {
+	return config.Config{
+		ExternalAPI: config.ExternalAPI{ListenAddress: addressWithAnyPort, TLS: config.ExternalTLS{Disabled: true}},
+		InternalAPI: config.InternalAPI{
+			ListenAddress: addressWithAnyPort,
+			TLS:           config.InternalTLS{CertFile: internalCertFile, KeyFile: internalKeyFile},
+		},
+		Metrics:  config.Metrics{ListenAddress: addressWithAnyPort},
+		Database: config.Database{URL: url},
 	}
 }
 

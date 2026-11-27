@@ -78,6 +78,8 @@ func TestServeReportsTheAddressThatAServerListensOn(t *testing.T) {
 		conn, err := net.Dial("tcp", addresses["api"])
 		require.NoError(t, err)
 		require.NoError(t, conn.Close())
+	case err := <-serveErrorChan:
+		t.Fatalf("serve stopped before it reported an address: %v", err)
 	case <-time.After(5 * time.Second):
 		t.Fatal("serve didn't report an address")
 	}
@@ -170,7 +172,6 @@ const addressWithAnyPort = "127.0.0.1:0"
 
 func ignoreAddresses(map[string]string) {}
 
-// sendTo returns a function that sends the addresses it's called with to addressesChan.
 func sendTo(addressesChan chan<- map[string]string) func(map[string]string) {
 	return func(addresses map[string]string) {
 		addressesChan <- addresses
