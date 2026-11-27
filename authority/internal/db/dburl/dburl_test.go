@@ -49,26 +49,32 @@ func TestParse(t *testing.T) {
 		},
 		"a missing sslrootcert": {
 			url:  url + "&sslrootcert=" + missing,
-			want: "can't be used, because sslrootcert or PGSSLROOTCERT names a file that can't be read: open " + missing + ": no such file or directory",
+			want: "can't be used, because sslrootcert or PGSSLROOTCERT names a file that can't be read: no such file or directory",
 		},
 		"a missing PGSSLROOTCERT": {
 			url:     url,
 			environ: map[string]string{"PGSSLROOTCERT": missing},
-			want:    "can't be used, because sslrootcert or PGSSLROOTCERT names a file that can't be read: open " + missing + ": no such file or directory",
+			want:    "can't be used, because sslrootcert or PGSSLROOTCERT names a file that can't be read: no such file or directory",
 		},
 		// Unlike libpq, pgx reads sslrootcert even if it doesn't use TLS.
 		"a missing sslrootcert with sslmode=disable": {
 			url:  baseURL + "?sslmode=disable&sslrootcert=" + missing,
-			want: "can't be used, because sslrootcert or PGSSLROOTCERT names a file that can't be read: open " + missing + ": no such file or directory",
+			want: "can't be used, because sslrootcert or PGSSLROOTCERT names a file that can't be read: no such file or directory",
 		},
 		"a missing sslcert": {
 			url:  url + "&sslcert=" + missing + "&sslkey=" + keyFile,
-			want: "can't be used, because sslcert or PGSSLCERT names a file that can't be read: open " + missing + ": no such file or directory",
+			want: "can't be used, because sslcert or PGSSLCERT names a file that can't be read: no such file or directory",
 		},
 		"a missing PGSSLKEY": {
 			url:     url,
 			environ: map[string]string{"PGSSLCERT": certFile, "PGSSLKEY": missing},
-			want:    "can't be used, because sslkey or PGSSLKEY names a file that can't be read: open " + missing + ": no such file or directory",
+			want:    "can't be used, because sslkey or PGSSLKEY names a file that can't be read: no such file or directory",
+		},
+		// pgx takes the password as part of the path here, because the space
+		// before it is missing.
+		"a missing sslrootcert that runs into the password": {
+			url:  "host=" + host + " user=phemera sslmode=verify-full sslrootcert=" + missing + "password=" + password,
+			want: "can't be used, because sslrootcert or PGSSLROOTCERT names a file that can't be read: no such file or directory",
 		},
 		// pgx can't find the password to mask in this URL, because the @ is
 		// missing.
@@ -128,7 +134,7 @@ func TestParseNamesATLSFileThatItMayNotRead(t *testing.T) {
 
 	// assert
 	assert.EqualError(t, err,
-		"can't be used, because sslrootcert or PGSSLROOTCERT names a file that can't be read: open "+certFile+": permission denied")
+		"can't be used, because sslrootcert or PGSSLROOTCERT names a file that can't be read: permission denied")
 }
 
 // writeKeyPair writes a self-signed certificate, which also serves as a CA

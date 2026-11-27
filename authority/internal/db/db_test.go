@@ -88,7 +88,7 @@ func TestOpenNamesAMissingTLSFile(t *testing.T) {
 
 	// assert
 	assert.EqualError(t, err, "the database URL can't be used, "+
-		"because sslrootcert or PGSSLROOTCERT names a file that can't be read: open "+missing+": no such file or directory")
+		"because sslrootcert or PGSSLROOTCERT names a file that can't be read: no such file or directory")
 }
 
 func TestOpenWhenAvailableFailsAtOnceWhenTheServerRefusesTheLogin(t *testing.T) {

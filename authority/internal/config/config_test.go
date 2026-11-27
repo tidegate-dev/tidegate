@@ -404,7 +404,7 @@ func TestMissingTLSFileOfTheDatabaseURLIsNamed(t *testing.T) {
 
 	// assert
 	assert.EqualError(t, err, "PHEMERA_AUTHORITY__DATABASE__URL: can't be used, "+
-		"because sslrootcert or PGSSLROOTCERT names a file that can't be read: open "+missing+": no such file or directory")
+		"because sslrootcert or PGSSLROOTCERT names a file that can't be read: no such file or directory")
 }
 
 const (

@@ -31,9 +31,9 @@ var tlsFiles = []struct {
 // variables and the TLS files that they or the URL name. Its error leaves out
 // pgx's error, because pgx masks the password only where it can find it, and
 // a malformed URL can hide it. If a TLS file can't be read, the error names
-// the setting and the file, and nothing else from the URL. The error reads
-// as the end of a sentence about the URL, as in "the database URL isn't a
-// valid ...".
+// the setting and the system's error, and nothing from the URL. The error
+// reads as the end of a sentence about the URL, as in "the database URL
+// isn't a valid ...".
 func Parse(url string) (*pgxpool.Config, error) {
 	config, err := pgxpool.ParseConfig(url)
 	if err != nil {
@@ -55,7 +55,7 @@ func safeError(err error) error {
 		for _, file := range tlsFiles {
 			if wrapper.Error() == file.pgxMessage+": "+pathErr.Error() {
 				return fmt.Errorf("can't be used, because %s or %s names a file that can't be read: %w",
-					file.setting, file.variable, pathErr)
+					file.setting, file.variable, pathErr.Err)
 			}
 		}
 	}
