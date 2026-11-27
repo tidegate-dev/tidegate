@@ -58,7 +58,7 @@ With `sslmode=verify-full`, the authority checks the server's certificate agains
 
 The Deployment mounts only the file `ca.crt` of the Secret `phemera-db-ca`, with `items`. The Secret also holds the CA's private key. The authority doesn't need it, and anyone who could read it in the container could sign a certificate that the authority trusts.
 
-Note that the file in `sslrootcert` must exist when the authority starts. The authority checks the URL along with its other settings, and that reads the file. If the file is missing, the authority stops and reports that the URL isn't a valid Postgres connection URL, although the URL itself is fine.
+Note that the file in `sslrootcert` must exist when the authority starts. The authority checks the URL along with its other settings, and that reads the file. If it can't read the file, the authority stops and reports that `sslrootcert` or `PGSSLROOTCERT` names a file that can't be read.
 
 The authority also stops when it can't reach the database. On a first install, it may restart a few times until CloudNativePG has created the database.
 
