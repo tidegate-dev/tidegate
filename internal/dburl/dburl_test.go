@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/phemera-dev/phemera/authority/internal/db/dburl"
+	"github.com/phemera-dev/phemera/internal/dburl"
 )
 
 const (

@@ -55,12 +55,10 @@ dependenciesRules:
       internal:
         - '^github.com/phemera-dev/phemera/internal/secret$'
 
-  # config checks the database URL with the parser that db uses.
   - package: '^github.com/phemera-dev/phemera/authority/internal/config$'
     shouldOnlyDependsOn:
       internal:
         - '^github.com/phemera-dev/phemera/internal.**'
-        - '^github.com/phemera-dev/phemera/authority/internal/db/dburl$'
 
   - package: '^github.com/phemera-dev/phemera/authority/internal/db.**'
     shouldOnlyDependsOn:

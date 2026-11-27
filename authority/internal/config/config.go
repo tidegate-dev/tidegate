@@ -17,7 +17,7 @@ import (
 	"github.com/knadh/koanf/providers/structs"
 	"github.com/knadh/koanf/v2"
 
-	"github.com/phemera-dev/phemera/authority/internal/db/dburl"
+	"github.com/phemera-dev/phemera/internal/dburl"
 	"github.com/phemera-dev/phemera/internal/logging"
 )
 
