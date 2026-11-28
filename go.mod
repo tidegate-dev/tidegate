@@ -17,7 +17,7 @@ require (
 	github.com/knadh/koanf/providers/env/v2 v2.0.2
 	github.com/knadh/koanf/providers/structs v1.0.1
 	github.com/knadh/koanf/v2 v2.4.1
-	github.com/matthewhartstonge/argon2 v1.6.4
+	github.com/matthewhartstonge/argon2 v1.6.5
 	github.com/mdlayher/sdnotify v1.0.0
 	github.com/onsi/ginkgo/v2 v2.34.0
 	github.com/onsi/gomega v1.44.0
